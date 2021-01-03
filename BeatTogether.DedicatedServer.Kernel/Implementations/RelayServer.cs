@@ -61,32 +61,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
         protected override void OnReceived(EndPoint endPoint, ReadOnlySpan<byte> buffer)
         {
             _logger.Verbose($"Handling OnReceived (EndPoint='{endPoint}', Size={buffer.Length}).");
-            if (!endPoint.Equals(_sourceEndPoint) &&
-                !endPoint.Equals(_targetEndPoint))
-            {
-                _logger.Warning(
-                    "Received a message from an end point that doesn't match the source/target " +
-                    $"(EndPoint='{endPoint}', " +
-                    $"SourceEndPoint='{_sourceEndPoint}', " +
-                    $"TargetEndPoint='{_targetEndPoint}')."
-                );
-                // TODO: Remove this after testing
-                _sourceEndPoint = (IPEndPoint)endPoint;
-            }
             if (endPoint.Equals(_sourceEndPoint))
             {
                 _logger.Verbose(
                     "Routing message from " +
-                    $"'{_sourceEndPoint}' -> '{_targetEndPoint}' " +
+                    $"'{endPoint}' -> '{_targetEndPoint}' " +
                     $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
                 );
                 SendAsync(_targetEndPoint, buffer);
             }
-            else if (endPoint.Equals(_targetEndPoint))
+            else
             {
                 _logger.Verbose(
                     "Routing message from " +
-                    $"'{_targetEndPoint}' -> '{_sourceEndPoint}' " +
+                    $"'{endPoint}' -> '{_sourceEndPoint}' " +
                     $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
                 );
                 SendAsync(_sourceEndPoint, buffer);
