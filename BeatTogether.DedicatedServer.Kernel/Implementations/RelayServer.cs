@@ -59,7 +59,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
         protected override void OnReceived(EndPoint endPoint, ReadOnlySpan<byte> buffer)
         {
             _logger.Verbose($"Handling OnReceived (EndPoint='{endPoint}', Size={buffer.Length}).");
-            if (_sourceEndPoint is null)
+            if (_sourceEndPoint is null && !endPoint.Equals(_targetEndPoint))
                 _sourceEndPoint = (IPEndPoint)endPoint;
             if (endPoint.Equals(_sourceEndPoint))
             {
