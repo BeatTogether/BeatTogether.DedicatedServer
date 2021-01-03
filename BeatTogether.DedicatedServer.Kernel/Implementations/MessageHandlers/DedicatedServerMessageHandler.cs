@@ -32,7 +32,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations.MessageHandlers
                 .OfType<GetAvailableRelayServerRequest>()
                 .Subscribe(async request =>
                 {
-                    Log.Information($"Got message '{request.SourceEndPoint}', '{request.TargetEndPoint}'");
                     var response = await _dedicatedServerService.GetAvailableRelayServer(request);
                     await _serviceBus.ReplyAsync(request, response);
                 })
