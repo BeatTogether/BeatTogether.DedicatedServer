@@ -28,6 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
             _dedicatedServerPortAllocator = dedicatedServerPortAllocator;
             _logger = Log.ForContext<RelayServer>();
 
+            _sourceEndPoint = sourceEndPoint;
             _targetEndPoint = targetEndPoint;
             _inactivityTimeout = inactivityTimeout;
         }
@@ -39,6 +40,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
             _logger.Information(
                 "Starting relay server " +
                 $"(EndPoint='{Endpoint}', " +
+                $"SourceEndPoint='_sourceEndPoint', " +
                 $"TargetEndPoint='{_targetEndPoint}')."
             );
             WaitForInactivityTimeout();
@@ -59,18 +61,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
         protected override void OnReceived(EndPoint endPoint, ReadOnlySpan<byte> buffer)
         {
             _logger.Verbose($"Handling OnReceived (EndPoint='{endPoint}', Size={buffer.Length}).");
-            if (_sourceEndPoint is null && !endPoint.Equals(_targetEndPoint))
-                _sourceEndPoint = (IPEndPoint)endPoint;
-            if (endPoint.Equals(_sourceEndPoint))
-            {
-                _logger.Verbose(
-                    "Routing message from " +
-                    $"'{endPoint}' -> '{_targetEndPoint}' " +
-                    $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
-                );
-                SendAsync(_targetEndPoint, buffer);
-            }
-            else
+            if (endPoint.Equals(_targetEndPoint))
             {
                 _logger.Verbose(
                     "Routing message from " +
@@ -78,6 +69,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
                     $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
                 );
                 SendAsync(_sourceEndPoint, buffer);
+            }
+            else
+            {
+                _logger.Verbose(
+                    "Routing message from " +
+                    $"'{endPoint}' -> '{_targetEndPoint}' " +
+                    $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
+                );
+                SendAsync(_targetEndPoint, buffer);
             }
 
             WaitForInactivityTimeout();
