@@ -40,7 +40,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
             _logger.Information(
                 "Starting relay server " +
                 $"(EndPoint='{Endpoint}', " +
-                $"SourceEndPoint='_sourceEndPoint', " +
+                $"SourceEndPoint='{_sourceEndPoint}', " +
                 $"TargetEndPoint='{_targetEndPoint}')."
             );
             WaitForInactivityTimeout();
