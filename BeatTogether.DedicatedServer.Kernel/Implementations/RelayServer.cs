@@ -92,8 +92,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
         {
             if (_cancellationTokenSource is not null)
             {
-                _cancellationTokenSource.Dispose();
-                _cancellationTokenSource = null;
+                _cancellationTokenSource.CancelAfter(_inactivityTimeout);
+                return;
             }
 
             _cancellationTokenSource = new CancellationTokenSource();
