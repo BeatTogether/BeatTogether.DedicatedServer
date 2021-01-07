@@ -70,7 +70,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
                 );
                 SendAsync(_sourceEndPoint, buffer);
             }
-            else
+            else if (endPoint.Equals(_sourceEndPoint))
             {
                 _logger.Verbose(
                     "Routing message from " +
@@ -78,6 +78,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
                     $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
                 );
                 SendAsync(_targetEndPoint, buffer);
+            } else
+            {
             }
 
             WaitForInactivityTimeout();
