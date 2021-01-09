@@ -60,27 +60,47 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
 
         protected override void OnReceived(EndPoint endPoint, ReadOnlySpan<byte> buffer)
         {
-            _logger.Verbose($"Handling OnReceived (EndPoint='{endPoint}', Size={buffer.Length}).");
-            if (endPoint.Equals(_targetEndPoint))
+            bool queued = false;
+            try
             {
-                _logger.Verbose(
-                    "Routing message from " +
-                    $"'{endPoint}' -> '{_sourceEndPoint}' " +
-                    $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
-                );
-                SendAsync(_sourceEndPoint, buffer);
-            }
-            else
-            {
-                _logger.Verbose(
-                    "Routing message from " +
-                    $"'{endPoint}' -> '{_targetEndPoint}' " +
-                    $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
-                );
-                SendAsync(_targetEndPoint, buffer);
-            }
+                _logger.Verbose($"Handling OnReceived (EndPoint='{endPoint}', Size={buffer.Length}).");
+                if (endPoint.Equals(_targetEndPoint))
+                {
+                    _logger.Verbose(
+                        "Routing message from " +
+                        $"'{endPoint}' -> '{_sourceEndPoint}' " +
+                        $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
+                    );
+                    queued = SendAsync(_sourceEndPoint, buffer);
+                }
+                else if (endPoint.Equals(_sourceEndPoint))
+                {
+                    _logger.Verbose(
+                        "Routing message from " +
+                        $"'{endPoint}' -> '{_targetEndPoint}' " +
+                        $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
+                    );
+                    queued = SendAsync(_targetEndPoint, buffer);
+                }
+                else
+                {
+                    _logger.Verbose("Not routing from '{endPoint}'.");
+                    return;
+                }
 
-            WaitForInactivityTimeout();
+                WaitForInactivityTimeout();
+            }
+            finally
+            {
+                if (!queued)
+                {
+                    ReceiveAsync();
+                }
+            }
+        }
+
+        protected override void OnSent(EndPoint endpoint, long sent)
+        {
             ReceiveAsync();
         }
 
