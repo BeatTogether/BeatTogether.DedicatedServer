@@ -42,7 +42,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
                     Error = GetAvailableRelayServerResponse.ErrorCode.NoAvailableRelayServers
                 });
             }
-            relayServer.Start();
+            if (!relayServer.Start())
+            {
+                _logger.Warning(
+                    "Failed to start UDP relay server for "+
+                    $"(SourceEndPoint='{request.SourceEndPoint}', " +
+                    $"TargetEndPoint='{request.TargetEndPoint}')."
+                );
+                return Task.FromResult(new GetAvailableRelayServerResponse()
+                {
+                    // TODO: should rarely happen, but a more specific error might be good
+                    Error = GetAvailableRelayServerResponse.ErrorCode.NoAvailableRelayServers
+                });
+            }
             return Task.FromResult(new GetAvailableRelayServerResponse()
             {
                 RemoteEndPoint = $"{_configuration.HostName}:{relayServer.Endpoint.Port}"
