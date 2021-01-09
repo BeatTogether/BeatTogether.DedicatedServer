@@ -16,6 +16,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
         private IPEndPoint _targetEndPoint;
         private int _inactivityTimeout;
         private CancellationTokenSource _cancellationTokenSource;
+        private bool _isEstablished;
 
         public RelayServer(
             IDedicatedServerPortAllocator dedicatedServerPortAllocator,
@@ -63,29 +64,34 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
             bool queued = false;
             try
             {
-                _logger.Verbose($"Handling OnReceived (EndPoint='{endPoint}', Size={buffer.Length}).");
                 if (endPoint.Equals(_targetEndPoint))
                 {
                     _logger.Verbose(
                         "Routing message from " +
                         $"'{endPoint}' -> '{_sourceEndPoint}' " +
-                        $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
+                        $"(Size={buffer.Length})."
                     );
                     queued = SendAsync(_sourceEndPoint, buffer);
                 }
-                else if (endPoint.Equals(_sourceEndPoint))
-                {
-                    _logger.Verbose(
-                        "Routing message from " +
-                        $"'{endPoint}' -> '{_targetEndPoint}' " +
-                        $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
-                    );
-                    queued = SendAsync(_targetEndPoint, buffer);
-                }
                 else
                 {
-                    _logger.Verbose("Not routing from '{endPoint}'.");
-                    return;
+                    if (!_isEstablished)
+                    {
+                        _sourceEndPoint = (IPEndPoint)endPoint;
+                        _isEstablished = true;
+                    }
+
+                    if (endPoint.Equals(_sourceEndPoint))
+                    {
+                        _logger.Verbose(
+                            "Routing message from " +
+                            $"'{endPoint}' -> '{_targetEndPoint}' " +
+                            $"(Size={buffer.Length})."
+                        );
+                        queued = SendAsync(_targetEndPoint, buffer);
+                    }
+                    else
+                        _logger.Verbose($"Not routing message from '{endPoint}'.");
                 }
 
                 WaitForInactivityTimeout();
