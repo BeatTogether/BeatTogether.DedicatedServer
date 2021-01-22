@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using System.Threading.Tasks;
-using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Kernel.Abstractions.Providers;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Requests;
@@ -9,19 +9,19 @@ using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.Implementations
 {
-    public class DedicatedServerService : IDedicatedServerService
+    public class RelayServerService : IRelayServerService
     {
-        private readonly DedicatedServerConfiguration _configuration;
+        private readonly RelayServerConfiguration _configuration;
         private readonly IRelayServerFactory _relayServerFactory;
-        private readonly ILogger _logger; 
+        private readonly ILogger _logger;
 
-        public DedicatedServerService(
-            DedicatedServerConfiguration configuration,
+        public RelayServerService(
+            RelayServerConfiguration configuration,
             IRelayServerFactory relayServerFactory)
         {
             _configuration = configuration;
             _relayServerFactory = relayServerFactory;
-            _logger = Log.ForContext<DedicatedServerService>();
+            _logger = Log.ForContext<RelayServerService>();
         }
 
         public Task<GetAvailableRelayServerResponse> GetAvailableRelayServer(GetAvailableRelayServerRequest request)
@@ -37,10 +37,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
                     $"(SourceEndPoint='{request.SourceEndPoint}', " +
                     $"TargetEndPoint='{request.TargetEndPoint}')."
                 );
-                return Task.FromResult(new GetAvailableRelayServerResponse()
-                {
-                    Error = GetAvailableRelayServerResponse.ErrorCode.NoAvailableRelayServers
-                });
+                return Task.FromResult(
+                    new GetAvailableRelayServerResponse(GetAvailableRelayServerError.NoAvailableRelayServers)
+                );
             }
             if (!relayServer.Start())
             {
@@ -49,16 +48,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
                     $"(SourceEndPoint='{request.SourceEndPoint}', " +
                     $"TargetEndPoint='{request.TargetEndPoint}')."
                 );
-                return Task.FromResult(new GetAvailableRelayServerResponse()
-                {
-                    // TODO: should rarely happen, but a more specific error might be good
-                    Error = GetAvailableRelayServerResponse.ErrorCode.NoAvailableRelayServers
-                });
+                return Task.FromResult(
+                    new GetAvailableRelayServerResponse(GetAvailableRelayServerError.FailedToStartRelayServer)
+                );
             }
-            return Task.FromResult(new GetAvailableRelayServerResponse()
-            {
-                RemoteEndPoint = $"{_configuration.HostName}:{relayServer.Endpoint.Port}"
-            });
+            return Task.FromResult(new GetAvailableRelayServerResponse(
+                GetAvailableRelayServerError.None,
+                $"{_configuration.HostName}:{relayServer.Endpoint.Port}")
+            );
         }
     }
 }

@@ -2,9 +2,9 @@
 using BeatTogether.DedicatedServer.Messaging.Requests;
 using BeatTogether.DedicatedServer.Messaging.Responses;
 
-namespace BeatTogether.DedicatedServer.Kernel.Abstractions
+namespace BeatTogether.DedicatedServer.Interface
 {
-    public interface IDedicatedServerService
+    public interface IRelayServerService
     {
         Task<GetAvailableRelayServerResponse> GetAvailableRelayServer(GetAvailableRelayServerRequest request);
     }

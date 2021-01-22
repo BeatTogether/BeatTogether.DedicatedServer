@@ -7,7 +7,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
 {
     public class DedicatedServerPortAllocator : IDedicatedServerPortAllocator
     {
-        private readonly DedicatedServerConfiguration _configuration;
+        private readonly RelayServerConfiguration _relayServerConfiguration;
 
         private readonly object _lock;
 
@@ -16,23 +16,23 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
 
         private int _lastPort;
 
-        public DedicatedServerPortAllocator(DedicatedServerConfiguration configuration)
+        public DedicatedServerPortAllocator(RelayServerConfiguration relayServerConfiguration)
         {
-            _configuration = configuration;
+            _relayServerConfiguration = relayServerConfiguration;
 
             _lock = new();
 
             _acquiredRelayServerPorts = new();
             _releasedRelayServerPorts = new();
 
-            _lastPort = configuration.BasePort;
+            _lastPort = relayServerConfiguration.BasePort;
         }
 
         public int? AcquireRelayServerPort()
         {
             lock (_lock)
             {
-                if (_acquiredRelayServerPorts.Count >= _configuration.RelayServers.MaximumSlots)
+                if (_acquiredRelayServerPorts.Count >= _relayServerConfiguration.MaximumSlots)
                     return null;
                 int port;
                 if (_releasedRelayServerPorts.Any())
