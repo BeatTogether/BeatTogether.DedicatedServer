@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - master
-  pull_request:
-    branches: [ master ]
 
 jobs:
   nuget-1:
@@ -23,10 +21,10 @@ jobs:
           NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: Pack
         run: |
-          dotnet pack -c Release --output nupkgs BeatTogether.DedicatedServer.Messaging/BeatTogether.DedicatedServer.Messaging.csproj
+          dotnet pack -c Release --output nupkgs BeatTogether.DedicatedServer.Interface/BeatTogether.DedicatedServer.Interface.csproj
       - name: Publish
         run: |
-          dotnet nuget push nupkgs/BeatTogether.DedicatedServer.Messaging.*.nupkg -k ${{secrets.GITHUB_TOKEN}} --skip-duplicate
+          dotnet nuget push "nupkgs/BeatTogether.DedicatedServer.*.nupkg" -k ${{secrets.GITHUB_TOKEN}} --skip-duplicate
 
   nuget-2:
     name: https://api.nuget.org/v3/index.json
@@ -44,7 +42,7 @@ jobs:
           NUGET_AUTH_TOKEN: ${{secrets.NUGET_API_KEY}}
       - name: Pack
         run: |
-          dotnet pack -c Release --output nupkgs BeatTogether.DedicatedServer.Messaging/BeatTogether.DedicatedServer.Messaging.csproj
+          dotnet pack -c Release --output nupkgs BeatTogether.DedicatedServer.Interface/BeatTogether.DedicatedServer.Interface.csproj
       - name: Publish
         run: |
-          dotnet nuget push nupkgs/BeatTogether.DedicatedServer.Messaging.*.nupkg -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
+          dotnet nuget push "nupkgs/BeatTogether.DedicatedServer.*.nupkg" -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
