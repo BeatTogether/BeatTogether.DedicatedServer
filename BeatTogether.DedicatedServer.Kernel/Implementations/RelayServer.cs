@@ -15,7 +15,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
         private IPEndPoint _sourceEndPoint;
         private IPEndPoint _targetEndPoint;
         private int _inactivityTimeout;
-        private CancellationTokenSource _cancellationTokenSource;
+        private CancellationTokenSource? _cancellationTokenSource;
         private bool _isEstablished;
 
         public RelayServer(
@@ -133,7 +133,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
                     $"TargetEndPoint='{_targetEndPoint}')."
                 );
 
-                if (_cancellationTokenSource != null)
+                if (_cancellationTokenSource is not null)
                 {
                     _cancellationTokenSource.Dispose();
                     _cancellationTokenSource = null;

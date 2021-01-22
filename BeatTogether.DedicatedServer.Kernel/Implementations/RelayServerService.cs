@@ -30,7 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations
                 IPEndPoint.Parse(request.SourceEndPoint),
                 IPEndPoint.Parse(request.TargetEndPoint)
             );
-            if (relayServer == null)
+            if (relayServer is null)
             {
                 _logger.Warning(
                     "No available slots for relay server " +

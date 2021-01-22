@@ -18,7 +18,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Implementations.Factories
             _dedicatedServerPortAllocator = dedicatedServerPortAllocator;
         }
 
-        public RelayServer GetRelayServer(IPEndPoint sourceEndPoint, IPEndPoint targetEndPoint)
+        public RelayServer? GetRelayServer(IPEndPoint sourceEndPoint, IPEndPoint targetEndPoint)
         {
             var port = _dedicatedServerPortAllocator.AcquireRelayServerPort();
             if (!port.HasValue)

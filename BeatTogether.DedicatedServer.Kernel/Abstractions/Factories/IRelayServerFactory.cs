@@ -5,6 +5,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions.Providers
 {
     public interface IRelayServerFactory
     {
-        RelayServer GetRelayServer(IPEndPoint sourceEndPoint, IPEndPoint targetEndPoint);
+        RelayServer? GetRelayServer(IPEndPoint sourceEndPoint, IPEndPoint targetEndPoint);
     }
 }
