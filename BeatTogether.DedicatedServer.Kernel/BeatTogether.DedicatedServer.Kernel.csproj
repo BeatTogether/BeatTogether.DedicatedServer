@@ -8,8 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="BeatTogether.Core.Messaging" Version="1.7.1" />
-    <PackageReference Include="BeatTogether.Extensions.RabbitMQ" Version="1.0.0" />
-    <PackageReference Include="BeatTogether.Extensions.Serilog" Version="1.0.0" />
+    <PackageReference Include="BeatTogether.Extensions.RabbitMQ" Version="1.0.1" />
+    <PackageReference Include="BeatTogether.Extensions.Serilog" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>
