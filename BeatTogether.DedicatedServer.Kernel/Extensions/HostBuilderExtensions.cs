@@ -1,12 +1,12 @@
 ﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface;
+using BeatTogether.DedicatedServer.Kernel;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Kernel.Abstractions.Providers;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
-using BeatTogether.DedicatedServer.Kernel.Implementations;
-using BeatTogether.DedicatedServer.Kernel.Implementations.Factories;
+using BeatTogether.DedicatedServer.Kernel.Factories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Security.Cryptography;
 
 namespace BeatTogether.Extensions
 {
@@ -19,10 +19,34 @@ namespace BeatTogether.Extensions
                 .UseAutobus()
                 .ConfigureServices((hostBuilderContext, services) =>
                     services
-                        .AddConfiguration<RelayServerConfiguration>("RelayServers")
-                        .AddSingleton<IDedicatedServerPortAllocator, DedicatedServerPortAllocator>()
-                        .AddSingleton<IRelayServerFactory, RelayServerFactory>()
-                        .AddServiceKernel<IRelayServerService, RelayServerService>()
+                        .AddCoreSecurity()
+                        .AddDedicatedServerMessaging()
+                        .AddAutoMapper(configuration =>
+                        {
+                            configuration.CreateMap<DedicatedServer.Interface.Models.GameplayServerConfiguration,
+                                                    DedicatedServer.Kernel.Models.GameplayServerConfiguration>();
+                        })
+                        .AddConfiguration<ServerConfiguration>("Server")
+                        .AddTransient<RNGCryptoServiceProvider>()
+                        .AddTransient(serviceProvider =>
+                            new AesCryptoServiceProvider()
+                            {
+                                Mode = CipherMode.CBC,
+                                Padding = PaddingMode.None
+                            }
+                        )
+                        .AddSingleton<IEncryptedPacketReader, EncryptedPacketReader>()
+                        .AddSingleton<IEncryptedPacketWriter, EncryptedPacketWriter>()
+                        .AddSingleton<PacketEncryptionLayer>()
+                        .AddSingleton<IPacketSource, PacketSource>()
+                        .AddSingleton<IPacketDispatcher, PacketDispatcher>()
+                        .AddSingleton<IPortAllocator, PortAllocator>()
+                        .AddSingleton<IPlayerRegistry, PlayerRegistry>()
+                        .AddSingleton<IMatchmakingServerRegistry, MatchmakingServerRegistry>()
+                        .AddSingleton<IMatchmakingServerFactory, MatchmakingServerFactory>()
+                        .AddServiceKernel<IMatchmakingService, MatchmakingService>()
+                        .AddHostedService<MasterServerEventHandler>()
+                        .AddAllPacketHandlersFromAssembly(typeof(PacketSource).Assembly)
                 );
     }
 }
