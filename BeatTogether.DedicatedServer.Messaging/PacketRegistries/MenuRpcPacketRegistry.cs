@@ -12,6 +12,11 @@ namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
             AddPacket<SetIsReadyPacket>(MenuRpcPacketType.SetIsReady);
             AddPacket<GetIsInLobbyPacket>(MenuRpcPacketType.GetIsInLobby);
             AddPacket<SetIsInLobbyPacket>(MenuRpcPacketType.SetIsInLobby);
+            AddPacket<GetOwnedSongPacksPacket>(MenuRpcPacketType.GetOwnedSongPacks);
+            AddPacket<GetPlayersPermissionConfigurationPacket>(MenuRpcPacketType.GetPermissionConfiguration);
+            AddPacket<GetRecommendedBeatmapPacket>(MenuRpcPacketType.GetRecommendedBeatmap);
+            AddPacket<GetRecommendedGameplayModifiersPacket>(MenuRpcPacketType.GetRecommendedGameplayModifiers);
+            AddPacket<GetStartedLevelPacket>(MenuRpcPacketType.GetStartedLevel);
         }
     }
 }
