@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.Extensions;
 using LiteNetLib.Utils;
@@ -16,7 +16,6 @@ namespace BeatTogether.DedicatedServer.Messaging
 
         public void WriteTo(NetDataWriter writer, INetSerializable packet)
         {
-            
             var type = packet.GetType();
             if (!_packetRegistry.TryGetPacketIds(type, out var packetIds))
                 throw new Exception($"Failed to retrieve identifier for packet of type '{type.Name}'.");
@@ -25,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Messaging
                 packetWriter.Put(packetId);
             packet.Serialize(packetWriter);
             writer.PutVarUInt((uint)packetWriter.Length);
-            writer.Put(packetWriter.Data);
+            writer.Put(packetWriter.Data, 0, packetWriter.Length);
         }
     }
 }

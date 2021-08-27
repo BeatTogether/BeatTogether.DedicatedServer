@@ -1,4 +1,4 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Models;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
@@ -283,7 +283,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 SyncTime = player.SyncTime
             };
-            _packetDispatcher.SendToPlayer(player, syncTimePacket, DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(player, syncTimePacket, DeliveryMethod.ReliableOrdered);
 
             var playerSortOrderPacket = new PlayerSortOrderPacket
             {
