@@ -19,6 +19,9 @@ namespace BeatTogether.DedicatedServer.Messaging
             var length = reader.GetVarUInt();
             if (reader.AvailableBytes < length)
                 throw new InvalidDataContractException($"Packet fragmented (AvailableBytes={reader.AvailableBytes}, Expected={length}).");
+
+            var prevPosition = reader.Position;
+
             IPacketRegistry packetRegistry = _packetRegistry;
             while (true)
             {
@@ -33,6 +36,11 @@ namespace BeatTogether.DedicatedServer.Messaging
                     packetRegistry = subPacketRegistry;
                     continue;
                 }
+
+                // skip any unprocessed bytes (or rewind the reader if too many bytes were read)
+                var processedBytes = reader.Position - prevPosition;
+                reader.SkipBytes((int)length - processedBytes);
+
                 throw new InvalidDataContractException(
                     $"Packet identifier not registered with '{packetRegistry.GetType().Name}' " +
                     $"(PacketId={packetId})."

@@ -86,7 +86,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 catch (Exception e)
                 {
                     _logger.Error(e, "Failed to read packet.");
-                    return;
+                    //return;
                 }
             }
         }

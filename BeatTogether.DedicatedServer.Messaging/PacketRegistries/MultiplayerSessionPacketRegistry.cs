@@ -1,4 +1,5 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;
 
 namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
 {
@@ -7,6 +8,7 @@ namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
         public override void Register()
         {
             AddSubPacketRegistry<MenuRpcPacketRegistry>(MultiplayerSessionPacketType.MenuRpc);
+            AddPacket<NodePoseSyncStatePacket>(MultiplayerSessionPacketType.NodePoseSyncState);
         }
     }
 }

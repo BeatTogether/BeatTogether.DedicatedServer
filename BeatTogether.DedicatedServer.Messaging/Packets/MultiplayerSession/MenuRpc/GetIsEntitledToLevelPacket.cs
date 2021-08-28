@@ -3,7 +3,7 @@ using LiteNetLib.Utils;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
-    public sealed class SetIsEntitledToLevelPacket : BaseRpcPacket
+    public sealed class GetIsEntitledToLevelPacket : BaseRpcPacket
     {
         public string? LevelId { get; set; }
 
