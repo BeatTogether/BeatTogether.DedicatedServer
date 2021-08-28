@@ -20,5 +20,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public bool TryGetPlayer(EndPoint remoteEndPoint, [MaybeNullWhen(false)] out IPlayer player) =>
             _playersByRemoteEndPoint.TryGetValue(remoteEndPoint, out player);
+
+        public int PlayerCount => _playersByRemoteEndPoint.Count;
     }
 }

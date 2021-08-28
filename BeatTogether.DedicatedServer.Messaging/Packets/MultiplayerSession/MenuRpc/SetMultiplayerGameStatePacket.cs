@@ -4,23 +4,20 @@ using LiteNetLib.Utils;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
-    public sealed class SetIsEntitledToLevelPacket : BaseRpcPacket
+    public sealed class SetMultiplayerGameStatePacket : BaseRpcPacket
     {
-        public string? LevelId { get; set; }
-        public EntitlementStatus Entitlement { get; set; }
+        public MultiplayerGameState State { get; set; }
 
         public override void Deserialize(NetDataReader reader)
         {
             base.Deserialize(reader);
-            LevelId = reader.GetString();
-            Entitlement = (EntitlementStatus)reader.GetInt();
+            State = (MultiplayerGameState)reader.GetInt();
         }
 
         public override void Serialize(NetDataWriter writer)
         {
             base.Serialize(writer);
-            writer.Put(LevelId);
-            writer.Put((int)Entitlement);
+            writer.Put((int)State);
         }
     }
 }

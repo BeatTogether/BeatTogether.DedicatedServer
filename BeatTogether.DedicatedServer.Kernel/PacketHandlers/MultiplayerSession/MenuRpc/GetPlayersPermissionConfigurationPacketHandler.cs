@@ -1,5 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
+using LiteNetLib;
 using Serilog;
 using System.Threading.Tasks;
 
@@ -21,7 +23,20 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetPlayersPermissionConfigurationPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            // TODO
+
+            var playerPermissionConfiguration = new PlayerPermissionConfiguration
+            {
+                UserId = sender.UserId,
+                IsServerOwner = true,
+                HasRecommendBeatmapsPermission = true,
+                HasRecommendGameplayModifiersPermission = true,
+                HasKickVotePermission = true
+            };
+
+            var permissionConfigurationPacket = new SetPlayersPermissionConfigurationPacket();
+            permissionConfigurationPacket.PermissionConfiguration.PlayersPermission.Add(playerPermissionConfiguration);
+            _packetDispatcher.SendToPlayer(sender, permissionConfigurationPacket, DeliveryMethod.ReliableOrdered);
+
             return Task.CompletedTask;
         }
     }

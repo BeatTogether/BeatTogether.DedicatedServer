@@ -1,5 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
+using LiteNetLib;
 using Serilog;
 using System.Threading.Tasks;
 
@@ -21,7 +23,13 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetMultiplayerGameStatePacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            // TODO
+
+            var gameStatePacket = new SetMultiplayerGameStatePacket
+            {
+                State = MultiplayerGameState.Lobby
+            };
+            _packetDispatcher.SendToPlayer(sender, gameStatePacket, DeliveryMethod.ReliableOrdered);
+
             return Task.CompletedTask;
         }
     }

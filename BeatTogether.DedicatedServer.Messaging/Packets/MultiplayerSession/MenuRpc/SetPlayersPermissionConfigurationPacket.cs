@@ -1,26 +1,23 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Enums;
+using BeatTogether.DedicatedServer.Messaging.Models;
 using LiteNetLib.Utils;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
-    public sealed class SetIsEntitledToLevelPacket : BaseRpcPacket
+    public sealed class SetPlayersPermissionConfigurationPacket : BaseRpcPacket
     {
-        public string? LevelId { get; set; }
-        public EntitlementStatus Entitlement { get; set; }
+        public PlayersPermissionConfiguration PermissionConfiguration { get; set; } = new();
 
         public override void Deserialize(NetDataReader reader)
         {
             base.Deserialize(reader);
-            LevelId = reader.GetString();
-            Entitlement = (EntitlementStatus)reader.GetInt();
+            PermissionConfiguration.Deserialize(reader);
         }
 
         public override void Serialize(NetDataWriter writer)
         {
             base.Serialize(writer);
-            writer.Put(LevelId);
-            writer.Put((int)Entitlement);
+            PermissionConfiguration.Serialize(writer);
         }
     }
 }

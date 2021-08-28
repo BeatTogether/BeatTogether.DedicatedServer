@@ -225,20 +225,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 connectionRequestData.UserName
             );
             player.SortIndex = sortIndex;
-            if (!_playersByUserId.TryAdd(player.UserId, player))
-            {
-                _logger.Warning(
-                    "Player failed to join matchmaking server " +
-                    $"(RemoteEndPoint='{player.NetPeer.EndPoint}', " +
-                    $"ConnectionId={player.ConnectionId}, " +
-                    $"Secret='{player.Secret}', " +
-                    $"UserId='{player.UserId}', " +
-                    $"UserName='{player.UserName}', " +
-                    $"SortIndex={player.SortIndex})."
-                );
-                // TODO: Kick player
-                return;
-            }
+            _playersByUserId[player.UserId] = player;
             _playersByConnectionId[connectionId] = player;
             _playerRegistry.AddPlayer(player);
             _logger.Information(
@@ -305,6 +292,19 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"(RemoteEndPoint='{peer.EndPoint}', DisconnectInfo={disconnectInfo})."
                 );
                 _packetEncryptionLayer.RemoveEncryptedEndPoint(peer.EndPoint);
+
+                if (_playerRegistry.TryGetPlayer(peer.EndPoint, out var player))
+                {
+                    _playersByUserId.TryRemove(player.UserId, out _);
+                    _playersByConnectionId.TryRemove(player.ConnectionId, out _);
+                    _playerRegistry.RemovePlayer(player);
+                }
+
+                if (_playerRegistry.PlayerCount == 0)
+                {
+                    _ = Stop(CancellationToken.None);
+                    _cancellationTokenSource?.Cancel();
+                }
             }
         }
 

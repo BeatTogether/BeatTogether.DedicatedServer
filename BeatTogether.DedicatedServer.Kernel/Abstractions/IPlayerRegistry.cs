@@ -11,5 +11,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         IPlayer GetPlayer(EndPoint remoteEndPoint);
 
         bool TryGetPlayer(EndPoint remoteEndPoint, [MaybeNullWhen(false)] out IPlayer player);
+
+        int PlayerCount { get; }
     }
 }

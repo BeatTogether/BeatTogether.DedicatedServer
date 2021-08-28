@@ -39,7 +39,7 @@ namespace BeatTogether.DedicatedServer.Messaging
 
                 // skip any unprocessed bytes (or rewind the reader if too many bytes were read)
                 var processedBytes = reader.Position - prevPosition;
-                reader.SkipBytes((int)length - processedBytes);
+                //reader.SkipBytes((int)length - processedBytes);
 
                 throw new InvalidDataContractException(
                     $"Packet identifier not registered with '{packetRegistry.GetType().Name}' " +
