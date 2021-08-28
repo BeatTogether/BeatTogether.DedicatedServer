@@ -40,11 +40,13 @@ namespace BeatTogether.DedicatedServer.Kernel
         private int _connectionIdCount = 0;
         private readonly ConcurrentQueue<int> _releasedSortIndices = new();
         private int _lastSortIndex = -1;
+        private float _lastSyncTimeUpdate;
 
         private Task? _task;
         private CancellationTokenSource? _cancellationTokenSource;
 
         private const int _eventPollDelay = 10;
+        private const float _syncTimeDelay = 5f;
 
         public MatchmakingServer(
             IPortAllocator portAllocator,
@@ -283,7 +285,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 SyncTime = player.SyncTime
             };
-            _packetDispatcher.SendToNearbyPlayers(player, syncTimePacket, DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToPlayer(player, syncTimePacket, DeliveryMethod.ReliableOrdered);
 
             var playerSortOrderPacket = new PlayerSortOrderPacket
             {
@@ -315,6 +317,19 @@ namespace BeatTogether.DedicatedServer.Kernel
             while (!cancellationToken.IsCancellationRequested)
             {
                 _netManager.PollEvents();
+                if (_lastSyncTimeUpdate < RunTime - _syncTimeDelay)
+                {
+                    _logger.Information(_playersByUserId.Count.ToString()); // dont remove this
+                    foreach (var player in _playersByUserId) {
+                        var syncTimePacket = new SyncTimePacket
+                        {
+                            SyncTime = player.Value.SyncTime
+                        };
+                        _packetDispatcher.SendToPlayer(player.Value, syncTimePacket, DeliveryMethod.ReliableOrdered);
+                    }
+                    _lastSyncTimeUpdate = RunTime;
+                }
+
                 await Task.Delay(_eventPollDelay, cancellationToken);
             }
         }
