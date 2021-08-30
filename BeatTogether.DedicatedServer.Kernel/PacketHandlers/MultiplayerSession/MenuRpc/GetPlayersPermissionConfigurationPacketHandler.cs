@@ -33,8 +33,10 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 HasKickVotePermission = true
             };
 
-            var permissionConfigurationPacket = new SetPlayersPermissionConfigurationPacket();
-            permissionConfigurationPacket.PermissionConfiguration.PlayersPermission.Add(playerPermissionConfiguration);
+            var permissionConfigurationPacket = new SetPlayersPermissionConfigurationPacket
+            {
+                PermissionConfiguration = sender.MatchmakingServer.Permissions
+            };
             _packetDispatcher.SendToPlayer(sender, permissionConfigurationPacket, DeliveryMethod.ReliableOrdered);
 
             return Task.CompletedTask;

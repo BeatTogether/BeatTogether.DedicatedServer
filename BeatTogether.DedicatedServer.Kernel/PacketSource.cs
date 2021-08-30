@@ -96,7 +96,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     builder.Append("}");
 
                     _logger.Debug(builder.ToString());
-                    return;
+                    //return;
                 }
             }
         }

@@ -7,7 +7,9 @@ using LiteNetLib;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -20,10 +22,12 @@ namespace BeatTogether.DedicatedServer.Kernel
         public string Secret { get; }
         public string ManagerId { get; }
         public GameplayServerConfiguration Configuration { get; }
+        public PlayersPermissionConfiguration Permissions { get; } = new();
         public bool IsRunning => _netManager.IsRunning;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => _netManager.LocalPort;
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
+        public List<IPlayer> Players { get => _playersByUserId.Values.ToList(); }
 
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IPortAllocator _portAllocator;
@@ -280,6 +284,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SortIndex = player.SortIndex
             };
             _packetDispatcher.SendToNearbyPlayers(player, playerSortOrderPacket, DeliveryMethod.ReliableOrdered);
+
+            UpdatePermissions();
         }
 
         void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
@@ -312,20 +318,36 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         #region Private Methods
 
+        private void UpdatePermissions()
+        {
+            foreach (IPlayer player in _playerRegistry.Players)
+            {
+                var playerPermission = new PlayerPermissionConfiguration
+                {
+                    UserId = player.UserId,
+                    IsServerOwner = player.UserId == ManagerId,
+                    HasRecommendBeatmapsPermission = true,
+                    HasRecommendGameplayModifiersPermission = Configuration.GameplayServerControlSettings == Enums.GameplayServerControlSettings.AllowModifierSelection || Configuration.GameplayServerControlSettings == Enums.GameplayServerControlSettings.All,
+                    HasKickVotePermission = true
+                };
+                Permissions.PlayersPermission.Add(playerPermission);
+            }
+        }
+
         private async Task PollEvents(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
                 _netManager.PollEvents();
+
                 if (_lastSyncTimeUpdate < RunTime - _syncTimeDelay)
                 {
-                    _logger.Information(_playersByUserId.Count.ToString()); // dont remove this
-                    foreach (var player in _playersByUserId) {
+                    foreach (var player in Players) {
                         var syncTimePacket = new SyncTimePacket
                         {
-                            SyncTime = player.Value.SyncTime
+                            SyncTime = player.SyncTime
                         };
-                        _packetDispatcher.SendToPlayer(player.Value, syncTimePacket, DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToPlayer(player, syncTimePacket, DeliveryMethod.ReliableOrdered);
                     }
                     _lastSyncTimeUpdate = RunTime;
                 }

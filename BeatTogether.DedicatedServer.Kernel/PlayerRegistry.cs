@@ -1,5 +1,7 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 
@@ -7,6 +9,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class PlayerRegistry : IPlayerRegistry
     {
+        public List<IPlayer> Players { get => _playersByRemoteEndPoint.Values.ToList(); }
         private readonly ConcurrentDictionary<EndPoint, IPlayer> _playersByRemoteEndPoint = new();
 
         public void AddPlayer(IPlayer player) =>

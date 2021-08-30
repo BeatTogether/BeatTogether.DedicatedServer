@@ -9,6 +9,7 @@ namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
         {
             AddSubPacketRegistry<MenuRpcPacketRegistry>(MultiplayerSessionPacketType.MenuRpc);
             AddPacket<NodePoseSyncStatePacket>(MultiplayerSessionPacketType.NodePoseSyncState);
+            AddPacket<NodePoseSyncStateDeltaPacket>(MultiplayerSessionPacketType.NodePoseSyncStateDelta);
         }
     }
 }
