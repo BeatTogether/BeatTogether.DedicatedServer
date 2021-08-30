@@ -95,7 +95,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }
                     builder.Append("}");
 
-                    _logger.Debug($"At reader position '{reader.Position}' in the following packet:");
                     _logger.Debug(builder.ToString());
                     return;
                 }

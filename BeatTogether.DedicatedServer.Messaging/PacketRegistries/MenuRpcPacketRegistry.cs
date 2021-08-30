@@ -22,6 +22,7 @@ namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
             AddPacket<GetStartedLevelPacket>(MenuRpcPacketType.GetStartedLevel);
             AddPacket<SetIsEntitledToLevelPacket>(MenuRpcPacketType.SetIsEntitledToLevel);
             AddPacket<GetIsEntitledToLevelPacket>(MenuRpcPacketType.GetIsEntitledToLevel);
+            AddPacket<GetCountdownEndTimePacket>(MenuRpcPacketType.GetCountdownEndTime);
         }
     }
 }

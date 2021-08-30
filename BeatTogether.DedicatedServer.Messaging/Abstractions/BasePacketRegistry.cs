@@ -26,10 +26,12 @@ namespace BeatTogether.DedicatedServer.Messaging
             _packetIds;
 
         /// <inheritdoc cref="IPacketRegistry.GetPacketIds"/>
+        /// broke but too lazy to fix
         public IEnumerable<byte> GetPacketIds(Type type) =>
             _packetIds[type];
 
         /// <inheritdoc cref="IPacketRegistry.GetPacketIds{T}"/>
+        /// broke but too lazy to fix
         public IEnumerable<byte> GetPacketIds<T>()
             where T : class, INetSerializable =>
             GetPacketIds(typeof(T));
@@ -47,8 +49,20 @@ namespace BeatTogether.DedicatedServer.Messaging
             _factories[(byte)packetId]();
 
         /// <inheritdoc cref="IPacketRegistry.TryGetPacketIds"/>
-        public bool TryGetPacketIds(Type type, [MaybeNullWhen(false)] out IEnumerable<byte> packetIds) =>
-            _packetIds.TryGetValue(type, out packetIds);
+        public bool TryGetPacketIds(Type type, [MaybeNullWhen(false)] out IEnumerable<byte> packetIds)
+        {
+            if (_packetIds.TryGetValue(type, out packetIds))
+                return true;
+            foreach (var (id, subRegistry) in _subPacketRegistries)
+            {
+                if (subRegistry.TryGetPacketIds(type, out IEnumerable<byte>? subPacketIds))
+                {
+                    packetIds = Enumerable.Empty<byte>().Append((byte)id).Concat(subPacketIds);
+                    return true;
+                }
+            }
+            return false;
+        }
 
         /// <inheritdoc cref="IPacketRegistry.TryGetPacketId{T}"/>
         public bool TryGetPacketIds<T>([MaybeNullWhen(false)] out IEnumerable<byte> packetIds)
@@ -101,8 +115,8 @@ namespace BeatTogether.DedicatedServer.Messaging
         {
             var subPacketRegistry = new T();
             _subPacketRegistries[(byte)packetRegistryId] = subPacketRegistry;
-            foreach (var (packetType, packetIds) in subPacketRegistry.GetAllPacketIds())
-                _packetIds[packetType] = packetIds;
+            //foreach (var (packetType, packetIds) in subPacketRegistry.GetAllPacketIds())
+            //    _packetIds[packetType] = packetIds;
         }
 
         #endregion

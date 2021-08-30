@@ -20,7 +20,7 @@ namespace BeatTogether.DedicatedServer.Messaging
             if (!_packetRegistry.TryGetPacketIds(type, out var packetIds))
                 throw new Exception($"Failed to retrieve identifier for packet of type '{type.Name}'.");
             var packetWriter = new NetDataWriter();
-            foreach (var packetId in packetIds)
+            foreach (byte packetId in packetIds)
                 packetWriter.Put(packetId);
             packet.Serialize(packetWriter);
             writer.PutVarUInt((uint)packetWriter.Length);
