@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System;
+using System.Runtime.Serialization;
 using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.Extensions;
 using LiteNetLib.Utils;
@@ -22,29 +23,35 @@ namespace BeatTogether.DedicatedServer.Messaging
 
             var prevPosition = reader.Position;
 
-            IPacketRegistry packetRegistry = _packetRegistry;
-            while (true)
+            try
             {
-                var packetId = reader.GetByte();
-                if (packetRegistry.TryCreatePacket(packetId, out var packet))
+                IPacketRegistry packetRegistry = _packetRegistry;
+                while (true)
                 {
-                    packet.Deserialize(reader);
-                    return packet;
-                }
-                if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
-                {
-                    packetRegistry = subPacketRegistry;
-                    continue;
-                }
+                    var packetId = reader.GetByte();
+                    if (packetRegistry.TryCreatePacket(packetId, out var packet))
+                    {
+                        packet.Deserialize(reader);
+                        return packet;
+                    }
+                    if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
+                    {
+                        packetRegistry = subPacketRegistry;
+                        continue;
+                    }
 
+                    throw new InvalidDataContractException(
+                        $"Packet identifier not registered with '{packetRegistry.GetType().Name}' " +
+                        $"(PacketId={packetId})."
+                    );
+                }
+            }
+            catch
+            {
                 // skip any unprocessed bytes (or rewind the reader if too many bytes were read)
                 var processedBytes = reader.Position - prevPosition;
-                //reader.SkipBytes((int)length - processedBytes);
-
-                throw new InvalidDataContractException(
-                    $"Packet identifier not registered with '{packetRegistry.GetType().Name}' " +
-                    $"(PacketId={packetId})."
-                );
+                reader.SkipBytes((int)length - processedBytes);
+                throw;
             }
         }
     }

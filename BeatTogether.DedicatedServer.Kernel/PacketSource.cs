@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Abstractions;
@@ -55,7 +56,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 RoutePacket(sender, routingHeader, reader, deliveryMethod);
                 return;
             }
-            
+
             while (!reader.EndOfData)
             {
                 try
@@ -86,6 +87,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                 catch (Exception e)
                 {
                     _logger.Error(e, "Failed to read packet.");
+
+                    var builder = new StringBuilder("new byte[] { ");
+                    foreach (var b in reader.RawData)
+                    {
+                        builder.Append(b + ", ");
+                    }
+                    builder.Append("}");
+
+                    _logger.Debug($"At reader position '{reader.Position}' in the following packet:");
+                    _logger.Debug(builder.ToString());
                     return;
                 }
             }
