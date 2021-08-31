@@ -24,6 +24,12 @@ namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
             AddPacket<SetIsEntitledToLevelPacket>(MenuRpcPacketType.SetIsEntitledToLevel);
             AddPacket<GetIsEntitledToLevelPacket>(MenuRpcPacketType.GetIsEntitledToLevel);
             AddPacket<GetCountdownEndTimePacket>(MenuRpcPacketType.GetCountdownEndTime);
+            AddPacket<SetCountdownEndTimePacket>(MenuRpcPacketType.SetCountdownEndTime);
+            AddPacket<GetIsStartButtonEnabledPacket>(MenuRpcPacketType.GetIsStartButtonEnabled);
+            AddPacket<SetIsStartButtonEnabledPacket>(MenuRpcPacketType.SetIsStartButtonEnabled);
+            AddPacket<SetStartGameTimePacket>(MenuRpcPacketType.SetStartGameTime);
+            AddPacket<CancelCountdownPacket>(MenuRpcPacketType.CancelCountdown);
+            AddPacket<CancelLevelStartPacket>(MenuRpcPacketType.CancelLevelStart);
         }
     }
 }

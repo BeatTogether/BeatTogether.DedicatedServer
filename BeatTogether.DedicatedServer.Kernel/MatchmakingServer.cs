@@ -3,6 +3,7 @@ using BeatTogether.DedicatedServer.Kernel.Models;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using LiteNetLib;
 using Serilog;
 using System;
@@ -290,6 +291,12 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SortIndex = player.SortIndex
             };
             _packetDispatcher.SendToNearbyPlayers(player, playerSortOrderPacket, DeliveryMethod.ReliableOrdered);
+
+            var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
+            {
+                Reason = player.UserId == ManagerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
+            };
+            _packetDispatcher.SendToPlayer(player, setIsStartButtonEnabledPacket, DeliveryMethod.ReliableOrdered);
 
             UpdatePermissions();
         }
