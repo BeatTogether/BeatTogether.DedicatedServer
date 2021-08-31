@@ -1,6 +1,6 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Kernel;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
 using System.Linq;
 using System.Reflection;
 
@@ -19,6 +19,17 @@ namespace BeatTogether.Extensions
                     services.AddTransient(
                         genericInterface.MakeGenericType(eventHandlerType.BaseType!.GetGenericArguments()),
                         eventHandlerType);
+            return services;
+        }
+
+        public static IServiceCollection AddAsyncLocal<TService>(this IServiceCollection services) where TService : class
+        {
+            services
+                .AddSingleton<IAsyncLocalServiceAccessor<TService>, AsyncLocalServiceAccessor<TService>>()
+                .AddTransient(serviceProvider => serviceProvider
+                    .GetRequiredService<IAsyncLocalServiceAccessor<TService>>()
+                    .Service
+                 );
             return services;
         }
     }

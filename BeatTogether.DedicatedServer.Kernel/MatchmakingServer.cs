@@ -34,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly IPacketSource _packetSource;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IPlayerRegistry _playerRegistry;
-        private readonly IServerContextFactory _serverContextFactory;
+        private readonly IAsyncLocalServiceAccessor<IServerContext> _serverContextAccessor;
         private readonly ILogger _logger = Log.ForContext<MatchmakingServer>();
 
         private IServerContext? _serverContext;
@@ -62,7 +62,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             IPacketSource packetSource,
             IPacketDispatcher packetDispatcher,
             IPlayerRegistry playerRegistry,
-            IServerContextFactory serverContextFactory,
+            IAsyncLocalServiceAccessor<IServerContext> serverContextAccessor,
             string secret,
             string managerId,
             GameplayServerConfiguration configuration)
@@ -76,7 +76,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _packetSource = packetSource;
             _packetDispatcher = packetDispatcher;
             _playerRegistry = playerRegistry;
-            _serverContextFactory = serverContextFactory;
+            _serverContextAccessor = serverContextAccessor;
 
             _netManager = new NetManager(this, packetEncryptionLayer);
         }
@@ -92,7 +92,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (!port.HasValue)
                 return;
 
-            _serverContext = _serverContextFactory.Create(_tempSecret, _tempManagerId, _tempConfiguration);
+            _serverContext = _serverContextAccessor.Set(new ServerContext(_tempSecret, _tempManagerId, _tempConfiguration));
 
             _logger.Information(
                 "Starting matchmaking server " +

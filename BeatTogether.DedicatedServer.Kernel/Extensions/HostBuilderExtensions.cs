@@ -1,4 +1,4 @@
-using Autobus;
+﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Kernel;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
@@ -41,17 +41,12 @@ namespace BeatTogether.Extensions
                         .AddSingleton<IPacketSource, PacketSource>()
                         .AddSingleton<IPacketDispatcher, PacketDispatcher>()
                         .AddSingleton<IPortAllocator, PortAllocator>()
-                        .AddSingleton<IServerContextAccessor, ServerContextAccessor>()
-                        .AddSingleton<IServerContextFactory, ServerContextFactory>()
-                        .AddTransient(serviceProvider => serviceProvider
-                            .GetRequiredService<IServerContextAccessor>()
-                            .Context
-                        )
                         .AddSingleton<IPlayerRegistry, PlayerRegistry>()
                         .AddSingleton<IMatchmakingServerRegistry, MatchmakingServerRegistry>()
                         .AddSingleton<IMatchmakingServerFactory, MatchmakingServerFactory>()
                         .AddServiceKernel<IMatchmakingService, MatchmakingService>()
                         .AddHostedService<MasterServerEventHandler>()
+                        .AddAsyncLocal<IServerContext>()
                         .AddAllPacketHandlersFromAssembly(typeof(PacketSource).Assembly)
                 );
     }
