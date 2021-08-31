@@ -9,7 +9,6 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class PlayerRegistry : IPlayerRegistry
     {
-        public List<IPlayer> Players { get => _playersByRemoteEndPoint.Values.ToList(); }
         private readonly ConcurrentDictionary<EndPoint, IPlayer> _playersByRemoteEndPoint = new();
 
         public void AddPlayer(IPlayer player) =>
@@ -23,7 +22,5 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public bool TryGetPlayer(EndPoint remoteEndPoint, [MaybeNullWhen(false)] out IPlayer player) =>
             _playersByRemoteEndPoint.TryGetValue(remoteEndPoint, out player);
-
-        public int PlayerCount => _playersByRemoteEndPoint.Count;
     }
 }

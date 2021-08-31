@@ -19,27 +19,27 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class MatchmakingServer : IMatchmakingServer, INetEventListener
     {
-        public string Secret { get; }
-        public string ManagerId { get; }
-        public GameplayServerConfiguration Configuration { get; }
+        public string Secret { get => _serverContext!.Secret; }
+        public string ManagerId { get => _serverContext!.ManagerId; private set => _serverContext!.ManagerId = value; }
+        public GameplayServerConfiguration Configuration { get => _serverContext!.Configuration; private set => _serverContext!.Configuration = value; }
         public PlayersPermissionConfiguration Permissions { get; } = new();
         public bool IsRunning => _netManager.IsRunning;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => _netManager.LocalPort;
-        public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
-        public List<IPlayer> Players { get => _playersByUserId.Values.ToList(); }
+        public MultiplayerGameState State { get => _serverContext!.State; private set => _serverContext!.State = value; }
+        public List<IPlayer> Players { get => _serverContext!.Players; }
 
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IPortAllocator _portAllocator;
         private readonly IPacketSource _packetSource;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IPlayerRegistry _playerRegistry;
+        private readonly IServerContextFactory _serverContextFactory;
         private readonly ILogger _logger = Log.ForContext<MatchmakingServer>();
 
+        private IServerContext? _serverContext;
         private long _startTime;
         private readonly NetManager _netManager;
-        private readonly ConcurrentDictionary<byte, IPlayer> _playersByConnectionId = new();
-        private readonly ConcurrentDictionary<string, IPlayer> _playersByUserId = new();
         private readonly ConcurrentQueue<byte> _releasedConnectionIds = new();
         private int _connectionIdCount = 0;
         private readonly ConcurrentQueue<int> _releasedSortIndices = new();
@@ -52,25 +52,31 @@ namespace BeatTogether.DedicatedServer.Kernel
         private const int _eventPollDelay = 10;
         private const float _syncTimeDelay = 5f;
 
+        private string _tempSecret;
+        private string _tempManagerId;
+        private GameplayServerConfiguration _tempConfiguration;
+
         public MatchmakingServer(
             IPortAllocator portAllocator,
             PacketEncryptionLayer packetEncryptionLayer,
             IPacketSource packetSource,
             IPacketDispatcher packetDispatcher,
             IPlayerRegistry playerRegistry,
+            IServerContextFactory serverContextFactory,
             string secret,
             string managerId,
             GameplayServerConfiguration configuration)
         {
-            Secret = secret;
-            ManagerId = managerId;
-            Configuration = configuration;
+            _tempSecret = secret;
+            _tempManagerId = managerId;
+            _tempConfiguration = configuration;
 
             _portAllocator = portAllocator;
             _packetEncryptionLayer = packetEncryptionLayer;
             _packetSource = packetSource;
             _packetDispatcher = packetDispatcher;
             _playerRegistry = playerRegistry;
+            _serverContextFactory = serverContextFactory;
 
             _netManager = new NetManager(this, packetEncryptionLayer);
         }
@@ -85,6 +91,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             var port = _portAllocator.AcquirePort();
             if (!port.HasValue)
                 return;
+
+            _serverContext = _serverContextFactory.Create(_tempSecret, _tempManagerId, _tempConfiguration);
 
             _logger.Information(
                 "Starting matchmaking server " +
@@ -159,18 +167,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void ReleaseConnectionId(byte connectionId) =>
             _releasedConnectionIds.Enqueue(connectionId);
 
-        public IPlayer GetPlayer(byte connectionId) =>
-            _playersByConnectionId[connectionId];
-
-        public IPlayer GetPlayer(string userId) =>
-            _playersByUserId[userId];
-
-        public bool TryGetPlayer(byte connectionId, [MaybeNullWhen(false)] out IPlayer player) =>
-            _playersByConnectionId.TryGetValue(connectionId, out player);
-
-        public bool TryGetPlayer(string userId, [MaybeNullWhen(false)] out IPlayer player) =>
-            _playersByUserId.TryGetValue(userId, out player);
-
         #endregion
 
         #region INetEventListener
@@ -229,8 +225,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 connectionRequestData.UserName
             );
             player.SortIndex = sortIndex;
-            _playersByUserId[player.UserId] = player;
-            _playersByConnectionId[connectionId] = player;
+            _serverContext!.AddPlayer(player);
             _playerRegistry.AddPlayer(player);
             _logger.Information(
                 "Player joined matchmaking server " +
@@ -301,12 +296,11 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 if (_playerRegistry.TryGetPlayer(peer.EndPoint, out var player))
                 {
-                    _playersByUserId.TryRemove(player.UserId, out _);
-                    _playersByConnectionId.TryRemove(player.ConnectionId, out _);
+                    _serverContext!.RemovePlayer(player);
                     _playerRegistry.RemovePlayer(player);
                 }
 
-                if (_playerRegistry.PlayerCount == 0)
+                if (Players.Count == 0)
                 {
                     _ = Stop(CancellationToken.None);
                     _cancellationTokenSource?.Cancel();
@@ -320,14 +314,14 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private void UpdatePermissions()
         {
-            foreach (IPlayer player in _playerRegistry.Players)
+            foreach (IPlayer player in _serverContext!.Players)
             {
                 var playerPermission = new PlayerPermissionConfiguration
                 {
                     UserId = player.UserId,
-                    IsServerOwner = player.UserId == ManagerId,
+                    IsServerOwner = player.UserId == _serverContext.ManagerId,
                     HasRecommendBeatmapsPermission = true,
-                    HasRecommendGameplayModifiersPermission = Configuration.GameplayServerControlSettings == Enums.GameplayServerControlSettings.AllowModifierSelection || Configuration.GameplayServerControlSettings == Enums.GameplayServerControlSettings.All,
+                    HasRecommendGameplayModifiersPermission = _serverContext.Configuration.GameplayServerControlSettings == Enums.GameplayServerControlSettings.AllowModifierSelection || _serverContext.Configuration.GameplayServerControlSettings == Enums.GameplayServerControlSettings.All,
                     HasKickVotePermission = true
                 };
                 Permissions.PlayersPermission.Add(playerPermission);

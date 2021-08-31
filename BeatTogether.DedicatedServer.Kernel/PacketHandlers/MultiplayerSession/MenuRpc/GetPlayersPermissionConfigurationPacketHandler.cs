@@ -9,11 +9,13 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     public sealed class GetPlayersPermissionConfigurationPacketHandler : BasePacketHandler<GetPlayersPermissionConfigurationPacket>
     {
+        private readonly IServerContext _serverContext;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly ILogger _logger = Log.ForContext<GetPlayersPermissionConfigurationPacketHandler>();
 
-        public GetPlayersPermissionConfigurationPacketHandler(IPacketDispatcher packetDispatcher)
+        public GetPlayersPermissionConfigurationPacketHandler(IServerContext serverContext, IPacketDispatcher packetDispatcher)
         {
+            _serverContext = serverContext;
             _packetDispatcher = packetDispatcher;
         }
 
@@ -24,18 +26,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"(SenderId={sender.ConnectionId})."
             );
 
-            var playerPermissionConfiguration = new PlayerPermissionConfiguration
-            {
-                UserId = sender.UserId,
-                IsServerOwner = true,
-                HasRecommendBeatmapsPermission = true,
-                HasRecommendGameplayModifiersPermission = true,
-                HasKickVotePermission = true
-            };
-
             var permissionConfigurationPacket = new SetPlayersPermissionConfigurationPacket
             {
-                PermissionConfiguration = sender.MatchmakingServer.Permissions
+                PermissionConfiguration = _serverContext.Permissions
             };
             _packetDispatcher.SendToPlayer(sender, permissionConfigurationPacket, DeliveryMethod.ReliableOrdered);
 

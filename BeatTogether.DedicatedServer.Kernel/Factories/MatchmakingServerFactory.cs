@@ -11,6 +11,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Factories
         private readonly IPacketSource _packetSource;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IPlayerRegistry _playerRegistry;
+        private readonly IServerContextFactory _serverContextFactory;
 
         public MatchmakingServerFactory(
             IMatchmakingServerRegistry matchmakingServerRegistry,
@@ -18,7 +19,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Factories
             PacketEncryptionLayer packetEncryptionLayer,
             IPacketSource packetSource,
             IPacketDispatcher packetDispatcher,
-            IPlayerRegistry playerRegistry)
+            IPlayerRegistry playerRegistry,
+            IServerContextFactory serverContextFactory)
         {
             _matchmakingServerRegistry = matchmakingServerRegistry;
             _portAllocator = portAllocator;
@@ -26,6 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Factories
             _packetSource = packetSource;
             _packetDispatcher = packetDispatcher;
             _playerRegistry = playerRegistry;
+            _serverContextFactory = serverContextFactory;
         }
 
         public IMatchmakingServer? CreateMatchmakingServer(
@@ -34,8 +37,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Factories
             GameplayServerConfiguration configuration)
         {
             var matchmakingServer = new MatchmakingServer(
-                _portAllocator, _packetEncryptionLayer,
-                _packetSource, _packetDispatcher, _playerRegistry,
+                _portAllocator, _packetEncryptionLayer, _packetSource, 
+                _packetDispatcher, _playerRegistry, _serverContextFactory,
                 secret, managerId, configuration);
             if (!_matchmakingServerRegistry.AddMatchmakingServer(matchmakingServer))
                 return null;
