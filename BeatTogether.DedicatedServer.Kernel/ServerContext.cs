@@ -21,13 +21,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly ConcurrentDictionary<byte, IPlayer> _playersByConnectionId = new();
         private readonly ConcurrentDictionary<string, IPlayer> _playersByUserId = new();
 
-        public ServerContext(string secret, string managerId, GameplayServerConfiguration configuration)
-        {
-            Secret = secret;
-            ManagerId = managerId;
-            Configuration = configuration;
-        }
-
         public void AddPlayer(IPlayer player)
         {
             _playersByUserId[player.UserId] = player;

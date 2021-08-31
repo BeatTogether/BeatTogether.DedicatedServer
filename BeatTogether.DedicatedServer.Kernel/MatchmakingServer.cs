@@ -19,25 +19,29 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class MatchmakingServer : IMatchmakingServer, INetEventListener
     {
-        public string Secret { get => _serverContext!.Secret; }
-        public string ManagerId { get => _serverContext!.ManagerId; private set => _serverContext!.ManagerId = value; }
-        public GameplayServerConfiguration Configuration { get => _serverContext!.Configuration; private set => _serverContext!.Configuration = value; }
+        public string Secret { get => _serverContext?.Secret ?? _tempSecret; }
+        public string ManagerId { get => _serverContext?.ManagerId ?? _tempSecret; private set => _serverContext.ManagerId = value; }
+        public GameplayServerConfiguration Configuration { get => _serverContext?.Configuration ?? _tempConfiguration; private set => _serverContext.Configuration = value; }
         public PlayersPermissionConfiguration Permissions { get; } = new();
         public bool IsRunning => _netManager.IsRunning;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => _netManager.LocalPort;
-        public MultiplayerGameState State { get => _serverContext!.State; private set => _serverContext!.State = value; }
-        public List<IPlayer> Players { get => _serverContext!.Players; }
+        public MultiplayerGameState State { get => _serverContext.State; private set => _serverContext.State = value; }
+        public List<IPlayer> Players { get => _serverContext.Players; }
 
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IPortAllocator _portAllocator;
-        private readonly IPacketSource _packetSource;
         private readonly IPacketDispatcher _packetDispatcher;
-        private readonly IPlayerRegistry _playerRegistry;
-        private readonly IAsyncLocalServiceAccessor<IServerContext> _serverContextAccessor;
         private readonly ILogger _logger = Log.ForContext<MatchmakingServer>();
 
-        private IServerContext? _serverContext;
+        private readonly IServiceAccessor<IServerContext> _serverContextAccessor;
+        private readonly IServiceAccessor<IPlayerRegistry> _playerRegistryAccessor;
+        private readonly IServiceAccessor<IPacketSource> _packetSourceAccessor;
+
+        private IServerContext _serverContext = null!;
+        private IPacketSource _packetSource = null!;
+        private IPlayerRegistry _playerRegistry = null!;
+
         private long _startTime;
         private readonly NetManager _netManager;
         private readonly ConcurrentQueue<byte> _releasedConnectionIds = new();
@@ -59,10 +63,10 @@ namespace BeatTogether.DedicatedServer.Kernel
         public MatchmakingServer(
             IPortAllocator portAllocator,
             PacketEncryptionLayer packetEncryptionLayer,
-            IPacketSource packetSource,
             IPacketDispatcher packetDispatcher,
-            IPlayerRegistry playerRegistry,
-            IAsyncLocalServiceAccessor<IServerContext> serverContextAccessor,
+            IServiceAccessor<IServerContext> serverContextAccessor,
+            IServiceAccessor<IPlayerRegistry> playerRegistryAccessor,
+            IServiceAccessor<IPacketSource> packetSourceAccessor,
             string secret,
             string managerId,
             GameplayServerConfiguration configuration)
@@ -73,10 +77,11 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             _portAllocator = portAllocator;
             _packetEncryptionLayer = packetEncryptionLayer;
-            _packetSource = packetSource;
             _packetDispatcher = packetDispatcher;
-            _playerRegistry = playerRegistry;
+
             _serverContextAccessor = serverContextAccessor;
+            _playerRegistryAccessor = playerRegistryAccessor;
+            _packetSourceAccessor = packetSourceAccessor;
 
             _netManager = new NetManager(this, packetEncryptionLayer);
         }
@@ -92,7 +97,13 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (!port.HasValue)
                 return;
 
-            _serverContext = _serverContextAccessor.Set(new ServerContext(_tempSecret, _tempManagerId, _tempConfiguration));
+            _serverContext = _serverContextAccessor.Create<ServerContext>();
+            _playerRegistry = _playerRegistryAccessor.Create<PlayerRegistry>();
+            _packetSource = _packetSourceAccessor.Create<PacketSource>();
+
+            _serverContext.Secret = _tempSecret;
+            _serverContext.ManagerId = _tempManagerId;
+            _serverContext.Configuration = _tempConfiguration;
 
             _logger.Information(
                 "Starting matchmaking server " +
@@ -225,7 +236,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 connectionRequestData.UserName
             );
             player.SortIndex = sortIndex;
-            _serverContext!.AddPlayer(player);
+            _serverContext.AddPlayer(player);
             _playerRegistry.AddPlayer(player);
             _logger.Information(
                 "Player joined matchmaking server " +
@@ -314,7 +325,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private void UpdatePermissions()
         {
-            foreach (IPlayer player in _serverContext!.Players)
+            foreach (IPlayer player in _serverContext.Players)
             {
                 var playerPermission = new PlayerPermissionConfiguration
                 {

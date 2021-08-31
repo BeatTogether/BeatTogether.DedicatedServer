@@ -23,14 +23,11 @@ namespace BeatTogether.Extensions
         }
 
         public static IServiceCollection AddAsyncLocal<TService>(this IServiceCollection services) where TService : class
-        {
-            services
-                .AddSingleton<IAsyncLocalServiceAccessor<TService>, AsyncLocalServiceAccessor<TService>>()
+            => services
+                .AddSingleton<IServiceAccessor<TService>, ServiceAccessor<TService>>()
                 .AddTransient(serviceProvider => serviceProvider
-                    .GetRequiredService<IAsyncLocalServiceAccessor<TService>>()
+                    .GetRequiredService<IServiceAccessor<TService>>()
                     .Service
-                 );
-            return services;
-        }
+                );
     }
 }
