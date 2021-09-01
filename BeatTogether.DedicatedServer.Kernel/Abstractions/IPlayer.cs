@@ -18,5 +18,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         AvatarData? AvatarData { get; set; }
         bool IsReady { get; set; }
         BeatmapIdentifierNetSerializable? BeatmapIdentifier { get; set; }
+        GameplayModifiers Modifiers { get; set; }
     }
 }
