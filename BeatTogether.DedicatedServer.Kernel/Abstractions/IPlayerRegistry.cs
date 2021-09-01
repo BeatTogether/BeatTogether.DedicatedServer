@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
@@ -7,6 +8,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
     public interface IPlayerRegistry
     {
         List<IPlayer> Players { get; }
+
+        event Action<IPlayer>? PlayerConnected;
+        event Action<IPlayer>? PlayerDisconnected;
 
         void AddPlayer(IPlayer player);
         void RemovePlayer(IPlayer player);

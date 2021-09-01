@@ -27,8 +27,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool IsRunning => _netManager.IsRunning;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => _netManager.LocalPort;
-        public MultiplayerGameState State { get => _serverContext.State; private set => _serverContext.State = value; }
-        public List<IPlayer> Players { get => _playerRegistry.Players; }
 
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IPortAllocator _portAllocator;
@@ -237,7 +235,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 connectionRequestData.UserName
             );
             player.SortIndex = sortIndex;
-            _serverContext.AddPlayer(player);
             _playerRegistry.AddPlayer(player);
             _logger.Information(
                 "Player joined matchmaking server " +
@@ -314,11 +311,10 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 if (_playerRegistry.TryGetPlayer(peer.EndPoint, out var player))
                 {
-                    _serverContext!.RemovePlayer(player);
                     _playerRegistry.RemovePlayer(player);
                 }
 
-                if (Players.Count == 0)
+                if (_playerRegistry.Players.Count == 0)
                 {
                     _ = Stop(CancellationToken.None);
                     _cancellationTokenSource?.Cancel();
@@ -332,7 +328,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private void UpdatePermissions()
         {
-            foreach (IPlayer player in _serverContext.Players)
+            foreach (IPlayer player in _playerRegistry.Players)
             {
                 var playerPermission = new PlayerPermissionConfiguration
                 {
@@ -354,7 +350,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 if (_lastSyncTimeUpdate < RunTime - _syncTimeDelay)
                 {
-                    foreach (var player in Players) {
+                    foreach (var player in _playerRegistry.Players) {
                         var syncTimePacket = new SyncTimePacket
                         {
                             SyncTime = player.SyncTime

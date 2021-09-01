@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Models;
-using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
@@ -15,7 +14,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool IsRunning { get; }
         float RunTime { get; }
         int Port { get; }
-        MultiplayerGameState State { get; }
 
         Task Start(CancellationToken cancellationToken = default);
         Task Stop(CancellationToken cancellationToken = default);

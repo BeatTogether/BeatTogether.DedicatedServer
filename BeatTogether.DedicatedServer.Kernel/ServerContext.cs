@@ -15,6 +15,5 @@ namespace BeatTogether.DedicatedServer.Kernel
         public string ManagerId { get; set; }
         public GameplayServerConfiguration Configuration { get; set; }
         public PlayersPermissionConfiguration Permissions { get; set; } = new();
-        public MultiplayerGameState State { get; set; } = MultiplayerGameState.Lobby;
     }
 }
