@@ -17,9 +17,9 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class MatchmakingServer : IMatchmakingServer, INetEventListener
     {
-        public string Secret { get; private set; }
-        public string ManagerId { get; private set; }
-        public GameplayServerConfiguration Configuration { get; private set; }
+        public string Secret { get; private set; } = null!;
+        public string ManagerId { get; private set; } = null!;
+        public GameplayServerConfiguration Configuration { get; private set; } = null!;
         public bool IsRunning => _netManager.IsRunning;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => _netManager.LocalPort;
@@ -59,15 +59,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             IServiceAccessor<IMatchmakingServer> matchmakingServerAccessor,
             IServiceAccessor<IPlayerRegistry> playerRegistryAccessor,
             IServiceAccessor<IPacketSource> packetSourceAccessor,
-            IServiceAccessor<IPermissionsManager> permissionsManagerAccessor,
-            string secret,
-            string managerId,
-            GameplayServerConfiguration configuration)
+            IServiceAccessor<IPermissionsManager> permissionsManagerAccessor)
         {
-            Secret = secret;
-            ManagerId = managerId;
-            Configuration = configuration;
-
             _portAllocator = portAllocator;
             _packetEncryptionLayer = packetEncryptionLayer;
             _packetDispatcher = packetDispatcher;
@@ -81,6 +74,13 @@ namespace BeatTogether.DedicatedServer.Kernel
         }
 
         #region Public Methods
+
+        public void Init(string secret, string managerId, GameplayServerConfiguration configuration)
+        {
+            Secret = secret;
+            ManagerId = managerId;
+            Configuration = configuration;
+        }
 
         public async Task Start(CancellationToken cancellationToken = default)
         {
