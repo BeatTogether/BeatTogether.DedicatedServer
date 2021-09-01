@@ -10,7 +10,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         string Secret { get; }
         string ManagerId { get; }
         GameplayServerConfiguration Configuration { get; }
-        PlayersPermissionConfiguration Permissions { get; }
         bool IsRunning { get; }
         float RunTime { get; }
         int Port { get; }

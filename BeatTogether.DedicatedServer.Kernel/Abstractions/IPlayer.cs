@@ -17,5 +17,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         int SortIndex { get; set; }
         AvatarData? AvatarData { get; set; }
         bool IsReady { get; set; }
+        BeatmapIdentifierNetSerializable? BeatmapIdentifier { get; set; }
     }
 }

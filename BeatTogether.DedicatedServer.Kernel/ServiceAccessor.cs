@@ -1,12 +1,11 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using Serilog;
 using System;
-using System.Linq;
 using System.Threading;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
-    public sealed class ServiceAccessor<IService, TService> : IServiceAccessor<IService>
+    public sealed class ServiceAccessor<IService, TService> : IServiceAccessor<IService> where TService : IService
     {
         private static AsyncLocal<IService> _service = new();
         public IService Service => _service.Value!;
@@ -25,6 +24,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             var service = (TService)_serviceProvider.GetService(typeof(TService));
             _service.Value = service!;
             return service!;
+        }
+
+        public IService Bind(IService service)
+        {
+            _service.Value = service;
+            return service;
         }
     }
 }

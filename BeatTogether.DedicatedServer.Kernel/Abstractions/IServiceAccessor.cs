@@ -5,5 +5,6 @@
         IService Service { get; }
 
         IService Create();
+        IService Bind(IService service);
     }
 }

@@ -22,4 +22,3 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 		}
 	}
 }
-sd

@@ -4,6 +4,7 @@ using BeatTogether.DedicatedServer.Kernel;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Factories;
+using BeatTogether.DedicatedServer.Kernel.Managers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Security.Cryptography;
@@ -44,9 +45,10 @@ namespace BeatTogether.Extensions
                         .AddSingleton<IMatchmakingServerFactory, MatchmakingServerFactory>()
                         .AddServiceKernel<IMatchmakingService, MatchmakingService>()
                         .AddHostedService<MasterServerEventHandler>()
-                        .AddAsyncLocal<IServerContext, ServerContext>()
+                        .AddAsyncLocal<IMatchmakingServer, MatchmakingServer>()
                         .AddAsyncLocal<IPlayerRegistry, PlayerRegistry>()
                         .AddAsyncLocal<IPacketSource, PacketSource>()
+                        .AddAsyncLocal<IPermissionsManager, PermissionsManager>()
                         .AddAllPacketHandlersFromAssembly(typeof(PacketSource).Assembly)
                 );
     }

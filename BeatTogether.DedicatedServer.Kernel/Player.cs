@@ -19,8 +19,10 @@ namespace BeatTogether.DedicatedServer.Kernel
             Math.Min(MatchmakingServer.RunTime - Latency.CurrentAverage - _syncTimeOffset,
                      MatchmakingServer.RunTime);
         public int SortIndex { get; set; }
+
         public AvatarData? AvatarData { get; set; }
         public bool IsReady { get; set; }
+        public BeatmapIdentifierNetSerializable? BeatmapIdentifier { get; set; }
 
         private const float _syncTimeOffset = 0.06f;
 

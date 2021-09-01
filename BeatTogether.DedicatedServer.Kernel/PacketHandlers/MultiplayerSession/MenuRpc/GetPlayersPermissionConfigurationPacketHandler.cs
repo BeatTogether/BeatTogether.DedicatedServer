@@ -1,5 +1,4 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using LiteNetLib;
 using Serilog;
@@ -9,14 +8,16 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     public sealed class GetPlayersPermissionConfigurationPacketHandler : BasePacketHandler<GetPlayersPermissionConfigurationPacket>
     {
-        private readonly IServerContext _serverContext;
         private readonly IPacketDispatcher _packetDispatcher;
+        private readonly IPermissionsManager _permissionsManager;
         private readonly ILogger _logger = Log.ForContext<GetPlayersPermissionConfigurationPacketHandler>();
 
-        public GetPlayersPermissionConfigurationPacketHandler(IServerContext serverContext, IPacketDispatcher packetDispatcher)
+        public GetPlayersPermissionConfigurationPacketHandler(
+            IPacketDispatcher packetDispatcher,
+            IPermissionsManager permissionsManager)
         {
-            _serverContext = serverContext;
             _packetDispatcher = packetDispatcher;
+            _permissionsManager = permissionsManager;
         }
 
         public override Task Handle(IPlayer sender, GetPlayersPermissionConfigurationPacket packet)
@@ -28,7 +29,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 
             var permissionConfigurationPacket = new SetPlayersPermissionConfigurationPacket
             {
-                PermissionConfiguration = _serverContext.Permissions
+                PermissionConfiguration = _permissionsManager.Permissions
             };
             _packetDispatcher.SendToPlayer(sender, permissionConfigurationPacket, DeliveryMethod.ReliableOrdered);
 

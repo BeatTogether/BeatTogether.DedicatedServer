@@ -8,11 +8,15 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     public sealed class SetIsReadyPacketHandler : BasePacketHandler<SetIsReadyPacket>
     {
+        private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly ILogger _logger = Log.ForContext<SetIsReadyPacketHandler>();
 
-        public SetIsReadyPacketHandler(IPacketDispatcher packetDispatcher)
+        public SetIsReadyPacketHandler(
+            IPlayerRegistry playerRegistry,
+            IPacketDispatcher packetDispatcher)
         {
+            _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
         }
 
@@ -25,7 +29,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 
             sender.IsReady = packet.IsReady;
 
-            if (sender.MatchmakingServer.Players.All(player => player.IsReady))
+            if (_playerRegistry.Players.All(player => player.IsReady))
 			{
                 var setStartGameTimePacket = new SetStartGameTimePacket
                 {
