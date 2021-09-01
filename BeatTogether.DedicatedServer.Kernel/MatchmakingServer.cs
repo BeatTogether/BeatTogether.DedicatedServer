@@ -28,7 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => _netManager.LocalPort;
         public MultiplayerGameState State { get => _serverContext.State; private set => _serverContext.State = value; }
-        public List<IPlayer> Players { get => _serverContext.Players; }
+        public List<IPlayer> Players { get => _playerRegistry.Players; }
 
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IPortAllocator _portAllocator;
@@ -98,9 +98,9 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (!port.HasValue)
                 return;
 
-            _serverContext = _serverContextAccessor.Create<ServerContext>();
-            _playerRegistry = _playerRegistryAccessor.Create<PlayerRegistry>();
-            _packetSource = _packetSourceAccessor.Create<PacketSource>();
+            _serverContext = _serverContextAccessor.Create();
+            _playerRegistry = _playerRegistryAccessor.Create();
+            _packetSource = _packetSourceAccessor.Create();
 
             _serverContext.Secret = _tempSecret;
             _serverContext.ManagerId = _tempManagerId;

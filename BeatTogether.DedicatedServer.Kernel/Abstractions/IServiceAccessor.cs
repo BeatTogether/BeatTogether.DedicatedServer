@@ -1,9 +1,9 @@
 ﻿namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
-    public interface IServiceAccessor<TService>
+    public interface IServiceAccessor<IService>
     {
-        TService Service { get; }
+        IService Service { get; }
 
-        TService Create<ServiceType>() where ServiceType : TService;
+        IService Create();
     }
 }

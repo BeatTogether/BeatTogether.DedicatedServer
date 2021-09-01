@@ -14,23 +14,17 @@ namespace BeatTogether.DedicatedServer.Kernel
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IPacketReader _packetReader;
-        private readonly IMatchmakingServerRegistry _matchmakingServerRegistry;
         private readonly IPlayerRegistry _playerRegistry;
-        private readonly IServerContext _serverContext;
         private readonly ILogger _logger = Log.ForContext<PacketSource>();
 
         public PacketSource(
             IServiceProvider serviceProvider,
             IPacketReader packetReader,
-            IMatchmakingServerRegistry matchmakingServerRegistry,
-            IPlayerRegistry playerRegistry,
-            IServerContext serverContext)
+            IPlayerRegistry playerRegistry)
         {
             _serviceProvider = serviceProvider;
             _packetReader = packetReader;
-            _matchmakingServerRegistry = matchmakingServerRegistry;
             _playerRegistry = playerRegistry;
-            _serverContext = serverContext;
         }
 
         public void Signal(NetPeer peer, NetDataReader reader, DeliveryMethod deliveryMethod)
@@ -132,15 +126,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             else
             {
-                if (!_matchmakingServerRegistry.TryGetMatchmakingServer(sender.Secret, out var matchmakingServer))
-                {
-                    _logger.Warning(
-                        "Failed to retrieve sender's matchmaking server " +
-                        $"(Secret='{sender.Secret}')."
-                    );
-                    return;
-                }
-                if (!_serverContext.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
+                if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
                 {
                     _logger.Warning(
                         "Failed to retrieve receiver " +

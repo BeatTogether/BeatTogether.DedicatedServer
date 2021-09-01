@@ -38,15 +38,15 @@ namespace BeatTogether.Extensions
                         .AddSingleton<IEncryptedPacketReader, EncryptedPacketReader>()
                         .AddSingleton<IEncryptedPacketWriter, EncryptedPacketWriter>()
                         .AddSingleton<PacketEncryptionLayer>()
-                        .AddAsyncLocal<IPacketSource>()
                         .AddSingleton<IPacketDispatcher, PacketDispatcher>()
                         .AddSingleton<IPortAllocator, PortAllocator>()
-                        .AddAsyncLocal<IPlayerRegistry>()
                         .AddSingleton<IMatchmakingServerRegistry, MatchmakingServerRegistry>()
                         .AddSingleton<IMatchmakingServerFactory, MatchmakingServerFactory>()
                         .AddServiceKernel<IMatchmakingService, MatchmakingService>()
                         .AddHostedService<MasterServerEventHandler>()
-                        .AddAsyncLocal<IServerContext>()
+                        .AddAsyncLocal<IServerContext, ServerContext>()
+                        .AddAsyncLocal<IPlayerRegistry, PlayerRegistry>()
+                        .AddAsyncLocal<IPacketSource, PacketSource>()
                         .AddAllPacketHandlersFromAssembly(typeof(PacketSource).Assembly)
                 );
     }
