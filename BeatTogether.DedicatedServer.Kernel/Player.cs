@@ -23,7 +23,20 @@ namespace BeatTogether.DedicatedServer.Kernel
         public AvatarData? AvatarData { get; set; }
         public bool IsReady { get; set; }
         public BeatmapIdentifierNetSerializable? BeatmapIdentifier { get; set; }
-        public GameplayModifiers Modifiers { get; set; }
+        public GameplayModifiers? Modifiers { get; set; }
+
+        public PlayerStateBloomFilter State { get; set; } = new();
+
+        public bool IsPlayer => State.Contains("player");
+        public bool IsSpectating => State.Contains("spectating");
+        public bool WantsToPlayNextLevel => State.Contains("wants_to_play_next_level");
+        public bool IsBackgrounded => State.Contains("backgrounded");
+        public bool InGameplay => State.Contains("in_gameplay");
+        public bool WasActiveAtLevelStart => State.Contains("was_active_at_level_start");
+        public bool IsActive => State.Contains("is_active");
+        public bool FinishedLevel => State.Contains("finished_level");
+        public bool InMenu => State.Contains("in_menu");
+        public bool IsModded => State.Contains("modded");
 
         private const float _syncTimeOffset = 0.06f;
 
