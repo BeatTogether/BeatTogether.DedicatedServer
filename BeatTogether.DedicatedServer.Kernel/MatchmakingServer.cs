@@ -327,20 +327,29 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                _netManager.PollEvents();
-                _lobbyManager.Update();
-
-                if (_lastSyncTimeUpdate < RunTime - _syncTimeDelay)
+                try
                 {
-                    foreach (var player in _playerRegistry.Players)
+                    _netManager.PollEvents();
+                    
+                    _lobbyManager.Update();
+
+                    if (_lastSyncTimeUpdate < RunTime - _syncTimeDelay)
                     {
-                        var syncTimePacket = new SyncTimePacket
+                        foreach (var player in _playerRegistry.Players)
                         {
-                            SyncTime = player.SyncTime
-                        };
-                        _packetDispatcher.SendToPlayer(player, syncTimePacket, DeliveryMethod.ReliableOrdered);
+                            var syncTimePacket = new SyncTimePacket
+                            {
+                                SyncTime = player.SyncTime
+                            };
+                            _packetDispatcher.SendToPlayer(player, syncTimePacket, DeliveryMethod.ReliableOrdered);
+                        }
+
+                        _lastSyncTimeUpdate = RunTime;
                     }
-                    _lastSyncTimeUpdate = RunTime;
+                }
+                catch (Exception e)
+                {
+                    _logger.Error(e, "Exception occurred in PollEvents");
                 }
 
                 await Task.Delay(_eventPollDelay, cancellationToken);

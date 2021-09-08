@@ -1,8 +1,8 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Enums;
-using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Models;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Collections.Generic;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Enums;
+using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
@@ -38,7 +38,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void Update()
         {
-            IPlayer manager = _playerRegistry.GetPlayer(_server.ManagerId);
+            if (!_playerRegistry.TryGetPlayer(_server.ManagerId, out var manager))
+                return;
+            
             BeatmapIdentifierNetSerializable? beatmap = GetSelectedBeatmap();
             
             if (beatmap != null && beatmap != _startedBeatmap)
