@@ -6,7 +6,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 {
     public sealed class SetIsEntitledToLevelPacket : BaseRpcPacket
     {
-        public string? LevelId { get; set; }
+        public string LevelId { get; set; } = null!;
         public EntitlementStatus Entitlement { get; set; }
 
         public override void Deserialize(NetDataReader reader)

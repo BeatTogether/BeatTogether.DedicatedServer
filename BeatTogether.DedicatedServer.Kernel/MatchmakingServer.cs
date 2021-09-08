@@ -33,11 +33,13 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly IServiceAccessor<IPlayerRegistry> _playerRegistryAccessor;
         private readonly IServiceAccessor<IPacketSource> _packetSourceAccessor;
         private readonly IServiceAccessor<IPermissionsManager> _permissionsManagerAccessor;
+        private readonly IServiceAccessor<IEntitlementManager> _entitlementManagerAccessor;
         private readonly IServiceAccessor<ILobbyManager> _lobbyManagerAccessor; 
 
         private IPacketSource _packetSource = null!;
         private IPlayerRegistry _playerRegistry = null!;
         private IPermissionsManager _permissionsManager = null!;
+        private IEntitlementManager _entitlementManager = null!;
         private ILobbyManager _lobbyManager = null!;
 
         private long _startTime;
@@ -62,6 +64,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             IServiceAccessor<IPlayerRegistry> playerRegistryAccessor,
             IServiceAccessor<IPacketSource> packetSourceAccessor,
             IServiceAccessor<IPermissionsManager> permissionsManagerAccessor,
+            IServiceAccessor<IEntitlementManager> entitlementManagerAccessor,
             IServiceAccessor<ILobbyManager> lobbyManagerAccessor)
         {
             _portAllocator = portAllocator;
@@ -72,6 +75,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _playerRegistryAccessor = playerRegistryAccessor;
             _packetSourceAccessor = packetSourceAccessor;
             _permissionsManagerAccessor = permissionsManagerAccessor;
+            _entitlementManagerAccessor = entitlementManagerAccessor;
             _lobbyManagerAccessor = lobbyManagerAccessor;
 
             _netManager = new NetManager(this, packetEncryptionLayer);
@@ -99,6 +103,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _playerRegistry = _playerRegistryAccessor.Create();
             _packetSource = _packetSourceAccessor.Create();
             _permissionsManager = _permissionsManagerAccessor.Create();
+            _entitlementManager = _entitlementManagerAccessor.Create();
             _lobbyManager = _lobbyManagerAccessor.Create();
 
             _logger.Information(

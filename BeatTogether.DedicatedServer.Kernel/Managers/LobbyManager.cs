@@ -19,21 +19,25 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || p.IsSpectating);
 
         private BeatmapIdentifierNetSerializable? _startedBeatmap;
+        private BeatmapIdentifierNetSerializable? _lastBeatmap;
         private GameplayModifiers _startedModifiers = new();
         private float _countdownEndTime;
 
         private IMatchmakingServer _server;
         private IPlayerRegistry _playerRegistry;
         private IPacketDispatcher _packetDispatcher;
+        private IEntitlementManager _entitlementManager;
 
         public LobbyManager(
             IMatchmakingServer server,
             IPlayerRegistry playerRegistry,
-            IPacketDispatcher packetDispatcher)
+            IPacketDispatcher packetDispatcher,
+            IEntitlementManager entitlementManager)
         {
             _server = server;
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
+            _entitlementManager = entitlementManager;
         }
 
         public void Update()
@@ -45,6 +49,43 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             
             if (beatmap != null && beatmap != _startedBeatmap)
             {
+                if (_lastBeatmap != beatmap)
+                {
+                    if (!_entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
+                    {
+                        var setPlayersMissingEntitlementsToLevelPacket = new SetPlayersMissingEntitlementsToLevelPacket
+                        {
+                            PlayersWithoutEntitlements = _entitlementManager.GetPlayersWithoutBeatmap(beatmap.LevelId)
+                        };
+
+                        var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
+                        {
+                            Reason = Messaging.Enums.CannotStartGameReason.DoNotOwnSong
+                        };
+
+                        _packetDispatcher.SendToNearbyPlayers(manager, setPlayersMissingEntitlementsToLevelPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToNearbyPlayers(manager, setIsStartButtonEnabledPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+
+                        _lastBeatmap = beatmap;
+                        return;
+                    }
+                    else
+                    {
+                        var setPlayersMissingEntitlementsToLevelPacket = new SetPlayersMissingEntitlementsToLevelPacket
+                        {
+                            PlayersWithoutEntitlements = new List<string>()
+                        };
+
+                        var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
+                        {
+                            Reason = Messaging.Enums.CannotStartGameReason.None
+                        };
+
+                        _packetDispatcher.SendToNearbyPlayers(manager, setPlayersMissingEntitlementsToLevelPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToNearbyPlayers(manager, setIsStartButtonEnabledPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                    }
+                }
+
                 switch (_server.Configuration.SongSelectionMode)
                 {
                     case SongSelectionMode.OwnerPicks:
@@ -138,6 +179,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         break;
                 }
             }
+            _lastBeatmap = beatmap;
         }
 
         public BeatmapIdentifierNetSerializable? GetSelectedBeatmap()
