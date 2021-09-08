@@ -30,6 +30,9 @@ namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
             AddPacket<SetStartGameTimePacket>(MenuRpcPacketType.SetStartGameTime);
             AddPacket<CancelCountdownPacket>(MenuRpcPacketType.CancelCountdown);
             AddPacket<CancelLevelStartPacket>(MenuRpcPacketType.CancelLevelStart);
+            AddPacket<StartLevelPacket>(MenuRpcPacketType.StartLevel);
+            AddPacket<ClearRecommendedBeatmapPacket>(MenuRpcPacketType.ClearRecommendedBeatmap);
+            AddPacket<ClearRecommendedModifiersPacket>(MenuRpcPacketType.ClearRecommendedGameplayModifiers);
         }
     }
 }

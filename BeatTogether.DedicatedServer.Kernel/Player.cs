@@ -23,7 +23,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public AvatarData? AvatarData { get; set; }
         public bool IsReady { get; set; }
         public BeatmapIdentifierNetSerializable? BeatmapIdentifier { get; set; }
-        public GameplayModifiers? Modifiers { get; set; }
+        public GameplayModifiers Modifiers { get; set; } = new();
 
         public PlayerStateBloomFilter State { get; set; } = new();
 

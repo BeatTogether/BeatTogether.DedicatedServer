@@ -5,8 +5,8 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 {
     public sealed class BeatmapIdentifierNetSerializable : INetSerializable
     {
-        public string? LevelId { get; set; }
-        public string? Characteristic { get; set; }
+        public string LevelId { get; set; } = null!;
+        public string Characteristic { get; set; } = null!;
         public BeatmapDifficulty Difficulty { get; set; }
 
         public void Deserialize(NetDataReader reader)

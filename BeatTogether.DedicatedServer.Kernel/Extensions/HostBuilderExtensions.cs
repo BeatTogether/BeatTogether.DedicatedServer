@@ -49,6 +49,7 @@ namespace BeatTogether.Extensions
                         .AddAsyncLocal<IPlayerRegistry, PlayerRegistry>()
                         .AddAsyncLocal<IPacketSource, PacketSource>()
                         .AddAsyncLocal<IPermissionsManager, PermissionsManager>()
+                        .AddAsyncLocal<ILobbyManager, LobbyManager>()
                         .AddAllPacketHandlersFromAssembly(typeof(PacketSource).Assembly)
                 );
     }
