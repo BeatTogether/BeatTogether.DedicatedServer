@@ -76,6 +76,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 new HMACSHA256(sendMacSourceArray)
             );
             _potentialEncryptionParameters[endPoint.Address] = encryptionParameters;
+            _encryptionParameters.TryRemove(endPoint, out _);
         }
 
         public void RemoveEncryptedEndPoint(IPEndPoint endPoint)
