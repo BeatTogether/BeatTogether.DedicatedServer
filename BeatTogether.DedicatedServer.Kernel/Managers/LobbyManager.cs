@@ -2,6 +2,7 @@
 using System.Linq;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Enums;
+using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 
@@ -42,6 +43,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void Update()
         {
+            if (_server.State != MultiplayerGameState.Lobby)
+                return;
+
             if (!_playerRegistry.TryGetPlayer(_server.ManagerId, out var manager))
                 return;
             
@@ -84,6 +88,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         _packetDispatcher.SendToNearbyPlayers(manager, setPlayersMissingEntitlementsToLevelPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
                         _packetDispatcher.SendToNearbyPlayers(manager, setIsStartButtonEnabledPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
                     }
+                }
+
+                if (_countdownEndTime != 0 && _countdownEndTime > _server.RunTime)
+                {
+                    _server.State = MultiplayerGameState.Game;
+                    return;
                 }
 
                 switch (_server.Configuration.SongSelectionMode)

@@ -23,7 +23,22 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool IsRunning => _netManager.IsRunning;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => _netManager.LocalPort;
+        public MultiplayerGameState State 
+        {
+            get => _state;
+            set
+            {
+                _state = value;
+                var gameStatePacket = new SetMultiplayerGameStatePacket
+                {
+                    State = value
+                };
+                _packetDispatcher.SendToNearbyPlayers(_netManager, gameStatePacket, DeliveryMethod.ReliableOrdered);
+            }
+        }
 
+
+        private MultiplayerGameState _state = MultiplayerGameState.Lobby;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IPortAllocator _portAllocator;
         private readonly IPacketDispatcher _packetDispatcher;

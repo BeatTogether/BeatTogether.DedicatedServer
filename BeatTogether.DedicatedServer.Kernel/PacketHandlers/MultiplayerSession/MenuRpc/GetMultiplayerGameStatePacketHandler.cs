@@ -9,11 +9,15 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     public sealed class GetMultiplayerGameStatePacketHandler : BasePacketHandler<GetMultiplayerGameStatePacket>
     {
+        private readonly IMatchmakingServer _server;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly ILogger _logger = Log.ForContext<GetMultiplayerGameStatePacketHandler>();
 
-        public GetMultiplayerGameStatePacketHandler(IPacketDispatcher packetDispatcher)
+        public GetMultiplayerGameStatePacketHandler(
+            IMatchmakingServer server,
+            IPacketDispatcher packetDispatcher)
         {
+            _server = server;
             _packetDispatcher = packetDispatcher;
         }
 
@@ -26,7 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 
             var gameStatePacket = new SetMultiplayerGameStatePacket
             {
-                State = MultiplayerGameState.Lobby
+                State = _server.State
             };
             _packetDispatcher.SendToPlayer(sender, gameStatePacket, DeliveryMethod.ReliableOrdered);
 
