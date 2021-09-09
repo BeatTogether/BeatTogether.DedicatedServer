@@ -90,7 +90,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                 }
 
-                if (_countdownEndTime != 0 && _countdownEndTime > _server.RunTime)
+                if (_countdownEndTime != 0 && _countdownEndTime > _server.RunTime && _entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
                 {
                     _server.State = MultiplayerGameState.Game;
                     return;
