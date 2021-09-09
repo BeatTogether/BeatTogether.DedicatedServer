@@ -14,6 +14,7 @@ namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
             AddPacket<PlayerDisconnectedPacket>(PacketType.PlayerDisconnected);
             AddPacket<PlayerSortOrderPacket>(PacketType.PlayerSortOrderUpdate);
             AddPacket<KickPlayerPacket>(PacketType.KickPlayer);
+            AddPacket<PlayerStatePacket>(PacketType.PlayerStateUpdate);
             AddSubPacketRegistry<MultiplayerSessionPacketRegistry>(PacketType.MultiplayerSession);
         }
     }

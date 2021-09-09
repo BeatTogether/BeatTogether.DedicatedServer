@@ -30,5 +30,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool FinishedLevel { get; }
         bool InMenu { get; }
         bool IsModded { get; }
+        bool InLobby { get; set; }
     }
 }
