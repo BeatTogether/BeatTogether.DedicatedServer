@@ -11,8 +11,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
     {
         public ConcurrentDictionary<string, ConcurrentDictionary<string, EntitlementStatus>> userEntitlements { get; } = new();
 
-        public event Action<string, string, EntitlementStatus>? entitlementReceived;
-
         public bool AllPlayersHaveBeatmap(string beatmap)
             => userEntitlements.Values.All(p => p[beatmap] != EntitlementStatus.NotOwned);
 

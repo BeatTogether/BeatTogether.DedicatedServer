@@ -9,8 +9,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
     {
         ConcurrentDictionary<string, ConcurrentDictionary<string, EntitlementStatus>> userEntitlements { get; }
 
-        event Action<string, string, EntitlementStatus>? entitlementReceived;
-
         bool AllPlayersHaveBeatmap(string beatmap);
         List<string> GetPlayersWithoutBeatmap(string beatmap);
         void HandleEntitlement(string userId, string beatmap, EntitlementStatus entitlement);
