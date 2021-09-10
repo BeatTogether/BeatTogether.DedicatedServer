@@ -12,6 +12,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 
         void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet);
         void HandleGameSongLoaded(IPlayer player);
+        void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet);
         void StartSong(BeatmapIdentifier beatmap, CancellationToken cancellationToken);
     }
 }

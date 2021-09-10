@@ -10,6 +10,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
     {
         public bool AllowBeatmapSelect { get; private set; } = true;
         public bool AllowVoteKick { get; private set; } = true;
+        public bool AllowInvite { get; private set; } = true;
 
         public PlayersPermissionConfiguration Permissions { get; private set; } = new();
 
@@ -47,7 +48,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     HasRecommendBeatmapsPermission = AllowBeatmapSelect,
                     HasRecommendGameplayModifiersPermission = _server.Configuration.GameplayServerControlSettings == Enums.GameplayServerControlSettings.AllowModifierSelection || _server.Configuration.GameplayServerControlSettings == Enums.GameplayServerControlSettings.All,
                     HasKickVotePermission = AllowVoteKick,
-                    HasInvitePermission = true
+                    HasInvitePermission = AllowInvite
                 };
                 Permissions.PlayersPermission.Add(playerPermission);
             }

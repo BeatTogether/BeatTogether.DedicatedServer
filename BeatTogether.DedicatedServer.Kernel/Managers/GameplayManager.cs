@@ -20,6 +20,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public GameplayManagerState State { get; private set; }
 
         private const float SongStartDelay = 2f;
+        private const float ResultsScreenTime = 30f;
 
         private ConcurrentDictionary<string, PlayerSpecificSettings> _playerSpecificSettings = new();
         private ConcurrentDictionary<string, LevelCompletionResults> _levelCompletionResults = new();
@@ -40,10 +41,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public async void StartSong(BeatmapIdentifier beatmap, CancellationToken cancellationToken)
         {
+            _server.State = MultiplayerGameState.Game;
+
             // Reset
             SessionGameId = Guid.NewGuid().ToString();
             _playerSpecificSettings.Clear();
             _levelCompletionResults.Clear();
+
+            // TODO: only process players present at game start
 
             IEnumerable<Task<SetGameplaySceneReadyPacket>> sceneReadyTasks = _playerRegistry.Players.Select(player => player.WaitForSceneReady(cancellationToken));
 
@@ -52,7 +57,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _packetDispatcher.SendToNearbyPlayers(getGameplaySceneReady, DeliveryMethod.ReliableOrdered);
 
             // Wait for scene ready
-            await Task.WhenAll(sceneReadyTasks.ToArray());
+            await WaitForCompletionOrCancel(sceneReadyTasks);
 
             // Set scene sync finished
             var setGameplaySceneSyncFinished = new SetGameplaySceneSyncFinishedPacket
@@ -72,7 +77,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _packetDispatcher.SendToNearbyPlayers(getGameplaySongReady, DeliveryMethod.ReliableOrdered);
 
             // Wait for song ready
-            await Task.WhenAll(songReadyTasks.ToArray());
+            await WaitForCompletionOrCancel(songReadyTasks);
 
             // Start song
             var setSongStartTime = new SetSongStartTimePacket
@@ -81,17 +86,40 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             };
             _packetDispatcher.SendToNearbyPlayers(setSongStartTime, DeliveryMethod.ReliableOrdered);
 
-            // TODO: wait for players to finish
+            // Wait for level finish
+            IEnumerable<Task<LevelFinishedPacket>> levelFinishedTasks = _playerRegistry.Players.Select(player => player.WaitForLevelFinished(cancellationToken));
+            await WaitForCompletionOrCancel(levelFinishedTasks);
+
+            // Wait at results screen
+            await Task.Delay((int)(ResultsScreenTime * 1000));
+
+            // Send to lobby
+            var returnToMenu = new ReturnToMenuPacket();
+            _packetDispatcher.SendToNearbyPlayers(returnToMenu, DeliveryMethod.ReliableOrdered);
+
+            // Set game state
+            _server.State = MultiplayerGameState.Lobby;
         }
 
         public void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet)
         {
             _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
+
+            // TODO: late join
+            // TODO: send to lobby if server is not in game
         }
 
         public void HandleGameSongLoaded(IPlayer player)
         {
             // This just exists for now
         }
+
+        public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet)
+        {
+            _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
+        }
+
+        private Task WaitForCompletionOrCancel(IEnumerable<Task> tasks) =>
+            Task.WhenAll(tasks.Select(task => task.ContinueWith(t => t.IsCanceled ? Task.CompletedTask : t)));
     }
 }

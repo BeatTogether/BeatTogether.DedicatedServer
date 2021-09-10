@@ -26,7 +26,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(SetIsEntitledToLevelPacket)}' " +
-                $"(SenderId={sender.ConnectionId})."
+                $"(SenderId={sender.ConnectionId}, LevelId={packet.LevelId}, Entitlement={packet.Entitlement})."
             );
 
             _entitlementManager.HandleEntitlement(sender.UserId, packet.LevelId, packet.Entitlement);

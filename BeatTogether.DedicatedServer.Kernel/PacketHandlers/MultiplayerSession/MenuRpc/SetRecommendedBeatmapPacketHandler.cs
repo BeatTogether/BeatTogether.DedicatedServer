@@ -31,6 +31,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 			};
 			_packetDispatcher.SendToPlayer(sender, setIsStartButtonEnabledPacket, DeliveryMethod.ReliableOrdered);
 
+			var getIsEntitledToLevelPacket = new GetIsEntitledToLevelPacket
+			{
+				LevelId = packet.BeatmapIdentifier.LevelId
+			};
+			_packetDispatcher.SendToNearbyPlayers(getIsEntitledToLevelPacket, DeliveryMethod.ReliableOrdered);
+
 			return Task.CompletedTask;
 		}
 	}

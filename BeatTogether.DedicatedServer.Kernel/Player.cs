@@ -58,6 +58,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private ConcurrentBag<TaskCompletionSource<SetGameplaySceneReadyPacket>> _gameplaySceneReadyTcs = new();
         private ConcurrentBag<TaskCompletionSource> _gameplaySongReadyTcs = new();
+        private ConcurrentBag<TaskCompletionSource<LevelFinishedPacket>> _gameplayLevelFinishedTcs = new();
 
         public Task<SetGameplaySceneReadyPacket> WaitForSceneReady(CancellationToken cancellationToken)
         {
@@ -93,6 +94,23 @@ namespace BeatTogether.DedicatedServer.Kernel
             _gameplaySongReadyTcs.Clear();
         }
 
+        public Task<LevelFinishedPacket> WaitForLevelFinished(CancellationToken cancellationToken)
+        {
+            var tcs = new TaskCompletionSource<LevelFinishedPacket>();
+            cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
+            _gameplayLevelFinishedTcs.Add(tcs);
+            return tcs.Task;
+        }
+
+        public void SignalLevelFinished(LevelFinishedPacket packet)
+        {
+            foreach (var tcs in _gameplayLevelFinishedTcs)
+            {
+                tcs.TrySetResult(packet);
+            }
+            _gameplayLevelFinishedTcs.Clear();
+        }
+
         public void Dispose()
         {
             foreach (var tcs in _gameplaySceneReadyTcs)
@@ -101,6 +119,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
 
             foreach (var tcs in _gameplaySongReadyTcs)
+            {
+                tcs.TrySetCanceled();
+            }
+
+            foreach (var tcs in _gameplayLevelFinishedTcs)
             {
                 tcs.TrySetCanceled();
             }

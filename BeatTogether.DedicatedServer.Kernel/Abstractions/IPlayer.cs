@@ -5,7 +5,7 @@ using System;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
-    public interface IPlayer : IGameplaySceneSignalSource, IGameplaySongSignalSource, IDisposable
+    public interface IPlayer : IGameplaySceneSignalSource, IGameplaySongSignalSource, IGameplayFinishedSignalSource, IDisposable
     {
         NetPeer NetPeer { get; }
         IMatchmakingServer MatchmakingServer { get; }

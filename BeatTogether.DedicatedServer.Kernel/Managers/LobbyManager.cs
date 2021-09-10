@@ -7,6 +7,7 @@ using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using LiteNetLib;
+using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
@@ -31,6 +32,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private IPacketDispatcher _packetDispatcher;
         private IEntitlementManager _entitlementManager;
         private IGameplayManager _gameplayManager;
+        private ILogger _logger = Log.ForContext<LobbyManager>();
 
         public LobbyManager(
             IMatchmakingServer server,
@@ -55,8 +57,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 return;
             
             BeatmapIdentifier? beatmap = GetSelectedBeatmap();
-            
-            if (beatmap != null && beatmap != _startedBeatmap)
+
+            if (beatmap != null)
             {
                 if (_lastBeatmap != beatmap)
                 {
@@ -97,7 +99,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
                 if (_countdownEndTime != 0 && _countdownEndTime > _server.RunTime && _entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
                 {
-                    _server.State = MultiplayerGameState.Game;
+                    _countdownEndTime = 0;
+                    _startedBeatmap = null;
+                    _lastBeatmap = null!;
+                    _startedModifiers = new();
                     _gameplayManager.StartSong(beatmap, CancellationToken.None);
                     return;
                 }

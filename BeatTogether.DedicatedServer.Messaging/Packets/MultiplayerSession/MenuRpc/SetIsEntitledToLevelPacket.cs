@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
+using BeatTogether.Extensions;
 using LiteNetLib.Utils;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
@@ -13,14 +14,14 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         {
             base.Deserialize(reader);
             LevelId = reader.GetString();
-            Entitlement = (EntitlementStatus)reader.GetInt();
+            Entitlement = (EntitlementStatus)reader.GetVarInt();
         }
 
         public override void Serialize(NetDataWriter writer)
         {
             base.Serialize(writer);
             writer.Put(LevelId);
-            writer.Put((int)Entitlement);
+            writer.PutVarInt((int)Entitlement);
         }
     }
 }
