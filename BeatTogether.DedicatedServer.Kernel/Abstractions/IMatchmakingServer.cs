@@ -1,8 +1,10 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Models;
 using BeatTogether.DedicatedServer.Messaging.Enums;
+using BeatTogether.DedicatedServer.Messaging.Models;
+using LiteNetLib;
+using LiteNetLib.Utils;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
@@ -14,7 +16,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool IsRunning { get; }
         float RunTime { get; }
         int Port { get; }
-        MultiplayerGameState State { get; }
+        MultiplayerGameState State { get; set; }
 
         Task Start(CancellationToken cancellationToken = default);
         Task Stop(CancellationToken cancellationToken = default);
@@ -23,10 +25,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         void ReleaseSortIndex(int sortIndex);
         byte GetNextConnectionId();
         void ReleaseConnectionId(byte connectionId);
-
-        IPlayer GetPlayer(byte connectionId);
-        IPlayer GetPlayer(string userId);
-        bool TryGetPlayer(byte connectionId, [MaybeNullWhen(false)] out IPlayer player);
-        bool TryGetPlayer(string userId, [MaybeNullWhen(false)] out IPlayer player);
+        void SendToAll(NetDataWriter writer, DeliveryMethod deliveryMethod);
     }
 }

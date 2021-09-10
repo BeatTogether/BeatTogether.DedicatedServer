@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Abstractions;
@@ -13,19 +14,16 @@ namespace BeatTogether.DedicatedServer.Kernel
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IPacketReader _packetReader;
-        private readonly IMatchmakingServerRegistry _matchmakingServerRegistry;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly ILogger _logger = Log.ForContext<PacketSource>();
 
         public PacketSource(
             IServiceProvider serviceProvider,
             IPacketReader packetReader,
-            IMatchmakingServerRegistry matchmakingServerRegistry,
             IPlayerRegistry playerRegistry)
         {
             _serviceProvider = serviceProvider;
             _packetReader = packetReader;
-            _matchmakingServerRegistry = matchmakingServerRegistry;
             _playerRegistry = playerRegistry;
         }
 
@@ -55,7 +53,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 RoutePacket(sender, routingHeader, reader, deliveryMethod);
                 return;
             }
-            
+
             while (!reader.EndOfData)
             {
                 try
@@ -86,7 +84,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                 catch (Exception e)
                 {
                     _logger.Error(e, "Failed to read packet.");
-                    return;
+
+                    var builder = new StringBuilder("new byte[] { ");
+                    foreach (var b in reader.RawData)
+                    {
+                        builder.Append(b + ", ");
+                    }
+                    builder.Append("}");
+
+                    _logger.Debug(builder.ToString());
+                    //return;
                 }
             }
         }
@@ -119,15 +126,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             else
             {
-                if (!_matchmakingServerRegistry.TryGetMatchmakingServer(sender.Secret, out var matchmakingServer))
-                {
-                    _logger.Warning(
-                        "Failed to retrieve sender's matchmaking server " +
-                        $"(Secret='{sender.Secret}')."
-                    );
-                    return;
-                }
-                if (!matchmakingServer.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
+                if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
                 {
                     _logger.Warning(
                         "Failed to retrieve receiver " +

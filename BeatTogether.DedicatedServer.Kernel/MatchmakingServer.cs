@@ -1,13 +1,14 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Models;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using LiteNetLib;
+using LiteNetLib.Utils;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -17,59 +18,100 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class MatchmakingServer : IMatchmakingServer, INetEventListener
     {
-        public string Secret { get; }
-        public string ManagerId { get; }
-        public GameplayServerConfiguration Configuration { get; }
+        public string Secret { get; private set; } = null!;
+        public string ManagerId { get; private set; } = null!;
+        public GameplayServerConfiguration Configuration { get; private set; } = null!;
         public bool IsRunning => _netManager.IsRunning;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => _netManager.LocalPort;
-        public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
+        public MultiplayerGameState State 
+        {
+            get => _state;
+            set
+            {
+                _state = value;
+                var gameStatePacket = new SetMultiplayerGameStatePacket
+                {
+                    State = value
+                };
+                _packetDispatcher.SendToNearbyPlayers(gameStatePacket, DeliveryMethod.ReliableOrdered);
+            }
+        }
 
+
+        private MultiplayerGameState _state = MultiplayerGameState.Lobby;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IPortAllocator _portAllocator;
-        private readonly IPacketSource _packetSource;
-        private readonly IPacketDispatcher _packetDispatcher;
-        private readonly IPlayerRegistry _playerRegistry;
         private readonly ILogger _logger = Log.ForContext<MatchmakingServer>();
+
+        private readonly IServiceAccessor<IMatchmakingServer> _matchmakingServerAccessor;
+        private readonly IServiceAccessor<IPlayerRegistry> _playerRegistryAccessor;
+        private readonly IServiceAccessor<IPacketSource> _packetSourceAccessor;
+        private readonly IServiceAccessor<IPacketDispatcher> _packetDispatcherAccessor;
+        private readonly IServiceAccessor<IPermissionsManager> _permissionsManagerAccessor;
+        private readonly IServiceAccessor<IEntitlementManager> _entitlementManagerAccessor;
+        private readonly IServiceAccessor<ILobbyManager> _lobbyManagerAccessor;
+        private readonly IServiceAccessor<IGameplayManager> _gameplayManagerAccessor;
+
+        private IPacketSource _packetSource = null!;
+        private IPacketDispatcher _packetDispatcher = null!;
+        private IPlayerRegistry _playerRegistry = null!;
+        private IPermissionsManager _permissionsManager = null!;
+        private IEntitlementManager _entitlementManager = null!;
+        private ILobbyManager _lobbyManager = null!;
+        private IGameplayManager _gameplayManager = null!;
 
         private long _startTime;
         private readonly NetManager _netManager;
-        private readonly ConcurrentDictionary<byte, IPlayer> _playersByConnectionId = new();
-        private readonly ConcurrentDictionary<string, IPlayer> _playersByUserId = new();
         private readonly ConcurrentQueue<byte> _releasedConnectionIds = new();
         private int _connectionIdCount = 0;
         private readonly ConcurrentQueue<int> _releasedSortIndices = new();
         private int _lastSortIndex = -1;
+        private float _lastSyncTimeUpdate;
 
         private Task? _task;
         private CancellationTokenSource? _cancellationTokenSource;
 
         private const int _eventPollDelay = 10;
+        private const float _syncTimeDelay = 5f;
 
         public MatchmakingServer(
             IPortAllocator portAllocator,
             PacketEncryptionLayer packetEncryptionLayer,
-            IPacketSource packetSource,
             IPacketDispatcher packetDispatcher,
-            IPlayerRegistry playerRegistry,
-            string secret,
-            string managerId,
-            GameplayServerConfiguration configuration)
+            IServiceAccessor<IMatchmakingServer> matchmakingServerAccessor,
+            IServiceAccessor<IPlayerRegistry> playerRegistryAccessor,
+            IServiceAccessor<IPacketSource> packetSourceAccessor,
+            IServiceAccessor<IPacketDispatcher> packetDispatcherAccessor,
+            IServiceAccessor<IPermissionsManager> permissionsManagerAccessor,
+            IServiceAccessor<IEntitlementManager> entitlementManagerAccessor,
+            IServiceAccessor<ILobbyManager> lobbyManagerAccessor,
+            IServiceAccessor<IGameplayManager> gameplayManagerAccessor)
         {
-            Secret = secret;
-            ManagerId = managerId;
-            Configuration = configuration;
-
             _portAllocator = portAllocator;
             _packetEncryptionLayer = packetEncryptionLayer;
-            _packetSource = packetSource;
             _packetDispatcher = packetDispatcher;
-            _playerRegistry = playerRegistry;
+
+            _matchmakingServerAccessor = matchmakingServerAccessor;
+            _playerRegistryAccessor = playerRegistryAccessor;
+            _packetSourceAccessor = packetSourceAccessor;
+            _packetDispatcherAccessor = packetDispatcherAccessor;
+            _permissionsManagerAccessor = permissionsManagerAccessor;
+            _entitlementManagerAccessor = entitlementManagerAccessor;
+            _lobbyManagerAccessor = lobbyManagerAccessor;
+            _gameplayManagerAccessor = gameplayManagerAccessor;
 
             _netManager = new NetManager(this, packetEncryptionLayer);
         }
 
         #region Public Methods
+
+        public void Init(string secret, string managerId, GameplayServerConfiguration configuration)
+        {
+            Secret = secret;
+            ManagerId = managerId;
+            Configuration = configuration;
+        }
 
         public async Task Start(CancellationToken cancellationToken = default)
         {
@@ -79,6 +121,15 @@ namespace BeatTogether.DedicatedServer.Kernel
             var port = _portAllocator.AcquirePort();
             if (!port.HasValue)
                 return;
+
+            _ = _matchmakingServerAccessor.Bind(this);
+            _playerRegistry = _playerRegistryAccessor.Create();
+            _packetSource = _packetSourceAccessor.Create();
+            _packetDispatcher = _packetDispatcherAccessor.Create();
+            _permissionsManager = _permissionsManagerAccessor.Create();
+            _entitlementManager = _entitlementManagerAccessor.Create();
+            _gameplayManager = _gameplayManagerAccessor.Create();
+            _lobbyManager = _lobbyManagerAccessor.Create();
 
             _logger.Information(
                 "Starting matchmaking server " +
@@ -153,17 +204,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void ReleaseConnectionId(byte connectionId) =>
             _releasedConnectionIds.Enqueue(connectionId);
 
-        public IPlayer GetPlayer(byte connectionId) =>
-            _playersByConnectionId[connectionId];
-
-        public IPlayer GetPlayer(string userId) =>
-            _playersByUserId[userId];
-
-        public bool TryGetPlayer(byte connectionId, [MaybeNullWhen(false)] out IPlayer player) =>
-            _playersByConnectionId.TryGetValue(connectionId, out player);
-
-        public bool TryGetPlayer(string userId, [MaybeNullWhen(false)] out IPlayer player) =>
-            _playersByUserId.TryGetValue(userId, out player);
+        public void SendToAll(NetDataWriter writer, DeliveryMethod deliveryMethod) =>
+            _netManager.SendToAll(writer, deliveryMethod);
 
         #endregion
 
@@ -223,21 +265,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 connectionRequestData.UserName
             );
             player.SortIndex = sortIndex;
-            if (!_playersByUserId.TryAdd(player.UserId, player))
-            {
-                _logger.Warning(
-                    "Player failed to join matchmaking server " +
-                    $"(RemoteEndPoint='{player.NetPeer.EndPoint}', " +
-                    $"ConnectionId={player.ConnectionId}, " +
-                    $"Secret='{player.Secret}', " +
-                    $"UserId='{player.UserId}', " +
-                    $"UserName='{player.UserName}', " +
-                    $"SortIndex={player.SortIndex})."
-                );
-                // TODO: Kick player
-                return;
-            }
-            _playersByConnectionId[connectionId] = player;
             _playerRegistry.AddPlayer(player);
             _logger.Information(
                 "Player joined matchmaking server " +
@@ -290,7 +317,15 @@ namespace BeatTogether.DedicatedServer.Kernel
                 UserId = player.UserId,
                 SortIndex = player.SortIndex
             };
-            _packetDispatcher.SendToNearbyPlayers(player, playerSortOrderPacket, DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(playerSortOrderPacket, DeliveryMethod.ReliableOrdered);
+
+            var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
+            {
+                Reason = player.UserId == ManagerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
+            };
+            _packetDispatcher.SendToPlayer(player, setIsStartButtonEnabledPacket, DeliveryMethod.ReliableOrdered);
+
+            _permissionsManager.UpdatePermissions();
         }
 
         void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
@@ -303,6 +338,17 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"(RemoteEndPoint='{peer.EndPoint}', DisconnectInfo={disconnectInfo})."
                 );
                 _packetEncryptionLayer.RemoveEncryptedEndPoint(peer.EndPoint);
+
+                if (_playerRegistry.TryGetPlayer(peer.EndPoint, out var player))
+                {
+                    _playerRegistry.RemovePlayer(player);
+                }
+
+                if (_playerRegistry.Players.Count == 0)
+                {
+                    _ = Stop(CancellationToken.None);
+                    _cancellationTokenSource?.Cancel();
+                }
             }
         }
 
@@ -314,7 +360,31 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                _netManager.PollEvents();
+                try
+                {
+                    _netManager.PollEvents();
+                    
+                    _lobbyManager.Update();
+
+                    if (_lastSyncTimeUpdate < RunTime - _syncTimeDelay)
+                    {
+                        foreach (var player in _playerRegistry.Players)
+                        {
+                            var syncTimePacket = new SyncTimePacket
+                            {
+                                SyncTime = player.SyncTime
+                            };
+                            _packetDispatcher.SendToPlayer(player, syncTimePacket, DeliveryMethod.ReliableOrdered);
+                        }
+
+                        _lastSyncTimeUpdate = RunTime;
+                    }
+                }
+                catch (Exception e)
+                {
+                    _logger.Error(e, "Exception occurred in PollEvents");
+                }
+
                 await Task.Delay(_eventPollDelay, cancellationToken);
             }
         }

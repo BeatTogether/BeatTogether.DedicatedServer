@@ -23,7 +23,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 $"(SenderId={sender.ConnectionId})."
             );
             sender.AvatarData = packet.AvatarData;
-            _packetDispatcher.SendToPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
+            sender.State = packet.PlayerStateBloomFilter;
+            //_packetDispatcher.SendToPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
             return Task.CompletedTask;
         }
     }

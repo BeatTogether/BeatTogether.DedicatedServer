@@ -4,6 +4,7 @@ using BeatTogether.DedicatedServer.Kernel;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Factories;
+using BeatTogether.DedicatedServer.Kernel.Managers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Security.Cryptography;
@@ -38,14 +39,19 @@ namespace BeatTogether.Extensions
                         .AddSingleton<IEncryptedPacketReader, EncryptedPacketReader>()
                         .AddSingleton<IEncryptedPacketWriter, EncryptedPacketWriter>()
                         .AddSingleton<PacketEncryptionLayer>()
-                        .AddSingleton<IPacketSource, PacketSource>()
-                        .AddSingleton<IPacketDispatcher, PacketDispatcher>()
                         .AddSingleton<IPortAllocator, PortAllocator>()
-                        .AddSingleton<IPlayerRegistry, PlayerRegistry>()
                         .AddSingleton<IMatchmakingServerRegistry, MatchmakingServerRegistry>()
                         .AddSingleton<IMatchmakingServerFactory, MatchmakingServerFactory>()
                         .AddServiceKernel<IMatchmakingService, MatchmakingService>()
                         .AddHostedService<MasterServerEventHandler>()
+                        .AddAsyncLocal<IMatchmakingServer, MatchmakingServer>()
+                        .AddAsyncLocal<IPlayerRegistry, PlayerRegistry>()
+                        .AddAsyncLocal<IPacketSource, PacketSource>()
+                        .AddAsyncLocal<IPacketDispatcher, PacketDispatcher>()
+                        .AddAsyncLocal<IPermissionsManager, PermissionsManager>()
+                        .AddAsyncLocal<ILobbyManager, LobbyManager>()
+                        .AddAsyncLocal<IGameplayManager, GameplayManager>()
+                        .AddAsyncLocal<IEntitlementManager, EntitlementManager>()
                         .AddAllPacketHandlersFromAssembly(typeof(PacketSource).Assembly)
                 );
     }
