@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
@@ -19,8 +20,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady);
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || p.IsSpectating);
 
-        private BeatmapIdentifierNetSerializable? _startedBeatmap;
-        private BeatmapIdentifierNetSerializable? _lastBeatmap;
+        private BeatmapIdentifier? _startedBeatmap;
+        private BeatmapIdentifier? _lastBeatmap;
         private GameplayModifiers _startedModifiers = new();
         private float _countdownEndTime;
 
@@ -28,17 +29,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private IPlayerRegistry _playerRegistry;
         private IPacketDispatcher _packetDispatcher;
         private IEntitlementManager _entitlementManager;
+        private IGameplayManager _gameplayManager;
 
         public LobbyManager(
             IMatchmakingServer server,
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
-            IEntitlementManager entitlementManager)
+            IEntitlementManager entitlementManager,
+            IGameplayManager gameplayManager)
         {
             _server = server;
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
             _entitlementManager = entitlementManager;
+            _gameplayManager = gameplayManager;
         }
 
         public void Update()
@@ -49,7 +53,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (!_playerRegistry.TryGetPlayer(_server.ManagerId, out var manager))
                 return;
             
-            BeatmapIdentifierNetSerializable? beatmap = GetSelectedBeatmap();
+            BeatmapIdentifier? beatmap = GetSelectedBeatmap();
             
             if (beatmap != null && beatmap != _startedBeatmap)
             {
@@ -93,6 +97,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 if (_countdownEndTime != 0 && _countdownEndTime > _server.RunTime && _entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
                 {
                     _server.State = MultiplayerGameState.Game;
+                    _gameplayManager.StartSong(beatmap, CancellationToken.None);
                     return;
                 }
 
@@ -192,13 +197,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _lastBeatmap = beatmap;
         }
 
-        public BeatmapIdentifierNetSerializable? GetSelectedBeatmap()
+        public BeatmapIdentifier? GetSelectedBeatmap()
         {
             switch(_server.Configuration.SongSelectionMode)
             {
                 case SongSelectionMode.OwnerPicks: return _playerRegistry.GetPlayer(_server.ManagerId).BeatmapIdentifier;
                 case SongSelectionMode.Vote:
-                    Dictionary<BeatmapIdentifierNetSerializable, int> voteDictionary = new();
+                    Dictionary<BeatmapIdentifier, int> voteDictionary = new();
                     _playerRegistry.Players.ForEach(p =>
                     {
                         if (p.BeatmapIdentifier != null)

@@ -6,7 +6,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 {
     public sealed class StartLevelPacket : BaseRpcPacket
     {
-        public BeatmapIdentifierNetSerializable Beatmap { get; set; } = new();
+        public BeatmapIdentifier Beatmap { get; set; } = new();
         public GameplayModifiers Modifiers { get; set; } = new();
         public float StartTime { get; set; }
 

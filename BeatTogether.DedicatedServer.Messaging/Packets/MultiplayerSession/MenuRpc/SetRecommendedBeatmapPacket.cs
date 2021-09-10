@@ -6,7 +6,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 {
     public sealed class SetRecommendedBeatmapPacket : BaseRpcPacket
     {
-        public BeatmapIdentifierNetSerializable BeatmapIdentifier { get; set; } = new();
+        public BeatmapIdentifier BeatmapIdentifier { get; set; } = new();
 
         public override void Deserialize(NetDataReader reader)
         {

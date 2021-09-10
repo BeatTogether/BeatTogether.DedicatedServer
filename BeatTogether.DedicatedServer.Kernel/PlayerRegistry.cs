@@ -33,6 +33,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _playersByUserId.TryRemove(player.UserId, out _);
             _playersByConnectionId.TryRemove(player.ConnectionId, out _);
             PlayerDisconnected?.Invoke(player);
+            player.Dispose();
         }
 
         public IPlayer GetPlayer(EndPoint remoteEndPoint) =>

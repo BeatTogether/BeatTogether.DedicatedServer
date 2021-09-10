@@ -7,7 +7,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     public sealed class SetGameplaySongReadyPacketHandler : BasePacketHandler<SetGameplaySongReadyPacket>
     {
+        private IGameplayManager _gameplayManager;
         private ILogger _logger = Log.ForContext<SetGameplaySongReadyPacketHandler>();
+
+        public SetGameplaySongReadyPacketHandler(
+            IGameplayManager gameplayManager)
+        {
+            _gameplayManager = gameplayManager;
+        }
 
         public override Task Handle(IPlayer sender, SetGameplaySongReadyPacket packet)
         {
@@ -15,6 +22,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(SetGameplaySongReadyPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
+
+            _gameplayManager.HandleGameSongLoaded(sender);
+            sender.SignalSongReady();
             return Task.CompletedTask;
         }
     }

@@ -1,10 +1,11 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using LiteNetLib;
+using System;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
-    public interface IPlayer
+    public interface IPlayer : IGameplaySceneSignalSource, IGameplaySongSignalSource, IDisposable
     {
         NetPeer NetPeer { get; }
         IMatchmakingServer MatchmakingServer { get; }
@@ -17,7 +18,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         int SortIndex { get; set; }
         AvatarData? AvatarData { get; set; }
         bool IsReady { get; set; }
-        BeatmapIdentifierNetSerializable? BeatmapIdentifier { get; set; }
+        BeatmapIdentifier? BeatmapIdentifier { get; set; }
         GameplayModifiers Modifiers { get; set; }
         PlayerStateBloomFilter State { get; set; }
         bool IsPlayer { get; }

@@ -49,13 +49,15 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly IServiceAccessor<IPacketSource> _packetSourceAccessor;
         private readonly IServiceAccessor<IPermissionsManager> _permissionsManagerAccessor;
         private readonly IServiceAccessor<IEntitlementManager> _entitlementManagerAccessor;
-        private readonly IServiceAccessor<ILobbyManager> _lobbyManagerAccessor; 
+        private readonly IServiceAccessor<ILobbyManager> _lobbyManagerAccessor;
+        private readonly IServiceAccessor<IGameplayManager> _gameplayManagerAccessor;
 
         private IPacketSource _packetSource = null!;
         private IPlayerRegistry _playerRegistry = null!;
         private IPermissionsManager _permissionsManager = null!;
         private IEntitlementManager _entitlementManager = null!;
         private ILobbyManager _lobbyManager = null!;
+        private IGameplayManager _gameplayManager = null!;
 
         private long _startTime;
         private readonly NetManager _netManager;
@@ -80,7 +82,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             IServiceAccessor<IPacketSource> packetSourceAccessor,
             IServiceAccessor<IPermissionsManager> permissionsManagerAccessor,
             IServiceAccessor<IEntitlementManager> entitlementManagerAccessor,
-            IServiceAccessor<ILobbyManager> lobbyManagerAccessor)
+            IServiceAccessor<ILobbyManager> lobbyManagerAccessor,
+            IServiceAccessor<IGameplayManager> gameplayManagerAccessor)
         {
             _portAllocator = portAllocator;
             _packetEncryptionLayer = packetEncryptionLayer;
@@ -92,6 +95,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _permissionsManagerAccessor = permissionsManagerAccessor;
             _entitlementManagerAccessor = entitlementManagerAccessor;
             _lobbyManagerAccessor = lobbyManagerAccessor;
+            _gameplayManagerAccessor = gameplayManagerAccessor;
 
             _netManager = new NetManager(this, packetEncryptionLayer);
         }
@@ -119,6 +123,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _packetSource = _packetSourceAccessor.Create();
             _permissionsManager = _permissionsManagerAccessor.Create();
             _entitlementManager = _entitlementManagerAccessor.Create();
+            _gameplayManager = _gameplayManagerAccessor.Create();
             _lobbyManager = _lobbyManagerAccessor.Create();
 
             _logger.Information(

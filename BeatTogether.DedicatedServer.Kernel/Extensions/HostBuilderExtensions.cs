@@ -50,6 +50,7 @@ namespace BeatTogether.Extensions
                         .AddAsyncLocal<IPacketSource, PacketSource>()
                         .AddAsyncLocal<IPermissionsManager, PermissionsManager>()
                         .AddAsyncLocal<ILobbyManager, LobbyManager>()
+                        .AddAsyncLocal<IGameplayManager, GameplayManager>()
                         .AddAsyncLocal<IEntitlementManager, EntitlementManager>()
                         .AddAllPacketHandlersFromAssembly(typeof(PacketSource).Assembly)
                 );

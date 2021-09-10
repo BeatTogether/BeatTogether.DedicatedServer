@@ -3,7 +3,7 @@ using LiteNetLib.Utils;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
-    public sealed class BeatmapIdentifierNetSerializable : INetSerializable
+    public sealed class BeatmapIdentifier : INetSerializable
     {
         public string LevelId { get; set; } = null!;
         public string Characteristic { get; set; } = null!;

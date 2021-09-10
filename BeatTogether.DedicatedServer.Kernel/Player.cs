@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using LiteNetLib;
 
 namespace BeatTogether.DedicatedServer.Kernel
@@ -23,7 +27,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public AvatarData? AvatarData { get; set; }
         public bool IsReady { get; set; }
         public bool InLobby { get; set; }
-        public BeatmapIdentifierNetSerializable? BeatmapIdentifier { get; set; }
+        public BeatmapIdentifier? BeatmapIdentifier { get; set; }
         public GameplayModifiers Modifiers { get; set; } = new();
 
         public PlayerStateBloomFilter State { get; set; } = new();
@@ -51,6 +55,55 @@ namespace BeatTogether.DedicatedServer.Kernel
             UserId = userId;
             UserName = userName;
         }
-            
+
+        private ConcurrentBag<TaskCompletionSource<SetGameplaySceneReadyPacket>> _gameplaySceneReadyTcs = new();
+        private ConcurrentBag<TaskCompletionSource> _gameplaySongReadyTcs = new();
+
+        public Task<SetGameplaySceneReadyPacket> WaitForSceneReady(CancellationToken cancellationToken)
+        {
+            var tcs = new TaskCompletionSource<SetGameplaySceneReadyPacket>();
+            cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
+            _gameplaySceneReadyTcs.Add(tcs);
+            return tcs.Task;
+        }
+
+        public void SignalSceneReady(SetGameplaySceneReadyPacket packet)
+        {
+            foreach (var tcs in _gameplaySceneReadyTcs)
+            {
+                tcs.TrySetResult(packet);
+            }
+            _gameplaySceneReadyTcs.Clear();
+        }
+
+        public Task WaitForSongReady(CancellationToken cancellationToken)
+        {
+            var tcs = new TaskCompletionSource();
+            cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
+            _gameplaySongReadyTcs.Add(tcs);
+            return tcs.Task;
+        }
+
+        public void SignalSongReady()
+        {
+            foreach (var tcs in _gameplaySongReadyTcs)
+            {
+                tcs.TrySetResult();
+            }
+            _gameplaySongReadyTcs.Clear();
+        }
+
+        public void Dispose()
+        {
+            foreach (var tcs in _gameplaySceneReadyTcs)
+            {
+                tcs.TrySetCanceled();
+            }
+
+            foreach (var tcs in _gameplaySongReadyTcs)
+            {
+                tcs.TrySetCanceled();
+            }
+        }
     }
 }
