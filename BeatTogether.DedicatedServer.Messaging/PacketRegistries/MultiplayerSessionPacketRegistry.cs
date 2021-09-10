@@ -11,6 +11,8 @@ namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
             AddSubPacketRegistry<GameplayRpcPacketRegistry>(MultiplayerSessionPacketType.GameplayRpc);
             AddPacket<NodePoseSyncStatePacket>(MultiplayerSessionPacketType.NodePoseSyncState);
             AddPacket<NodePoseSyncStateDeltaPacket>(MultiplayerSessionPacketType.NodePoseSyncStateDelta);
+            AddPacket<ScoreSyncStatePacket>(MultiplayerSessionPacketType.ScoreSyncState);
+            AddPacket<ScoreSyncStateDeltaPacket>(MultiplayerSessionPacketType.ScoreSyncStateDelta);
         }
     }
 }

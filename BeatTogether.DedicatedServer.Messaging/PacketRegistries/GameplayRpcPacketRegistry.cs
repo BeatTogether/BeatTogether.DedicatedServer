@@ -17,6 +17,8 @@ namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
             AddPacket<ReturnToMenuPacket>(GameplayRpcPacketType.ReturnToMenu);
             AddPacket<RequestReturnToMenuPacket>(GameplayRpcPacketType.RequestReturnToMenu);
             AddPacket<LevelFinishedPacket>(GameplayRpcPacketType.LevelFinished);
+            AddPacket<NoteCutPacket>(GameplayRpcPacketType.NoteCut);
+            AddPacket<NoteMissPacket>(GameplayRpcPacketType.NoteMissed);
         }
     }
 }
