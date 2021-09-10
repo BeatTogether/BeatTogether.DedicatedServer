@@ -6,6 +6,7 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
+using LiteNetLib;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
@@ -71,8 +72,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             Reason = Messaging.Enums.CannotStartGameReason.DoNotOwnSong
                         };
 
-                        _packetDispatcher.SendToNearbyPlayers(manager, setPlayersMissingEntitlementsToLevelPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
-                        _packetDispatcher.SendToNearbyPlayers(manager, setIsStartButtonEnabledPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToNearbyPlayers(setPlayersMissingEntitlementsToLevelPacket, DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToNearbyPlayers(setIsStartButtonEnabledPacket, DeliveryMethod.ReliableOrdered);
 
                         _lastBeatmap = beatmap;
                         return;
@@ -89,8 +90,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             Reason = Messaging.Enums.CannotStartGameReason.None
                         };
 
-                        _packetDispatcher.SendToNearbyPlayers(manager, setPlayersMissingEntitlementsToLevelPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
-                        _packetDispatcher.SendToNearbyPlayers(manager, setIsStartButtonEnabledPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToNearbyPlayers(setPlayersMissingEntitlementsToLevelPacket, DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToNearbyPlayers(setIsStartButtonEnabledPacket, DeliveryMethod.ReliableOrdered);
                     }
                 }
 
@@ -133,8 +134,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                     StartTime = _countdownEndTime
                                 };
 
-                                _packetDispatcher.SendToNearbyPlayers(manager, countdownEndTimePacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
-                                _packetDispatcher.SendToNearbyPlayers(manager, startLevelPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                                _packetDispatcher.SendToNearbyPlayers(countdownEndTimePacket, DeliveryMethod.ReliableOrdered);
+                                _packetDispatcher.SendToNearbyPlayers(startLevelPacket, DeliveryMethod.ReliableOrdered);
                             }
                         }
                         else
@@ -145,8 +146,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
                                 var cancelCountdownPacket = new CancelCountdownPacket();
                                 var cancelLevelStartPacket = new CancelLevelStartPacket();
-                                _packetDispatcher.SendToNearbyPlayers(manager, cancelCountdownPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
-                                _packetDispatcher.SendToNearbyPlayers(manager, cancelLevelStartPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                                _packetDispatcher.SendToNearbyPlayers(cancelCountdownPacket, DeliveryMethod.ReliableOrdered);
+                                _packetDispatcher.SendToNearbyPlayers(cancelLevelStartPacket, DeliveryMethod.ReliableOrdered);
                             }
                         }
                         break;
@@ -175,8 +176,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                     StartTime = _countdownEndTime
                                 };
 
-                                _packetDispatcher.SendToNearbyPlayers(manager, countdownEndTimePacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
-                                _packetDispatcher.SendToNearbyPlayers(manager, startLevelPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                                _packetDispatcher.SendToNearbyPlayers(countdownEndTimePacket, DeliveryMethod.ReliableOrdered);
+                                _packetDispatcher.SendToNearbyPlayers(startLevelPacket, DeliveryMethod.ReliableOrdered);
                             }
                         }
                         else
@@ -187,8 +188,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
                                 var cancelCountdownPacket = new CancelCountdownPacket();
                                 var cancelLevelStartPacket = new CancelLevelStartPacket();
-                                _packetDispatcher.SendToNearbyPlayers(manager, cancelCountdownPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
-                                _packetDispatcher.SendToNearbyPlayers(manager, cancelLevelStartPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                                _packetDispatcher.SendToNearbyPlayers(cancelCountdownPacket, DeliveryMethod.ReliableOrdered);
+                                _packetDispatcher.SendToNearbyPlayers(cancelLevelStartPacket, DeliveryMethod.ReliableOrdered);
                             }
                         }
                         break;

@@ -5,6 +5,7 @@ using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using LiteNetLib;
+using LiteNetLib.Utils;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
@@ -33,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     State = value
                 };
-                _packetDispatcher.SendToNearbyPlayers(_netManager, gameStatePacket, DeliveryMethod.ReliableOrdered);
+                _packetDispatcher.SendToNearbyPlayers(gameStatePacket, DeliveryMethod.ReliableOrdered);
             }
         }
 
@@ -41,18 +42,19 @@ namespace BeatTogether.DedicatedServer.Kernel
         private MultiplayerGameState _state = MultiplayerGameState.Lobby;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IPortAllocator _portAllocator;
-        private readonly IPacketDispatcher _packetDispatcher;
         private readonly ILogger _logger = Log.ForContext<MatchmakingServer>();
 
         private readonly IServiceAccessor<IMatchmakingServer> _matchmakingServerAccessor;
         private readonly IServiceAccessor<IPlayerRegistry> _playerRegistryAccessor;
         private readonly IServiceAccessor<IPacketSource> _packetSourceAccessor;
+        private readonly IServiceAccessor<IPacketDispatcher> _packetDispatcherAccessor;
         private readonly IServiceAccessor<IPermissionsManager> _permissionsManagerAccessor;
         private readonly IServiceAccessor<IEntitlementManager> _entitlementManagerAccessor;
         private readonly IServiceAccessor<ILobbyManager> _lobbyManagerAccessor;
         private readonly IServiceAccessor<IGameplayManager> _gameplayManagerAccessor;
 
         private IPacketSource _packetSource = null!;
+        private IPacketDispatcher _packetDispatcher = null!;
         private IPlayerRegistry _playerRegistry = null!;
         private IPermissionsManager _permissionsManager = null!;
         private IEntitlementManager _entitlementManager = null!;
@@ -80,6 +82,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             IServiceAccessor<IMatchmakingServer> matchmakingServerAccessor,
             IServiceAccessor<IPlayerRegistry> playerRegistryAccessor,
             IServiceAccessor<IPacketSource> packetSourceAccessor,
+            IServiceAccessor<IPacketDispatcher> packetDispatcherAccessor,
             IServiceAccessor<IPermissionsManager> permissionsManagerAccessor,
             IServiceAccessor<IEntitlementManager> entitlementManagerAccessor,
             IServiceAccessor<ILobbyManager> lobbyManagerAccessor,
@@ -92,6 +95,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _matchmakingServerAccessor = matchmakingServerAccessor;
             _playerRegistryAccessor = playerRegistryAccessor;
             _packetSourceAccessor = packetSourceAccessor;
+            _packetDispatcherAccessor = packetDispatcherAccessor;
             _permissionsManagerAccessor = permissionsManagerAccessor;
             _entitlementManagerAccessor = entitlementManagerAccessor;
             _lobbyManagerAccessor = lobbyManagerAccessor;
@@ -121,6 +125,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _ = _matchmakingServerAccessor.Bind(this);
             _playerRegistry = _playerRegistryAccessor.Create();
             _packetSource = _packetSourceAccessor.Create();
+            _packetDispatcher = _packetDispatcherAccessor.Create();
             _permissionsManager = _permissionsManagerAccessor.Create();
             _entitlementManager = _entitlementManagerAccessor.Create();
             _gameplayManager = _gameplayManagerAccessor.Create();
@@ -198,6 +203,9 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public void ReleaseConnectionId(byte connectionId) =>
             _releasedConnectionIds.Enqueue(connectionId);
+
+        public void SendToAll(NetDataWriter writer, DeliveryMethod deliveryMethod) =>
+            _netManager.SendToAll(writer, deliveryMethod);
 
         #endregion
 
@@ -309,7 +317,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 UserId = player.UserId,
                 SortIndex = player.SortIndex
             };
-            _packetDispatcher.SendToNearbyPlayers(player, playerSortOrderPacket, DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(playerSortOrderPacket, DeliveryMethod.ReliableOrdered);
 
             var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
             {

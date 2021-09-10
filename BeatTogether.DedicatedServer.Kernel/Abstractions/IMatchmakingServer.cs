@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Models;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using LiteNetLib;
+using LiteNetLib.Utils;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
@@ -23,5 +25,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         void ReleaseSortIndex(int sortIndex);
         byte GetNextConnectionId();
         void ReleaseConnectionId(byte connectionId);
+        void SendToAll(NetDataWriter writer, DeliveryMethod deliveryMethod);
     }
 }

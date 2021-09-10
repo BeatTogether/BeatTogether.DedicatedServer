@@ -1,6 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
+using LiteNetLib;
 using System;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
@@ -59,7 +60,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 PermissionConfiguration = Permissions
             };
-            _packetDispatcher.SendToNearbyPlayers(player, permissionConfigurationPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(permissionConfigurationPacket, DeliveryMethod.ReliableOrdered);
         }
 
         private void HandlePlayerDisconnected(IPlayer player)
@@ -69,7 +70,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 PermissionConfiguration = Permissions
             };
-            _packetDispatcher.SendToNearbyPlayers(player, permissionConfigurationPacket, LiteNetLib.DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(permissionConfigurationPacket, DeliveryMethod.ReliableOrdered);
         }
     }
 }

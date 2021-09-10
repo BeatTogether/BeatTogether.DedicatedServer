@@ -9,14 +9,18 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class PacketDispatcher : IPacketDispatcher
     {
+        private readonly IMatchmakingServer _server;
         private readonly IPacketWriter _packetWriter;
         private readonly ILogger _logger = Log.ForContext<PacketDispatcher>();
 
         private const byte _localConnectionId = 0;
         private const byte _allConnectionIds = 127;
 
-        public PacketDispatcher(IPacketWriter packetWriter)
+        public PacketDispatcher(
+            IMatchmakingServer server,
+            IPacketWriter packetWriter)
         {
+            _server = server;
             _packetWriter = packetWriter;
         }
 
@@ -46,19 +50,16 @@ namespace BeatTogether.DedicatedServer.Kernel
             toPlayer.NetPeer.Send(writer, deliveryMethod);
         }
 
-        public void SendToNearbyPlayers(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod)
-            => SendToNearbyPlayers(player.NetPeer.NetManager, packet, deliveryMethod);
-
-        public void SendToNearbyPlayers(NetManager manager, INetSerializable packet, DeliveryMethod deliveryMethod)
+        public void SendToNearbyPlayers(INetSerializable packet, DeliveryMethod deliveryMethod)
         {
             _logger.Debug(
-                $"Sending packet of type '{packet.GetType().Name}' "
+                $"Sending packet of type '{packet.GetType().Name}'"
             );
 
             var writer = new NetDataWriter();
             writer.PutRoutingHeader(_localConnectionId, _localConnectionId);
             _packetWriter.WriteTo(writer, packet);
-            manager.SendToAll(writer, deliveryMethod);
+            _server.SendToAll(writer, deliveryMethod);
         }
     }
 }

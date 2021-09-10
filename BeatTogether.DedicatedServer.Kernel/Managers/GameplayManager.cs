@@ -3,6 +3,7 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
+using LiteNetLib;
 using LiteNetLib.Utils;
 using System;
 using System.Collections.Concurrent;
@@ -48,7 +49,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Ask for scene ready
             var getGameplaySceneReady = new GetGameplaySceneReadyPacket();
-            _packetDispatcher.SendToNearbyPlayers(_playerRegistry.GetPlayer(_server.ManagerId), getGameplaySceneReady, LiteNetLib.DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(getGameplaySceneReady, DeliveryMethod.ReliableOrdered);
 
             // Wait for scene ready
             await Task.WhenAll(sceneReadyTasks.ToArray());
@@ -62,13 +63,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     ActivePlayerSpecificSettingsAtStart = _playerSpecificSettings.Values.ToList()
                 }
             };
-            _packetDispatcher.SendToNearbyPlayers(_playerRegistry.GetPlayer(_server.ManagerId), setGameplaySceneSyncFinished, LiteNetLib.DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(setGameplaySceneSyncFinished, DeliveryMethod.ReliableOrdered);
 
             IEnumerable<Task> songReadyTasks = _playerRegistry.Players.Select(player => player.WaitForSongReady(cancellationToken));
 
             // Ask for song ready
             var getGameplaySongReady = new GetGameplaySongReadyPacket();
-            _packetDispatcher.SendToNearbyPlayers(_playerRegistry.GetPlayer(_server.ManagerId), getGameplaySongReady, LiteNetLib.DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(getGameplaySongReady, DeliveryMethod.ReliableOrdered);
 
             // Wait for song ready
             await Task.WhenAll(songReadyTasks.ToArray());
@@ -78,7 +79,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 StartTime = _server.RunTime + SongStartDelay
             };
-            _packetDispatcher.SendToNearbyPlayers(_playerRegistry.GetPlayer(_server.ManagerId), setSongStartTime, LiteNetLib.DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(setSongStartTime, DeliveryMethod.ReliableOrdered);
 
             // TODO: wait for players to finish
         }

@@ -7,7 +7,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
     {
         void SendToPlayer(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod);
         void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, DeliveryMethod deliveryMethod);
-        void SendToNearbyPlayers(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod);
-        void SendToNearbyPlayers(NetManager manager, INetSerializable packet, DeliveryMethod deliveryMethod);
+        void SendToNearbyPlayers(INetSerializable packet, DeliveryMethod deliveryMethod);
     }
 }
