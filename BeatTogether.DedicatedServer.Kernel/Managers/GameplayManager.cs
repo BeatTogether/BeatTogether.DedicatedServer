@@ -90,8 +90,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             IEnumerable<Task<LevelFinishedPacket>> levelFinishedTasks = _playerRegistry.Players.Select(player => player.WaitForLevelFinished(cancellationToken));
             await WaitForCompletionOrCancel(levelFinishedTasks);
 
-            // Wait at results screen
-            await Task.Delay((int)(ResultsScreenTime * 1000));
+            // Wait at results screen if anyone cleared
+            if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared))
+                await Task.Delay((int)(ResultsScreenTime * 1000));
 
             // Send to lobby
             var returnToMenu = new ReturnToMenuPacket();
