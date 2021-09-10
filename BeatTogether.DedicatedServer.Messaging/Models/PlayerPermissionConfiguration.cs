@@ -9,23 +9,24 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public bool HasRecommendBeatmapsPermission { get; set; }
         public bool HasRecommendGameplayModifiersPermission { get; set; }
         public bool HasKickVotePermission { get; set; }
+        public bool HasInvitePermission { get; set; }
 
         public void Deserialize(NetDataReader reader)
         {
             UserId = reader.GetString();
-            IsServerOwner = reader.GetBool();
-            HasRecommendBeatmapsPermission = reader.GetBool();
-            HasRecommendGameplayModifiersPermission = reader.GetBool();
-            HasKickVotePermission = reader.GetBool();
+            byte num = reader.GetByte();
+            IsServerOwner = (num & 1) > 0;
+            HasRecommendBeatmapsPermission = (num & 2) > 0;
+            HasRecommendGameplayModifiersPermission = (num & 4) > 0;
+            HasKickVotePermission = (num & 8) > 0;
+            HasInvitePermission = (num & 16) > 0;
         }
 
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(UserId);
-            writer.Put(IsServerOwner);
-            writer.Put(HasRecommendBeatmapsPermission);
-            writer.Put(HasRecommendGameplayModifiersPermission);
-            writer.Put(HasKickVotePermission);
+            int num = (IsServerOwner ? 1 : 0) | (HasRecommendBeatmapsPermission ? 2 : 0) | (HasRecommendGameplayModifiersPermission ? 4 : 0) | (HasKickVotePermission ? 8 : 0) | (HasInvitePermission ? 16 : 0);
+            writer.Put((byte)num);
         }
     }
 }
