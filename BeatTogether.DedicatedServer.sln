@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServer.Interface", "BeatTogether.DedicatedServer.Interface\BeatTogether.DedicatedServer.Interface.csproj", "{0E80C7B3-94A7-4C07-A959-9B937D2666EE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServer.Messaging", "BeatTogether.DedicatedServer.Messaging\BeatTogether.DedicatedServer.Messaging.csproj", "{1217B128-4589-4307-94A6-FCFAECF855DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{0E80C7B3-94A7-4C07-A959-9B937D2666EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E80C7B3-94A7-4C07-A959-9B937D2666EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E80C7B3-94A7-4C07-A959-9B937D2666EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1217B128-4589-4307-94A6-FCFAECF855DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1217B128-4589-4307-94A6-FCFAECF855DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1217B128-4589-4307-94A6-FCFAECF855DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1217B128-4589-4307-94A6-FCFAECF855DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

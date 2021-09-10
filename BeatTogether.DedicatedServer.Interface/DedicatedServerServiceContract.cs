@@ -7,6 +7,6 @@ namespace BeatTogether.DedicatedServer.Interface
         public override void Build(IServiceContractBuilder builder) =>
             builder
                 .UseName("DedicatedServer")
-                .AddInterface<IRelayServerService>();
+                .AddInterface<IMatchmakingService>();
     }
 }
