@@ -409,7 +409,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                     if (_lastSyncTimeUpdate < RunTime - _syncTimeDelay)
                     {
-                        foreach (var player in _playerRegistry.Players)
+                        foreach (IPlayer player in _playerRegistry.Players)
                         {
                             var syncTimePacket = new SyncTimePacket
                             {
