@@ -352,6 +352,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
 			}
 
+            // Send new player's sort order
+            _packetDispatcher.SendToNearbyPlayers(new PlayerSortOrderPacket
+            {
+                UserId = player.UserId,
+                SortIndex = player.SortIndex
+            }, DeliveryMethod.ReliableOrdered);
+
             // Disable start button if they are manager without selected song
             var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
             {
