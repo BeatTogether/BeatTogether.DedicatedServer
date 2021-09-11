@@ -24,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             );
             sender.Avatar = packet.PlayerAvatar;
             sender.State = packet.PlayerState;
-            _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
+            //_packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
             return Task.CompletedTask;
         }
     }

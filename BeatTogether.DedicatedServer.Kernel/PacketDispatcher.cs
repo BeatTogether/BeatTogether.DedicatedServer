@@ -77,11 +77,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
-                $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={toPlayer.ConnectionId})."
+                $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={_localConnectionId})."
             );
 
             var writer = new NetDataWriter();
-            writer.PutRoutingHeader(fromPlayer.ConnectionId, toPlayer.RemoteConnectionId);
+            writer.PutRoutingHeader(fromPlayer.ConnectionId, _localConnectionId);
             _packetWriter.WriteTo(writer, packet);
             toPlayer.NetPeer.Send(writer, deliveryMethod);
         }
@@ -94,7 +94,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new NetDataWriter();
-            writer.PutRoutingHeader(_localConnectionId, player.RemoteConnectionId);
+            writer.PutRoutingHeader(_localConnectionId, _localConnectionId);
             _packetWriter.WriteTo(writer, packet);
             player.NetPeer.Send(writer, deliveryMethod);
         }
