@@ -19,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public string SessionGameId { get; private set; } = null!;
         public GameplayManagerState State { get; private set; }
 
-        private const float SongStartDelay = 2f;
+        private const float SongStartDelay = 0.5f;
         private const float ResultsScreenTime = 30f;
 
         private ConcurrentDictionary<string, PlayerSpecificSettings> _playerSpecificSettings = new();

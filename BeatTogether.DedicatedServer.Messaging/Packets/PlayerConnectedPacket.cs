@@ -5,8 +5,8 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
     public sealed class PlayerConnectedPacket : INetSerializable
     {
         public byte RemoteConnectionId { get; set; }
-        public string? UserId { get; set; }
-        public string? UserName { get; set; }
+        public string UserId { get; set; } = null!;
+        public string UserName { get; set; } = null!;
         public bool IsConnectionOwner { get; set; }
 
         public void Deserialize(NetDataReader reader)

@@ -5,7 +5,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
     public sealed class PlayerSortOrderPacket : INetSerializable
     {
-        public string? UserId { get; set; }
+        public string UserId { get; set; } = null!;
         public int SortIndex { get; set; }
 
         public void Deserialize(NetDataReader reader)

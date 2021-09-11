@@ -24,13 +24,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                      MatchmakingServer.RunTime);
         public int SortIndex { get; set; }
 
-        public AvatarData? AvatarData { get; set; }
+        public AvatarData Avatar { get; set; } = new();
         public bool IsReady { get; set; }
         public bool InLobby { get; set; }
         public BeatmapIdentifier? BeatmapIdentifier { get; set; }
         public GameplayModifiers Modifiers { get; set; } = new();
 
-        public PlayerStateBloomFilter State { get; set; } = new();
+        public PlayerStateHash State { get; set; } = new();
 
         public bool IsPlayer => State.Contains("player");
         public bool IsSpectating => State.Contains("spectating");

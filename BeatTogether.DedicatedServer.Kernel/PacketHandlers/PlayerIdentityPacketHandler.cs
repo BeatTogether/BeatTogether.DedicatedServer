@@ -22,9 +22,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 $"Handling packet of type '{nameof(PlayerIdentityPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            sender.AvatarData = packet.AvatarData;
-            sender.State = packet.PlayerStateBloomFilter;
-            //_packetDispatcher.SendToPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
+            sender.Avatar = packet.PlayerAvatar;
+            sender.State = packet.PlayerState;
+            _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
             return Task.CompletedTask;
         }
     }

@@ -2,7 +2,7 @@
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
-    public sealed class PlayerStateBloomFilter : BitMask128
+    public sealed class PlayerStateHash : BitMask128
     {
     }
 }

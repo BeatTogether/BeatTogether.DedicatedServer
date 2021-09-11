@@ -16,11 +16,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         RollingAverage Latency { get; }
         float SyncTime { get; }
         int SortIndex { get; set; }
-        AvatarData? AvatarData { get; set; }
+        AvatarData Avatar { get; set; }
         bool IsReady { get; set; }
         BeatmapIdentifier? BeatmapIdentifier { get; set; }
         GameplayModifiers Modifiers { get; set; }
-        PlayerStateBloomFilter State { get; set; }
+        PlayerStateHash State { get; set; }
         bool IsPlayer { get; }
         bool IsSpectating { get; }
         bool WantsToPlayNextLevel { get; }

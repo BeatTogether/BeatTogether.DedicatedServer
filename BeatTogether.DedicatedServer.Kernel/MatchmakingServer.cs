@@ -306,19 +306,53 @@ namespace BeatTogether.DedicatedServer.Kernel
                 peer.Disconnect();
                 return;
             }
-            var syncTimePacket = new SyncTimePacket
+
+            // Update SyncTime
+            _packetDispatcher.SendToNearbyPlayers(new SyncTimePacket
             {
                 SyncTime = player.SyncTime
-            };
-            _packetDispatcher.SendToPlayer(player, syncTimePacket, DeliveryMethod.ReliableOrdered);
+            }, DeliveryMethod.ReliableOrdered);
 
-            var playerSortOrderPacket = new PlayerSortOrderPacket
+            // Send new player's connection data
+            _packetDispatcher.SendExcludingPlayer(player, new PlayerConnectedPacket
             {
+                RemoteConnectionId = player.ConnectionId,
                 UserId = player.UserId,
-                SortIndex = player.SortIndex
-            };
-            _packetDispatcher.SendToNearbyPlayers(playerSortOrderPacket, DeliveryMethod.ReliableOrdered);
+                UserName = player.UserName,
+                IsConnectionOwner = false
+            }, DeliveryMethod.ReliableOrdered);
 
+            foreach (IPlayer p in _playerRegistry.Players)
+			{
+                if (p.ConnectionId != player.ConnectionId)
+                {
+                    // Send all player connection data packets to new player
+                    _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
+                    {
+                        RemoteConnectionId = p.ConnectionId,
+                        UserId = p.UserId,
+                        UserName = p.UserName,
+                        IsConnectionOwner = false
+                    }, DeliveryMethod.ReliableOrdered);
+
+                    // Send all player sort index packets to new player
+                    if (p.SortIndex != -1)
+                        _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
+                        {
+                            UserId = p.UserId,
+                            SortIndex = p.SortIndex
+                        }, DeliveryMethod.ReliableOrdered);
+
+                    // Send all player identity packets to new player
+                    _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
+                    {
+                        PlayerState = p.State,
+                        PlayerAvatar = p.Avatar
+                    }, DeliveryMethod.ReliableOrdered);
+                }
+			}
+
+            // Disable start button if they are manager without selected song
             var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
             {
                 Reason = player.UserId == ManagerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
