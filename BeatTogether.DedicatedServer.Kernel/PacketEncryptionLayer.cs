@@ -124,7 +124,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 if (!TryDecrypt(ref bufferReader, encryptionParameters, out var decryptedData))
                 {
-                    _logger.Warning($"Failed to decrypt packet (RemoteEndPoint='{endPoint}').");
                     length = 0;
                     return;
                 }
@@ -206,8 +205,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                     .ToArray();
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.Warning($"Failed to decrypt packet.");
+                _logger.Error(ex.Message);
                 data = null;
                 return false;
             }
