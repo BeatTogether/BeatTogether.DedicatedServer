@@ -314,12 +314,28 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
 
             // Send new player's connection data
-            _packetDispatcher.SendExcludingPlayer(player, new PlayerConnectedPacket
+            _packetDispatcher.SendToNearbyPlayers(new PlayerConnectedPacket
             {
                 RemoteConnectionId = player.ConnectionId,
                 UserId = player.UserId,
                 UserName = player.UserName,
                 IsConnectionOwner = false
+            }, DeliveryMethod.ReliableOrdered);
+
+            // Send new player's sort order
+            _packetDispatcher.SendToNearbyPlayers(new PlayerSortOrderPacket
+            {
+                UserId = player.UserId,
+                SortIndex = player.SortIndex
+            }, DeliveryMethod.ReliableOrdered);
+
+            // Send host player to new player
+            _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
+            {
+                RemoteConnectionId = 0,
+                UserId = Secret,
+                UserName = "BeatTogether.DedicatedServer",
+                IsConnectionOwner = true
             }, DeliveryMethod.ReliableOrdered);
 
             foreach (IPlayer p in _playerRegistry.Players)
@@ -351,13 +367,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }, DeliveryMethod.ReliableOrdered);
                 }
 			}
-
-            // Send new player's sort order
-            _packetDispatcher.SendToNearbyPlayers(new PlayerSortOrderPacket
-            {
-                UserId = player.UserId,
-                SortIndex = player.SortIndex
-            }, DeliveryMethod.ReliableOrdered);
 
             // Disable start button if they are manager without selected song
             var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
