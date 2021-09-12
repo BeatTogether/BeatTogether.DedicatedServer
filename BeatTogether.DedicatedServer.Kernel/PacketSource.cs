@@ -103,15 +103,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             (byte SenderId, byte ReceiverId) routingHeader,
             NetDataReader reader, DeliveryMethod deliveryMethod)
         {
-            if (sender.ConnectionId != routingHeader.SenderId)
-            {
-                _logger.Warning(
-                    "Sender connection ID does not match the one in the routing header " +
-                    $"(SenderConnectionId={sender.ConnectionId}, Expected={routingHeader.SenderId})."
-                );
-                return;
-            }
-
             var writer = new NetDataWriter();
             writer.PutRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
             writer.Put(reader.RawData, reader.Position, reader.AvailableBytes);
