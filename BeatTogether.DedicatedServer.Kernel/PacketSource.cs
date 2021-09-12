@@ -51,7 +51,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (routingHeader.ReceiverId != 0)
             {
                 RoutePacket(sender, routingHeader, reader, deliveryMethod);
-                return;
             }
 
             while (!reader.EndOfData)
