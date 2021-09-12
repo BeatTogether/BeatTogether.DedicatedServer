@@ -17,8 +17,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         float RunTime { get; }
         int Port { get; }
         MultiplayerGameState State { get; set; }
+		string UserId { get; }
+		string UserName { get; }
 
-        Task Start(CancellationToken cancellationToken = default);
+		Task Start(CancellationToken cancellationToken = default);
         Task Stop(CancellationToken cancellationToken = default);
 
         int GetNextSortIndex();
