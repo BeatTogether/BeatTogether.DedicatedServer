@@ -408,6 +408,17 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 _packetEncryptionLayer.RemoveEncryptedEndPoint(peer.EndPoint);
 
+                // Disconnect player
+                if (_playerRegistry.TryGetPlayer(peer.EndPoint, out var player))
+                {
+                    _packetDispatcher.SendFromPlayer(player, new PlayerDisconnectedPacket
+                    {
+                        DisconnectedReason = DisconnectedReason.ClientConnectionClosed
+                    }, DeliveryMethod.ReliableOrdered);
+
+                    _playerRegistry.RemovePlayer(player);
+                }
+
                 if (_playerRegistry.Players.Count == 0)
                 {
                     _ = Stop(CancellationToken.None);
@@ -415,17 +426,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 else
 				{
-                    // Disconnect player
-                    if (_playerRegistry.TryGetPlayer(peer.EndPoint, out var player))
-                    {
-                        _packetDispatcher.SendFromPlayer(player, new PlayerDisconnectedPacket
-                        {
-                            DisconnectedReason = DisconnectedReason.ClientConnectionClosed
-                        }, DeliveryMethod.ReliableOrdered);
-
-                        _playerRegistry.RemovePlayer(player);
-                    }
-
                     // Set new manager
                     ManagerId = _playerRegistry.Players.First().UserId;
 
