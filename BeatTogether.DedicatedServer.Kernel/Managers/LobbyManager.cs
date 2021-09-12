@@ -254,8 +254,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }
             }
 
-            // If beatmap is null and it wasn't previously
-            else if (_lastBeatmap != beatmap)
+            // If beatmap is null and it wasn't previously or manager changed
+            else if (_lastBeatmap != beatmap || _lastManagerId != _server.ManagerId)
             {
                 // Cannot select song because no song is selected
                 _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket

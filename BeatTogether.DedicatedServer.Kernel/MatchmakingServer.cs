@@ -259,6 +259,11 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return;
             }
 
+            if (_playerRegistry.Players.Count == Configuration.MaxPlayerCount)
+			{
+                request.Reject();
+			}
+
             var netPeer = request.Accept();
             var connectionId = GetNextConnectionId();
             var sortIndex = GetNextSortIndex();
@@ -420,6 +425,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                         ManagerId = "";
 
                     _playerRegistry.RemovePlayer(player);
+                    ReleaseSortIndex(player.SortIndex);
+                    ReleaseConnectionId(player.ConnectionId);
                 }
 
                 if (_playerRegistry.Players.Count == 0)
