@@ -9,6 +9,7 @@ using LiteNetLib.Utils;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -418,6 +419,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     _ = Stop(CancellationToken.None);
                     _cancellationTokenSource?.Cancel();
+                }
+                else
+				{
+                    ManagerId = _playerRegistry.Players.First().UserId;
                 }
             }
         }
