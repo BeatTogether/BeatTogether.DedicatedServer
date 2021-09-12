@@ -30,16 +30,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void UpdatePermissions()
         {
-            Permissions.PlayersPermission.Add(new PlayerPermissionConfiguration
-            {
-                UserId = _server.UserId,
-                IsServerOwner = false,
-                HasRecommendBeatmapsPermission = true,
-                HasRecommendGameplayModifiersPermission = true,
-                HasKickVotePermission = true,
-                HasInvitePermission = true
-            });
-
             foreach (IPlayer player in _playerRegistry.Players)
             {
                 var playerPermission = new PlayerPermissionConfiguration
