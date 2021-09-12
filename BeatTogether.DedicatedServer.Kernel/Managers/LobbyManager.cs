@@ -25,6 +25,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private BeatmapIdentifier? _startedBeatmap;
         private BeatmapIdentifier? _lastBeatmap;
         private GameplayModifiers _startedModifiers = new();
+        private GameplayModifiers _lastModifiers = new();
         private float _countdownEndTime;
 
         private IMatchmakingServer _server;
@@ -57,7 +58,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 return;
             
             BeatmapIdentifier? beatmap = GetSelectedBeatmap();
-            // TODO: GetSelectedModifiers()
+            GameplayModifiers modifiers = GetSelectedModifiers();
 
             if (beatmap != null)
             {
@@ -102,6 +103,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                 }
 
+                // If new modifiers selected
+                if (_lastModifiers != modifiers)
+				{
+                    // Send selected modifiers
+                    _packetDispatcher.SendToNearbyPlayers(new SetRecommendedModifiersPacket
+                    {
+                        Modifiers = modifiers
+                    }, DeliveryMethod.ReliableOrdered);
+				}
+
                 // If counting down and countdown finished and all players have map
                 if (_countdownEndTime != 0 && _countdownEndTime < _server.RunTime && _entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
                 {
@@ -138,7 +149,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             if (AllPlayersReady || isManagerReady)
                             {
                                 _startedBeatmap = beatmap;
-                                _startedModifiers = manager.Modifiers;
+                                _startedModifiers = modifiers;
                                 
                                 // Set countdown end time
                                 _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
@@ -213,7 +224,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         break;
                 }
             }
+
             _lastBeatmap = beatmap;
+            _lastModifiers = modifiers;
         }
 
         public BeatmapIdentifier? GetSelectedBeatmap()
@@ -244,5 +257,34 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             };
             return null;
         }
+
+        public GameplayModifiers GetSelectedModifiers()
+		{
+            switch(_server.Configuration.SongSelectionMode)
+			{
+                case SongSelectionMode.OwnerPicks: return _playerRegistry.GetPlayer(_server.ManagerId).Modifiers;
+                case SongSelectionMode.Vote:
+                    Dictionary<GameplayModifiers, int> voteDictionary = new();
+                    _playerRegistry.Players.ForEach(p =>
+                    {
+                        if (p.Modifiers != null)
+                        {
+                            if (voteDictionary.ContainsKey(p.Modifiers))
+                                voteDictionary[p.Modifiers]++;
+                            else
+                                voteDictionary[p.Modifiers] = 1;
+                        }
+                    });
+
+                    var topModifiers = voteDictionary.First();
+                    voteDictionary.ToList().ForEach(modifiers =>
+                    {
+                        if (modifiers.Value > topModifiers.Value)
+                            topModifiers = modifiers;
+                    });
+                    return topModifiers.Key;
+            };
+            return new GameplayModifiers();
+		}
     }
 }
