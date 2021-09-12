@@ -48,7 +48,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
 
             // Is this packet meant to be routed?
-            if (routingHeader.SenderId != 0 && routingHeader.ReceiverId != 0)
+            if (routingHeader.ReceiverId != 0)
             {
                 RoutePacket(sender, routingHeader, reader, deliveryMethod);
                 return;

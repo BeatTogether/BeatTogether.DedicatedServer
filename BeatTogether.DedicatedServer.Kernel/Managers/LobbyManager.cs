@@ -57,6 +57,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 return;
             
             BeatmapIdentifier? beatmap = GetSelectedBeatmap();
+            // TODO: GetSelectedModifiers()
 
             if (beatmap != null)
             {
