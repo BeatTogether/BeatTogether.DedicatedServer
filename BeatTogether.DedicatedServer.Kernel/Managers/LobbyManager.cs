@@ -18,10 +18,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private const float CountdownTimeEveryoneReady = 5.0f;
         private const float CountdownAfterGameplayCooldown = 5f;
 
-        public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || p.IsSpectating);
+        public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel);
         public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady);
-        public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || p.IsSpectating);
-        public bool AllPlayersSpectating => _playerRegistry.Players.All(p => p.IsSpectating);
+        public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel);
+        public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel);
 
         private BeatmapIdentifier? _startedBeatmap;
         private BeatmapIdentifier? _lastBeatmap;
