@@ -30,6 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private bool _lastSpectatorState;
         private bool _lastEntitlementState;
+        private string _lastManagerId;
 
         private IMatchmakingServer _server;
         private IPlayerRegistry _playerRegistry;
@@ -67,8 +68,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 bool allPlayersOwnBeatmap = _entitlementManager.AllPlayersOwnBeatmap(beatmap.LevelId);
 
-                // If new beatmap selected
-                if (_lastBeatmap != beatmap || _lastEntitlementState != allPlayersOwnBeatmap || _lastSpectatorState != AllPlayersSpectating)
+                // If new beatmap selected or entitlement state changed or spectator state changed or manager changed
+                if (_lastBeatmap != beatmap || _lastEntitlementState != allPlayersOwnBeatmap || _lastSpectatorState != AllPlayersSpectating || _lastManagerId != _server.ManagerId)
                 {
                     // If not all players have beatmap
                     if (!allPlayersOwnBeatmap)
@@ -263,6 +264,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }, DeliveryMethod.ReliableOrdered);
             }
 
+            _lastManagerId = _server.ManagerId;
             _lastSpectatorState = AllPlayersSpectating;
             _lastBeatmap = beatmap;
         }

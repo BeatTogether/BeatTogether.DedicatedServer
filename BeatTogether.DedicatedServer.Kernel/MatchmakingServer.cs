@@ -416,6 +416,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                         DisconnectedReason = DisconnectedReason.ClientConnectionClosed
                     }, DeliveryMethod.ReliableOrdered);
 
+                    if (ManagerId == player.UserId)
+                        ManagerId = "";
+
                     _playerRegistry.RemovePlayer(player);
                 }
 
@@ -426,8 +429,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 else
 				{
-                    // Set new manager
-                    ManagerId = _playerRegistry.Players.First().UserId;
+                    // Set new manager if manager left
+                    if (ManagerId == "")
+                        ManagerId = _playerRegistry.Players.First().UserId;
 
                     // Update permissions
                     _permissionsManager.UpdatePermissions();
