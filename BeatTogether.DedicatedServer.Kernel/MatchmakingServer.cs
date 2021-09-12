@@ -286,10 +286,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketError) =>
             _logger.Error($"Socket error occurred (SocketError={socketError}).");
 
-        void INetEventListener.OnNetworkLatencyUpdate(NetPeer peer, int latency)
-        {
-            // _logger.Verbose($"Latency updated (RemoteEndPoint='{peer.EndPoint}', Latency={0.001f * latency}).");
-        }
+        void INetEventListener.OnNetworkLatencyUpdate(NetPeer peer, int latency) =>
+            _logger.Verbose($"Latency updated (RemoteEndPoint='{peer.EndPoint}', Latency={0.001f * latency}).");
 
         void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod) =>
             _packetSource.Signal(peer, reader, deliveryMethod);
