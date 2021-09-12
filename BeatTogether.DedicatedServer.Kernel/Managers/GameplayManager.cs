@@ -24,6 +24,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private const float SongStartDelay = 0.5f;
         private const float ResultsScreenTime = 30f;
 
+        private float _songStartTime;
+
         private ConcurrentDictionary<string, PlayerSpecificSettings> _playerSpecificSettings = new();
         private ConcurrentDictionary<string, LevelCompletionResults> _levelCompletionResults = new();
 
@@ -54,6 +56,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             SessionGameId = Guid.NewGuid().ToString();
             _playerSpecificSettings.Clear();
             _levelCompletionResults.Clear();
+            _songStartTime = 0;
 
             State = GameplayManagerState.SceneLoad;
 
@@ -91,11 +94,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             await WaitForCompletionOrCancel(songReadyTasks);
 
             State = GameplayManagerState.Gameplay;
+            _songStartTime = _server.RunTime + SongStartDelay;
 
             // Start song
             var setSongStartTime = new SetSongStartTimePacket
             {
-                StartTime = _server.RunTime + SongStartDelay
+                StartTime = _songStartTime
             };
             _packetDispatcher.SendToNearbyPlayers(setSongStartTime, DeliveryMethod.ReliableOrdered);
 
@@ -126,7 +130,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
 
-            if (State != GameplayManagerState.SceneLoad)
+            if (_server.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayerDidConnectLatePacket
                 {
                     UserId = player.UserId,
@@ -143,7 +147,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void HandleGameSongLoaded(IPlayer player)
         {
-            // This just exists for now
+            if (_server.State == MultiplayerGameState.Game && State != GameplayManagerState.SongLoad)
+                _packetDispatcher.SendToPlayer(player, new SetSongStartTimePacket
+                {
+                    StartTime = _songStartTime
+                }, DeliveryMethod.ReliableOrdered);
+
+            if (_server.State != MultiplayerGameState.Game)
+                _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
         }
 
         public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet)
