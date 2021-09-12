@@ -23,6 +23,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private const float SongStartDelay = 0.5f;
         private const float ResultsScreenTime = 30f;
+        private const float SceneLoadTimeLimit = 15.0f;
+        private const float SongLoadTimeLimit = 15.0f;
 
         private float _songStartTime;
 
@@ -64,14 +66,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Create level finished tasks (players may send these at any time during gameplay)
             IEnumerable<Task<LevelFinishedPacket>> levelFinishedTasks = _playerRegistry.Players.Select(player => player.WaitForLevelFinished(cancellationToken));
-            
+
+
             // Create scene ready tasks
-            IEnumerable<Task<SetGameplaySceneReadyPacket>> sceneReadyTasks = loadingPlayers.Select(player => player.WaitForSceneReady(cancellationToken));
+            var sceneReadyCts = new CancellationTokenSource();
+            IEnumerable<Task<SetGameplaySceneReadyPacket>> sceneReadyTasks = loadingPlayers.Select(player => player.WaitForSceneReady(sceneReadyCts.Token));
 
             // Ask for scene ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
 
             // Wait for scene ready
+            sceneReadyCts.CancelAfter((int)(SceneLoadTimeLimit * 1000));
             await WaitForCompletionOrCancel(sceneReadyTasks);
 
             State = GameplayManagerState.SongLoad;
@@ -86,12 +91,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }
             }, DeliveryMethod.ReliableOrdered);
 
-            IEnumerable<Task> songReadyTasks = loadingPlayers.Select(player => player.WaitForSongReady(cancellationToken));
+            // Create song ready tasks
+            var songReadyCts = new CancellationTokenSource();
+            IEnumerable<Task> songReadyTasks = loadingPlayers.Select(player => player.WaitForSongReady(songReadyCts.Token));
 
             // Ask for song ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
 
             // Wait for song ready
+            songReadyCts.CancelAfter((int)(SongLoadTimeLimit * 1000));
             await WaitForCompletionOrCancel(songReadyTasks);
 
             State = GameplayManagerState.Gameplay;
