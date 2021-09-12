@@ -125,10 +125,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                     );
                     return;
                 }
-                _logger.Verbose(
-                    $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
-                    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
-                );
+                //_logger.Verbose(
+                //    $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
+                //    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
+                //);
                 receiver.NetPeer.Send(writer, deliveryMethod);
             }
         }
