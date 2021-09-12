@@ -17,7 +17,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
     public sealed class GameplayManager : IGameplayManager
     {
         public string SessionGameId { get; private set; } = null!;
-        public GameplayManagerState State { get; private set; }
+        public GameplayManagerState State { get; private set; } = GameplayManagerState.None;
+        public BeatmapIdentifier? CurrentBeatmap { get; private set; }
+        public GameplayModifiers? CurrentModifiers { get; private set; }
 
         private const float SongStartDelay = 0.5f;
         private const float ResultsScreenTime = 30f;
@@ -39,9 +41,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _packetDispatcher = packetDispatcher;
         }
 
-        public async void StartSong(BeatmapIdentifier beatmap, CancellationToken cancellationToken)
+        public async void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
         {
+            if (State != GameplayManagerState.None)
+                return;
+
             _server.State = MultiplayerGameState.Game;
+            CurrentBeatmap = beatmap;
+            CurrentModifiers = modifiers;
 
             // Reset
             SessionGameId = Guid.NewGuid().ToString();
@@ -102,7 +109,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared))
                 await Task.Delay((int)(ResultsScreenTime * 1000));
 
+            // Reset
             State = GameplayManagerState.None;
+            CurrentBeatmap = null;
+            CurrentModifiers = null;
 
             // Send to lobby
             var returnToMenu = new ReturnToMenuPacket();

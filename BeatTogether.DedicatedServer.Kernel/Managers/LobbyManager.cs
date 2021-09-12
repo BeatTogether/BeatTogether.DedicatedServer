@@ -123,7 +123,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _startedModifiers = new();
 
                     // Start map
-                    _gameplayManager.StartSong(beatmap, CancellationToken.None);
+                    _gameplayManager.StartSong(beatmap, modifiers, CancellationToken.None);
                     return;
                 }
 
