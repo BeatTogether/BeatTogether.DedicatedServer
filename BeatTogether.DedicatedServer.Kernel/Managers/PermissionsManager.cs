@@ -41,7 +41,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             Permissions.PlayersPermission.Add(new PlayerPermissionConfiguration
             {
-                UserId = _server.Secret,
+                UserId = _server.UserId,
                 IsServerOwner = true,
                 HasRecommendBeatmapsPermission = true,
                 HasRecommendGameplayModifiersPermission = true,

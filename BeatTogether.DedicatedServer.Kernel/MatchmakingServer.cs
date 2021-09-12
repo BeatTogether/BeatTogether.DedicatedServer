@@ -18,6 +18,9 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class MatchmakingServer : IMatchmakingServer, INetEventListener
     {
+        public string UserId => "ziuMSceapEuNN7wRGQXrZg";
+        public string UserName => "";
+
         public string Secret { get; private set; } = null!;
         public string ManagerId { get; private set; } = null!;
         public GameplayServerConfiguration Configuration { get; private set; } = null!;
@@ -335,8 +338,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
             {
                 RemoteConnectionId = 0,
-                UserId = Secret,
-                UserName = "BeatTogether.DedicatedServer",
+                UserId = UserId,
+                UserName = UserName,
                 IsConnectionOwner = true
             }, DeliveryMethod.ReliableOrdered);
 
