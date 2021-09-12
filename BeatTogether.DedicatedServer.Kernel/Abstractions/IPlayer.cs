@@ -10,7 +10,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         NetPeer NetPeer { get; }
         IMatchmakingServer MatchmakingServer { get; }
         byte ConnectionId { get; }
-        byte RemoteConnectionId { get; set; }
+        byte RemoteConnectionId { get; }
         string Secret { get; }
         string UserId { get; }
         string UserName { get; }

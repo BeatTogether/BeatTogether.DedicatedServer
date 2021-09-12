@@ -103,6 +103,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             (byte SenderId, byte ReceiverId) routingHeader,
             NetDataReader reader, DeliveryMethod deliveryMethod)
         {
+            routingHeader.SenderId = sender.ConnectionId;
             var writer = new NetDataWriter();
             writer.PutRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
             writer.Put(reader.RawData, reader.Position, reader.AvailableBytes);

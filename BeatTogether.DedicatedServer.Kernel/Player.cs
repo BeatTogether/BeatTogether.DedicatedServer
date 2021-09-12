@@ -15,7 +15,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public NetPeer NetPeer { get; }
         public IMatchmakingServer MatchmakingServer { get; }
         public byte ConnectionId { get; }
-        public byte RemoteConnectionId { get; set; }
+        public byte RemoteConnectionId => 0;
         public string Secret { get; }
         public string UserId { get; }
         public string UserName { get; }
