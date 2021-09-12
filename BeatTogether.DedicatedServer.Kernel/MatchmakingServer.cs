@@ -388,7 +388,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             };
             _packetDispatcher.SendToPlayer(player, setIsStartButtonEnabledPacket, DeliveryMethod.ReliableOrdered);
 
+            // Update permissions with new player
             _permissionsManager.UpdatePermissions();
+            _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
+            {
+                PermissionConfiguration = _permissionsManager.Permissions
+            }, DeliveryMethod.ReliableOrdered);
         }
 
         void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
@@ -403,16 +408,6 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 _packetEncryptionLayer.RemoveEncryptedEndPoint(peer.EndPoint);
 
-                if (_playerRegistry.TryGetPlayer(peer.EndPoint, out var player))
-                {
-                    _packetDispatcher.SendFromPlayer(player, new PlayerDisconnectedPacket
-                    {
-                        DisconnectedReason = DisconnectedReason.ClientConnectionClosed
-                    }, DeliveryMethod.ReliableOrdered);
-
-                    _playerRegistry.RemovePlayer(player);
-                }
-
                 if (_playerRegistry.Players.Count == 0)
                 {
                     _ = Stop(CancellationToken.None);
@@ -420,7 +415,26 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 else
 				{
+                    // Disconnect player
+                    if (_playerRegistry.TryGetPlayer(peer.EndPoint, out var player))
+                    {
+                        _packetDispatcher.SendFromPlayer(player, new PlayerDisconnectedPacket
+                        {
+                            DisconnectedReason = DisconnectedReason.ClientConnectionClosed
+                        }, DeliveryMethod.ReliableOrdered);
+
+                        _playerRegistry.RemovePlayer(player);
+                    }
+
+                    // Set new manager
                     ManagerId = _playerRegistry.Players.First().UserId;
+
+                    // Update permissions
+                    _permissionsManager.UpdatePermissions();
+                    _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
+                    {
+                        PermissionConfiguration = _permissionsManager.Permissions
+                    }, DeliveryMethod.ReliableOrdered);
                 }
             }
         }

@@ -27,11 +27,11 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"(SenderId={sender.ConnectionId})."
             );
 
-            var permissionConfigurationPacket = new SetPlayersPermissionConfigurationPacket
+            _permissionsManager.UpdatePermissions();
+            _packetDispatcher.SendToPlayer(sender, new SetPlayersPermissionConfigurationPacket
             {
                 PermissionConfiguration = _permissionsManager.Permissions
-            };
-            _packetDispatcher.SendToPlayer(sender, permissionConfigurationPacket, DeliveryMethod.ReliableOrdered);
+            }, DeliveryMethod.ReliableOrdered);
 
             return Task.CompletedTask;
         }

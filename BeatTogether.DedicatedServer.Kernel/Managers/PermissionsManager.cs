@@ -6,7 +6,7 @@ using System;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
-    public sealed class PermissionsManager : IPermissionsManager, IDisposable
+    public sealed class PermissionsManager : IPermissionsManager
     {
         public bool AllowBeatmapSelect { get; private set; } = true;
         public bool AllowVoteKick { get; private set; } = false;
@@ -26,15 +26,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _server = server;
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
-
-            _playerRegistry.PlayerConnected += HandlePlayerConnected;
-            _playerRegistry.PlayerDisconnected += HandlePlayerDisconnected;
-        }
-
-        public void Dispose()
-        {
-            _playerRegistry.PlayerConnected -= HandlePlayerConnected;
-            _playerRegistry.PlayerDisconnected -= HandlePlayerDisconnected;
         }
 
         public void UpdatePermissions()
@@ -62,26 +53,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 };
                 Permissions.PlayersPermission.Add(playerPermission);
             }
-        }
-
-        private void HandlePlayerConnected(IPlayer player)
-        {
-            UpdatePermissions();
-            var permissionConfigurationPacket = new SetPlayersPermissionConfigurationPacket
-            {
-                PermissionConfiguration = Permissions
-            };
-            _packetDispatcher.SendToNearbyPlayers(permissionConfigurationPacket, DeliveryMethod.ReliableOrdered);
-        }
-
-        private void HandlePlayerDisconnected(IPlayer player)
-        {
-            UpdatePermissions();
-            var permissionConfigurationPacket = new SetPlayersPermissionConfigurationPacket
-            {
-                PermissionConfiguration = Permissions
-            };
-            _packetDispatcher.SendToNearbyPlayers(permissionConfigurationPacket, DeliveryMethod.ReliableOrdered);
         }
     }
 }

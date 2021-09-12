@@ -12,9 +12,6 @@ namespace BeatTogether.DedicatedServer.Kernel
     {
         public List<IPlayer> Players { get => _playersByUserId.Values.ToList(); }
 
-        public event Action<IPlayer>? PlayerConnected;
-        public event Action<IPlayer>? PlayerDisconnected;
-
         private readonly ConcurrentDictionary<EndPoint, IPlayer> _playersByRemoteEndPoint = new();
         private readonly ConcurrentDictionary<byte, IPlayer> _playersByConnectionId = new();
         private readonly ConcurrentDictionary<string, IPlayer> _playersByUserId = new();
@@ -24,7 +21,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             _playersByRemoteEndPoint.TryAdd(player.NetPeer.EndPoint, player);
             _playersByUserId[player.UserId] = player;
             _playersByConnectionId[player.ConnectionId] = player;
-            PlayerConnected?.Invoke(player);
         }
 
         public void RemovePlayer(IPlayer player)
@@ -32,7 +28,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             _playersByRemoteEndPoint.TryRemove(player.NetPeer.EndPoint, out _);
             _playersByUserId.TryRemove(player.UserId, out _);
             _playersByConnectionId.TryRemove(player.ConnectionId, out _);
-            PlayerDisconnected?.Invoke(player);
             player.Dispose();
         }
 

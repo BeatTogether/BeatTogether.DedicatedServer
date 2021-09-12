@@ -113,19 +113,37 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }, DeliveryMethod.ReliableOrdered);
 				}
 
-                // If counting down and countdown finished and all players have map
-                if (_countdownEndTime != 0 && _countdownEndTime < _server.RunTime && _entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
-                {
-                    // Reset
-                    _countdownEndTime = 0;
-                    _startedBeatmap = null;
-                    _lastBeatmap = null!;
-                    _startedModifiers = new();
+                // If counting down and countdown finished
+                if (_countdownEndTime != 0 && _countdownEndTime < _server.RunTime)
+				{
+                    // If countdown just finished
+                    if (_countdownEndTime != 1)
+					{
+                        // Set start level
+                        _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                        {
+                            Beatmap = _startedBeatmap!,
+                            Modifiers = _startedModifiers,
+                            StartTime = _countdownEndTime
+                        }, DeliveryMethod.ReliableOrdered);
 
-                    // Start map
-                    _gameplayManager.StartSong(beatmap, modifiers, CancellationToken.None);
-                    return;
-                }
+                        _countdownEndTime = 1;
+                    }
+
+                    // If all players have map
+                    if (_entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
+					{
+                        // Reset
+                        _countdownEndTime = 0;
+                        _startedBeatmap = null;
+                        _lastBeatmap = null!;
+                        _startedModifiers = new();
+
+                        // Start map
+                        _gameplayManager.StartSong(beatmap, modifiers, CancellationToken.None);
+                        return;
+                    }
+				}
 
                 // Figure out if should be counting down and for how long
                 switch (_server.Configuration.SongSelectionMode)
@@ -156,14 +174,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 {
                                     CountdownTime = _countdownEndTime
                                 }, DeliveryMethod.ReliableOrdered);
-
-                                // Set start level
-                                _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
-                                {
-                                    Beatmap = _startedBeatmap,
-                                    Modifiers = _startedModifiers,
-                                    StartTime = _countdownEndTime
-                                }, DeliveryMethod.ReliableOrdered);
                             }
                         }
 
@@ -188,18 +198,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                     // Shorten countdown time
                                     _countdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
 
+                                    // Cancel countdown (bc of stupid client garbage)
+                                    _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
+                                    
                                     // Set countdown end time
                                     _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
                                     {
                                         CountdownTime = _countdownEndTime
-                                    }, DeliveryMethod.ReliableOrdered);
-
-                                    // Set start level
-                                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
-                                    {
-                                        Beatmap = _startedBeatmap!,
-                                        Modifiers = _startedModifiers,
-                                        StartTime = _countdownEndTime
                                     }, DeliveryMethod.ReliableOrdered);
                                 }
                             }
