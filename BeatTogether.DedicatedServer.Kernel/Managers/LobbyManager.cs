@@ -61,57 +61,71 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             if (beatmap != null)
             {
+                // If new beatmap selected
                 if (_lastBeatmap != beatmap)
                 {
+                    // Send selected beatmap
+                    _packetDispatcher.SendToNearbyPlayers(new SetRecommendedBeatmapPacket
+                    {
+                        BeatmapIdentifier = beatmap
+                    }, DeliveryMethod.ReliableOrdered);
+
+                    // If not all players have beatmap
                     if (!_entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
                     {
-                        var setPlayersMissingEntitlementsToLevelPacket = new SetPlayersMissingEntitlementsToLevelPacket
+                        // Set players missing entitlements
+                        _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _entitlementManager.GetPlayersWithoutBeatmap(beatmap.LevelId)
-                        };
+                        }, DeliveryMethod.ReliableOrdered);
 
-                        var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
+                        // Cannot start song because losers dont have your map
+                        _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
                         {
                             Reason = Messaging.Enums.CannotStartGameReason.DoNotOwnSong
-                        };
-
-                        _packetDispatcher.SendToNearbyPlayers(setPlayersMissingEntitlementsToLevelPacket, DeliveryMethod.ReliableOrdered);
-                        _packetDispatcher.SendToNearbyPlayers(setIsStartButtonEnabledPacket, DeliveryMethod.ReliableOrdered);
+                        }, DeliveryMethod.ReliableOrdered);
 
                         _lastBeatmap = beatmap;
                         return;
                     }
+                    // If all players have beatmap
                     else
                     {
-                        var setPlayersMissingEntitlementsToLevelPacket = new SetPlayersMissingEntitlementsToLevelPacket
+                        // Set no players missing entitlements
+                        _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = new List<string>()
-                        };
+                        }, DeliveryMethod.ReliableOrdered);
 
-                        var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
+                        // Allow start map
+                        _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
                         {
                             Reason = Messaging.Enums.CannotStartGameReason.None
-                        };
-
-                        _packetDispatcher.SendToNearbyPlayers(setPlayersMissingEntitlementsToLevelPacket, DeliveryMethod.ReliableOrdered);
-                        _packetDispatcher.SendToNearbyPlayers(setIsStartButtonEnabledPacket, DeliveryMethod.ReliableOrdered);
+                        }, DeliveryMethod.ReliableOrdered);
                     }
                 }
 
+                // If counting down and countdown finished and all players have map
                 if (_countdownEndTime != 0 && _countdownEndTime > _server.RunTime && _entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
                 {
+                    // Reset
                     _countdownEndTime = 0;
                     _startedBeatmap = null;
                     _lastBeatmap = null!;
                     _startedModifiers = new();
+
+                    // Start map
                     _gameplayManager.StartSong(beatmap, CancellationToken.None);
                     return;
                 }
 
+                // Figure out if should be counting down and for how long
                 switch (_server.Configuration.SongSelectionMode)
                 {
                     case SongSelectionMode.OwnerPicks:
                         bool isManagerReady = manager.IsReady;
+
+                        // If not already counting down
                         if (_countdownEndTime == 0)
                         {
                             if (AllPlayersReady)
@@ -123,37 +137,38 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 _countdownEndTime = _server.RunTime + CountdownTimeSomeReady;
                             }
 
+                            // If should be counting down, tell players
                             if (AllPlayersReady || isManagerReady)
                             {
                                 _startedBeatmap = beatmap;
                                 _startedModifiers = manager.Modifiers;
-
-                                var countdownEndTimePacket = new SetCountdownEndTimePacket
+                                
+                                // Set countdown end time
+                                _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
                                 {
                                     CountdownTime = _countdownEndTime
-                                };
+                                }, DeliveryMethod.ReliableOrdered);
 
-                                var startLevelPacket = new StartLevelPacket
+                                // Set start level
+                                _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                                 {
                                     Beatmap = _startedBeatmap,
                                     Modifiers = _startedModifiers,
                                     StartTime = _countdownEndTime
-                                };
-
-                                _packetDispatcher.SendToNearbyPlayers(countdownEndTimePacket, DeliveryMethod.ReliableOrdered);
-                                _packetDispatcher.SendToNearbyPlayers(startLevelPacket, DeliveryMethod.ReliableOrdered);
+                                }, DeliveryMethod.ReliableOrdered);
                             }
                         }
+
+                        // If counting down
                         else
                         {
+                            // If manager is no longer ready
                             if (!isManagerReady)
                             {
+                                // Reset and stop counting down
                                 _countdownEndTime = 0;
-
-                                var cancelCountdownPacket = new CancelCountdownPacket();
-                                var cancelLevelStartPacket = new CancelLevelStartPacket();
-                                _packetDispatcher.SendToNearbyPlayers(cancelCountdownPacket, DeliveryMethod.ReliableOrdered);
-                                _packetDispatcher.SendToNearbyPlayers(cancelLevelStartPacket, DeliveryMethod.ReliableOrdered);
+                                _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
+                                _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                             }
                         }
                         break;
