@@ -62,11 +62,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             var loadingPlayers = _playerRegistry.Players; // During scene and song, only wait for players that were already connected
 
+            // Create level finished tasks (players may send these at any time during gameplay)
+            IEnumerable<Task<LevelFinishedPacket>> levelFinishedTasks = _playerRegistry.Players.Select(player => player.WaitForLevelFinished(cancellationToken));
+            
+            // Create scene ready tasks
             IEnumerable<Task<SetGameplaySceneReadyPacket>> sceneReadyTasks = loadingPlayers.Select(player => player.WaitForSceneReady(cancellationToken));
 
             // Ask for scene ready
-            var getGameplaySceneReady = new GetGameplaySceneReadyPacket();
-            _packetDispatcher.SendToNearbyPlayers(getGameplaySceneReady, DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
 
             // Wait for scene ready
             await WaitForCompletionOrCancel(sceneReadyTasks);
@@ -74,21 +77,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             State = GameplayManagerState.SongLoad;
 
             // Set scene sync finished
-            var setGameplaySceneSyncFinished = new SetGameplaySceneSyncFinishedPacket
+            _packetDispatcher.SendToNearbyPlayers(new SetGameplaySceneSyncFinishedPacket
             {
                 SessionGameId = SessionGameId,
                 PlayersAtStart = new PlayerSpecificSettingsAtStart
                 {
                     ActivePlayerSpecificSettingsAtStart = _playerSpecificSettings.Values.ToList()
                 }
-            };
-            _packetDispatcher.SendToNearbyPlayers(setGameplaySceneSyncFinished, DeliveryMethod.ReliableOrdered);
+            }, DeliveryMethod.ReliableOrdered);
 
             IEnumerable<Task> songReadyTasks = loadingPlayers.Select(player => player.WaitForSongReady(cancellationToken));
 
             // Ask for song ready
-            var getGameplaySongReady = new GetGameplaySongReadyPacket();
-            _packetDispatcher.SendToNearbyPlayers(getGameplaySongReady, DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
 
             // Wait for song ready
             await WaitForCompletionOrCancel(songReadyTasks);
@@ -97,14 +98,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _songStartTime = _server.RunTime + SongStartDelay;
 
             // Start song
-            var setSongStartTime = new SetSongStartTimePacket
+            _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
                 StartTime = _songStartTime
-            };
-            _packetDispatcher.SendToNearbyPlayers(setSongStartTime, DeliveryMethod.ReliableOrdered);
+            }, DeliveryMethod.ReliableOrdered);
 
-            // Wait for level finish
-            IEnumerable<Task<LevelFinishedPacket>> levelFinishedTasks = _playerRegistry.Players.Select(player => player.WaitForLevelFinished(cancellationToken));
+            // Now wait for everyone to finish
             await WaitForCompletionOrCancel(levelFinishedTasks);
 
             State = GameplayManagerState.Results;
@@ -119,8 +118,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             CurrentModifiers = null;
 
             // Send to lobby
-            var returnToMenu = new ReturnToMenuPacket();
-            _packetDispatcher.SendToNearbyPlayers(returnToMenu, DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
 
             // Set game state
             _server.State = MultiplayerGameState.Lobby;

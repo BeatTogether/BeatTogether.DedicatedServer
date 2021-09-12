@@ -6,7 +6,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 {
     public sealed class SetOwnedSongPacksPacket : BaseRpcPacket
     {
-        public SongPackMask? SongPackMask { get; set; } = new();
+        public SongPackMask SongPackMask { get; set; } = new();
 
         public override void Deserialize(NetDataReader reader)
         {

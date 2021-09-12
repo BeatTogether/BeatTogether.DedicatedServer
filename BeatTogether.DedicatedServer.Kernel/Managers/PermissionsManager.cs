@@ -40,7 +40,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     IsServerOwner = player.UserId == _server.ManagerId,
                     HasRecommendBeatmapsPermission = AllowBeatmapSelect,
                     HasRecommendGameplayModifiersPermission = _server.Configuration.GameplayServerControlSettings == Enums.GameplayServerControlSettings.AllowModifierSelection || _server.Configuration.GameplayServerControlSettings == Enums.GameplayServerControlSettings.All,
-                    HasKickVotePermission = AllowVoteKick,
+                    HasKickVotePermission = player.UserId == _server.ManagerId || AllowVoteKick,
                     HasInvitePermission = AllowInvite
                 };
                 Permissions.PlayersPermission.Add(playerPermission);
