@@ -30,6 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void UpdatePermissions()
         {
+            Permissions.PlayersPermission.Clear();
             foreach (IPlayer player in _playerRegistry.Players)
             {
                 var playerPermission = new PlayerPermissionConfiguration
