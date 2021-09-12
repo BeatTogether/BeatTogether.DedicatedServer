@@ -3,6 +3,7 @@ using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using LiteNetLib;
 using System;
+using System.Linq;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
@@ -45,5 +46,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 Permissions.PlayersPermission.Add(playerPermission);
             }
         }
+
+        public bool PlayerCanRecommendBeatmaps(string userId)
+            => Permissions.PlayersPermission.Any(p => p.UserId == userId && p.HasRecommendBeatmapsPermission);
+
+        public bool PlayerCanRecommendModifiers(string userId)
+            => Permissions.PlayersPermission.Any(p => p.UserId == userId && p.HasRecommendGameplayModifiersPermission);
+
+        public bool PlayerCanKickVote(string userId)
+            => Permissions.PlayersPermission.Any(p => p.UserId == userId && p.HasKickVotePermission);
+
+        public bool PlayerCanInvite(string userId)
+            => Permissions.PlayersPermission.Any(p => p.UserId == userId && p.HasInvitePermission);
     }
 }

@@ -9,11 +9,15 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
 	public sealed class SetRecommendedModifiersPacketHandler : BasePacketHandler<SetRecommendedModifiersPacket>
 	{
+		private readonly IPermissionsManager _permissionsManager;
 		private readonly IPacketDispatcher _packetDispatcher;
 		private readonly ILogger _logger = Log.ForContext<SetRecommendedModifiersPacket>();
 
-		public SetRecommendedModifiersPacketHandler(IPacketDispatcher packetDispatcher)
+		public SetRecommendedModifiersPacketHandler(
+			IPermissionsManager permissionsManager,
+			IPacketDispatcher packetDispatcher)
 		{
+			_permissionsManager = permissionsManager;
 			_packetDispatcher = packetDispatcher;
 		}
 
@@ -24,7 +28,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 				$"(SenderId={sender.ConnectionId})."
 			);
 
-			sender.Modifiers = packet.Modifiers;
+			if (_permissionsManager.PlayerCanRecommendModifiers(sender.UserId))
+				sender.Modifiers = packet.Modifiers;
 
 			return Task.CompletedTask;
 		}

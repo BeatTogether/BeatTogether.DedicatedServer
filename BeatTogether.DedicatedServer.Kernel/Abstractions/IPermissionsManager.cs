@@ -8,6 +8,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool AllowVoteKick { get; }
         PlayersPermissionConfiguration Permissions { get; }
 
-        void UpdatePermissions();
+		bool PlayerCanInvite(string userId);
+		bool PlayerCanKickVote(string userId);
+		bool PlayerCanRecommendBeatmaps(string userId);
+		bool PlayerCanRecommendModifiers(string userId);
+		void UpdatePermissions();
     }
 }

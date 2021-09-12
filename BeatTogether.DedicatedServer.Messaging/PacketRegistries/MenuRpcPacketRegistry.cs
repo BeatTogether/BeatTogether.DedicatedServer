@@ -35,6 +35,7 @@ namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
             AddPacket<ClearRecommendedBeatmapPacket>(MenuRpcPacketType.ClearRecommendedBeatmap);
             AddPacket<ClearRecommendedModifiersPacket>(MenuRpcPacketType.ClearRecommendedGameplayModifiers);
             AddPacket<SetPlayersMissingEntitlementsToLevelPacket>(MenuRpcPacketType.SetPlayersMissingEntitlementsToLevel);
+            AddPacket<RequestKickPlayerPacket>(MenuRpcPacketType.RequestKickPlayer);
         }
     }
 }

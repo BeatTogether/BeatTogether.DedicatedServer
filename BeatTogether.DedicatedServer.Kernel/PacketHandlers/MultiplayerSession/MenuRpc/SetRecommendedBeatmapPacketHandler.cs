@@ -9,11 +9,15 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
 	public sealed class SetRecommendedBeatmapPacketHandler : BasePacketHandler<SetRecommendedBeatmapPacket>
 	{
+		private readonly IPermissionsManager _permissionsManager;
 		private readonly IPacketDispatcher _packetDispatcher;
 		private readonly ILogger _logger = Log.ForContext<SetRecommendedBeatmapPacket>();
 
-		public SetRecommendedBeatmapPacketHandler(IPacketDispatcher packetDispatcher)
+		public SetRecommendedBeatmapPacketHandler(
+			IPermissionsManager permissionsManager,
+			IPacketDispatcher packetDispatcher)
 		{
+			_permissionsManager = permissionsManager;
 			_packetDispatcher = packetDispatcher;
 		}
 
@@ -24,18 +28,15 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 				$"(SenderId={sender.ConnectionId})."
 			);
 
-			sender.BeatmapIdentifier = packet.BeatmapIdentifier;
-			var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
+			if (_permissionsManager.PlayerCanRecommendBeatmaps(sender.UserId))
 			{
-				Reason = CannotStartGameReason.None
-			};
-			_packetDispatcher.SendToPlayer(sender, setIsStartButtonEnabledPacket, DeliveryMethod.ReliableOrdered);
+				sender.BeatmapIdentifier = packet.BeatmapIdentifier;
 
-			var getIsEntitledToLevelPacket = new GetIsEntitledToLevelPacket
-			{
-				LevelId = packet.BeatmapIdentifier.LevelId
-			};
-			_packetDispatcher.SendToNearbyPlayers(getIsEntitledToLevelPacket, DeliveryMethod.ReliableOrdered);
+				_packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
+				{
+					LevelId = packet.BeatmapIdentifier.LevelId
+				}, DeliveryMethod.ReliableOrdered);
+			}
 
 			return Task.CompletedTask;
 		}

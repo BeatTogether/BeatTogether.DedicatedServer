@@ -18,7 +18,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             => userEntitlements.Values.All(p => p[beatmap] != EntitlementStatus.NotOwned);
 
         public List<string> GetPlayersWithoutBeatmap(string beatmap)
-            => userEntitlements.Where(userEntitlement => !userEntitlement.Value.ContainsKey(beatmap)).Select(userEntitlement => userEntitlement.Key).ToList();
+            => userEntitlements.Where(userEntitlement => !userEntitlement.Value.ContainsKey(beatmap) || userEntitlement.Value[beatmap] == EntitlementStatus.NotOwned).Select(userEntitlement => userEntitlement.Key).ToList();
 
         public void HandleEntitlement(string userId, string beatmap, EntitlementStatus entitlement)
             => userEntitlements.GetOrAdd(userId, _ => new ConcurrentDictionary<string, EntitlementStatus>())[beatmap] = entitlement;
