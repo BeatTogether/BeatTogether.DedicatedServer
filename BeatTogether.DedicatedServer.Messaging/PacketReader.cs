@@ -1,6 +1,6 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.Extensions;
 using LiteNetLib.Utils;
 
@@ -15,7 +15,7 @@ namespace BeatTogether.DedicatedServer.Messaging
             _packetRegistry = packetRegistry;
         }
 
-        public INetSerializable ReadFrom(NetDataReader reader)
+        public ProcessingPacketInfo ReadFrom(NetDataReader reader)
         {
             var length = reader.GetVarUInt();
             if (reader.AvailableBytes < length)
@@ -31,8 +31,12 @@ namespace BeatTogether.DedicatedServer.Messaging
                     var packetId = reader.GetByte();
                     if (packetRegistry.TryCreatePacket(packetId, out var packet))
                     {
-                        packet.Deserialize(reader);
-                        return packet;
+                        return new ProcessingPacketInfo
+                        {
+                            length = length,
+                            startPosition = prevPosition,
+                            packet = packet
+                        };
                     }
                     if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
                     {
@@ -53,6 +57,29 @@ namespace BeatTogether.DedicatedServer.Messaging
                 reader.SkipBytes((int)length - processedBytes);
                 throw;
             }
+        }
+
+        public INetSerializable ReadDataFrom(NetDataReader reader, ProcessingPacketInfo packetInfo)
+		{
+            try
+			{
+                packetInfo.packet.Deserialize(reader);
+                return packetInfo.packet;
+			}
+            catch
+			{
+                // skip any unprocess bytes (or rewind the reader if too many bytes were read)
+                var processedBytes = reader.Position - packetInfo.startPosition;
+                reader.SkipBytes((int)packetInfo.length - processedBytes);
+                throw;
+			}
+		}
+
+        public void SkipPacket(NetDataReader reader, ProcessingPacketInfo packetInfo)
+		{
+            // skip any unprocess bytes (or rewind the reader if too many bytes were read)
+            var processedBytes = reader.Position - packetInfo.startPosition;
+            reader.SkipBytes((int)packetInfo.length - processedBytes);
         }
     }
 }

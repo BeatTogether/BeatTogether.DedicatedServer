@@ -57,22 +57,25 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 try
                 {
-                    var packet = _packetReader.ReadFrom(reader);
-                    var packetType = packet.GetType();
+                    var packetInfo = _packetReader.ReadFrom(reader);
+                    var packetType = packetInfo.packet.GetType();
                     var packetHandlerType = typeof(IPacketHandler<>)
                         .MakeGenericType(packetType);
                     var packetHandler = _serviceProvider.GetService(packetHandlerType);
                     if (packetHandler is null)
                     {
                         _logger.Warning($"No handler exists for packet of type '{packetType.Name}'.");
+                        _packetReader.SkipPacket(reader, packetInfo);
                         continue;
                     }
+
+                    _packetReader.ReadDataFrom(reader, packetInfo);
 
                     Task.Run(async () =>
                     {
                         try
                         {
-                            await ((IPacketHandler)packetHandler).Handle(sender, packet);
+                            await ((IPacketHandler)packetHandler).Handle(sender, packetInfo.packet);
                         }
                         catch (Exception e)
                         {
@@ -91,7 +94,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }
                     builder.Append("}");
 
-                    _logger.Debug(builder.ToString());
+                    _logger.Verbose(builder.ToString());
                     //return;
                 }
             }
@@ -109,10 +112,10 @@ namespace BeatTogether.DedicatedServer.Kernel
             writer.Put(reader.RawData, reader.Position, reader.AvailableBytes);
             if (routingHeader.ReceiverId == 127)
             {
-                //_logger.Verbose(
-                //    $"Routing packet from {routingHeader.SenderId} -> all players " +
-                //    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
-                //);
+                _logger.Verbose(
+                    $"Routing packet from {routingHeader.SenderId} -> all players " +
+                    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
+                );
                 sender.NetPeer.NetManager.SendToAll(writer, deliveryMethod, sender.NetPeer);
             }
             else
@@ -125,10 +128,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                     );
                     return;
                 }
-                //_logger.Verbose(
-                //    $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
-                //    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
-                //);
+                _logger.Verbose(
+                    $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
+                    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
+                );
                 receiver.NetPeer.Send(writer, deliveryMethod);
             }
         }
