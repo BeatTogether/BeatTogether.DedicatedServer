@@ -72,7 +72,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }, DeliveryMethod.ReliableOrdered);
 
                     // If not all players have beatmap
-                    if (!_entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
+                    if (!_entitlementManager.AllPlayersOwnBeatmap(beatmap.LevelId))
                     {
                         // Set players missing entitlements
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
@@ -177,6 +177,31 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 _countdownEndTime = 0;
                                 _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
                                 _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+							}
+
+                            // If manager is still ready
+							else
+							{
+                                // If all players are ready and countdown is too long
+                                if (AllPlayersReady && _countdownEndTime - _server.RunTime > CountdownTimeEveryoneReady)
+                                {
+                                    // Shorten countdown time
+                                    _countdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
+
+                                    // Set countdown end time
+                                    _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
+                                    {
+                                        CountdownTime = _countdownEndTime
+                                    }, DeliveryMethod.ReliableOrdered);
+
+                                    // Set start level
+                                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                                    {
+                                        Beatmap = _startedBeatmap!,
+                                        Modifiers = _startedModifiers,
+                                        StartTime = _countdownEndTime
+                                    }, DeliveryMethod.ReliableOrdered);
+                                }
                             }
                         }
                         break;
