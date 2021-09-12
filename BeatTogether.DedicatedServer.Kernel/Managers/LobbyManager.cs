@@ -84,9 +84,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         {
                             Reason = Messaging.Enums.CannotStartGameReason.DoNotOwnSong
                         }, DeliveryMethod.ReliableOrdered);
-
-                        _lastBeatmap = beatmap;
-                        return;
                     }
                     // If all players have beatmap
                     else
@@ -106,7 +103,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }
 
                 // If counting down and countdown finished and all players have map
-                if (_countdownEndTime != 0 && _countdownEndTime > _server.RunTime && _entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
+                if (_countdownEndTime != 0 && _countdownEndTime < _server.RunTime && _entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
                 {
                     // Reset
                     _countdownEndTime = 0;

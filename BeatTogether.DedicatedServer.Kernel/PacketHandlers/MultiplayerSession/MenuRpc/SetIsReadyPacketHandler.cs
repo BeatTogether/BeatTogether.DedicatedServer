@@ -29,17 +29,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 
             sender.IsReady = packet.IsReady;
 
-            if (_playerRegistry.Players.All(player => player.IsReady))
-			{
-                var setStartGameTimePacket = new SetStartGameTimePacket
-                {
-                    StartTime = sender.MatchmakingServer.RunTime + 5
-                };
-                //_packetDispatcher.SendToNearbyPlayers( )
-
-                return Task.CompletedTask;
-			}
-
             return Task.CompletedTask;
         }
     }

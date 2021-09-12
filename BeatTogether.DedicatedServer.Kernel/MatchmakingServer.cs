@@ -401,10 +401,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                     "Peer disconnected " +
                     $"(RemoteEndPoint='{peer.EndPoint}', DisconnectInfo={disconnectInfo})."
                 );
+
                 _packetEncryptionLayer.RemoveEncryptedEndPoint(peer.EndPoint);
 
                 if (_playerRegistry.TryGetPlayer(peer.EndPoint, out var player))
                 {
+                    _packetDispatcher.SendFromPlayer(player, new PlayerDisconnectedPacket
+                    {
+                        DisconnectedReason = DisconnectedReason.ClientConnectionClosed
+                    }, DeliveryMethod.ReliableOrdered);
+
                     _playerRegistry.RemovePlayer(player);
                 }
 
