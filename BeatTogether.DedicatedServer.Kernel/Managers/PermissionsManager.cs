@@ -9,7 +9,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
     public sealed class PermissionsManager : IPermissionsManager, IDisposable
     {
         public bool AllowBeatmapSelect { get; private set; } = true;
-        public bool AllowVoteKick { get; private set; } = true;
+        public bool AllowVoteKick { get; private set; } = false;
         public bool AllowInvite { get; private set; } = true;
 
         public PlayersPermissionConfiguration Permissions { get; private set; } = new();

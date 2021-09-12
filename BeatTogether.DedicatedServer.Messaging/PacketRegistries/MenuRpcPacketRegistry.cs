@@ -19,7 +19,8 @@ namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
             AddPacket<SetPlayersPermissionConfigurationPacket>(MenuRpcPacketType.SetPermissionConfiguration);
             AddPacket<GetRecommendedBeatmapPacket>(MenuRpcPacketType.GetRecommendedBeatmap);
             AddPacket<SetRecommendedBeatmapPacket>(MenuRpcPacketType.RecommendBeatmap);
-            AddPacket<GetRecommendedGameplayModifiersPacket>(MenuRpcPacketType.GetRecommendedGameplayModifiers);
+            AddPacket<GetRecommendedModifiersPacket>(MenuRpcPacketType.GetRecommendedGameplayModifiers);
+            AddPacket<SetRecommendedModifiersPacket>(MenuRpcPacketType.RecommendGameplayModifiers);
             AddPacket<GetStartedLevelPacket>(MenuRpcPacketType.GetStartedLevel);
             AddPacket<SetIsEntitledToLevelPacket>(MenuRpcPacketType.SetIsEntitledToLevel);
             AddPacket<GetIsEntitledToLevelPacket>(MenuRpcPacketType.GetIsEntitledToLevel);

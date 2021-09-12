@@ -109,10 +109,10 @@ namespace BeatTogether.DedicatedServer.Kernel
             writer.Put(reader.RawData, reader.Position, reader.AvailableBytes);
             if (routingHeader.ReceiverId == 127)
             {
-                _logger.Verbose(
-                    $"Routing packet from {routingHeader.SenderId} -> all players " +
-                    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
-                );
+                //_logger.Verbose(
+                //    $"Routing packet from {routingHeader.SenderId} -> all players " +
+                //    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
+                //);
                 sender.NetPeer.NetManager.SendToAll(writer, deliveryMethod, sender.NetPeer);
             }
             else

@@ -350,7 +350,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 UserId = Secret,
                 SortIndex = 0
-            }, DeliveryMethod.ReliableOrdered); ;
+            }, DeliveryMethod.ReliableOrdered);
 
             foreach (IPlayer p in _playerRegistry.Players)
 			{
