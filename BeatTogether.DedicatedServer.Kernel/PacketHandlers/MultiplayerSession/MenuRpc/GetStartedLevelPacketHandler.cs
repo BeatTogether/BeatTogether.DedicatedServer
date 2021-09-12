@@ -1,4 +1,5 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using LiteNetLib;
 using Serilog;
@@ -29,14 +30,20 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetStartedLevelPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-
-            if (_gameplayManager.CurrentBeatmap != null && _gameplayManager.CurrentModifiers != null)
-                _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
-                {
-                    Beatmap = _gameplayManager.CurrentBeatmap,
-                    Modifiers = _gameplayManager.CurrentModifiers,
-                    StartTime = _server.RunTime
-                }, DeliveryMethod.ReliableOrdered);
+            if (_server.State == MultiplayerGameState.Game)
+            {
+                if (_gameplayManager.CurrentBeatmap != null && _gameplayManager.CurrentModifiers != null)
+                    _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
+                    {
+                        Beatmap = _gameplayManager.CurrentBeatmap,
+                        Modifiers = _gameplayManager.CurrentModifiers,
+                        StartTime = _server.RunTime
+                    }, DeliveryMethod.ReliableOrdered);
+            }
+            else
+			{
+                _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+			}
 
             return Task.CompletedTask;
         }
