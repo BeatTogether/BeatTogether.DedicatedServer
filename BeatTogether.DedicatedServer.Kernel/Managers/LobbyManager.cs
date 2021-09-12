@@ -29,6 +29,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private float _countdownEndTime;
 
         private bool _lastSpectatorState;
+        private bool _lastEntitlementState;
 
         private IMatchmakingServer _server;
         private IPlayerRegistry _playerRegistry;
@@ -64,11 +65,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             if (beatmap != null)
             {
+                bool allPlayersOwnBeatmap = _entitlementManager.AllPlayersOwnBeatmap(beatmap.LevelId);
+
                 // If new beatmap selected
-                if (_lastBeatmap != beatmap)
+                if (_lastBeatmap != beatmap || _lastEntitlementState != allPlayersOwnBeatmap)
                 {
                     // If not all players have beatmap
-                    if (!_entitlementManager.AllPlayersOwnBeatmap(beatmap.LevelId))
+                    if (!allPlayersOwnBeatmap)
                     {
                         // Set players missing entitlements
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
@@ -99,6 +102,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             }, DeliveryMethod.ReliableOrdered);
                     }
                 }
+
+                _lastEntitlementState = allPlayersOwnBeatmap;
 
                 // If counting down and countdown finished
                 if (_countdownEndTime != 0 && _countdownEndTime < _server.RunTime)
