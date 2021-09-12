@@ -25,7 +25,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private BeatmapIdentifier? _startedBeatmap;
         private BeatmapIdentifier? _lastBeatmap;
         private GameplayModifiers _startedModifiers = new();
-        private GameplayModifiers _lastModifiers = new();
         private float _countdownEndTime;
 
         private IMatchmakingServer _server;
@@ -65,12 +64,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 // If new beatmap selected
                 if (_lastBeatmap != beatmap)
                 {
-                    // Send selected beatmap
-                    _packetDispatcher.SendToNearbyPlayers(new SetRecommendedBeatmapPacket
-                    {
-                        BeatmapIdentifier = beatmap
-                    }, DeliveryMethod.ReliableOrdered);
-
                     // If not all players have beatmap
                     if (!_entitlementManager.AllPlayersOwnBeatmap(beatmap.LevelId))
                     {
@@ -102,16 +95,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         }, DeliveryMethod.ReliableOrdered);
                     }
                 }
-
-                // If new modifiers selected
-                if (_lastModifiers != modifiers)
-				{
-                    // Send selected modifiers
-                    _packetDispatcher.SendToNearbyPlayers(new SetRecommendedModifiersPacket
-                    {
-                        Modifiers = modifiers
-                    }, DeliveryMethod.ReliableOrdered);
-				}
 
                 // If counting down and countdown finished
                 if (_countdownEndTime != 0 && _countdownEndTime < _server.RunTime)
@@ -256,7 +239,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
 
             _lastBeatmap = beatmap;
-            _lastModifiers = modifiers;
         }
 
         public BeatmapIdentifier? GetSelectedBeatmap()
