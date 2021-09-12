@@ -13,7 +13,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(PlayerStatePacket)}' " +
-                $"(SenderId={sender.ConnectionId}, IsPlayer={packet.PlayerState.Contains("player")}, IsModded={packet.PlayerState.Contains("modded")})."
+                $"(SenderId={sender.ConnectionId}, IsPlayer={packet.PlayerState.Contains("player")}, IsModded={packet.PlayerState.Contains("modded")}, " + 
+                $"IsActive={packet.PlayerState.Contains("is_active")}, WantsToPlayNextLevel={packet.PlayerState.Contains("wants_to_play_next_level")})."
             );
 
             sender.State = packet.PlayerState;
