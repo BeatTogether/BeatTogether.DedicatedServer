@@ -38,6 +38,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
         }
 
+        private PlayerStateHash _localState = new();
+        private AvatarData _localAvatar = new();
 
         private MultiplayerGameState _state = MultiplayerGameState.Lobby;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
@@ -337,6 +339,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 UserName = "BeatTogether.DedicatedServer",
                 IsConnectionOwner = true
             }, DeliveryMethod.ReliableOrdered);
+
+            // Send host player sort order to new player
+            _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
+            {
+                UserId = Secret,
+                SortIndex = 0
+            }, DeliveryMethod.ReliableOrdered); ;
 
             foreach (IPlayer p in _playerRegistry.Players)
 			{
