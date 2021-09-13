@@ -314,7 +314,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     var topBeatmap = voteDictionary.First();
                     voteDictionary.ToList().ForEach(beatmap =>
                     {
-                        _logger.Debug($"topBeatmap = {topBeatmap}");
                         if (beatmap.Value > topBeatmap.Value)
                             topBeatmap = beatmap;
                     });
