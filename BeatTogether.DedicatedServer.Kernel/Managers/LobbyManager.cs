@@ -97,10 +97,25 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
                         // Allow start map if all players aren't spectating
                         if (!AllPlayersSpectating)
+                        {
                             _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
                             {
                                 Reason = CannotStartGameReason.None
                             }, DeliveryMethod.ReliableOrdered);
+
+                            if (_server.Configuration.SongSelectionMode != SongSelectionMode.OwnerPicks)
+                            {
+                                _packetDispatcher.SendToNearbyPlayers(new SetRecommendedBeatmapPacket
+                                {
+                                    BeatmapIdentifier = beatmap
+                                }, DeliveryMethod.ReliableOrdered);
+
+                                _packetDispatcher.SendToNearbyPlayers(new SetRecommendedModifiersPacket
+                                {
+                                    Modifiers = modifiers
+                                }, DeliveryMethod.ReliableOrdered);
+                            }
+                        }
 
                         // Cannot start map because all players are spectating
                         if (AllPlayersSpectating)
@@ -262,6 +277,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 {
                     Reason = CannotStartGameReason.NoSongSelected
                 }, DeliveryMethod.ReliableOrdered);
+
+                if (_server.Configuration.SongSelectionMode != SongSelectionMode.OwnerPicks)
+                {
+                    _packetDispatcher.SendToNearbyPlayers(new ClearRecommendedBeatmapPacket(), DeliveryMethod.ReliableOrdered);
+                    _packetDispatcher.SendToNearbyPlayers(new ClearRecommendedModifiersPacket(), DeliveryMethod.ReliableOrdered);
+                }
             }
 
             _lastManagerId = _server.ManagerId;
@@ -320,7 +341,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     });
 
                     if (!voteDictionary.Any())
-                        return null;
+                        return new GameplayModifiers();
 
                     var topModifiers = voteDictionary.First();
                     voteDictionary.ToList().ForEach(modifiers =>
