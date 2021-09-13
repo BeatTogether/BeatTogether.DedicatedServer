@@ -1,3 +1,6 @@
+using Autobus;
+using AutoMapper;
+using BeatTogether.DedicatedServer.Interface.Events;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Models;
 using BeatTogether.DedicatedServer.Messaging.Enums;
@@ -47,6 +50,8 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private MultiplayerGameState _state = MultiplayerGameState.Lobby;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
+        private readonly IAutobus _autobus;
+        private readonly IMapper _mapper;
         private readonly IPortAllocator _portAllocator;
         private readonly ILogger _logger = Log.ForContext<MatchmakingServer>();
 
@@ -82,6 +87,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         private const float _syncTimeDelay = 5f;
 
         public MatchmakingServer(
+            IAutobus autobus,
+            IMapper mapper,
             IPortAllocator portAllocator,
             PacketEncryptionLayer packetEncryptionLayer,
             IPacketDispatcher packetDispatcher,
@@ -94,6 +101,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             IServiceAccessor<ILobbyManager> lobbyManagerAccessor,
             IServiceAccessor<IGameplayManager> gameplayManagerAccessor)
         {
+            _autobus = autobus;
+            _mapper = mapper;
             _portAllocator = portAllocator;
             _packetEncryptionLayer = packetEncryptionLayer;
             _packetDispatcher = packetDispatcher;
@@ -153,6 +162,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             _task = Task.Run(() => PollEvents(_cancellationTokenSource.Token));
             _netManager.Start(port.Value);
             _startTime = DateTime.UtcNow.Ticks;
+            var gameplayServerConfigurationDto = _mapper.Map<Interface.Models.GameplayServerConfiguration>(Configuration);
+            _autobus.Publish(new MatchmakingServerStartedEvent(Secret, ManagerId, gameplayServerConfigurationDto));
         }
 
         public async Task Stop(CancellationToken cancellationToken = default)
@@ -184,6 +195,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 _task = null;
                 _netManager.Stop();
                 _portAllocator.ReleasePort(Port);
+                _autobus.Publish(new MatchmakingServerStoppedEvent(Secret));
             }
         }
 

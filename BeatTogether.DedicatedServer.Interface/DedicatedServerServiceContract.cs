@@ -1,4 +1,5 @@
 ﻿using Autobus;
+using BeatTogether.DedicatedServer.Interface.Events;
 
 namespace BeatTogether.DedicatedServer.Interface
 {
@@ -7,6 +8,8 @@ namespace BeatTogether.DedicatedServer.Interface
         public override void Build(IServiceContractBuilder builder) =>
             builder
                 .UseName("DedicatedServer")
-                .AddInterface<IMatchmakingService>();
+                .AddInterface<IMatchmakingService>()
+                .AddEvent<MatchmakingServerStartedEvent>()
+                .AddEvent<MatchmakingServerStoppedEvent>();
     }
 }

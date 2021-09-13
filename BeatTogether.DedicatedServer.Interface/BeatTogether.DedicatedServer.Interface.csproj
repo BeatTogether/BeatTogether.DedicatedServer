@@ -7,7 +7,7 @@
     <Authors>pythonology</Authors>
     <Company>pythonology</Company>
     <RepositoryUrl>https://github.com/pythonology/BeatTogether.DedicatedServer</RepositoryUrl>
-    <Version>1.1.2</Version>
+    <Version>1.2.0</Version>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 

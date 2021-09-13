@@ -24,6 +24,8 @@ namespace BeatTogether.Extensions
                         .AddDedicatedServerMessaging()
                         .AddAutoMapper(configuration =>
                         {
+                            configuration.CreateMap<DedicatedServer.Kernel.Models.GameplayServerConfiguration,
+                                                    DedicatedServer.Interface.Models.GameplayServerConfiguration>();
                             configuration.CreateMap<DedicatedServer.Interface.Models.GameplayServerConfiguration,
                                                     DedicatedServer.Kernel.Models.GameplayServerConfiguration>();
                         })
