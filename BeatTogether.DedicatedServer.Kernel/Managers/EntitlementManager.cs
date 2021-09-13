@@ -12,10 +12,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public ConcurrentDictionary<string, ConcurrentDictionary<string, EntitlementStatus>> userEntitlements { get; } = new();
 
         public bool AllPlayersHaveBeatmap(string beatmap)
-            => userEntitlements.Values.All(p => p[beatmap] == EntitlementStatus.Ok);
+            => userEntitlements.Values.All(p => p.ContainsKey(beatmap) ? p[beatmap] == EntitlementStatus.Ok : false);
 
         public bool AllPlayersOwnBeatmap(string beatmap)
-            => userEntitlements.Values.All(p => p[beatmap] != EntitlementStatus.NotOwned);
+            => userEntitlements.Values.All(p => p.ContainsKey(beatmap) ? p[beatmap] != EntitlementStatus.NotOwned : false);
 
         public List<string> GetPlayersWithoutBeatmap(string beatmap)
             => userEntitlements.Where(userEntitlement => !userEntitlement.Value.ContainsKey(beatmap) || userEntitlement.Value[beatmap] == EntitlementStatus.NotOwned).Select(userEntitlement => userEntitlement.Key).ToList();
