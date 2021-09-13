@@ -11,7 +11,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
     {
         public bool AllowBeatmapSelect { get; private set; } = true;
         public bool AllowVoteKick { get; private set; } = false;
-        public bool AllowInvite => _server.Configuration.InvitePolicy == Enums.InvitePolicy.AnyoneCanInvite;
+        public bool AllowInvite => _server.Configuration.DiscoveryPolicy == Enums.DiscoveryPolicy.WithCode;
 
         public PlayersPermissionConfiguration Permissions { get; private set; } = new();
 
