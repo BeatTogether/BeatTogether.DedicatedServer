@@ -103,19 +103,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             {
                                 Reason = CannotStartGameReason.None
                             }, DeliveryMethod.ReliableOrdered);
-
-                            if (_server.Configuration.SongSelectionMode != SongSelectionMode.OwnerPicks)
-                            {
-                                _packetDispatcher.SendToNearbyPlayers(new SetRecommendedBeatmapPacket
-                                {
-                                    BeatmapIdentifier = beatmap
-                                }, DeliveryMethod.ReliableOrdered);
-
-                                _packetDispatcher.SendToNearbyPlayers(new SetRecommendedModifiersPacket
-                                {
-                                    Modifiers = modifiers
-                                }, DeliveryMethod.ReliableOrdered);
-                            }
                         }
 
                         // Cannot start map because all players are spectating
@@ -304,12 +291,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 {
                     Reason = CannotStartGameReason.NoSongSelected
                 }, DeliveryMethod.ReliableOrdered);
-
-                if (_server.Configuration.SongSelectionMode != SongSelectionMode.OwnerPicks)
-                {
-                    _packetDispatcher.SendToNearbyPlayers(new ClearRecommendedBeatmapPacket(), DeliveryMethod.ReliableOrdered);
-                    _packetDispatcher.SendToNearbyPlayers(new ClearRecommendedModifiersPacket(), DeliveryMethod.ReliableOrdered);
-                }
             }
 
             _lastManagerId = _server.ManagerId;
