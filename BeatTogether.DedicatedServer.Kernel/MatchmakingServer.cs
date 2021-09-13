@@ -82,8 +82,13 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private Task? _task;
         private CancellationTokenSource? _cancellationTokenSource;
+        private CancellationTokenSource? _waitForPlayerCts;
 
+        // Millesecond timing constants
         private const int _eventPollDelay = 10;
+        private const int _waitForPlayerTimeLimit = 5000;
+
+        // Second timing constants
         private const float _syncTimeDelay = 5f;
 
         public MatchmakingServer(
@@ -164,6 +169,19 @@ namespace BeatTogether.DedicatedServer.Kernel
             _startTime = DateTime.UtcNow.Ticks;
             var gameplayServerConfigurationDto = _mapper.Map<Interface.Models.GameplayServerConfiguration>(Configuration);
             _autobus.Publish(new MatchmakingServerStartedEvent(Secret, ManagerId, gameplayServerConfigurationDto));
+
+            try
+            {
+                _waitForPlayerCts = new CancellationTokenSource();
+                await Task.Delay(_waitForPlayerTimeLimit, _waitForPlayerCts.Token);
+                _logger.Warning("Timed out waiting for player to join, stopping server.");
+                _ = Stop(CancellationToken.None);
+                _cancellationTokenSource?.Cancel();
+            }
+            catch (OperationCanceledException) 
+            {
+                _waitForPlayerCts = null;
+            }
         }
 
         public async Task Stop(CancellationToken cancellationToken = default)
@@ -297,6 +315,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"UserName='{player.UserName}', " +
                 $"SortIndex={player.SortIndex})."
             );
+
+            if (_waitForPlayerCts != null)
+                _waitForPlayerCts.Cancel();
         }
 
         void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketError) =>
