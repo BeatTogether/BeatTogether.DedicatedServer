@@ -287,6 +287,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         }
                     });
 
+                    if (!voteDictionary.Any())
+                        return null;
+
                     var topBeatmap = voteDictionary.First();
                     voteDictionary.ToList().ForEach(beatmap =>
                     {
@@ -315,6 +318,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 voteDictionary[p.Modifiers] = 1;
                         }
                     });
+
+                    if (!voteDictionary.Any())
+                        return null;
 
                     var topModifiers = voteDictionary.First();
                     voteDictionary.ToList().ForEach(modifiers =>
