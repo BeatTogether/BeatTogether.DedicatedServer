@@ -243,8 +243,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"IsConnectionOwner={connectionRequestData.IsConnectionOwner})."
             );
 
-            if (string.IsNullOrEmpty(connectionRequestData.Secret) ||
-                string.IsNullOrEmpty(connectionRequestData.UserId) ||
+            if (string.IsNullOrEmpty(connectionRequestData.UserId) ||
                 string.IsNullOrEmpty(connectionRequestData.UserName))
             {
                 _logger.Warning(
