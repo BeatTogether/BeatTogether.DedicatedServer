@@ -58,7 +58,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_server.State != MultiplayerGameState.Lobby)
                 return;
 
-            if (!_playerRegistry.TryGetPlayer(_server.ManagerId, out var manager))
+            if (!_playerRegistry.TryGetPlayer(_server.ManagerId, out var manager) && _server.Configuration.SongSelectionMode == SongSelectionMode.OwnerPicks)
                 return;
             
             BeatmapIdentifier? beatmap = GetSelectedBeatmap();
