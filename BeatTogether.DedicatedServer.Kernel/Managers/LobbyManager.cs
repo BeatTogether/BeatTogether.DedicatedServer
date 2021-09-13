@@ -31,7 +31,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private bool _lastSpectatorState;
         private bool _lastEntitlementState;
-        private string _lastManagerId;
+        private string _lastManagerId = null!;
 
         private IMatchmakingServer _server;
         private IPlayerRegistry _playerRegistry;
@@ -125,9 +125,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         // If not already counting down
                         if (_countdownEndTime == 0)
                         {
-                            if (AllPlayersReady && !AllPlayersSpectating)
+                            if (AllPlayersReady && !AllPlayersSpectating && allPlayersOwnBeatmap)
                                 _countdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
-                            else if (isManagerReady)
+                            else if (isManagerReady && allPlayersOwnBeatmap)
                                 _countdownEndTime = _server.RunTime + CountdownTimeManagerReady;
 
                             // If should be counting down, tell players
@@ -147,8 +147,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         // If counting down
                         else
                         {
-                            // If manager is no longer ready
-                            if (!isManagerReady)
+                            // If manager is no longer ready or not all players own beatmap
+                            if (!isManagerReady || !allPlayersOwnBeatmap)
                             {
                                 // Reset and stop counting down
                                 _countdownEndTime = 0;
@@ -156,7 +156,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                             }
 
-                            // If manager is still ready
+                            // If manager is still ready and all players own beatmap
                             else
                             {
                                 // If all players are ready and countdown is too long
@@ -209,12 +209,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         }
                         break;
                     case SongSelectionMode.Vote:
+
                         // If not already counting down
                         if (_countdownEndTime == 0)
                         {
-                            if (AllPlayersReady && !AllPlayersSpectating)
+                            if (AllPlayersReady && !AllPlayersSpectating && allPlayersOwnBeatmap)
                                 _countdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
-                            if (SomePlayersReady)
+                            if (SomePlayersReady && allPlayersOwnBeatmap)
                                 _countdownEndTime = _server.RunTime + CountdownTimeSomeReady;
 
                             // If should be counting down, tell players
@@ -233,8 +234,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         // If counting down
                         else
                         {
-                            // If no players are ready 
-                            if (NoPlayersReady)
+                            // If no players are ready or not all players own beatmap
+                            if (NoPlayersReady || !allPlayersOwnBeatmap)
                             {
                                 // Reset and stop counting down
                                 _countdownEndTime = 0;
@@ -242,7 +243,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                             }
                             
-                            // If players still ready
+                            // If players still ready and all players own beatmap
                             else
                             {
                                 // If all players are ready and countdown is too long
@@ -260,22 +261,22 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                     }, DeliveryMethod.ReliableOrdered);
                                 }
                             }
-                        }
 
-                        // If countdown finished
-                        if (_countdownEndTime < _server.RunTime)
-                        {
-                            // If all players have map
-                            if (_entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
+                            // If countdown finished
+                            if (_countdownEndTime < _server.RunTime)
                             {
-                                // Reset
-                                _countdownEndTime = 0;
-                                _startedBeatmap = null;
-                                _startedModifiers = new();
+                                // If all players have map
+                                if (_entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
+                                {
+                                    // Reset
+                                    _countdownEndTime = 0;
+                                    _startedBeatmap = null;
+                                    _startedModifiers = new();
 
-                                // Start map
-                                _gameplayManager.StartSong(beatmap, modifiers, CancellationToken.None);
-                                return;
+                                    // Start map
+                                    _gameplayManager.StartSong(beatmap, modifiers, CancellationToken.None);
+                                    return;
+                                }
                             }
                         }
 
