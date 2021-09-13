@@ -297,16 +297,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 case SongSelectionMode.OwnerPicks: return _playerRegistry.GetPlayer(_server.ManagerId).BeatmapIdentifier;
                 case SongSelectionMode.Vote:
                     Dictionary<BeatmapIdentifier, int> voteDictionary = new();
-                    _playerRegistry.Players.ForEach(p =>
+                    foreach (IPlayer player in _playerRegistry.Players)
                     {
-                        if (p.BeatmapIdentifier != null)
+                        if (player.BeatmapIdentifier != null)
                         {
-                            if (voteDictionary.ContainsKey(p.BeatmapIdentifier))
-                                voteDictionary[p.BeatmapIdentifier]++;
+                            if (voteDictionary.ContainsKey(player.BeatmapIdentifier))
+                                voteDictionary[player.BeatmapIdentifier]++;
                             else
-                                voteDictionary[p.BeatmapIdentifier] = 1;
+                                voteDictionary[player.BeatmapIdentifier] = 1;
                         }
-                    });
+                    }
 
                     if (!voteDictionary.Any())
                         return null;
@@ -314,6 +314,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     var topBeatmap = voteDictionary.First();
                     voteDictionary.ToList().ForEach(beatmap =>
                     {
+                        _logger.Debug($"topBeatmap = {topBeatmap}");
                         if (beatmap.Value > topBeatmap.Value)
                             topBeatmap = beatmap;
                     });
@@ -329,16 +330,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 case SongSelectionMode.OwnerPicks: return _playerRegistry.GetPlayer(_server.ManagerId).Modifiers;
                 case SongSelectionMode.Vote:
                     Dictionary<GameplayModifiers, int> voteDictionary = new();
-                    _playerRegistry.Players.ForEach(p =>
+                    foreach (IPlayer player in _playerRegistry.Players)
                     {
-                        if (p.Modifiers != null)
+                        if (player.Modifiers != null)
                         {
-                            if (voteDictionary.ContainsKey(p.Modifiers))
-                                voteDictionary[p.Modifiers]++;
+                            if (voteDictionary.ContainsKey(player.Modifiers))
+                                voteDictionary[player.Modifiers]++;
                             else
-                                voteDictionary[p.Modifiers] = 1;
+                                voteDictionary[player.Modifiers] = 1;
                         }
-                    });
+                    }
 
                     if (!voteDictionary.Any())
                         return new GameplayModifiers();
