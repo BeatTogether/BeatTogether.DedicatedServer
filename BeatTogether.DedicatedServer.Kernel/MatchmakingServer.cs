@@ -170,18 +170,20 @@ namespace BeatTogether.DedicatedServer.Kernel
             var gameplayServerConfigurationDto = _mapper.Map<Interface.Models.GameplayServerConfiguration>(Configuration);
             _autobus.Publish(new MatchmakingServerStartedEvent(Secret, ManagerId, gameplayServerConfigurationDto));
 
-            try
+            _waitForPlayerCts = new CancellationTokenSource();
+            _ = Task.Delay(_waitForPlayerTimeLimit, _waitForPlayerCts.Token).ContinueWith(t =>
             {
-                _waitForPlayerCts = new CancellationTokenSource();
-                await Task.Delay(_waitForPlayerTimeLimit, _waitForPlayerCts.Token);
-                _logger.Warning("Timed out waiting for player to join, stopping server.");
-                _ = Stop(CancellationToken.None);
-                _cancellationTokenSource?.Cancel();
-            }
-            catch (OperationCanceledException) 
-            {
-                _waitForPlayerCts = null;
-            }
+                if (!t.IsCanceled)
+                {
+                    _logger.Warning("Timed out waiting for player to join, stopping server.");
+                    _ = Stop(CancellationToken.None);
+                    _cancellationTokenSource?.Cancel();
+                }
+                else
+                {
+                    _waitForPlayerCts = null;
+                }
+            });
         }
 
         public async Task Stop(CancellationToken cancellationToken = default)
