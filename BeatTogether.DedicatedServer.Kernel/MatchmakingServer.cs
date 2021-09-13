@@ -433,7 +433,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }, DeliveryMethod.ReliableOrdered);
 
                     if (ManagerId == player.UserId)
-                        ManagerId = "needsmigration";
+                        ManagerId = "";
 
                     _playerRegistry.RemovePlayer(player);
                     ReleaseSortIndex(player.SortIndex);
@@ -448,7 +448,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 else
 				{
                     // Set new manager if manager left
-                    if (ManagerId == "needsmigration")
+                    if (ManagerId == "" && Configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
                         ManagerId = _playerRegistry.Players.First().UserId;
 
                     // Update permissions
