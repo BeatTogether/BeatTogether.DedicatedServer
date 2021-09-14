@@ -234,6 +234,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         // If counting down
                         else
                         {
+                            // If beatmap or modifiers changed, update them
+                            if (_startedBeatmap != beatmap || _startedModifiers != modifiers)
+                            {
+                                _startedBeatmap = beatmap;
+                                _startedModifiers = modifiers;
+                            }
+
                             // If countdown finished
                             if (_countdownEndTime < _server.RunTime)
                             {
@@ -269,6 +276,18 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                     // Shorten countdown time
                                     _countdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
 
+                                    // Set start level
+                                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                                    {
+                                        Beatmap = _startedBeatmap!,
+                                        Modifiers = _startedModifiers,
+                                        StartTime = _countdownEndTime
+                                    }, DeliveryMethod.ReliableOrdered);
+                                }
+
+                                // If countdown time is less than everyone ready time
+                                if (_countdownEndTime - _server.RunTime < CountdownTimeEveryoneReady)
+                                {
                                     // Set start level
                                     _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                                     {
