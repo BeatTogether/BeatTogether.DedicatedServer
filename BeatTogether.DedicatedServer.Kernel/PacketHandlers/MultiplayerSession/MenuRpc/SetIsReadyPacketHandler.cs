@@ -24,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(SetIsReadyPacket)}' " +
-                $"(SenderId={sender.ConnectionId})."
+                $"(SenderId={sender.ConnectionId}, IsReady={packet.IsReady})."
             );
 
             sender.IsReady = packet.IsReady;
