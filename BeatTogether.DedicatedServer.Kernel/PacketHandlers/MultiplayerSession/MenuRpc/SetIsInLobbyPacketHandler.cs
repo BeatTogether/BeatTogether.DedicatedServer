@@ -13,7 +13,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(SetIsInLobbyPacket)}' " +
-                $"(SenderId={sender.ConnectionId})."
+                $"(SenderId={sender.ConnectionId}, InLobby={packet.IsInLobby})."
             );
 
             sender.InLobby = packet.IsInLobby;

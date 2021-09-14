@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
-    public interface IGameplayManager
+    public interface IGameplayManager : IRequestReturnToMenuSignalSource
     {
         string SessionGameId { get; }
         GameplayManagerState State { get; }

@@ -25,7 +25,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 		{
 			_logger.Debug(
 				$"Handling packet of type '{nameof(SetRecommendedBeatmapPacket)}' " +
-				$"(SenderId={sender.ConnectionId})."
+				$"(SenderId={sender.ConnectionId}, LevelId={packet.BeatmapIdentifier.LevelId}, Difficulty={packet.BeatmapIdentifier.Difficulty})."
 			);
 
 			if (_permissionsManager.PlayerCanRecommendBeatmaps(sender.UserId))

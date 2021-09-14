@@ -472,7 +472,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 				{
                     // Set new manager if manager left
                     if (ManagerId == "" && Configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
-                        ManagerId = _playerRegistry.Players.First().UserId;
+                        ManagerId = _playerRegistry.Players.Last().UserId;
 
                     // Update permissions
                     _permissionsManager.UpdatePermissions();

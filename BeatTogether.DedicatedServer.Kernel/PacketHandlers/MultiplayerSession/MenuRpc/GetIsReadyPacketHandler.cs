@@ -22,7 +22,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetIsReadyPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            // TODO
+
+            // Doesn't need to be handled
+
             return Task.CompletedTask;
         }
     }
