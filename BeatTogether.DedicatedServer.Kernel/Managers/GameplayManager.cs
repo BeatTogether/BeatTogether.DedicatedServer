@@ -102,6 +102,21 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             songReadyCts.CancelAfter((int)(SongLoadTimeLimit * 1000));
             await WaitForCompletionOrCancel(songReadyTasks);
 
+            // If no players are actually playing
+            if (_playerRegistry.Players.All(player => !player.InGameplay))
+            {
+                // Reset
+                State = GameplayManagerState.None;
+                CurrentBeatmap = null;
+                CurrentModifiers = null;
+
+                // Send to lobby
+                _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
+
+                // Set game state
+                _server.State = MultiplayerGameState.Lobby;
+            }
+
             State = GameplayManagerState.Gameplay;
             _songStartTime = _server.RunTime + SongStartDelay;
 
