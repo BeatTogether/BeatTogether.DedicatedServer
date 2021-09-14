@@ -31,6 +31,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private ConcurrentDictionary<string, PlayerSpecificSettings> _playerSpecificSettings = new();
         private ConcurrentDictionary<string, LevelCompletionResults> _levelCompletionResults = new();
 
+        private CancellationTokenSource? _requestReturnToMenuCts;
+
         private IMatchmakingServer _server;
         private IPlayerRegistry _playerRegistry;
         private IPacketDispatcher _packetDispatcher;
@@ -59,29 +61,29 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _playerSpecificSettings.Clear();
             _levelCompletionResults.Clear();
             _songStartTime = 0;
+            _requestReturnToMenuCts = new CancellationTokenSource();
 
             State = GameplayManagerState.SceneLoad;
 
             var loadingPlayers = _playerRegistry.Players; // During scene and song, only wait for players that were already connected
 
             // Create level finished tasks (players may send these at any time during gameplay)
-            IEnumerable<Task<LevelFinishedPacket>> levelFinishedTasks = _playerRegistry.Players.Select(player => player.WaitForLevelFinished(cancellationToken));
-
+            var levelFinishedCts = new CancellationTokenSource();
+            var linkedLevelFinishedCts = CancellationTokenSource.CreateLinkedTokenSource(levelFinishedCts.Token, _requestReturnToMenuCts.Token);
+            IEnumerable<Task<LevelFinishedPacket>> levelFinishedTasks = _playerRegistry.Players.Select(player => player.WaitForLevelFinished(linkedLevelFinishedCts.Token));
 
             // Create scene ready tasks
             var sceneReadyCts = new CancellationTokenSource();
-            IEnumerable<Task<SetGameplaySceneReadyPacket>> sceneReadyTasks = loadingPlayers.Select(player => player.WaitForSceneReady(sceneReadyCts.Token));
-
-            // Ask for scene ready
-            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
+            var linkedSceneReadyCts = CancellationTokenSource.CreateLinkedTokenSource(sceneReadyCts.Token, _requestReturnToMenuCts.Token);
+            IEnumerable<Task<SetGameplaySceneReadyPacket>> sceneReadyTasks = loadingPlayers.Select(player => player.WaitForSceneReady(linkedSceneReadyCts.Token));
 
             // Wait for scene ready
+            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
             sceneReadyCts.CancelAfter((int)(SceneLoadTimeLimit * 1000));
             await WaitForCompletionOrCancel(sceneReadyTasks);
 
-            State = GameplayManagerState.SongLoad;
-
             // Set scene sync finished
+            State = GameplayManagerState.SongLoad;
             _packetDispatcher.SendToNearbyPlayers(new SetGameplaySceneSyncFinishedPacket
             {
                 SessionGameId = SessionGameId,
@@ -93,40 +95,27 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Create song ready tasks
             var songReadyCts = new CancellationTokenSource();
-            IEnumerable<Task> songReadyTasks = loadingPlayers.Select(player => player.WaitForSongReady(songReadyCts.Token));
-
-            // Ask for song ready
-            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
+            var linkedSongReadyCts = CancellationTokenSource.CreateLinkedTokenSource(songReadyCts.Token, _requestReturnToMenuCts.Token);
+            IEnumerable<Task> songReadyTasks = loadingPlayers.Select(player => player.WaitForSongReady(linkedSongReadyCts.Token));
 
             // Wait for song ready
+            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
             songReadyCts.CancelAfter((int)(SongLoadTimeLimit * 1000));
             await WaitForCompletionOrCancel(songReadyTasks);
 
             // If no players are actually playing
             if (_playerRegistry.Players.All(player => !player.InGameplay))
             {
-                // Reset
-                State = GameplayManagerState.None;
-                CurrentBeatmap = null;
-                CurrentModifiers = null;
-
-                // Send to lobby
-                _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-
-                // Set game state
-                _server.State = MultiplayerGameState.Lobby;
+                _requestReturnToMenuCts.Cancel();
             }
 
+            // Start song and wait for finish
             State = GameplayManagerState.Gameplay;
             _songStartTime = _server.RunTime + SongStartDelay;
-
-            // Start song
             _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
-
-            // Now wait for everyone to finish
             await WaitForCompletionOrCancel(levelFinishedTasks);
 
             State = GameplayManagerState.Results;
@@ -135,15 +124,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared))
                 await Task.Delay((int)(ResultsScreenTime * 1000));
 
-            // Reset
+            // End gameplay
             State = GameplayManagerState.None;
             CurrentBeatmap = null;
             CurrentModifiers = null;
-
-            // Send to lobby
             _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-
-            // Set game state
             _server.State = MultiplayerGameState.Lobby;
         }
 
@@ -185,5 +170,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private Task WaitForCompletionOrCancel(IEnumerable<Task> tasks) =>
             Task.WhenAll(tasks.Select(task => task.ContinueWith(t => t.IsCanceled ? Task.CompletedTask : t)));
+
+        public void SignalRequestReturnToMenu()
+        {
+            if (_requestReturnToMenuCts != null)
+            {
+                _requestReturnToMenuCts.Cancel();
+            }
+        }
     }
 }
