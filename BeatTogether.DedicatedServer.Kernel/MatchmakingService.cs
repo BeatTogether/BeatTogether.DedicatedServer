@@ -35,11 +35,11 @@ namespace BeatTogether.DedicatedServer.Kernel
                 _mapper.Map<Models.GameplayServerConfiguration>(request.Configuration)
             );
             if (matchmakingServer is null)
-                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret);
+                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty);
 
             await matchmakingServer.Start();
             if (!matchmakingServer.IsRunning)
-                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.NoAvailableSlots);
+                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.NoAvailableSlots, string.Empty);
 
             return new CreateMatchmakingServerResponse(
                 CreateMatchmakingServerError.None,
