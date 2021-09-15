@@ -76,10 +76,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (!allPlayersOwnBeatmap)
                     {
                         // Set players missing entitlements
-                        _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
-                        {
-                            PlayersWithoutEntitlements = _entitlementManager.GetPlayersWithoutBeatmap(beatmap.LevelId)
-                        }, DeliveryMethod.ReliableOrdered);
+                        //_packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
+                        //{
+                        //    PlayersWithoutEntitlements = _entitlementManager.GetPlayersWithoutBeatmap(beatmap.LevelId)
+                        //}, DeliveryMethod.ReliableOrdered);
 
                         // Cannot start song because losers dont have your map
                         _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
@@ -91,10 +91,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     else
                     {
                         // Set no players missing entitlements
-                        _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
-                        {
-                            PlayersWithoutEntitlements = new List<string>()
-                        }, DeliveryMethod.ReliableOrdered);
+                        //_packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
+                        //{
+                        //    PlayersWithoutEntitlements = new List<string>()
+                        //}, DeliveryMethod.ReliableOrdered);
 
                         // Allow start map if all players aren't spectating
                         if (!AllPlayersSpectating)
