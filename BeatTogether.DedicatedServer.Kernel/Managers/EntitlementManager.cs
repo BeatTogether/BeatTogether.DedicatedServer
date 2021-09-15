@@ -29,7 +29,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         // Gets a list of playerIds that have registered 'NotOwned' entitlement
         public List<string> GetPlayersWithoutBeatmap(string beatmap)
-            => userEntitlements.Where(userEntitlement => userEntitlement.Value.ContainsKey(beatmap) && userEntitlement.Value[beatmap] == EntitlementStatus.NotOwned).Select(userEntitlement => userEntitlement.Key).ToList();
+            => _playerRegistry.Players
+                .Where(p => !userEntitlements.TryGetValue(p.UserId, out var userEntitlement) || !userEntitlement.TryGetValue(beatmap, out var entitlement) || entitlement == EntitlementStatus.NotOwned)
+                .Select(p => p.UserId)
+                .ToList();
 
         // Handles an entitlement
         public void HandleEntitlement(string userId, string beatmap, EntitlementStatus entitlement)
