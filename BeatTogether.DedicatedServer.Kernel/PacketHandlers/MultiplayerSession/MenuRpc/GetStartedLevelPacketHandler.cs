@@ -10,16 +10,19 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
     public sealed class GetStartedLevelPacketHandler : BasePacketHandler<GetStartedLevelPacket>
     {
         private readonly IMatchmakingServer _server;
+        private readonly ILobbyManager _lobbyManager;
         private readonly IGameplayManager _gameplayManager;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly ILogger _logger = Log.ForContext<GetStartedLevelPacketHandler>();
 
         public GetStartedLevelPacketHandler(
             IMatchmakingServer server, 
+            ILobbyManager lobbyManager,
             IGameplayManager gameplayManager, 
             IPacketDispatcher packetDispatcher)
         {
             _server = server;
+            _lobbyManager = lobbyManager;
             _gameplayManager = gameplayManager;
             _packetDispatcher = packetDispatcher;
         }
@@ -42,7 +45,15 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             }
             else
 			{
-                _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+                if (_lobbyManager.StartedBeatmap != null)
+                {
+                    _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
+                    {
+                        LevelId = _lobbyManager.StartedBeatmap.LevelId
+                    }, DeliveryMethod.ReliableOrdered);
+                }
+                else
+                    _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
 			}
 
             return Task.CompletedTask;

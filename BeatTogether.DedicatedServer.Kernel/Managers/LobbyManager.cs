@@ -24,11 +24,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel);
         public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel);
 
-        private BeatmapIdentifier? _startedBeatmap;
-        private BeatmapIdentifier? _lastBeatmap;
-        private GameplayModifiers _startedModifiers = new();
-        private float _countdownEndTime;
+        public BeatmapIdentifier? StartedBeatmap { get; private set; }
+        public GameplayModifiers StartedModifiers { get; private set; } = new();
+        public float CountdownEndTime { get; private set; }
 
+        private BeatmapIdentifier? _lastBeatmap;
         private bool _lastSpectatorState;
         private bool _lastEntitlementState;
         private string _lastManagerId = null!;
@@ -76,10 +76,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (!allPlayersOwnBeatmap)
                     {
                         // Set players missing entitlements
-                        //_packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
-                        //{
-                        //    PlayersWithoutEntitlements = _entitlementManager.GetPlayersWithoutBeatmap(beatmap.LevelId)
-                        //}, DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
+                        {
+                            PlayersWithoutEntitlements = _entitlementManager.GetPlayersWithoutBeatmap(beatmap.LevelId)
+                        }, DeliveryMethod.ReliableOrdered);
 
                         // Cannot start song because losers dont have your map
                         _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
@@ -91,10 +91,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     else
                     {
                         // Set no players missing entitlements
-                        //_packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
-                        //{
-                        //    PlayersWithoutEntitlements = new List<string>()
-                        //}, DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
+                        {
+                            PlayersWithoutEntitlements = new List<string>()
+                        }, DeliveryMethod.ReliableOrdered);
 
                         // Allow start map if all players aren't spectating
                         if (!AllPlayersSpectating)
@@ -123,23 +123,23 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         bool isManagerReady = manager!.IsReady;
 
                         // If not already counting down
-                        if (_countdownEndTime == 0)
+                        if (CountdownEndTime == 0)
                         {
                             if (AllPlayersReady && !AllPlayersSpectating && allPlayersOwnBeatmap)
-                                _countdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
+                                CountdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
                             else if (isManagerReady && allPlayersOwnBeatmap)
-                                _countdownEndTime = _server.RunTime + CountdownTimeManagerReady;
+                                CountdownEndTime = _server.RunTime + CountdownTimeManagerReady;
 
                             // If should be counting down, tell players
-                            if (_countdownEndTime != 0)
+                            if (CountdownEndTime != 0)
                             {
-                                _startedBeatmap = beatmap;
-                                _startedModifiers = modifiers;
+                                StartedBeatmap = beatmap;
+                                StartedModifiers = modifiers;
 
                                 // Set countdown end time
                                 _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
                                 {
-                                    CountdownTime = _countdownEndTime
+                                    CountdownTime = CountdownEndTime
                                 }, DeliveryMethod.ReliableOrdered);
                             }
                         }
@@ -148,29 +148,29 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         else
                         {
                             // If countdown finished
-                            if (_countdownEndTime < _server.RunTime)
+                            if (CountdownEndTime < _server.RunTime)
                             {
                                 // If countdown just finished
-                                if (_countdownEndTime != 1)
+                                if (CountdownEndTime != 1)
                                 {
                                     // Set start level
                                     _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                                     {
-                                        Beatmap = _startedBeatmap!,
-                                        Modifiers = _startedModifiers,
-                                        StartTime = _countdownEndTime
+                                        Beatmap = StartedBeatmap!,
+                                        Modifiers = StartedModifiers,
+                                        StartTime = CountdownEndTime
                                     }, DeliveryMethod.ReliableOrdered);
 
-                                    _countdownEndTime = 1;
+                                    CountdownEndTime = 1;
                                 }
 
                                 // If all players have map
                                 if (_entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
                                 {
                                     // Reset
-                                    _countdownEndTime = 0;
-                                    _startedBeatmap = null;
-                                    _startedModifiers = new();
+                                    CountdownEndTime = 0;
+                                    StartedBeatmap = null;
+                                    StartedModifiers = new();
 
                                     // Start map
                                     _gameplayManager.StartSong(beatmap, modifiers, CancellationToken.None);
@@ -182,7 +182,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             if (!isManagerReady || !allPlayersOwnBeatmap)
                             {
                                 // Reset and stop counting down
-                                _countdownEndTime = 0;
+                                CountdownEndTime = 0;
                                 _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
                                 _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                             }
@@ -191,10 +191,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             else
                             {
                                 // If all players are ready and countdown is too long
-                                if (AllPlayersReady && _countdownEndTime - _server.RunTime > CountdownTimeEveryoneReady)
+                                if (AllPlayersReady && CountdownEndTime - _server.RunTime > CountdownTimeEveryoneReady)
                                 {
                                     // Shorten countdown time
-                                    _countdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
+                                    CountdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
 
                                     // Cancel countdown (bc of stupid client garbage)
                                     _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
@@ -202,7 +202,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                     // Set countdown end time
                                     _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
                                     {
-                                        CountdownTime = _countdownEndTime
+                                        CountdownTime = CountdownEndTime
                                     }, DeliveryMethod.ReliableOrdered);
                                 }
                             }
@@ -211,22 +211,22 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     case SongSelectionMode.Vote:
 
                         // If not already counting down
-                        if (_countdownEndTime == 0)
+                        if (CountdownEndTime == 0)
                         {
                             if (AllPlayersReady && !AllPlayersSpectating && allPlayersOwnBeatmap)
-                                _countdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
+                                CountdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
                             if (SomePlayersReady && allPlayersOwnBeatmap)
-                                _countdownEndTime = _server.RunTime + CountdownTimeSomeReady;
+                                CountdownEndTime = _server.RunTime + CountdownTimeSomeReady;
 
                             // If should be counting down, tell players
-                            if (_countdownEndTime != 0)
+                            if (CountdownEndTime != 0)
                             {
-                                _startedBeatmap = beatmap;
-                                _startedModifiers = modifiers;
+                                StartedBeatmap = beatmap;
+                                StartedModifiers = modifiers;
 
                                 _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
                                 {
-                                    CountdownTime = _countdownEndTime
+                                    CountdownTime = CountdownEndTime
                                 }, DeliveryMethod.ReliableOrdered);
                             }
                         }
@@ -235,36 +235,36 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         else
                         {
                             // If beatmap or modifiers changed, update them
-                            if (_startedBeatmap != beatmap || _startedModifiers != modifiers)
+                            if (StartedBeatmap != beatmap || StartedModifiers != modifiers)
                             {
-                                _startedBeatmap = beatmap;
-                                _startedModifiers = modifiers;
+                                StartedBeatmap = beatmap;
+                                StartedModifiers = modifiers;
                             }
 
                             // If countdown finished
-                            if (_countdownEndTime < _server.RunTime)
+                            if (CountdownEndTime < _server.RunTime)
                             {
                                 // If countdown just finished
-                                if (_countdownEndTime != 1)
+                                if (CountdownEndTime != 1)
                                 {
                                     // Set start level
                                     _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                                     {
-                                        Beatmap = _startedBeatmap!,
-                                        Modifiers = _startedModifiers,
-                                        StartTime = _countdownEndTime
+                                        Beatmap = StartedBeatmap!,
+                                        Modifiers = StartedModifiers,
+                                        StartTime = CountdownEndTime
                                     }, DeliveryMethod.ReliableOrdered);
 
-                                    _countdownEndTime = 1;
+                                    CountdownEndTime = 1;
                                 }
 
                                 // If all players have map
                                 if (_entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
                                 {
                                     // Reset
-                                    _countdownEndTime = 0;
-                                    _startedBeatmap = null;
-                                    _startedModifiers = new();
+                                    CountdownEndTime = 0;
+                                    StartedBeatmap = null;
+                                    StartedModifiers = new();
 
                                     // Start map
                                     _gameplayManager.StartSong(beatmap, modifiers, CancellationToken.None);
@@ -276,7 +276,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             if (NoPlayersReady || !allPlayersOwnBeatmap)
                             {
                                 // Reset and stop counting down
-                                _countdownEndTime = 0;
+                                CountdownEndTime = 0;
                                 _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
                                 _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                             }
@@ -285,17 +285,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             else
                             {
                                 // If all players are ready and countdown is too long
-                                if (AllPlayersReady && _countdownEndTime - _server.RunTime > CountdownTimeEveryoneReady)
+                                if (AllPlayersReady && CountdownEndTime - _server.RunTime > CountdownTimeEveryoneReady)
                                 {
                                     // Shorten countdown time
-                                    _countdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
+                                    CountdownEndTime = _server.RunTime + CountdownTimeEveryoneReady;
 
                                     // Set start level
                                     _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                                     {
-                                        Beatmap = _startedBeatmap!,
-                                        Modifiers = _startedModifiers,
-                                        StartTime = _countdownEndTime
+                                        Beatmap = StartedBeatmap!,
+                                        Modifiers = StartedModifiers,
+                                        StartTime = CountdownEndTime
                                     }, DeliveryMethod.ReliableOrdered);
                                 }
                             }

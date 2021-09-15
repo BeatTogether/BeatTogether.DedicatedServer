@@ -1,4 +1,6 @@
-﻿namespace BeatTogether.DedicatedServer.Kernel.Abstractions
+﻿using BeatTogether.DedicatedServer.Messaging.Models;
+
+namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
     public interface ILobbyManager
     {
@@ -6,7 +8,10 @@
         bool SomePlayersReady { get; }
         bool NoPlayersReady { get; }
 		bool AllPlayersSpectating { get; }
+        BeatmapIdentifier? StartedBeatmap { get; }
+        GameplayModifiers StartedModifiers { get; }
+        float CountdownEndTime { get; }
 
-		void Update();
+        void Update();
     }
 }
