@@ -29,6 +29,8 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public async Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request)
         {
+            return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty);
+
             var matchmakingServer = _matchmakingServerFactory.CreateMatchmakingServer(
                 request.Secret,
                 request.ManagerId,
