@@ -30,19 +30,17 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public async Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request)
         {
-            return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
-
             var matchmakingServer = _matchmakingServerFactory.CreateMatchmakingServer(
                 request.Secret,
                 request.ManagerId,
                 _mapper.Map<Models.GameplayServerConfiguration>(request.Configuration)
             );
             if (matchmakingServer is null)
-                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty);
+                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
 
             await matchmakingServer.Start();
             if (!matchmakingServer.IsRunning)
-                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.NoAvailableSlots, string.Empty);
+                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.NoAvailableSlots, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
 
             return new CreateMatchmakingServerResponse(
                 CreateMatchmakingServerError.None,
