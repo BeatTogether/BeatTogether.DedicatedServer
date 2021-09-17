@@ -205,10 +205,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                     .ToArray();
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                _logger.Warning($"Failed to decrypt packet.");
-                _logger.Error(ex.Message);
+                _logger.Warning($"Failed to decrypt packet: {e.Message}");
                 data = null;
                 return false;
             }

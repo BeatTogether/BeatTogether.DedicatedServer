@@ -85,7 +85,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 catch (Exception e)
                 {
-                    _logger.Error(e, "Failed to read packet.");
+                    _logger.Warning($"Failed to read packet: {e.Message}");
 
                     var builder = new StringBuilder("new byte[] { ");
                     foreach (var b in reader.RawData)
