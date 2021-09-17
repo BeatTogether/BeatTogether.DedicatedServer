@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using AutoMapper;
 using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Interface.Requests;
@@ -29,7 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public async Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request)
         {
-            return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty);
+            return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
 
             var matchmakingServer = _matchmakingServerFactory.CreateMatchmakingServer(
                 request.Secret,
