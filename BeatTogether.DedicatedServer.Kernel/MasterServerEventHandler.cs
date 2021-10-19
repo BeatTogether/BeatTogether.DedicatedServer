@@ -43,19 +43,16 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private Task<PlayerConnectedToMatchmakingServerAck> Handle(PlayerConnectedToMatchmakingServerEvent @event)
         {
-            lock (_packetEncryptionLayer)
-            {
-                var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
-                var random = @event.Random;
-                var publicKey = @event.PublicKey;
-                _logger.Verbose(
-                    "Adding encrypted end point " +
-                    $"(RemoteEndPoint='{remoteEndPoint}', " +
-                    $"Random='{BitConverter.ToString(random)}', " +
-                    $"PublicKey='{BitConverter.ToString(publicKey)}')."
-                );
-                _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random, publicKey);
-            }
+            var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
+            var random = @event.Random;
+            var publicKey = @event.PublicKey;
+            _logger.Verbose(
+                "Adding encrypted end point " +
+                $"(RemoteEndPoint='{remoteEndPoint}', " +
+                $"Random='{BitConverter.ToString(random)}', " +
+                $"PublicKey='{BitConverter.ToString(publicKey)}')."
+            );
+            _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random, publicKey);
             return Task.FromResult(new PlayerConnectedToMatchmakingServerAck());
         }
         #endregion
