@@ -86,7 +86,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         // Millesecond timing constants
         private const int _eventPollDelay = 10;
-        private const int _waitForPlayerTimeLimit = 5000;
+        private const int _waitForPlayerTimeLimit = 10000;
 
         // Second timing constants
         private const float _syncTimeDelay = 5f;
