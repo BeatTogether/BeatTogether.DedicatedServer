@@ -9,7 +9,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
     public sealed class SyncTimePacketHandler : BasePacketHandler<SyncTimePacket>
     {
         private readonly IPacketDispatcher _packetDispatcher;
-        private readonly ILogger _logger = Log.ForContext<PlayerStatePacketHandler>();
+        private readonly ILogger _logger = Log.ForContext<SyncTimePacketHandler>();
 
         public SyncTimePacketHandler(IPacketDispatcher packetDispatcher)
         {
