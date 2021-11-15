@@ -27,13 +27,13 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _autobus.Subscribe<PlayerConnectedToMatchmakingServerEvent, PlayerConnectedToMatchmakingServerAck>(Handle);
+            _autobus.Subscribe<PlayerConnectedToMatchmakingServerEvent>(Handle);
             return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _autobus.Unsubscribe<PlayerConnectedToMatchmakingServerEvent, PlayerConnectedToMatchmakingServerAck>(Handle);
+            _autobus.Unsubscribe<PlayerConnectedToMatchmakingServerEvent>(Handle);
             return Task.CompletedTask;
         }
 
@@ -41,7 +41,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         #region Private Methods
 
-        private Task<PlayerConnectedToMatchmakingServerAck> Handle(PlayerConnectedToMatchmakingServerEvent @event)
+        private Task Handle(PlayerConnectedToMatchmakingServerEvent @event)
         {
             var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
             var random = @event.Random;
@@ -53,7 +53,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"PublicKey='{BitConverter.ToString(publicKey)}')."
             );
             _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random, publicKey);
-            return Task.FromResult(new PlayerConnectedToMatchmakingServerAck());
+            return Task.CompletedTask;
         }
         #endregion
     }
