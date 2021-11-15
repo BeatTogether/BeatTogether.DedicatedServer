@@ -1,9 +1,6 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using System.Linq;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using LiteNetLib;
-using System;
-using System.Linq;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
@@ -11,7 +8,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
     {
         public bool AllowBeatmapSelect { get; private set; } = true;
         public bool AllowVoteKick { get; private set; } = false;
-        public bool AllowInvite => _server.Configuration.DiscoveryPolicy == Enums.DiscoveryPolicy.WithCode;
+        public bool AllowInvite => _server.Configuration.DiscoveryPolicy is
+            Enums.DiscoveryPolicy.WithCode or Enums.DiscoveryPolicy.Public;
 
         public PlayersPermissionConfiguration Permissions { get; private set; } = new();
 
