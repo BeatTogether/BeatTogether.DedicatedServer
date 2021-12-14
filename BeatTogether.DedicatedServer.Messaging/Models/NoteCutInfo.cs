@@ -1,5 +1,6 @@
-﻿using BeatTogether.Extensions;
-using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -20,40 +21,40 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public float TimeToNextNote { get; set; }
         public Vector3 MoveVec { get; set; }
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            CutWasOk = reader.GetByte();
-            SaberSpeed = reader.GetFloat();
-            SaberDir.Deserialize(reader);
-            CutPoint.Deserialize(reader);
-            CutNormal.Deserialize(reader);
-            NotePosition.Deserialize(reader);
-            NoteScale.Deserialize(reader);
-            NoteRotation.Deserialize(reader);
-            ColorType = reader.GetVarInt();
-            NoteLineLayer = reader.GetVarInt();
-            NoteLineIndex = reader.GetVarInt();
-            NoteTime = reader.GetFloat();
-            TimeToNextNote = reader.GetFloat();
-            MoveVec.Deserialize(reader);
+            CutWasOk = reader.ReadUInt8();
+            SaberSpeed = reader.ReadFloat32();
+            SaberDir.ReadFrom(ref reader);
+            CutPoint.ReadFrom(ref reader);
+            CutNormal.ReadFrom(ref reader);
+            NotePosition.ReadFrom(ref reader);
+            NoteScale.ReadFrom(ref reader);
+            NoteRotation.ReadFrom(ref reader);
+            ColorType = reader.ReadVarInt();
+            NoteLineLayer = reader.ReadVarInt();
+            NoteLineIndex = reader.ReadVarInt();
+            NoteTime = reader.ReadFloat32();
+            TimeToNextNote = reader.ReadFloat32();
+            MoveVec.ReadFrom(ref reader);
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.Put(CutWasOk);
-            writer.Put(SaberSpeed);
-            SaberDir.Serialize(writer);
-            CutPoint.Serialize(writer);
-            CutNormal.Serialize(writer);
-            NotePosition.Serialize(writer);
-            NoteScale.Serialize(writer);
-            NoteRotation.Serialize(writer);
-            writer.PutVarInt(ColorType);
-            writer.PutVarInt(NoteLineLayer);
-            writer.PutVarInt(NoteLineIndex);
-            writer.Put(NoteTime);
-            writer.Put(TimeToNextNote);
-            MoveVec.Serialize(writer);
+            writer.WriteUInt8(CutWasOk);
+            writer.WriteFloat32(SaberSpeed);
+            SaberDir.WriteTo(ref writer);
+            CutPoint.WriteTo(ref writer);
+            CutNormal.WriteTo(ref writer);
+            NotePosition.WriteTo(ref writer);
+            NoteScale.WriteTo(ref writer);
+            NoteRotation.WriteTo(ref writer);
+            writer.WriteVarInt(ColorType);
+            writer.WriteVarInt(NoteLineLayer);
+            writer.WriteVarInt(NoteLineIndex);
+            writer.WriteFloat32(NoteTime);
+            writer.WriteFloat32(TimeToNextNote);
+            MoveVec.WriteTo(ref writer);
         }
     }
 }

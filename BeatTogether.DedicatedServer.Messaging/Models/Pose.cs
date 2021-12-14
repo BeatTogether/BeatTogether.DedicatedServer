@@ -1,4 +1,5 @@
-﻿using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -7,16 +8,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public Vector3 Position { get; set; }
         public Quaternion Rotation { get; set; }
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            Position.Deserialize(reader);
-            Rotation.Deserialize(reader);
+            Position.ReadFrom(ref reader);
+            Rotation.ReadFrom(ref reader);
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            Position.Serialize(writer);
-            Rotation.Serialize(writer);
+            Position.WriteTo(ref writer);
+            Rotation.WriteTo(ref writer);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -8,18 +9,18 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public float g { get; set; }
         public float b { get; set; }
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            r = reader.GetFloat();
-            g = reader.GetFloat();
-            b = reader.GetFloat();
+            r = reader.ReadFloat32();
+            g = reader.ReadFloat32();
+            b = reader.ReadFloat32();
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.Put(r);
-            writer.Put(g);
-            writer.Put(b);
+            writer.WriteFloat32(r);
+            writer.WriteFloat32(g);
+            writer.WriteFloat32(b);
         }
     }
 }

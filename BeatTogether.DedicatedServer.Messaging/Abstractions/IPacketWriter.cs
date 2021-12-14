@@ -1,9 +1,10 @@
-﻿using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Abstractions
 {
     public interface IPacketWriter
     {
-        void WriteTo(NetDataWriter writer, INetSerializable packet);
+        void WriteTo(ref SpanBufferWriter writer, INetSerializable packet);
     }
 }

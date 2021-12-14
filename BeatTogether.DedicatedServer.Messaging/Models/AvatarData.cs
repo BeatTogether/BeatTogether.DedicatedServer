@@ -1,6 +1,7 @@
-﻿using System.Drawing;
-using BeatTogether.Extensions;
-using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
+using Krypton.Buffers;
+using System.Drawing;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -23,46 +24,46 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public string? EyesId { get; set; }
         public string? MouthId { get; set; }
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            HeadTopId = reader.GetString();
-            HeadTopPrimaryColor = reader.GetColor();
-            HandsColor = reader.GetColor();
-            ClothesId = reader.GetString();
-            ClothesPrimaryColor = reader.GetColor();
-            ClothesSecondaryColor = reader.GetColor();
-            ClothesDetailColor = reader.GetColor();
+            HeadTopId = reader.ReadUTF8String();
+            HeadTopPrimaryColor = reader.ReadColor();
+            HandsColor = reader.ReadColor();
+            ClothesId = reader.ReadUTF8String();
+            ClothesPrimaryColor = reader.ReadColor();
+            ClothesSecondaryColor = reader.ReadColor();
+            ClothesDetailColor = reader.ReadColor();
             reader.SkipBytes(8);
-            EyesId = reader.GetString();
-            MouthId = reader.GetString();
-            GlassesColor = reader.GetColor();
-            FacialHairColor = reader.GetColor();
-            HeadTopSecondaryColor = reader.GetColor();
-            GlassesId = reader.GetString();
-            FacialHairId = reader.GetString();
-            HandsId = reader.GetString();
+            EyesId = reader.ReadUTF8String();
+            MouthId = reader.ReadUTF8String();
+            GlassesColor = reader.ReadColor();
+            FacialHairColor = reader.ReadColor();
+            HeadTopSecondaryColor = reader.ReadColor();
+            GlassesId = reader.ReadUTF8String();
+            FacialHairId = reader.ReadUTF8String();
+            HandsId = reader.ReadUTF8String();
             SkinColorId = GlassesId;  // Don't ask
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.Put(HeadTopId);
-            writer.Put(HeadTopPrimaryColor);
-            writer.Put(HandsColor);
-            writer.Put(ClothesId);
-            writer.Put(ClothesPrimaryColor);
-            writer.Put(ClothesSecondaryColor);
-            writer.Put(ClothesDetailColor);
-            writer.Put(new Color());
-            writer.Put(new Color());
-            writer.Put(EyesId);
-            writer.Put(MouthId);
-            writer.Put(GlassesColor);
-            writer.Put(FacialHairColor);
-            writer.Put(HeadTopSecondaryColor);
-            writer.Put(GlassesId);
-            writer.Put(FacialHairId);
-            writer.Put(HandsId);
+            writer.WriteUTF8String(HeadTopId);
+            writer.WriteColor(HeadTopPrimaryColor);
+            writer.WriteColor(HandsColor);
+            writer.WriteUTF8String(ClothesId);
+            writer.WriteColor(ClothesPrimaryColor);
+            writer.WriteColor(ClothesSecondaryColor);
+            writer.WriteColor(ClothesDetailColor);
+            writer.WriteColor(new Color());
+            writer.WriteColor(new Color());
+            writer.WriteUTF8String(EyesId);
+            writer.WriteUTF8String(MouthId);
+            writer.WriteColor(GlassesColor);
+            writer.WriteColor(FacialHairColor);
+            writer.WriteColor(HeadTopSecondaryColor);
+            writer.WriteUTF8String(GlassesId);
+            writer.WriteUTF8String(FacialHairId);
+            writer.WriteUTF8String(HandsId);
         }
     }
 }

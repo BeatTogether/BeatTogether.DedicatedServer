@@ -1,5 +1,6 @@
-﻿using BeatTogether.Extensions;
-using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -11,22 +12,22 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public int Combo { get; set; }
         public int Multiplier { get; set; }
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            ModifiedScore = reader.GetVarInt();
-            RawScore = reader.GetVarInt();
-            ImmediateMaxPossibleScore = reader.GetVarInt();
-            Combo = reader.GetVarInt();
-            Multiplier = reader.GetVarInt();
+            ModifiedScore = reader.ReadVarInt();
+            RawScore = reader.ReadVarInt();
+            ImmediateMaxPossibleScore = reader.ReadVarInt();
+            Combo = reader.ReadVarInt();
+            Multiplier = reader.ReadVarInt();
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.PutVarInt(ModifiedScore);
-            writer.PutVarInt(RawScore);
-            writer.PutVarInt(ImmediateMaxPossibleScore);
-            writer.PutVarInt(Combo);
-            writer.PutVarInt(Multiplier);
+            writer.WriteVarInt(ModifiedScore);
+            writer.WriteVarInt(RawScore);
+            writer.WriteVarInt(ImmediateMaxPossibleScore);
+            writer.WriteVarInt(Combo);
+            writer.WriteVarInt(Multiplier);
         }
     }
 }

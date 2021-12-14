@@ -1,4 +1,5 @@
-﻿using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -22,9 +23,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 		public bool ZenMode { get; set; }
 		public bool SmallCubes { get; set; }
 
-		public void Deserialize(NetDataReader reader)
+		public void ReadFrom(ref SpanBufferReader reader)
 		{
-			int @int = reader.GetInt();
+			int @int = reader.ReadInt32();
 			Energy = (EnergyType)(@int & 15);
 			DemoNoFail = (@int & 32) != 0;
 			InstaFail = (@int & 64) != 0;
@@ -44,7 +45,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 			SmallCubes = (@int & 67108864) != 0;
 		}
 
-		public void Serialize(NetDataWriter writer)
+		public void WriteTo(ref SpanBufferWriter writer)
 		{
 			int num = 0;
 			num |= (int)(Energy & (EnergyType)15);
@@ -64,7 +65,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 			num |= (ProMode ? 16777216 : 0);
 			num |= (ZenMode ? 33554432 : 0);
 			num |= (SmallCubes ? 67108864 : 0);
-			writer.Put(num);
+			writer.WriteInt32(num);
 		}
 
 		public enum EnabledObstacleType

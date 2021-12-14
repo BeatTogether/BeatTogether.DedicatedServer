@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets;
+using BeatTogether.LiteNetLib.Abstractions;
 
 namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
 {

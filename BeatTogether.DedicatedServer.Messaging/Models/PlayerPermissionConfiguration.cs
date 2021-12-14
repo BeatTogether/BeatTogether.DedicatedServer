@@ -1,4 +1,5 @@
-﻿using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -11,10 +12,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public bool HasKickVotePermission { get; set; }
         public bool HasInvitePermission { get; set; }
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            UserId = reader.GetString();
-            byte num = reader.GetByte();
+            UserId = reader.ReadUTF8String();
+            byte num = reader.ReadUInt8();
             IsServerOwner = (num & 1) > 0;
             HasRecommendBeatmapsPermission = (num & 2) > 0;
             HasRecommendGameplayModifiersPermission = (num & 4) > 0;
@@ -22,11 +23,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             HasInvitePermission = (num & 16) > 0;
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.Put(UserId);
+            writer.WriteUTF8String(UserId);
             int num = (IsServerOwner ? 1 : 0) | (HasRecommendBeatmapsPermission ? 2 : 0) | (HasRecommendGameplayModifiersPermission ? 4 : 0) | (HasKickVotePermission ? 8 : 0) | (HasInvitePermission ? 16 : 0);
-            writer.Put((byte)num);
+            writer.WriteUInt8((byte)num);
         }
     }
 }

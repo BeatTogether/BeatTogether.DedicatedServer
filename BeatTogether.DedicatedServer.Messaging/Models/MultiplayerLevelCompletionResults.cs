@@ -1,6 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.Extensions;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -9,18 +10,18 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public MultiplayerLevelEndState LevelEndState { get; set; }
         public LevelCompletionResults LevelCompletionResults { get; set; } = new();
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            LevelEndState = (MultiplayerLevelEndState)reader.GetVarInt();
+            LevelEndState = (MultiplayerLevelEndState)reader.ReadVarInt();
             if (LevelEndState == MultiplayerLevelEndState.Cleared || LevelEndState == MultiplayerLevelEndState.Failed)
-                LevelCompletionResults.Deserialize(reader);
+                LevelCompletionResults.ReadFrom(ref reader);
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.PutVarInt((int)LevelEndState);
+            writer.WriteVarInt((int)LevelEndState);
             if (LevelEndState == MultiplayerLevelEndState.Cleared || LevelEndState == MultiplayerLevelEndState.Failed)
-                LevelCompletionResults.Serialize(writer);
+                LevelCompletionResults.WriteTo(ref writer);
         }
     }
 }
