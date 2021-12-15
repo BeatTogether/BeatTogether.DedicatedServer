@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Models;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib.Abstractions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
 {
@@ -9,18 +10,18 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
         public float Time { get; set; }
         public NodePoseSyncState State { get; set; } = new();
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            SyncStateId = reader.GetByte();
-            Time = reader.GetFloat();
-            State.Deserialize(reader);
+            SyncStateId = reader.ReadUInt8();
+            Time = reader.ReadFloat32();
+            State.ReadFrom(ref reader);
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.Put(SyncStateId);
-            writer.Put(Time);
-            State.Serialize(writer);
+            writer.WriteUInt8(SyncStateId);
+            writer.WriteFloat32(Time);
+            State.WriteTo(ref writer);
         }
     }
 }

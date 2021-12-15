@@ -2,7 +2,7 @@
 using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.LiteNetLib.Abstractions;
 
-namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
+namespace BeatTogether.DedicatedServer.Messaging.Registries
 {
     public sealed class PacketRegistry : BasePacketRegistry
     {

@@ -1,7 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.Extensions;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib.Extensions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
@@ -9,16 +9,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
     {
         public MultiplayerGameState State { get; set; }
 
-        public override void Deserialize(NetDataReader reader)
+        public override void ReadFrom(ref SpanBufferReader reader)
         {
-            base.Deserialize(reader);
-            State = (MultiplayerGameState)reader.GetVarInt();
+            base.ReadFrom(ref reader);
+            State = (MultiplayerGameState)reader.ReadVarInt();
         }
 
-        public override void Serialize(NetDataWriter writer)
+        public override void WriteTo(ref SpanBufferWriter writer)
         {
-            base.Serialize(writer);
-            writer.PutVarInt((int)State);
+            base.WriteTo(ref writer);
+            writer.WriteVarInt((int)State);
         }
     }
 }

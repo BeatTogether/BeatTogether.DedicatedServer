@@ -1,6 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using LiteNetLib.Utils;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
@@ -8,16 +8,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
     {
         public PlayersPermissionConfiguration PermissionConfiguration { get; set; } = new();
 
-        public override void Deserialize(NetDataReader reader)
+        public override void ReadFrom(ref SpanBufferReader reader)
         {
-            base.Deserialize(reader);
-            PermissionConfiguration.Deserialize(reader);
+            base.ReadFrom(ref reader);
+            PermissionConfiguration.ReadFrom(ref reader);
         }
 
-        public override void Serialize(NetDataWriter writer)
+        public override void WriteTo(ref SpanBufferWriter writer)
         {
-            base.Serialize(writer);
-            PermissionConfiguration.Serialize(writer);
+            base.WriteTo(ref writer);
+            PermissionConfiguration.WriteTo(ref writer);
         }
     }
 }

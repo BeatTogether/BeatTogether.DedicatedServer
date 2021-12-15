@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Models;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib.Abstractions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
@@ -7,14 +8,14 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
     {
         public PlayerStateHash PlayerState { get; set; } = new();
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            PlayerState.Deserialize(reader);
+            PlayerState.ReadFrom(ref reader);
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            PlayerState.Serialize(writer);
+            PlayerState.WriteTo(ref writer);
         }
     }
 }

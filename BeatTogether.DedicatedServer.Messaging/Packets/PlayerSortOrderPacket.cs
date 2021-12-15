@@ -1,5 +1,6 @@
-﻿using BeatTogether.Extensions;
-using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
@@ -8,16 +9,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         public string UserId { get; set; } = null!;
         public int SortIndex { get; set; }
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            UserId = reader.GetString();
-            SortIndex = reader.GetVarInt();
+            UserId = reader.ReadUTF8String();
+            SortIndex = reader.ReadVarInt();
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.Put(UserId);
-            writer.PutVarInt(SortIndex);
+            writer.WriteUTF8String(UserId);
+            writer.WriteVarInt(SortIndex);
         }
     }
 }

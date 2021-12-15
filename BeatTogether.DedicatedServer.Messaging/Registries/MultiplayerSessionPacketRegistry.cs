@@ -1,7 +1,8 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;
+using BeatTogether.LiteNetLib.Abstractions;
 
-namespace BeatTogether.DedicatedServer.Messaging.PacketRegistries
+namespace BeatTogether.DedicatedServer.Messaging.Registries
 {
     public sealed class MultiplayerSessionPacketRegistry : BasePacketRegistry
     {
