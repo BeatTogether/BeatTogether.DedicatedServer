@@ -17,7 +17,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         public override void WriteTo(ref SpanBufferWriter writer)
         {
             base.WriteTo(ref writer);
-            Modifiers.ReadFrom(ref writer);
+            Modifiers.WriteTo(ref writer);
         }
     }
 }

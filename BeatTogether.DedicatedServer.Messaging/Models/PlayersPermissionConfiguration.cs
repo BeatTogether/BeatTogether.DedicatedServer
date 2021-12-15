@@ -24,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteInt32(PlayersPermission.Count);
             foreach(var permission in PlayersPermission)
             {
-                permission.WriteTo(writer);
+                permission.WriteTo(ref writer);
             }
         }
     }

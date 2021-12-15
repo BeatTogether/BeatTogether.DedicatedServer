@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
