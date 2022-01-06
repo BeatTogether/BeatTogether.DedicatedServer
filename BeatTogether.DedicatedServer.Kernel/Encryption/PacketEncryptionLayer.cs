@@ -24,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
         private readonly ILogger _logger = Log.ForContext<PacketEncryptionLayer>();
 
         private readonly ConcurrentDictionary<IPAddress, EncryptionParameters> _potentialEncryptionParameters = new();
-        private readonly ConcurrentDictionary<IPEndPoint, EncryptionParameters> _encryptionParameters = new();
+        private readonly ConcurrentDictionary<EndPoint, EncryptionParameters> _encryptionParameters = new();
 
         private static byte[] _masterSecretSeed = Encoding.UTF8.GetBytes("master secret");
         private static byte[] _keyExpansionSeed = Encoding.UTF8.GetBytes("key expansion");
@@ -83,51 +83,47 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             _encryptionParameters.TryRemove(endPoint, out _);
         }
 
-        public void ProcessInboundPacket(EndPoint endPoint, Span<byte> data)
+        public void ProcessInboundPacket(EndPoint endPoint, ref Span<byte> data)
         {
+            var address = ((IPEndPoint)endPoint).Address;
+
             if (data.Length == 0)
                 return;
 
-            var bufferReader = new BinaryBufferReader(data.Slice(0, data.Length));
+            var bufferReader = new BinaryBufferReader(data);
             if (!bufferReader.ReadBool())  // isEncrypted
             {
                 _logger.Warning($"Received an unencrypted packet (RemoteEndPoint='{endPoint}').");
                 return;
             }
 
-            if (!_encryptionParameters.TryGetValue((IPEndPoint)endPoint, out var encryptionParameters))
-            {
-                if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint)endPoint).Address, out encryptionParameters))
-                {
-                    if (TryDecrypt(ref bufferReader, encryptionParameters, out var decryptedData))
-                    {
-                        _potentialEncryptionParameters.TryRemove(((IPEndPoint)endPoint).Address, out _);
-                        _encryptionParameters[(IPEndPoint)endPoint] = encryptionParameters;
-                        data = decryptedData;
-                        return;
-                    }
-                }
+            byte[]? decryptedData;
 
-                _logger.Verbose(
-                    "Failed to retrieve encryption parameters " +
-                    $"(RemoteEndPoint='{endPoint}')."
-                );
+            if (_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters) &&
+                !TryDecrypt(ref bufferReader, encryptionParameters, out decryptedData))
+            {
+                data = decryptedData;
                 return;
             }
-            else
-            {
-                if (!TryDecrypt(ref bufferReader, encryptionParameters, out var decryptedData))
-                {
-                    return;
-                }
 
+            if (_potentialEncryptionParameters.TryGetValue(address, out encryptionParameters) &&
+                TryDecrypt(ref bufferReader, encryptionParameters, out decryptedData))
+            {
+                _potentialEncryptionParameters.TryRemove(address, out _);
+                _encryptionParameters[endPoint] = encryptionParameters;
                 data = decryptedData;
+                return;
             }
+
+            _logger.Verbose(
+                "Failed to retrieve encryption parameters " +
+                $"(RemoteEndPoint='{endPoint}')."
+            );
         }
 
-        public void ProcessOutBoundPacket(EndPoint endPoint, Span<byte> data)
+        public void ProcessOutBoundPacket(EndPoint endPoint, ref Span<byte> data)
         {
-            if (!_encryptionParameters.TryGetValue((IPEndPoint)endPoint, out var encryptionParameters))
+            if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
             {
                 _logger.Warning(
                     "Failed to retrieve encryption parameters " +
