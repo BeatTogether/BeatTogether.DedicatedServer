@@ -30,7 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public string UserId => "ziuMSceapEuNN7wRGQXrZg";
         public string UserName => "";
-        public InstanceConfiguration Configuration { get; private set; } = null!;
+        public InstanceConfiguration Configuration { get; private set; }
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => Endpoint.Port;
@@ -39,7 +39,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public event Action StartEvent = null!;
         public event Action StopEvent = null!;
 
-        private readonly InstanceConfiguration _configuration;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
         private readonly ConcurrentQueue<byte> _releasedConnectionIds = new();
@@ -67,7 +66,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                   serviceProvider,
                   packetLayer)
         {
-            _configuration = configuration;
+            Configuration = configuration;
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
         }

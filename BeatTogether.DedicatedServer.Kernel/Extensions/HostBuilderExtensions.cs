@@ -6,6 +6,7 @@ using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Dispatchers;
+using BeatTogether.LiteNetLib.Extensions;
 using BeatTogether.LiteNetLib.Sources;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,6 +21,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Extensions
                 .UseSerilog()
                 .ConfigureServices((hostBuilderContext, services) =>
                     services
+                        .AddLiteNetMessaging()
                         .AddConfiguration<LiteNetConfiguration>("LiteNetLib")
                         .AddScoped<InstanceConfiguration>()
                         .AddDedicatedServerMessaging()
