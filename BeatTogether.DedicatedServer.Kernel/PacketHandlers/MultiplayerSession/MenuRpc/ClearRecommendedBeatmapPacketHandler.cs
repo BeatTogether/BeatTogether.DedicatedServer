@@ -1,7 +1,8 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using LiteNetLib;
+using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System.Threading.Tasks;
 
@@ -10,12 +11,15 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
     class ClearRecommendedBeatmapPacketHandler : BasePacketHandler<ClearRecommendedBeatmapPacket>
     {
         private readonly IPacketDispatcher _packetDispatcher;
+        private readonly ILobbyManager _lobbyManager;
         private readonly ILogger _logger = Log.ForContext<ClearRecommendedBeatmapPacketHandler>();
 
         public ClearRecommendedBeatmapPacketHandler(
-            IPacketDispatcher packetDispatcher)
+            IPacketDispatcher packetDispatcher,
+            ILobbyManager lobbyManager)
         {
             _packetDispatcher = packetDispatcher;
+            _lobbyManager = lobbyManager;
         }
 
         public override Task Handle(IPlayer sender, ClearRecommendedBeatmapPacket packet)
@@ -26,11 +30,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
 
             sender.BeatmapIdentifier = null;
-            var setIsStartButtonEnabledPacket = new SetIsStartButtonEnabledPacket
+            _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
             {
                 Reason = CannotStartGameReason.NoSongSelected
-            };
-            _packetDispatcher.SendToPlayer(sender, setIsStartButtonEnabledPacket, DeliveryMethod.ReliableOrdered);
+            }, DeliveryMethod.ReliableOrdered);
+
+            _lobbyManager.Update();
 
             return Task.CompletedTask;
         }

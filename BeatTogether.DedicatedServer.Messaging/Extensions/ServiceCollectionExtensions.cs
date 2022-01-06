@@ -1,6 +1,5 @@
-﻿using BeatTogether.DedicatedServer.Messaging;
-using BeatTogether.DedicatedServer.Messaging.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.PacketRegistries;
+﻿using BeatTogether.DedicatedServer.Messaging.Registries;
+using BeatTogether.LiteNetLib.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BeatTogether.Extensions
@@ -9,8 +8,6 @@ namespace BeatTogether.Extensions
     {
         public static IServiceCollection AddDedicatedServerMessaging(this IServiceCollection services) =>
             services
-                .AddSingleton<IPacketRegistry, PacketRegistry>()
-                .AddSingleton<IPacketReader, PacketReader>()
-                .AddSingleton<IPacketWriter, PacketWriter>();
+                .AddSingleton<IPacketRegistry, PacketRegistry>();
     }
 }

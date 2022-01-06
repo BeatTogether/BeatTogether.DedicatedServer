@@ -1,4 +1,5 @@
-﻿using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -12,26 +13,26 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public float HeadPosToPlayerHeightOffset { get; set; }
         public ColorScheme ColorScheme { get; set; } = new();
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            UserId = reader.GetString();
-            UserName = reader.GetString();
-            LeftHanded = reader.GetBool();
-            AutomaticPlayerHeight = reader.GetBool();
-            PlayerHeight = reader.GetFloat();
-            HeadPosToPlayerHeightOffset = reader.GetFloat();
-            ColorScheme.Deserialize(reader);
+            UserId = reader.ReadUTF8String();
+            UserName = reader.ReadUTF8String();
+            LeftHanded = reader.ReadBool();
+            AutomaticPlayerHeight = reader.ReadBool();
+            PlayerHeight = reader.ReadFloat32();
+            HeadPosToPlayerHeightOffset = reader.ReadFloat32();
+            ColorScheme.ReadFrom(ref reader);
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.Put(UserId);
-            writer.Put(UserName);
-            writer.Put(LeftHanded);
-            writer.Put(AutomaticPlayerHeight);
-            writer.Put(PlayerHeight);
-            writer.Put(HeadPosToPlayerHeightOffset);
-            ColorScheme.Serialize(writer);
+            writer.WriteUTF8String(UserId);
+            writer.WriteUTF8String(UserName);
+            writer.WriteBool(LeftHanded);
+            writer.WriteBool(AutomaticPlayerHeight);
+            writer.WriteFloat32(PlayerHeight);
+            writer.WriteFloat32(HeadPosToPlayerHeightOffset);
+            ColorScheme.WriteTo(ref writer);
         }
     }
 }

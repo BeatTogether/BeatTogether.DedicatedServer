@@ -1,7 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Enums;
+using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using LiteNetLib;
+using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System.Threading.Tasks;
 
@@ -9,16 +9,16 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
 	public sealed class SetRecommendedBeatmapPacketHandler : BasePacketHandler<SetRecommendedBeatmapPacket>
 	{
-		private readonly IPermissionsManager _permissionsManager;
 		private readonly IPacketDispatcher _packetDispatcher;
+		private readonly ILobbyManager _lobbyManager;
 		private readonly ILogger _logger = Log.ForContext<SetRecommendedBeatmapPacket>();
 
 		public SetRecommendedBeatmapPacketHandler(
-			IPermissionsManager permissionsManager,
-			IPacketDispatcher packetDispatcher)
+			IPacketDispatcher packetDispatcher,
+			ILobbyManager lobbyManager)
 		{
-			_permissionsManager = permissionsManager;
 			_packetDispatcher = packetDispatcher;
+			_lobbyManager = lobbyManager;
 		}
 
 		public override Task Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)
@@ -28,7 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 				$"(SenderId={sender.ConnectionId}, LevelId={packet.BeatmapIdentifier.LevelId}, Difficulty={packet.BeatmapIdentifier.Difficulty})."
 			);
 
-			if (_permissionsManager.PlayerCanRecommendBeatmaps(sender.UserId))
+			if (sender.CanRecommendBeatmaps)
 			{
 				sender.BeatmapIdentifier = packet.BeatmapIdentifier;
 
@@ -36,6 +36,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 				{
 					LevelId = packet.BeatmapIdentifier.LevelId
 				}, DeliveryMethod.ReliableOrdered);
+
+				_lobbyManager.Update();
 			}
 
 			return Task.CompletedTask;

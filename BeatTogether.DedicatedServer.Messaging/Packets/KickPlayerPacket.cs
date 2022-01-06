@@ -1,6 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.Extensions;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
@@ -8,14 +9,14 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
     {
         public DisconnectedReason DisconnectedReason { get; set; }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.PutVarInt((int)DisconnectedReason);
+            writer.WriteVarInt((int)DisconnectedReason);
         }
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            DisconnectedReason = (DisconnectedReason)reader.GetVarInt();
+            DisconnectedReason = (DisconnectedReason)reader.ReadVarInt();
         }
     }
 }

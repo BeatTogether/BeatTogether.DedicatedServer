@@ -1,4 +1,4 @@
-﻿using BeatTogether.Extensions;
+﻿using BeatTogether.DedicatedServer.Node.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace BeatTogether.DedicatedServer
@@ -9,6 +9,6 @@ namespace BeatTogether.DedicatedServer
             CreateHostBuilder(args).Build().Run();
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args).UseDedicatedServerKernel();
+            Host.CreateDefaultBuilder(args).UseDedicatedServerNode();
     }
 }

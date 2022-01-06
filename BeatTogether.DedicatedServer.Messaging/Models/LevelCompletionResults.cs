@@ -1,6 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.Extensions;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -36,70 +37,70 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public float AverageTimeDeviation { get; set; }
         public float EndSongTime { get; set; }
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            GameplayModifiers.Deserialize(reader);
-            ModifiedScore = reader.GetVarInt();
-            RawScore = reader.GetVarInt();
-            Rank = (Rank)reader.GetVarInt();
-            FullCombo = reader.GetBool();
-            LeftSaberMovementDistance = reader.GetFloat();
-            RightSaberMovementDistance = reader.GetFloat();
-            LeftHandMovementDistance = reader.GetFloat();
-            RightHandMovementDistance = reader.GetFloat();
-            SongDuration = reader.GetFloat();
-            LevelEndStateType = (LevelEndStateType)reader.GetVarInt();
-            LevelEndAction = (LevelEndAction)reader.GetVarInt();
-            Energy = reader.GetFloat();
-            GoodCutsCount = reader.GetVarInt();
-            BadCutsCount = reader.GetVarInt();
-            MissedCount = reader.GetVarInt();
-            NotGoodCount = reader.GetVarInt();
-            OkCount = reader.GetVarInt();
-            AverageCutScore = reader.GetVarInt();
-            MaxCutScore = reader.GetVarInt();
-            AverageCutDistanceRawScore = reader.GetFloat();
-            MaxCombo = reader.GetVarInt();
-            MinDirDeviation = reader.GetFloat();
-            MaxDirDeviation = reader.GetFloat();
-            AverageDirDeviation = reader.GetFloat();
-            MinTimeDeviation = reader.GetFloat();
-            MaxTimeDeviation = reader.GetFloat();
-            AverageTimeDeviation = reader.GetFloat();
-            EndSongTime = reader.GetFloat();
+            GameplayModifiers.ReadFrom(ref reader);
+            ModifiedScore = reader.ReadVarInt();
+            RawScore = reader.ReadVarInt();
+            Rank = (Rank)reader.ReadVarInt();
+            FullCombo = reader.ReadBool();
+            LeftSaberMovementDistance = reader.ReadFloat32();
+            RightSaberMovementDistance = reader.ReadFloat32();
+            LeftHandMovementDistance = reader.ReadFloat32();
+            RightHandMovementDistance = reader.ReadFloat32();
+            SongDuration = reader.ReadFloat32();
+            LevelEndStateType = (LevelEndStateType)reader.ReadVarInt();
+            LevelEndAction = (LevelEndAction)reader.ReadVarInt();
+            Energy = reader.ReadFloat32();
+            GoodCutsCount = reader.ReadVarInt();
+            BadCutsCount = reader.ReadVarInt();
+            MissedCount = reader.ReadVarInt();
+            NotGoodCount = reader.ReadVarInt();
+            OkCount = reader.ReadVarInt();
+            AverageCutScore = reader.ReadVarInt();
+            MaxCutScore = reader.ReadVarInt();
+            AverageCutDistanceRawScore = reader.ReadFloat32();
+            MaxCombo = reader.ReadVarInt();
+            MinDirDeviation = reader.ReadFloat32();
+            MaxDirDeviation = reader.ReadFloat32();
+            AverageDirDeviation = reader.ReadFloat32();
+            MinTimeDeviation = reader.ReadFloat32();
+            MaxTimeDeviation = reader.ReadFloat32();
+            AverageTimeDeviation = reader.ReadFloat32();
+            EndSongTime = reader.ReadFloat32();
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            GameplayModifiers.Serialize(writer);
-            writer.PutVarInt(ModifiedScore);
-            writer.PutVarInt(RawScore);
-            writer.PutVarInt((int)Rank);
-            writer.Put(FullCombo);
-            writer.Put(LeftSaberMovementDistance);
-            writer.Put(RightSaberMovementDistance);
-            writer.Put(LeftHandMovementDistance);
-            writer.Put(RightHandMovementDistance);
-            writer.Put(SongDuration);
-            writer.PutVarInt((int)LevelEndStateType);
-            writer.PutVarInt((int)LevelEndAction);
-            writer.Put(Energy);
-            writer.PutVarInt(GoodCutsCount);
-            writer.PutVarInt(BadCutsCount);
-            writer.PutVarInt(MissedCount);
-            writer.PutVarInt(NotGoodCount);
-            writer.PutVarInt(OkCount);
-            writer.PutVarInt(AverageCutScore);
-            writer.PutVarInt(MaxCutScore);
-            writer.Put(AverageCutDistanceRawScore);
-            writer.PutVarInt(MaxCombo);
-            writer.Put(MinDirDeviation);
-            writer.Put(MaxDirDeviation);
-            writer.Put(AverageDirDeviation);
-            writer.Put(MinTimeDeviation);
-            writer.Put(MaxTimeDeviation);
-            writer.Put(AverageTimeDeviation);
-            writer.Put(EndSongTime);
+            GameplayModifiers.WriteTo(ref writer);
+            writer.WriteVarInt(ModifiedScore);
+            writer.WriteVarInt(RawScore);
+            writer.WriteVarInt((int)Rank);
+            writer.WriteBool(FullCombo);
+            writer.WriteFloat32(LeftSaberMovementDistance);
+            writer.WriteFloat32(RightSaberMovementDistance);
+            writer.WriteFloat32(LeftHandMovementDistance);
+            writer.WriteFloat32(RightHandMovementDistance);
+            writer.WriteFloat32(SongDuration);
+            writer.WriteVarInt((int)LevelEndStateType);
+            writer.WriteVarInt((int)LevelEndAction);
+            writer.WriteFloat32(Energy);
+            writer.WriteVarInt(GoodCutsCount);
+            writer.WriteVarInt(BadCutsCount);
+            writer.WriteVarInt(MissedCount);
+            writer.WriteVarInt(NotGoodCount);
+            writer.WriteVarInt(OkCount);
+            writer.WriteVarInt(AverageCutScore);
+            writer.WriteVarInt(MaxCutScore);
+            writer.WriteFloat32(AverageCutDistanceRawScore);
+            writer.WriteVarInt(MaxCombo);
+            writer.WriteFloat32(MinDirDeviation);
+            writer.WriteFloat32(MaxDirDeviation);
+            writer.WriteFloat32(AverageDirDeviation);
+            writer.WriteFloat32(MinTimeDeviation);
+            writer.WriteFloat32(MaxTimeDeviation);
+            writer.WriteFloat32(AverageTimeDeviation);
+            writer.WriteFloat32(EndSongTime);
         }
     }
 }

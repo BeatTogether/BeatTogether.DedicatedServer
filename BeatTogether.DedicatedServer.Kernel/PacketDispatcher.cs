@@ -1,44 +1,47 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.Extensions;
-using LiteNetLib;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib;
+using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Configuration;
+using BeatTogether.LiteNetLib.Dispatchers;
+using BeatTogether.LiteNetLib.Enums;
+using Krypton.Buffers;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
-    public sealed class PacketDispatcher : IPacketDispatcher
+    public sealed class PacketDispatcher : ConnectedMessageDispatcher, IPacketDispatcher
     {
-        private readonly IMatchmakingServer _server;
+        public const byte LocalConnectionId = 0;
+        public const byte AllConnectionIds = 127;
+
         private readonly IPlayerRegistry _playerRegistry;
-        private readonly IPacketWriter _packetWriter;
         private readonly ILogger _logger = Log.ForContext<PacketDispatcher>();
 
-        private const byte _localConnectionId = 0;
-        private const byte _allConnectionIds = 127;
-
         public PacketDispatcher(
-            IMatchmakingServer server,
             IPlayerRegistry playerRegistry,
-            IPacketWriter packetWriter)
+            LiteNetConfiguration configuration,
+            LiteNetServer server)
+            : base (
+                  configuration,
+                  server)
         {
-            _server = server;
             _playerRegistry = playerRegistry;
-            _packetWriter = packetWriter;
         }
 
         public void SendToNearbyPlayers(INetSerializable packet, DeliveryMethod deliveryMethod)
         {
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
-                $"(SenderId={_localConnectionId})"
-
+                $"(SenderId={LocalConnectionId})"
             );
 
-            var writer = new NetDataWriter();
-            writer.PutRoutingHeader(_localConnectionId, _localConnectionId);
-            _packetWriter.WriteTo(writer, packet);
-            _server.SendToAll(writer, deliveryMethod);
+            var writer = new SpanBufferWriter();
+            writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
+            packet.WriteTo(ref writer);
+
+            foreach (var player in _playerRegistry.Players)
+                Send(player.Endpoint, writer.Data, deliveryMethod);
         }
 
         public void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -48,16 +51,12 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(ExcludedId={excludedPlayer.ConnectionId})"
             );
 
-            var writer = new NetDataWriter();
-            writer.PutRoutingHeader(_localConnectionId, _localConnectionId);
-            _packetWriter.WriteTo(writer, packet);
+            var writer = new SpanBufferWriter();
+            writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
+            packet.WriteTo(ref writer);
             foreach (IPlayer player in _playerRegistry.Players)
-            {
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
-                {
-                    player.NetPeer.Send(writer, deliveryMethod);
-                }
-            }
+                    Send(player.Endpoint, writer.Data, deliveryMethod);
         }
 
         public void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -67,36 +66,38 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={fromPlayer.ConnectionId})"
             );
 
-            var writer = new NetDataWriter();
-            writer.PutRoutingHeader(fromPlayer.ConnectionId, _localConnectionId);
-            _packetWriter.WriteTo(writer, packet);
-            _server.SendToAll(writer, deliveryMethod);
+            var writer = new SpanBufferWriter();
+            writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            packet.WriteTo(ref writer);
+
+            foreach (var player in _playerRegistry.Players)
+                Send(player.Endpoint, writer.Data, deliveryMethod);
 		}
 
         public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
         {
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
-                $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={_localConnectionId})."
+                $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={LocalConnectionId})."
             );
 
-            var writer = new NetDataWriter();
-            writer.PutRoutingHeader(fromPlayer.ConnectionId, _localConnectionId);
-            _packetWriter.WriteTo(writer, packet);
-            toPlayer.NetPeer.Send(writer, deliveryMethod);
+            var writer = new SpanBufferWriter();
+            writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            packet.WriteTo(ref writer);
+            Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
         }
 
         public void SendToPlayer(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod)
         {
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
-                $"(SenderId={_localConnectionId}, ReceiverId={_localConnectionId})."
+                $"(SenderId={LocalConnectionId}, ReceiverId={LocalConnectionId})."
             );
 
-            var writer = new NetDataWriter();
-            writer.PutRoutingHeader(_localConnectionId, _localConnectionId);
-            _packetWriter.WriteTo(writer, packet);
-            player.NetPeer.Send(writer, deliveryMethod);
+            var writer = new SpanBufferWriter();
+            writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
+            packet.WriteTo(ref writer);
+            Send(player.Endpoint, writer, deliveryMethod);
         }
     }
 }

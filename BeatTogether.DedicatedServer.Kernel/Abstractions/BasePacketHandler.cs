@@ -1,5 +1,5 @@
-﻿using System.Threading.Tasks;
-using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {

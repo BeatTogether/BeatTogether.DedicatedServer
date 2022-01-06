@@ -1,5 +1,5 @@
-﻿using LiteNetLib;
-using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Enums;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {

@@ -1,7 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.Extensions;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib.Extensions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
@@ -10,18 +10,18 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         public string LevelId { get; set; } = null!;
         public EntitlementStatus Entitlement { get; set; }
 
-        public override void Deserialize(NetDataReader reader)
+        public override void ReadFrom(ref SpanBufferReader reader)
         {
-            base.Deserialize(reader);
-            LevelId = reader.GetString();
-            Entitlement = (EntitlementStatus)reader.GetVarInt();
+            base.ReadFrom(ref reader);
+            LevelId = reader.ReadUTF8String();
+            Entitlement = (EntitlementStatus)reader.ReadVarInt();
         }
 
-        public override void Serialize(NetDataWriter writer)
+        public override void WriteTo(ref SpanBufferWriter writer)
         {
-            base.Serialize(writer);
-            writer.Put(LevelId);
-            writer.PutVarInt((int)Entitlement);
+            base.WriteTo(ref writer);
+            writer.WriteUTF8String(LevelId);
+            writer.WriteVarInt((int)Entitlement);
         }
     }
 }

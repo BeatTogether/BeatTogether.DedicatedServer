@@ -1,5 +1,5 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
-using LiteNetLib.Utils;
+using Krypton.Buffers;
 using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
@@ -8,23 +8,23 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
     {
         public List<string> PlayersWithoutEntitlements { get; set; } = new();
 
-        public override void Deserialize(NetDataReader reader)
+        public override void ReadFrom(ref SpanBufferReader reader)
         {
-            base.Deserialize(reader);
-            int count = reader.GetInt();
+            base.ReadFrom(ref reader);
+            int count = reader.ReadInt32();
             for (int i = 0; i < count; i++)
             {
-                PlayersWithoutEntitlements.Add(reader.GetString());
+                PlayersWithoutEntitlements.Add(reader.ReadUTF8String());
             }
         }
 
-        public override void Serialize(NetDataWriter writer)
+        public override void WriteTo(ref SpanBufferWriter writer)
         {
-            base.Serialize(writer);
-            writer.Put(PlayersWithoutEntitlements.Count);
+            base.WriteTo(ref writer);
+            writer.WriteInt32(PlayersWithoutEntitlements.Count);
             foreach (string player in PlayersWithoutEntitlements)
             {
-                writer.Put(player);
+                writer.WriteUTF8String(player);
             }
         }
     }

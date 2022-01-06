@@ -1,7 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using LiteNetLib;
+using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System.Threading.Tasks;
 
@@ -9,15 +8,15 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     public sealed class GetMultiplayerGameStatePacketHandler : BasePacketHandler<GetMultiplayerGameStatePacket>
     {
-        private readonly IMatchmakingServer _server;
+        private readonly IDedicatedInstance _instance;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly ILogger _logger = Log.ForContext<GetMultiplayerGameStatePacketHandler>();
 
         public GetMultiplayerGameStatePacketHandler(
-            IMatchmakingServer server,
+            IDedicatedInstance instance,
             IPacketDispatcher packetDispatcher)
         {
-            _server = server;
+            _instance = instance;
             _packetDispatcher = packetDispatcher;
         }
 
@@ -28,11 +27,10 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"(SenderId={sender.ConnectionId})."
             );
 
-            var gameStatePacket = new SetMultiplayerGameStatePacket
+            _packetDispatcher.SendToPlayer(sender, new SetMultiplayerGameStatePacket
             {
-                State = _server.State
-            };
-            _packetDispatcher.SendToPlayer(sender, gameStatePacket, DeliveryMethod.ReliableOrdered);
+                State = _instance.State
+            }, DeliveryMethod.ReliableOrdered);
 
             return Task.CompletedTask;
         }

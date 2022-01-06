@@ -1,9 +1,5 @@
-﻿using LiteNetLib.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -13,18 +9,18 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public Pose LeftController { get; set; }
         public Pose RightController { get; set; }
 
-        public void Deserialize(NetDataReader reader)
+        public void ReadFrom(ref SpanBufferReader reader)
         {
-            Head.Deserialize(reader);
-            LeftController.Deserialize(reader);
-            RightController.Deserialize(reader);
+            Head.ReadFrom(ref reader);
+            LeftController.ReadFrom(ref reader);
+            RightController.ReadFrom(ref reader);
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            Head.Serialize(writer);
-            LeftController.Serialize(writer);
-            RightController.Serialize(writer);
+            Head.WriteTo(ref writer);
+            LeftController.WriteTo(ref writer);
+            RightController.WriteTo(ref writer);
         }
     }
 }

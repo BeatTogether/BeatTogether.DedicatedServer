@@ -1,102 +1,132 @@
 ﻿using System;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.Extensions;
-using LiteNetLib;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib;
+using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Configuration;
+using BeatTogether.LiteNetLib.Enums;
+using BeatTogether.LiteNetLib.Extensions;
+using BeatTogether.LiteNetLib.Sources;
+using Krypton.Buffers;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
-    public sealed class PacketSource : IPacketSource
+    public sealed class PacketSource : ConnectedMessageSource
     {
+        public const byte LocalConnectionId = 0;
+        public const byte AllConnectionIds = 127;
+
         private readonly IServiceProvider _serviceProvider;
-        private readonly IPacketReader _packetReader;
+        private readonly IPacketRegistry _packetRegistry;
         private readonly IPlayerRegistry _playerRegistry;
+        private readonly PacketDispatcher _packetDispatcher;
         private readonly ILogger _logger = Log.ForContext<PacketSource>();
 
         public PacketSource(
             IServiceProvider serviceProvider,
-            IPacketReader packetReader,
-            IPlayerRegistry playerRegistry)
+            IPacketRegistry packetRegistry,
+            IPlayerRegistry playerRegistry,
+            PacketDispatcher packetDispatcher,
+            LiteNetConfiguration configuration,
+            LiteNetServer server)
+            : base (
+                  configuration,
+                  server)
         {
             _serviceProvider = serviceProvider;
-            _packetReader = packetReader;
+            _packetRegistry = packetRegistry;
             _playerRegistry = playerRegistry;
+            _packetDispatcher = packetDispatcher;
         }
 
-        public void Signal(NetPeer peer, NetDataReader reader, DeliveryMethod deliveryMethod)
+        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader, DeliveryMethod method)
         {
-            if (!reader.TryGetRoutingHeader(out var routingHeader))
+            if (!reader.TryReadRoutingHeader(out var routingHeader))
             {
                 _logger.Warning(
                     "Failed to read routing header " +
-                    $"(RemoteEndPoint='{peer.EndPoint}')."
+                    $"(RemoteEndPoint='{remoteEndPoint}')."
                 );
                 return;
             }
 
-            if (!_playerRegistry.TryGetPlayer(peer.EndPoint, out var sender))
+            if (!_playerRegistry.TryGetPlayer(remoteEndPoint, out var sender))
             {
                 _logger.Warning(
                     "Failed to retrieve sender " +
-                    $"(RemoteEndPoint='{peer.EndPoint}')."
+                    $"(RemoteEndPoint='{remoteEndPoint}')."
                 );
                 return;
             }
 
             // Is this packet meant to be routed?
             if (routingHeader.ReceiverId != 0)
-            {
-                RoutePacket(sender, routingHeader, reader, deliveryMethod);
-            }
+                RoutePacket(sender, routingHeader, ref reader, method);
 
-            while (!reader.EndOfData)
+            while (reader.RemainingSize > 0)
             {
-                try
+                var length = reader.ReadVarUInt();
+                if (reader.RemainingSize < length)
                 {
-                    var packetInfo = _packetReader.ReadFrom(reader);
-                    var packetType = packetInfo.packet.GetType();
-                    var packetHandlerType = typeof(IPacketHandler<>)
-                        .MakeGenericType(packetType);
-                    var packetHandler = _serviceProvider.GetService(packetHandlerType);
-                    if (packetHandler is null)
+                    _logger.Warning($"Packet fragmented (RemainingSize={reader.RemainingSize}, Expected={length}).");
+                    return;
+                }
+
+                var prevPosition = reader.Offset;
+                INetSerializable? packet;
+                var packetRegistry = _packetRegistry;
+                while (true)
+                {
+                    var packetId = reader.ReadByte();
+                    if (packetRegistry.TryCreatePacket(packetId, out packet))
+                        break;
+                    if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
                     {
-                        _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
-                        _packetReader.SkipPacket(reader, packetInfo);
+                        packetRegistry = subPacketRegistry;
                         continue;
                     }
-
-                    _packetReader.ReadDataFrom(reader, packetInfo);
-
-                    Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await ((IPacketHandler)packetHandler).Handle(sender, packetInfo.packet);
-                        }
-                        catch (Exception e)
-                        {
-                            _logger.Error(e, $"Failed to handle packet of type '{packetType.Name}'.");
-                        }
-                    });
+                    break;
                 }
-                catch (Exception e)
+
+                if (packet == null)
                 {
-                    _logger.Warning($"Failed to read packet: {e.Message}");
-
-                    var builder = new StringBuilder("new byte[] { ");
-                    foreach (var b in reader.RawData)
-                    {
-                        builder.Append(b + ", ");
-                    }
-                    builder.Append("}");
-
-                    _logger.Verbose(builder.ToString());
-                    //return;
+                    // skip any unprocessed bytes
+                    var processedBytes = reader.Offset - prevPosition;
+                    reader.SkipBytes((int)length - processedBytes);
+                    continue;
                 }
+
+                var packetType = packet.GetType();
+                var packetHandlerType = typeof(Abstractions.IPacketHandler<>)
+                    .MakeGenericType(packetType);
+                var packetHandler = _serviceProvider.GetService(packetHandlerType);
+                if (packetHandler is null)
+                {
+                    _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
+
+                    // skip any unprocessed bytes
+                    var processedBytes = reader.Offset - prevPosition;
+                    reader.SkipBytes((int)length - processedBytes);
+                    continue;
+                }
+
+                try
+                {
+                    packet.ReadFrom(ref reader);
+                }
+                catch
+                {
+                    // skip any unprocessed bytes
+                    var processedBytes = reader.Offset - prevPosition;
+                    reader.SkipBytes((int)length - processedBytes);
+                    continue;
+                }
+
+                ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
             }
         }
 
@@ -104,19 +134,20 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private void RoutePacket(IPlayer sender,
             (byte SenderId, byte ReceiverId) routingHeader,
-            NetDataReader reader, DeliveryMethod deliveryMethod)
+            ref SpanBufferReader reader, DeliveryMethod deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
-            var writer = new NetDataWriter();
-            writer.PutRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
-            writer.Put(reader.RawData, reader.Position, reader.AvailableBytes);
-            if (routingHeader.ReceiverId == 127)
+            var writer = new SpanBufferWriter();
+            writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
+            writer.WriteBytes(reader.RemainingData);
+            if (routingHeader.ReceiverId == AllConnectionIds)
             {
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
-                sender.NetPeer.NetManager.SendToAll(writer, deliveryMethod, sender.NetPeer);
+                foreach (var player in _playerRegistry.Players)
+                    _packetDispatcher.Send(player.Endpoint, writer, deliveryMethod);
             }
             else
             {
@@ -132,7 +163,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
-                receiver.NetPeer.Send(writer, deliveryMethod);
+                _packetDispatcher.Send(receiver.Endpoint, writer, deliveryMethod);
             }
         }
 

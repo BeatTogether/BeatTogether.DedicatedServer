@@ -1,23 +1,20 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using Serilog;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
     public sealed class SetIsReadyPacketHandler : BasePacketHandler<SetIsReadyPacket>
     {
-        private readonly IPlayerRegistry _playerRegistry;
-        private readonly IPacketDispatcher _packetDispatcher;
+        private readonly ILobbyManager _lobbyManager;
         private readonly ILogger _logger = Log.ForContext<SetIsReadyPacketHandler>();
 
         public SetIsReadyPacketHandler(
-            IPlayerRegistry playerRegistry,
-            IPacketDispatcher packetDispatcher)
+            ILobbyManager lobbyManager)
         {
-            _playerRegistry = playerRegistry;
-            _packetDispatcher = packetDispatcher;
+            _lobbyManager = lobbyManager;
         }
 
         public override Task Handle(IPlayer sender, SetIsReadyPacket packet)
@@ -28,6 +25,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
 
             sender.IsReady = packet.IsReady;
+            _lobbyManager.Update();
 
             return Task.CompletedTask;
         }

@@ -1,4 +1,5 @@
-﻿using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -30,16 +31,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 			return (ShiftRight(Top, num2) | ShiftRight(Bottom, offset)) & num;
 		}
 
-		public void Deserialize(NetDataReader reader)
+		public void ReadFrom(ref SpanBufferReader reader)
         {
-            Top = reader.GetULong();
-            Bottom = reader.GetULong();
+            Top = reader.ReadUInt64();
+            Bottom = reader.ReadUInt64();
         }
 
-        public void Serialize(NetDataWriter writer)
+        public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.Put(Top);
-            writer.Put(Bottom);
+            writer.WriteUInt64(Top);
+            writer.WriteUInt64(Bottom);
         }
 
 		private static uint MurmurHash2(string key)

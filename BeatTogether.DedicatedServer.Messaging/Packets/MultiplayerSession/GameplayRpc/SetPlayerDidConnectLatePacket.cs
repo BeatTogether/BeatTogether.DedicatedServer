@@ -1,6 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using LiteNetLib.Utils;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc
 {
@@ -10,20 +10,20 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
         public PlayerSpecificSettingsAtStart PlayersAtStart { get; set; } = new();
         public string SessionGameId { get; set; } = null!;
 
-        public override void Deserialize(NetDataReader reader)
+        public override void ReadFrom(ref SpanBufferReader reader)
         {
-            base.Deserialize(reader);
-            UserId = reader.GetString();
-            PlayersAtStart.Deserialize(reader);
-            SessionGameId = reader.GetString();
+            base.ReadFrom(ref reader);
+            UserId = reader.ReadUTF8String();
+            PlayersAtStart.ReadFrom(ref reader);
+            SessionGameId = reader.ReadUTF8String();
         }
 
-        public override void Serialize(NetDataWriter writer)
+        public override void WriteTo(ref SpanBufferWriter writer)
         {
-            base.Serialize(writer);
-            writer.Put(UserId);
-            PlayersAtStart.Serialize(writer);
-            writer.Put(SessionGameId);
+            base.WriteTo(ref writer);
+            writer.WriteUTF8String(UserId);
+            PlayersAtStart.WriteTo(ref writer);
+            writer.WriteUTF8String(SessionGameId);
         }
     }
 }

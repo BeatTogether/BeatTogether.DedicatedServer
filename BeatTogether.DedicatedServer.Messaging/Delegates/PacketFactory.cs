@@ -1,4 +1,4 @@
-﻿using LiteNetLib.Utils;
+﻿using BeatTogether.LiteNetLib.Abstractions;
 
 namespace BeatTogether.DedicatedServer.Messaging.Delegates
 {

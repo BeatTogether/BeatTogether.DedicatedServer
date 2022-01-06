@@ -1,7 +1,8 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.Extensions;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib.Extensions;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
@@ -9,16 +10,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 	{
 		public CannotStartGameReason Reason { get; set; }
 
-		public override void Deserialize(NetDataReader reader)
-		{
-			base.Deserialize(reader);
-			Reason = (CannotStartGameReason)reader.GetVarInt();
+		public override void ReadFrom(ref SpanBufferReader reader)
+        {
+			base.ReadFrom(ref reader);
+			Reason = (CannotStartGameReason)reader.ReadVarInt();
 		}
 
-		public override void Serialize(NetDataWriter writer)
-		{
-			base.Serialize(writer);
-			writer.PutVarInt((int)Reason);
+		public override void WriteTo(ref SpanBufferWriter writer)
+        {
+			base.WriteTo(ref writer);
+			writer.WriteVarInt((int)Reason);
 		}
 	}
 }

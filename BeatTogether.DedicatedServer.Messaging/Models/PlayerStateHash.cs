@@ -1,6 +1,4 @@
-﻿using LiteNetLib.Utils;
-
-namespace BeatTogether.DedicatedServer.Messaging.Models
+﻿namespace BeatTogether.DedicatedServer.Messaging.Models
 {
     public sealed class PlayerStateHash : BitMask128
     {

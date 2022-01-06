@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <PackageIcon>icon.png</PackageIcon>
+    <Authors>pythonology</Authors>
+    <Company>pythonology</Company>
+    <RepositoryUrl>https://github.com/pythonology/BeatTogether.DedicatedServer</RepositoryUrl>
+    <Version>1.0.0</Version>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BeatTogether.DedicatedServer.Interface\BeatTogether.DedicatedServer.Interface.csproj" />
+    <ProjectReference Include="..\BeatTogether.DedicatedServer.Kernel\BeatTogether.DedicatedServer.Kernel.csproj" />
+  </ItemGroup>
+
+</Project>
