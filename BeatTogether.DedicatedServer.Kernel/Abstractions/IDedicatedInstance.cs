@@ -27,5 +27,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         byte GetNextConnectionId();
         void ReleaseConnectionId(byte connectionId);
         void SetState(MultiplayerGameState state);
+        Task Complete();
     }
 }

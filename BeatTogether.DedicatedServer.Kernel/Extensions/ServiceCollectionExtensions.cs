@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Kernel;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Managers;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.LiteNetLib;
@@ -16,6 +17,7 @@ namespace BeatTogether.Extensions
         public static IServiceCollection AddDedicatedServer(this IServiceCollection services) =>
             services
                 .AddDedicatedServerMessaging()
+                .AddScoped<InstanceConfiguration>()
                 .AddScoped<DedicatedInstance>()
                 .AddExisting<IDedicatedInstance, DedicatedInstance>()
                 .AddExisting<LiteNetServer, DedicatedInstance>()

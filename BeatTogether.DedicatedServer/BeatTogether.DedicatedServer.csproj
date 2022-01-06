@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BeatTogether.DedicatedServer.Kernel\BeatTogether.DedicatedServer.Kernel.csproj" />
+    <ProjectReference Include="..\BeatTogether.DedicatedServer.Node\BeatTogether.DedicatedServer.Node.csproj" />
   </ItemGroup>
 
 </Project>

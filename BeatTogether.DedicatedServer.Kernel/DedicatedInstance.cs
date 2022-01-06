@@ -48,6 +48,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private int _lastSortIndex = -1;
         private CancellationTokenSource? _waitForPlayerCts;
         private CancellationTokenSource? _stopServerCts;
+        private TaskCompletionSource _serverStoppedTcs = new();
 
         public DedicatedInstance(
             InstanceConfiguration configuration,
@@ -127,10 +128,14 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"GameplayServerControlSettings={Configuration.GameplayServerControlSettings})."
             );
 
+            _serverStoppedTcs.SetResult();
             _stopServerCts!.Cancel();
 
             return Stop();
         }
+
+        public Task Complete()
+            => _serverStoppedTcs.Task;
 
         public int GetNextSortIndex()
         {
