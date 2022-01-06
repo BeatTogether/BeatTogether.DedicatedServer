@@ -37,7 +37,7 @@ namespace BeatTogether.DedicatedServer.Node.Extensions
                         .AddSingleton<IEncryptedPacketWriter, EncryptedPacketWriter>()
                         .AddSingleton<PacketEncryptionLayer>()
                         .AddSingleton<IPacketLayer, PacketEncryptionLayer>(services =>
-                            services.GetRequiredService<PacketEncryptionLayer>())a
+                            services.GetRequiredService<PacketEncryptionLayer>())
                         .AddSingleton<IPortAllocator, PortAllocator>()
                         .AddSingleton<IInstanceRegistry, InstanceRegistry>()
                         .AddSingleton<IInstanceFactory, InstanceFactory>()
