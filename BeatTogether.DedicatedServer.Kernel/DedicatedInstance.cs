@@ -38,7 +38,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private readonly InstanceConfiguration _configuration;
         private readonly IPlayerRegistry _playerRegistry;
-        private readonly IPacketDispatcher _packetDispatcher;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ConcurrentQueue<byte> _releasedConnectionIds = new();
         private readonly ConcurrentQueue<int> _releasedSortIndices = new();
         private readonly ILogger _logger = Log.ForContext<DedicatedInstance>();
@@ -49,6 +49,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private CancellationTokenSource? _waitForPlayerCts;
         private CancellationTokenSource? _stopServerCts;
         private TaskCompletionSource _serverStoppedTcs = new();
+        private IPacketDispatcher _packetDispatcher = null!;
 
         public DedicatedInstance(
             InstanceConfiguration configuration,
@@ -66,7 +67,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             _configuration = configuration;
             _playerRegistry = playerRegistry;
-            _packetDispatcher = serviceProvider.GetRequiredService<IPacketDispatcher>();
+            _serviceProvider = serviceProvider;
         }
 
         #region Public Methods
@@ -75,6 +76,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             if (IsRunning)
                 return Task.CompletedTask;
+
+            _packetDispatcher = _serviceProvider.GetRequiredService<IPacketDispatcher>();
 
             _startTime = DateTime.UtcNow.Ticks;
 
