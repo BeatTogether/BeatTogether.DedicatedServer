@@ -6,6 +6,7 @@ using BeatTogether.DedicatedServer.Interface.Responses;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
+using Serilog;
 using System;
 using System.Threading.Tasks;
 
@@ -17,6 +18,7 @@ namespace BeatTogether.DedicatedServer.Node
         private readonly IInstanceFactory _instanceFactory;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IAutobus _autobus;
+        private readonly ILogger _logger = Log.ForContext<NodeService>();
 
         public NodeService(
             NodeConfiguration configuration,
@@ -32,6 +34,16 @@ namespace BeatTogether.DedicatedServer.Node
 
         public async Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request)
         {
+            _logger.Debug($"Received request to create matchmaking server. " +
+                $"(Secret={request.Secret}, " +
+                $"ManagerId={request.ManagerId}, " +
+                $"MaxPlayerCount={request.Configuration.MaxPlayerCount}, " +
+                $"DiscoveryPolicy={request.Configuration.DiscoveryPolicy}, " +
+                $"InvitePolicy={request.Configuration.InvitePolicy}, " +
+                $"GameplayServerMode={request.Configuration.GameplayServerMode}, " +
+                $"SongSelectionMode={request.Configuration.SongSelectionMode}, " +
+                $"GameplayServerControlSettings={request.Configuration.GameplayServerControlSettings})");
+
             var matchmakingServer = _instanceFactory.CreateInstance(
                 request.Secret,
                 request.ManagerId,
