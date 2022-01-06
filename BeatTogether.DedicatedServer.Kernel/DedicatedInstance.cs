@@ -113,7 +113,8 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             StartEvent?.Invoke();
 
-            return Start();
+            base.Start();
+            return Task.CompletedTask;
         }
 
         public Task Stop(CancellationToken cancellationToken = default)
@@ -137,7 +138,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             _stopServerCts!.Cancel();
             StopEvent?.Invoke();
 
-            return Stop();
+            base.Stop();
+            return Task.CompletedTask;
         }
 
         public int GetNextSortIndex()
