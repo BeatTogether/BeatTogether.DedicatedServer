@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc
@@ -13,14 +14,14 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
         {
             base.ReadFrom(ref reader);
             PlayersAtStart.ReadFrom(ref reader);
-            SessionGameId = reader.ReadUTF8String();
+            SessionGameId = reader.ReadString();
         }
 
         public override void WriteTo(ref SpanBufferWriter writer)
         {
             base.WriteTo(ref writer);
             PlayersAtStart.WriteTo(ref writer);
-            writer.WriteUTF8String(SessionGameId);
+            writer.WriteString(SessionGameId);
         }
     }
 }

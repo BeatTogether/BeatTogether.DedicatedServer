@@ -1,4 +1,5 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
@@ -15,8 +16,8 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 
         public void ReadFrom(ref SpanBufferReader reader)
         {
-            UserId = reader.ReadUTF8String();
-            UserName = reader.ReadUTF8String();
+            UserId = reader.ReadString();
+            UserName = reader.ReadString();
             LeftHanded = reader.ReadBool();
             AutomaticPlayerHeight = reader.ReadBool();
             PlayerHeight = reader.ReadFloat32();
@@ -26,8 +27,8 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 
         public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.WriteUTF8String(UserId);
-            writer.WriteUTF8String(UserName);
+            writer.WriteString(UserId);
+            writer.WriteString(UserName);
             writer.WriteBool(LeftHanded);
             writer.WriteBool(AutomaticPlayerHeight);
             writer.WriteFloat32(PlayerHeight);

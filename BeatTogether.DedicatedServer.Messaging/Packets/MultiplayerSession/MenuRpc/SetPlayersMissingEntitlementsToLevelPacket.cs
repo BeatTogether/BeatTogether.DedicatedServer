@@ -1,4 +1,5 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 using System.Collections.Generic;
 
@@ -14,7 +15,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             int count = reader.ReadInt32();
             for (int i = 0; i < count; i++)
             {
-                PlayersWithoutEntitlements.Add(reader.ReadUTF8String());
+                PlayersWithoutEntitlements.Add(reader.ReadString());
             }
         }
 
@@ -24,7 +25,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             writer.WriteInt32(PlayersWithoutEntitlements.Count);
             foreach (string player in PlayersWithoutEntitlements)
             {
-                writer.WriteUTF8String(player);
+                writer.WriteString(player);
             }
         }
     }

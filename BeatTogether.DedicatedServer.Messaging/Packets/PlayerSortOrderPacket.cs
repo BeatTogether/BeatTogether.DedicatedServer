@@ -11,13 +11,13 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
 
         public void ReadFrom(ref SpanBufferReader reader)
         {
-            UserId = reader.ReadUTF8String();
+            UserId = reader.ReadString();
             SortIndex = reader.ReadVarInt();
         }
 
         public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.WriteUTF8String(UserId);
+            writer.WriteString(UserId);
             writer.WriteVarInt(SortIndex);
         }
     }

@@ -1,28 +1,29 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
     public sealed class ConnectionRequestData : INetSerializable
     {
-        public string? Secret { get; set; }
-        public string? UserId { get; set; }
-        public string? UserName { get; set; }
+        public string Secret { get; set; } = null!;
+        public string UserId { get; set; } = null!;
+        public string UserName { get; set; } = null!;
         public bool IsConnectionOwner { get; set; }
 
         public void ReadFrom(ref SpanBufferReader reader)
         {
-            Secret = reader.ReadUTF8String();
-            UserId = reader.ReadUTF8String();
-            UserName = reader.ReadUTF8String();
+            Secret = reader.ReadString();
+            UserId = reader.ReadString();
+            UserName = reader.ReadString();
             IsConnectionOwner = reader.ReadBool();
         }
 
         public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.WriteUTF8String(Secret);
-            writer.WriteUTF8String(UserId);
-            writer.WriteUTF8String(UserName);
+            writer.WriteString(Secret);
+            writer.WriteString(UserId);
+            writer.WriteString(UserName);
             writer.WriteBool(IsConnectionOwner);
         }
     }

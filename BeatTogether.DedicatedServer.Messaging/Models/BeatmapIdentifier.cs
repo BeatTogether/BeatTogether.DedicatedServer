@@ -12,15 +12,15 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 
         public void ReadFrom(ref SpanBufferReader reader)
         {
-            LevelId = reader.ReadUTF8String();
-            Characteristic = reader.ReadUTF8String();
+            LevelId = reader.ReadString();
+            Characteristic = reader.ReadString();
             Difficulty = (BeatmapDifficulty)reader.ReadVarUInt();
         }
 
         public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.WriteUTF8String(LevelId);
-            writer.WriteUTF8String(Characteristic);
+            writer.WriteString(LevelId);
+            writer.WriteString(Characteristic);
             writer.WriteVarUInt((uint)Difficulty);
         }
     }

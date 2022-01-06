@@ -1,4 +1,5 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
@@ -10,13 +11,13 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 		public override void ReadFrom(ref SpanBufferReader reader)
         {
 			base.ReadFrom(ref reader);
-			KickedPlayerId = reader.ReadUTF8String();
+			KickedPlayerId = reader.ReadString();
 		}
 
 		public override void WriteTo(ref SpanBufferWriter writer)
         {
 			base.WriteTo(ref writer);
-			writer.WriteUTF8String(KickedPlayerId);
+			writer.WriteString(KickedPlayerId);
 		}
 	}
 }

@@ -13,14 +13,14 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         public override void ReadFrom(ref SpanBufferReader reader)
         {
             base.ReadFrom(ref reader);
-            LevelId = reader.ReadUTF8String();
+            LevelId = reader.ReadString();
             Entitlement = (EntitlementStatus)reader.ReadVarInt();
         }
 
         public override void WriteTo(ref SpanBufferWriter writer)
         {
             base.WriteTo(ref writer);
-            writer.WriteUTF8String(LevelId);
+            writer.WriteString(LevelId);
             writer.WriteVarInt((int)Entitlement);
         }
     }
