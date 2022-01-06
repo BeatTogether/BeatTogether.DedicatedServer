@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Enums;
@@ -8,8 +9,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
     public interface IDedicatedInstance
     {
-        public event ClientConnectHandler ClientConnectEvent;
-        public event ClientDisconnectHandler ClientDisconnectEvent;
+        event Action StartEvent;
+        event Action StopEvent;
+
+        event ClientConnectHandler ClientConnectEvent;
+        event ClientDisconnectHandler ClientDisconnectEvent;
 
         InstanceConfiguration Configuration { get; }
         bool IsRunning { get; }
@@ -27,6 +31,5 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         byte GetNextConnectionId();
         void ReleaseConnectionId(byte connectionId);
         void SetState(MultiplayerGameState state);
-        Task Complete();
     }
 }

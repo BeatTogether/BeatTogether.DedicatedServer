@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
-    public sealed class DedicatedInstance : LiteNetServer, Abstractions.IDedicatedInstance
+    public sealed class DedicatedInstance : LiteNetServer, IDedicatedInstance
     {
         // Milliseconds instance will wait for a player to connect.
         public const int WaitForPlayerTimeLimit = 10000;
@@ -36,6 +36,9 @@ namespace BeatTogether.DedicatedServer.Kernel
         public int Port => Endpoint.Port;
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
 
+        public event Action StartEvent = null!;
+        public event Action StopEvent = null!;
+
         private readonly InstanceConfiguration _configuration;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
@@ -48,7 +51,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         private int _lastSortIndex = -1;
         private CancellationTokenSource? _waitForPlayerCts;
         private CancellationTokenSource? _stopServerCts;
-        private TaskCompletionSource _serverStoppedTcs = new();
         private IPacketDispatcher _packetDispatcher = null!;
 
         public DedicatedInstance(
@@ -110,6 +112,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
             });
 
+            StartEvent?.Invoke();
+
             return Start();
         }
 
@@ -131,14 +135,11 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"GameplayServerControlSettings={Configuration.GameplayServerControlSettings})."
             );
 
-            _serverStoppedTcs.SetResult();
             _stopServerCts!.Cancel();
+            StopEvent?.Invoke();
 
             return Stop();
         }
-
-        public Task Complete()
-            => _serverStoppedTcs.Task;
 
         public int GetNextSortIndex()
         {

@@ -1,6 +1,4 @@
-﻿using Autobus;
-using BeatTogether.DedicatedServer.Interface;
-using BeatTogether.DedicatedServer.Interface.Events;
+﻿using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Interface.Requests;
 using BeatTogether.DedicatedServer.Interface.Responses;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
@@ -17,19 +15,16 @@ namespace BeatTogether.DedicatedServer.Node
         private readonly NodeConfiguration _configuration;
         private readonly IInstanceFactory _instanceFactory;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
-        private readonly IAutobus _autobus;
         private readonly ILogger _logger = Log.ForContext<NodeService>();
 
         public NodeService(
             NodeConfiguration configuration,
             IInstanceFactory instanceFactory,
-            PacketEncryptionLayer packetEncryptionLayer,
-            IAutobus autobus)
+            PacketEncryptionLayer packetEncryptionLayer)
         {
             _configuration = configuration;
             _instanceFactory = instanceFactory;
             _packetEncryptionLayer = packetEncryptionLayer;
-            _autobus = autobus;
         }
 
         public async Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request)
@@ -53,11 +48,6 @@ namespace BeatTogether.DedicatedServer.Node
                 return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
 
             await matchmakingServer.Start();
-            _autobus.Publish(new MatchmakingServerStartedEvent(request.Secret, request.ManagerId, request.Configuration));
-            _ = matchmakingServer.Complete().ContinueWith(_ =>
-            {
-                _autobus.Publish(new MatchmakingServerStoppedEvent(request.Secret));
-            });
 
             return new CreateMatchmakingServerResponse(
                 CreateMatchmakingServerError.None,

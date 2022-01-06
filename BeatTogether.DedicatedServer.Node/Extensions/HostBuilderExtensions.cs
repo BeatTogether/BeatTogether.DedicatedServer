@@ -41,7 +41,7 @@ namespace BeatTogether.DedicatedServer.Node.Extensions
                         .AddSingleton<IPortAllocator, PortAllocator>()
                         .AddSingleton<IInstanceRegistry, InstanceRegistry>()
                         .AddSingleton<IInstanceFactory, InstanceFactory>()
-                        .AddServiceKernel<IMatchmakingService, NodeService>()
+                        .AddServiceKernel<IMatchmakingService, NodeService>(ServiceLifetime.Singleton)
                         .AddHostedService<MasterServerEventHandler>()
                 );
     }
