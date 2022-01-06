@@ -14,22 +14,6 @@ namespace BeatTogether.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddDedicatedServer(this IServiceCollection services) =>
-            services
-                .AddDedicatedServerMessaging()
-                .AddScoped<InstanceConfiguration>()
-                .AddScoped<DedicatedInstance>()
-                .AddExisting<IDedicatedInstance, DedicatedInstance>()
-                .AddExisting<LiteNetServer, DedicatedInstance>()
-                .AddScoped<IPlayerRegistry, PlayerRegistry>()
-                .AddScoped<ConnectedMessageSource, PacketSource>()
-                .AddScoped<PacketDispatcher>()
-                .AddExisting<IPacketDispatcher, PacketDispatcher>()
-                .AddExisting<ConnectedMessageDispatcher, PacketDispatcher>()
-                .AddScoped<ILobbyManager, LobbyManager>()
-                .AddScoped<IGameplayManager, GameplayManager>()
-                .AddAllPacketHandlersFromAssembly(typeof(PacketSource).Assembly);
-
         public static IServiceCollection AddExisting<TService, TImplementation>(this IServiceCollection services)
             where TService : class
             where TImplementation : class, TService

@@ -1,10 +1,8 @@
 ﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface;
-using BeatTogether.DedicatedServer.Kernel;
-using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions;
-using BeatTogether.DedicatedServer.Kernel.Managers;
+using BeatTogether.DedicatedServer.Kernel.Extensions;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
 using BeatTogether.Extensions;
@@ -22,10 +20,10 @@ namespace BeatTogether.DedicatedServer.Node.Extensions
                 .ConfigureAppConfiguration()
                 .UseSerilog()
                 .UseAutobus()
+                .UseDedicatedInstances()
                 .ConfigureServices((hostBuilderContext, services) =>
                     services
                         .AddCoreSecurity()
-                        .AddDedicatedServer()
                         .AddConfiguration<NodeConfiguration>("Node")
                         .AddTransient<RNGCryptoServiceProvider>()
                         .AddTransient(serviceProvider =>
