@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
-using LiteNetLib;
+using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
@@ -11,7 +11,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly ILogger _logger = Log.ForContext<PlayerIdentityPacketHandler>();
 
-        public PlayerIdentityPacketHandler(IPacketDispatcher packetDispatcher)
+        public PlayerIdentityPacketHandler(
+            IPacketDispatcher packetDispatcher)
         {
             _packetDispatcher = packetDispatcher;
         }

@@ -1,11 +1,8 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
+using BeatTogether.LiteNetLib.Enums;
 using LiteNetLib;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
@@ -15,7 +12,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly ILogger _logger = Log.ForContext<PlayerLatencyPacketHandler>();
 
-        public PlayerLatencyPacketHandler(IPacketDispatcher packetDispatcher)
+        public PlayerLatencyPacketHandler(
+            IPacketDispatcher packetDispatcher)
         {
             _packetDispatcher = packetDispatcher;
         }
@@ -28,11 +26,10 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             );
 
             sender.Latency.Update(packet.Latency);
-            var playerLatencyPacket = new PlayerLatencyPacket
+            _packetDispatcher.SendFromPlayer(sender, new PlayerLatencyPacket
             {
                 Latency = sender.Latency.CurrentAverage
-            };
-            _packetDispatcher.SendFromPlayer(sender, playerLatencyPacket, DeliveryMethod.ReliableOrdered);
+            }, DeliveryMethod.ReliableOrdered);
 
             return Task.CompletedTask;
         }

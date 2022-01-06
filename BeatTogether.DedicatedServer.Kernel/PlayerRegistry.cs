@@ -18,17 +18,16 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public void AddPlayer(IPlayer player)
         {
-            _playersByRemoteEndPoint.TryAdd(player.NetPeer.EndPoint, player);
+            _playersByRemoteEndPoint.TryAdd(player.Endpoint, player);
             _playersByUserId[player.UserId] = player;
             _playersByConnectionId[player.ConnectionId] = player;
         }
 
         public void RemovePlayer(IPlayer player)
         {
-            _playersByRemoteEndPoint.TryRemove(player.NetPeer.EndPoint, out _);
+            _playersByRemoteEndPoint.TryRemove(player.Endpoint, out _);
             _playersByUserId.TryRemove(player.UserId, out _);
             _playersByConnectionId.TryRemove(player.ConnectionId, out _);
-            player.Dispose();
         }
 
         public IPlayer GetPlayer(EndPoint remoteEndPoint) =>

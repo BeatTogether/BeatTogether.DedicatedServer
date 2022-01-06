@@ -1,24 +1,23 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using BeatTogether.DedicatedServer.Kernel.Models;
+using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.DedicatedServer.Messaging.Models;
-using LiteNetLib;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib.Delegates;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
-    public interface IMatchmakingServer
+    public interface IDedicatedServer
     {
-        string Secret { get; }
-        string ManagerId { get; }
-        GameplayServerConfiguration Configuration { get; }
+        public event ClientConnectHandler ClientConnectEvent;
+        public event ClientDisconnectHandler ClientDisconnectEvent;
+
+        ServerConfiguration Configuration { get; }
         bool IsRunning { get; }
         float RunTime { get; }
         int Port { get; }
-        MultiplayerGameState State { get; set; }
 		string UserId { get; }
 		string UserName { get; }
+        MultiplayerGameState State { get; }
 
 		Task Start(CancellationToken cancellationToken = default);
         Task Stop(CancellationToken cancellationToken = default);
@@ -27,6 +26,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         void ReleaseSortIndex(int sortIndex);
         byte GetNextConnectionId();
         void ReleaseConnectionId(byte connectionId);
-        void SendToAll(NetDataWriter writer, DeliveryMethod deliveryMethod);
+        void SetState(MultiplayerGameState state);
     }
 }

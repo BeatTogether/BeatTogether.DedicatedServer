@@ -24,10 +24,10 @@ namespace BeatTogether.Extensions
                         .AddDedicatedServerMessaging()
                         .AddAutoMapper(configuration =>
                         {
-                            configuration.CreateMap<DedicatedServer.Kernel.Models.GameplayServerConfiguration,
+                            configuration.CreateMap<DedicatedServer.Kernel.Models.GameplayConfiguration,
                                                     DedicatedServer.Interface.Models.GameplayServerConfiguration>();
                             configuration.CreateMap<DedicatedServer.Interface.Models.GameplayServerConfiguration,
-                                                    DedicatedServer.Kernel.Models.GameplayServerConfiguration>();
+                                                    DedicatedServer.Kernel.Models.GameplayConfiguration>();
                         })
                         .AddConfiguration<ServerConfiguration>("Server")
                         .AddTransient<RNGCryptoServiceProvider>()
@@ -46,7 +46,7 @@ namespace BeatTogether.Extensions
                         .AddSingleton<IMatchmakingServerFactory, MatchmakingServerFactory>()
                         .AddServiceKernel<IMatchmakingService, MatchmakingService>()
                         .AddHostedService<MasterServerEventHandler>()
-                        .AddAsyncLocal<IMatchmakingServer, MatchmakingServer>()
+                        .AddAsyncLocal<IDedicatedServer, DedicatedServer>()
                         .AddAsyncLocal<IPlayerRegistry, PlayerRegistry>()
                         .AddAsyncLocal<IPacketSource, PacketSource>()
                         .AddAsyncLocal<IPacketDispatcher, PacketDispatcher>()

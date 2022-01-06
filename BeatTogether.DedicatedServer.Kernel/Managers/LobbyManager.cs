@@ -1,17 +1,19 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using LiteNetLib;
+using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
-    public sealed class LobbyManager : ILobbyManager
+    public sealed class LobbyManager : ILobbyManager, IDisposable
     {
         private const float CountdownTimeForeverAlone = 5f;
         private const float CountdownTimeSomeReady = 30.0f;
@@ -33,33 +35,45 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private bool _lastEntitlementState;
         private string _lastManagerId = null!;
 
-        private IMatchmakingServer _server;
-        private IPlayerRegistry _playerRegistry;
-        private IPacketDispatcher _packetDispatcher;
-        private IEntitlementManager _entitlementManager;
-        private IGameplayManager _gameplayManager;
+        private readonly IDedicatedServer _server;
+        private readonly IPlayerRegistry _playerRegistry;
+        private readonly IPacketDispatcher _packetDispatcher;
+        private readonly IGameplayManager _gameplayManager;
         private ILogger _logger = Log.ForContext<LobbyManager>();
 
         public LobbyManager(
-            IMatchmakingServer server,
+            IDedicatedServer server,
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
-            IEntitlementManager entitlementManager,
             IGameplayManager gameplayManager)
         {
             _server = server;
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
-            _entitlementManager = entitlementManager;
             _gameplayManager = gameplayManager;
+
+            _server.ClientConnectEvent += HandleClientConnect;
+            _server.ClientDisconnectEvent += HandleClientDisconnect;
         }
+
+        public void Dispose()
+        {
+            _server.ClientConnectEvent -= HandleClientConnect;
+            _server.ClientDisconnectEvent -= HandleClientDisconnect;
+        }
+
+        private void HandleClientConnect(EndPoint endPoint)
+            => Update();
+
+        private void HandleClientDisconnect(EndPoint endPoint, DisconnectReason reason)
+            => Update();
 
         public void Update()
         {
             if (_server.State != MultiplayerGameState.Lobby)
                 return;
 
-            if (!_playerRegistry.TryGetPlayer(_server.ManagerId, out var manager) && _server.Configuration.SongSelectionMode == SongSelectionMode.OwnerPicks)
+            if (!_playerRegistry.TryGetPlayer(_server.Configuration.ManagerId, out var manager) && _server.Configuration.SongSelectionMode == SongSelectionMode.OwnerPicks)
                 return;
             
             BeatmapIdentifier? beatmap = GetSelectedBeatmap();
@@ -67,10 +81,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             if (beatmap != null)
             {
-                bool allPlayersOwnBeatmap = _entitlementManager.AllPlayersOwnBeatmap(beatmap.LevelId);
+                bool allPlayersOwnBeatmap = _playerRegistry.Players
+                    .All(p => p.GetEntitlement(beatmap.LevelId) is EntitlementStatus.Ok or EntitlementStatus.NotDownloaded);
 
                 // If new beatmap selected or entitlement state changed or spectator state changed or manager changed
-                if (_lastBeatmap != beatmap || _lastEntitlementState != allPlayersOwnBeatmap || _lastSpectatorState != AllPlayersSpectating || _lastManagerId != _server.ManagerId)
+                if (_lastBeatmap != beatmap || _lastEntitlementState != allPlayersOwnBeatmap || _lastSpectatorState != AllPlayersSpectating || _lastManagerId != _server.Configuration.ManagerId)
                 {
                     // If not all players have beatmap
                     if (!allPlayersOwnBeatmap)
@@ -78,7 +93,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         // Set players missing entitlements
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
-                            PlayersWithoutEntitlements = _entitlementManager.GetPlayersWithoutBeatmap(beatmap.LevelId)
+                            PlayersWithoutEntitlements = _playerRegistry.Players
+                                .Where(p => p.GetEntitlement(beatmap.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.NotDownloaded)
+                                .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
 
                         // Cannot start song because losers dont have your map
@@ -165,7 +182,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 }
 
                                 // If all players have map
-                                if (_entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
+                                if (_playerRegistry.Players.All(p => p.GetEntitlement(beatmap.LevelId) is EntitlementStatus.Ok))
                                 {
                                     // Reset
                                     CountdownEndTime = 0;
@@ -259,7 +276,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 }
 
                                 // If all players have map
-                                if (_entitlementManager.AllPlayersHaveBeatmap(beatmap.LevelId))
+                                if (_playerRegistry.Players.All(p => p.GetEntitlement(beatmap.LevelId) is EntitlementStatus.Ok))
                                 {
                                     // Reset
                                     CountdownEndTime = 0;
@@ -306,7 +323,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
 
             // If beatmap is null and it wasn't previously or manager changed
-            else if (_lastBeatmap != beatmap || _lastManagerId != _server.ManagerId)
+            else if (_lastBeatmap != beatmap || _lastManagerId != _server.Configuration.ManagerId)
             {
                 // Cannot select song because no song is selected
                 _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
@@ -315,7 +332,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }, DeliveryMethod.ReliableOrdered);
             }
 
-            _lastManagerId = _server.ManagerId;
+            _lastManagerId = _server.Configuration.ManagerId;
             _lastSpectatorState = AllPlayersSpectating;
             _lastBeatmap = beatmap;
         }
@@ -324,7 +341,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             switch(_server.Configuration.SongSelectionMode)
             {
-                case SongSelectionMode.OwnerPicks: return _playerRegistry.GetPlayer(_server.ManagerId).BeatmapIdentifier;
+                case SongSelectionMode.OwnerPicks: return _playerRegistry.GetPlayer(_server.Configuration.ManagerId).BeatmapIdentifier;
                 case SongSelectionMode.Vote:
                     Dictionary<BeatmapIdentifier, int> voteDictionary = new();
                     foreach (IPlayer player in _playerRegistry.Players)
@@ -356,7 +373,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 		{
             switch(_server.Configuration.SongSelectionMode)
 			{
-                case SongSelectionMode.OwnerPicks: return _playerRegistry.GetPlayer(_server.ManagerId).Modifiers;
+                case SongSelectionMode.OwnerPicks: return _playerRegistry.GetPlayer(_server.Configuration.ManagerId).Modifiers;
                 case SongSelectionMode.Vote:
                     Dictionary<GameplayModifiers, int> voteDictionary = new();
                     foreach (IPlayer player in _playerRegistry.Players)

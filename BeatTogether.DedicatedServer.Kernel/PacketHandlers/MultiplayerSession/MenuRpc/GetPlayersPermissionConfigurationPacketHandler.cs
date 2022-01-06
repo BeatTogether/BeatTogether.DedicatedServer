@@ -1,23 +1,29 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using LiteNetLib;
+using BeatTogether.LiteNetLib.Enums;
 using Serilog;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
     public sealed class GetPlayersPermissionConfigurationPacketHandler : BasePacketHandler<GetPlayersPermissionConfigurationPacket>
     {
+        private readonly ServerConfiguration _configuration;
         private readonly IPacketDispatcher _packetDispatcher;
-        private readonly IPermissionsManager _permissionsManager;
+        private readonly IPlayerRegistry _playerRegistry;
         private readonly ILogger _logger = Log.ForContext<GetPlayersPermissionConfigurationPacketHandler>();
 
         public GetPlayersPermissionConfigurationPacketHandler(
+            ServerConfiguration configuration,
             IPacketDispatcher packetDispatcher,
-            IPermissionsManager permissionsManager)
+            IPlayerRegistry playerRegistry)
         {
+            _configuration = configuration;
             _packetDispatcher = packetDispatcher;
-            _permissionsManager = permissionsManager;
+            _playerRegistry = playerRegistry;
         }
 
         public override Task Handle(IPlayer sender, GetPlayersPermissionConfigurationPacket packet)
@@ -27,10 +33,20 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"(SenderId={sender.ConnectionId})."
             );
 
-            _permissionsManager.UpdatePermissions();
             _packetDispatcher.SendToPlayer(sender, new SetPlayersPermissionConfigurationPacket
             {
-                PermissionConfiguration = _permissionsManager.Permissions
+                PermissionConfiguration = new PlayersPermissionConfiguration
+                {
+                    PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
+                    {
+                        UserId = x.UserId,
+                        IsServerOwner = x.IsManager,
+                        HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
+                        HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
+                        HasKickVotePermission = x.CanKickVote,
+                        HasInvitePermission = x.CanInvite
+                    }).ToList()
+                }
             }, DeliveryMethod.ReliableOrdered);
 
             return Task.CompletedTask;

@@ -7,7 +7,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
 {
     public sealed class PlayerStatePacketHandler : BasePacketHandler<PlayerStatePacket>
     {
+        private readonly ILobbyManager _lobbyManager;
         private readonly ILogger _logger = Log.ForContext<PlayerStatePacketHandler>();
+
+        public PlayerStatePacketHandler(
+            ILobbyManager lobbyManager)
+        {
+            _lobbyManager = lobbyManager;
+        }
 
         public override Task Handle(IPlayer sender, PlayerStatePacket packet)
         {
@@ -18,6 +25,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             );
 
             sender.State = packet.PlayerState;
+            _lobbyManager.Update();
 
             return Task.CompletedTask;
         }

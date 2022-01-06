@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Threading;
 
-namespace BeatTogether.DedicatedServer.Kernel.Models
+namespace BeatTogether.DedicatedServer.Kernel.Encryption
 {
     public sealed class EncryptionParameters
     {

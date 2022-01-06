@@ -21,14 +21,5 @@ namespace BeatTogether.Extensions
                         eventHandlerType);
             return services;
         }
-
-        public static IServiceCollection AddAsyncLocal<IService, TService>(this IServiceCollection services) where IService : class where TService : class, IService
-            => services
-                .AddTransient<TService>()
-                .AddSingleton<IServiceAccessor<IService>, ServiceAccessor<IService, TService>>()
-                .AddTransient(serviceProvider => serviceProvider
-                    .GetRequiredService<IServiceAccessor<IService>>()
-                    .Service
-                );
     }
 }

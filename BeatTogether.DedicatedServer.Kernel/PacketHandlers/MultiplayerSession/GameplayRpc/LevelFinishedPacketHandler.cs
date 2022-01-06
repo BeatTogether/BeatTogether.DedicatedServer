@@ -24,7 +24,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
 
             _gameplayManager.HandleLevelFinished(sender, packet);
-            sender.SignalLevelFinished(packet);
             return Task.CompletedTask;
         }
     }

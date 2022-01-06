@@ -7,12 +7,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     public sealed class RequestReturnToMenuPacketHandler : BasePacketHandler<RequestReturnToMenuPacket>
     {
-        private IMatchmakingServer _server;
+        private IDedicatedServer _server;
         private IGameplayManager _gameplayManager;
         private ILogger _logger = Log.ForContext<SetGameplaySceneReadyPacketHandler>();
 
         public RequestReturnToMenuPacketHandler(
-            IMatchmakingServer server,
+            IDedicatedServer server,
             IGameplayManager gameplayManager)
         {
             _server = server;
@@ -26,7 +26,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"(SenderId={sender.ConnectionId})."
             );
 
-            if (sender.UserId == _server.ManagerId)
+            if (sender.IsManager)
                 _gameplayManager.SignalRequestReturnToMenu();
 
             return Task.CompletedTask;

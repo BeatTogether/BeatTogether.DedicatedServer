@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BinaryRecords;
 
-namespace BeatTogether.DedicatedServer.Kernel
+namespace BeatTogether.DedicatedServer.Kernel.Encryption
 {
     public sealed class EncryptedPacketWriter : IEncryptedPacketWriter
     {

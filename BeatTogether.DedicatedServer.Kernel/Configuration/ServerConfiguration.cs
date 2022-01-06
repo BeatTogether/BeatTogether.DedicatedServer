@@ -1,9 +1,39 @@
-﻿namespace BeatTogether.DedicatedServer.Kernel.Configuration
+﻿using BeatTogether.DedicatedServer.Kernel.Enums;
+
+namespace BeatTogether.DedicatedServer.Kernel.Configuration
 {
     public sealed class ServerConfiguration
     {
-        public string HostName { get; set; } = "127.0.0.1";
-        public int BasePort { get; set; } = 30000;
-        public int MaximumSlots { get; set; } = 10000;
+        public int Port { get; }
+        public string Secret { get; }
+        public string ManagerId { get; set; }
+        public int MaxPlayerCount { get; }
+        public DiscoveryPolicy DiscoveryPolicy { get; }
+        public InvitePolicy InvitePolicy { get; }
+        public GameplayServerMode GameplayServerMode { get; }
+        public SongSelectionMode SongSelectionMode { get; }
+        public GameplayServerControlSettings GameplayServerControlSettings { get; }
+
+        public ServerConfiguration(
+            int port,
+            string secret,
+            string managerId,
+            int maxPlayerCount,
+            DiscoveryPolicy discoveryPolicy,
+            InvitePolicy invitePolicy,
+            GameplayServerMode gameplayServerMode,
+            SongSelectionMode songSelectionMode,
+            GameplayServerControlSettings gameplayServerControlSettings)
+        {
+            Port = port;
+            Secret = secret;
+            ManagerId = managerId;
+            MaxPlayerCount = maxPlayerCount;
+            DiscoveryPolicy = discoveryPolicy;
+            InvitePolicy = invitePolicy;
+            GameplayServerMode = gameplayServerMode;
+            SongSelectionMode = songSelectionMode;
+            GameplayServerControlSettings = gameplayServerControlSettings;
+        }
     }
 }

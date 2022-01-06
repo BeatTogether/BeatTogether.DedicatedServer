@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using BinaryRecords;
 
-namespace BeatTogether.DedicatedServer.Kernel.Abstractions
+namespace BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions
 {
     public interface IEncryptedPacketWriter
     {

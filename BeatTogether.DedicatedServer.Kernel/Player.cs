@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Types;
+using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
-using LiteNetLib;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class Player : IPlayer
     {
-        public NetPeer NetPeer { get; }
-        public IMatchmakingServer MatchmakingServer { get; }
+        public EndPoint Endpoint { get; }
+        public IDedicatedServer Server { get; }
         public byte ConnectionId { get; }
         public byte RemoteConnectionId => 0;
         public string Secret { get; }
@@ -21,8 +19,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public string UserName { get; }
         public RollingAverage Latency { get; } = new(30);
         public float SyncTime =>
-            Math.Min(MatchmakingServer.RunTime - Latency.CurrentAverage - _syncTimeOffset,
-                     MatchmakingServer.RunTime);
+            Math.Min(Server.RunTime - Latency.CurrentAverage - _syncTimeOffset,
+                     Server.RunTime);
         public int SortIndex { get; set; }
 
         public AvatarData Avatar { get; set; } = new();
@@ -32,6 +30,14 @@ namespace BeatTogether.DedicatedServer.Kernel
         public GameplayModifiers Modifiers { get; set; } = new();
 
         public PlayerStateHash State { get; set; } = new();
+
+        public bool IsManager => UserId == Server.Configuration.ManagerId;
+        public bool CanRecommendBeatmaps => true;
+        public bool CanRecommendModifiers => 
+            Server.Configuration.GameplayServerControlSettings is Enums.GameplayServerControlSettings.AllowModifierSelection or Enums.GameplayServerControlSettings.All;
+        public bool CanKickVote => UserId == Server.Configuration.ManagerId;
+        public bool CanInvite => 
+            Server.Configuration.DiscoveryPolicy is Enums.DiscoveryPolicy.WithCode or Enums.DiscoveryPolicy.Public;
 
         public bool IsPlayer => State.Contains("player");
         public bool IsSpectating => State.Contains("spectating");
@@ -45,89 +51,23 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool IsModded => State.Contains("modded");
 
         private const float _syncTimeOffset = 0.06f;
+        private ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();
 
-        public Player(NetPeer netPeer, IMatchmakingServer matchmakingServer,
+        public Player(EndPoint endPoint, IDedicatedServer server,
             byte connectionId, string secret, string userId, string userName)
         {
-            NetPeer = netPeer;
-            MatchmakingServer = matchmakingServer;
+            Endpoint = endPoint;
+            Server = server;
             ConnectionId = connectionId;
             Secret = secret;
             UserId = userId;
             UserName = userName;
         }
 
-        private ConcurrentBag<TaskCompletionSource<SetGameplaySceneReadyPacket>> _gameplaySceneReadyTcs = new();
-        private ConcurrentBag<TaskCompletionSource> _gameplaySongReadyTcs = new();
-        private ConcurrentBag<TaskCompletionSource<LevelFinishedPacket>> _gameplayLevelFinishedTcs = new();
+        public EntitlementStatus GetEntitlement(string levelId)
+            => _entitlements.TryGetValue(levelId, out var value) ? value : EntitlementStatus.Unknown;
 
-        public Task<SetGameplaySceneReadyPacket> WaitForSceneReady(CancellationToken cancellationToken)
-        {
-            var tcs = new TaskCompletionSource<SetGameplaySceneReadyPacket>();
-            cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
-            _gameplaySceneReadyTcs.Add(tcs);
-            return tcs.Task;
-        }
-
-        public void SignalSceneReady(SetGameplaySceneReadyPacket packet)
-        {
-            foreach (var tcs in _gameplaySceneReadyTcs)
-            {
-                tcs.TrySetResult(packet);
-            }
-            _gameplaySceneReadyTcs.Clear();
-        }
-
-        public Task WaitForSongReady(CancellationToken cancellationToken)
-        {
-            var tcs = new TaskCompletionSource();
-            cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
-            _gameplaySongReadyTcs.Add(tcs);
-            return tcs.Task;
-        }
-
-        public void SignalSongReady()
-        {
-            foreach (var tcs in _gameplaySongReadyTcs)
-            {
-                tcs.TrySetResult();
-            }
-            _gameplaySongReadyTcs.Clear();
-        }
-
-        public Task<LevelFinishedPacket> WaitForLevelFinished(CancellationToken cancellationToken)
-        {
-            var tcs = new TaskCompletionSource<LevelFinishedPacket>();
-            cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
-            _gameplayLevelFinishedTcs.Add(tcs);
-            return tcs.Task;
-        }
-
-        public void SignalLevelFinished(LevelFinishedPacket packet)
-        {
-            foreach (var tcs in _gameplayLevelFinishedTcs)
-            {
-                tcs.TrySetResult(packet);
-            }
-            _gameplayLevelFinishedTcs.Clear();
-        }
-
-        public void Dispose()
-        {
-            foreach (var tcs in _gameplaySceneReadyTcs)
-            {
-                tcs.TrySetCanceled();
-            }
-
-            foreach (var tcs in _gameplaySongReadyTcs)
-            {
-                tcs.TrySetCanceled();
-            }
-
-            foreach (var tcs in _gameplayLevelFinishedTcs)
-            {
-                tcs.TrySetCanceled();
-            }
-        }
+        public void SetEntitlement(string levelId, EntitlementStatus entitlement)
+            => _entitlements[levelId] = entitlement;
     }
 }

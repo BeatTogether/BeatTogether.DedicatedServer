@@ -2,7 +2,7 @@
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using LiteNetLib;
+using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System.Threading.Tasks;
 
@@ -12,17 +12,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 	{
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
-        private readonly IPermissionsManager _permissionsManager;
         private readonly ILogger _logger = Log.ForContext<RequestKickPlayerPacketHandler>();
 
         public RequestKickPlayerPacketHandler(
             IPlayerRegistry playerRegistry,
-            IPacketDispatcher packetDispatcher,
-            IPermissionsManager permissionsManager)
+            IPacketDispatcher packetDispatcher)
         {
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
-            _permissionsManager = permissionsManager;
         }
 
         public override Task Handle(IPlayer sender, RequestKickPlayerPacket packet)
@@ -32,7 +29,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"(SenderId={sender.ConnectionId}, KickedPlayerId={packet.KickedPlayerId})."
             );
 
-            if (_permissionsManager.PlayerCanKickVote(sender.UserId))
+            if (sender.CanKickVote)
                 if (_playerRegistry.TryGetPlayer(packet.KickedPlayerId, out var kickedPlayer))
                     _packetDispatcher.SendToPlayer(kickedPlayer, new KickPlayerPacket
                     {

@@ -1,6 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
-using LiteNetLib;
+using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System.Threading.Tasks;
 
@@ -23,11 +23,10 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 $"(SenderId={sender.ConnectionId}, SyncTime={packet.SyncTime})."
             );
 
-            var syncTimePacket = new SyncTimePacket
+            _packetDispatcher.SendToPlayer(sender, new SyncTimePacket
             {
                 SyncTime = sender.SyncTime
-            };
-            _packetDispatcher.SendToPlayer(sender, syncTimePacket, DeliveryMethod.ReliableOrdered);
+            }, DeliveryMethod.ReliableOrdered);
 
             return Task.CompletedTask;
         }

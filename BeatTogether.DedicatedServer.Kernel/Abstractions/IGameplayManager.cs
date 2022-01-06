@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
-    public interface IGameplayManager : IRequestReturnToMenuSignalSource
+    public interface IGameplayManager
     {
         string SessionGameId { get; }
         GameplayManagerState State { get; }
@@ -16,5 +16,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         void HandleGameSongLoaded(IPlayer player);
         void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet);
 		void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken);
-	}
+
+        void SignalRequestReturnToMenu();
+    }
 }

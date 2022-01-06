@@ -5,7 +5,7 @@ using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BinaryRecords;
 using Serilog;
 
-namespace BeatTogether.DedicatedServer.Kernel
+namespace BeatTogether.DedicatedServer.Kernel.Encryption
 {
     public sealed class EncryptedPacketReader : IEncryptedPacketReader
     {

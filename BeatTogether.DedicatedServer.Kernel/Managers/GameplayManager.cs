@@ -3,12 +3,12 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
-using LiteNetLib;
-using LiteNetLib.Utils;
+using BeatTogether.LiteNetLib.Enums;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,17 +28,21 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private float _songStartTime;
 
-        private ConcurrentDictionary<string, PlayerSpecificSettings> _playerSpecificSettings = new();
-        private ConcurrentDictionary<string, LevelCompletionResults> _levelCompletionResults = new();
-
         private CancellationTokenSource? _requestReturnToMenuCts;
 
-        private IMatchmakingServer _server;
-        private IPlayerRegistry _playerRegistry;
-        private IPacketDispatcher _packetDispatcher;
+        private readonly IDedicatedServer _server;
+        private readonly IPlayerRegistry _playerRegistry;
+        private readonly IPacketDispatcher _packetDispatcher;
+
+        private readonly ConcurrentDictionary<string, PlayerSpecificSettings> _playerSpecificSettings = new();
+        private readonly ConcurrentDictionary<string, LevelCompletionResults> _levelCompletionResults = new();
+
+        private readonly ConcurrentDictionary<string, TaskCompletionSource> _levelFinishedTcs = new();
+        private readonly ConcurrentDictionary<string, TaskCompletionSource> _sceneReadyTcs = new();
+        private readonly ConcurrentDictionary<string, TaskCompletionSource> _songReadyTcs = new();
 
         public GameplayManager(
-            IMatchmakingServer server,
+            IDedicatedServer server,
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher)
         {
@@ -52,7 +56,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (State != GameplayManagerState.None)
                 return;
 
-            _server.State = MultiplayerGameState.Game;
+            _server.SetState(MultiplayerGameState.Game);
             CurrentBeatmap = beatmap;
             CurrentModifiers = modifiers;
 
@@ -60,6 +64,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             SessionGameId = Guid.NewGuid().ToString();
             _playerSpecificSettings.Clear();
             _levelCompletionResults.Clear();
+            _levelFinishedTcs.Clear();
+            _sceneReadyTcs.Clear();
+            _songReadyTcs.Clear();
             _songStartTime = 0;
             _requestReturnToMenuCts = new CancellationTokenSource();
 
@@ -70,17 +77,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // Create level finished tasks (players may send these at any time during gameplay)
             var levelFinishedCts = new CancellationTokenSource();
             var linkedLevelFinishedCts = CancellationTokenSource.CreateLinkedTokenSource(levelFinishedCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task<LevelFinishedPacket>> levelFinishedTasks = _playerRegistry.Players.Select(player => player.WaitForLevelFinished(linkedLevelFinishedCts.Token));
+            IEnumerable<Task> levelFinishedTasks = _playerRegistry.Players.Select(p => _levelFinishedTcs.GetOrAdd(p.UserId, _ => new()).Task);
 
             // Create scene ready tasks
             var sceneReadyCts = new CancellationTokenSource();
             var linkedSceneReadyCts = CancellationTokenSource.CreateLinkedTokenSource(sceneReadyCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task<SetGameplaySceneReadyPacket>> sceneReadyTasks = loadingPlayers.Select(player => player.WaitForSceneReady(linkedSceneReadyCts.Token));
+            IEnumerable<Task> sceneReadyTasks = loadingPlayers.Select(p => _sceneReadyTcs.GetOrAdd(p.UserId, _ => new()).Task);
 
             // Wait for scene ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
             sceneReadyCts.CancelAfter((int)(SceneLoadTimeLimit * 1000));
-            await WaitForCompletionOrCancel(sceneReadyTasks);
+            await Task.WhenAll(sceneReadyTasks);
 
             // Set scene sync finished
             State = GameplayManagerState.SongLoad;
@@ -96,12 +103,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // Create song ready tasks
             var songReadyCts = new CancellationTokenSource();
             var linkedSongReadyCts = CancellationTokenSource.CreateLinkedTokenSource(songReadyCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task> songReadyTasks = loadingPlayers.Select(player => player.WaitForSongReady(linkedSongReadyCts.Token));
+            IEnumerable<Task> songReadyTasks = loadingPlayers.Select(p => _songReadyTcs.GetOrAdd(p.UserId, _ => new()).Task);
 
             // Wait for song ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
             songReadyCts.CancelAfter((int)(SongLoadTimeLimit * 1000));
-            await WaitForCompletionOrCancel(songReadyTasks);
+            await Task.WhenAll(sceneReadyTasks);
 
             // If no players are actually playing
             if (_playerRegistry.Players.All(player => !player.InGameplay))
@@ -116,7 +123,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
-            await WaitForCompletionOrCancel(levelFinishedTasks);
+            await Task.WhenAll(levelFinishedTasks);
 
             State = GameplayManagerState.Results;
 
@@ -129,7 +136,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             CurrentBeatmap = null;
             CurrentModifiers = null;
             _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-            _server.State = MultiplayerGameState.Lobby;
+            _server.SetState(MultiplayerGameState.Lobby);
         }
 
         public void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet)
@@ -149,6 +156,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             if (_server.State != MultiplayerGameState.Game)
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
+
+            _sceneReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
 
         public void HandleGameSongLoaded(IPlayer player)
@@ -161,22 +170,26 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             if (_server.State != MultiplayerGameState.Game)
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
+
+            _songReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
+
         }
 
         public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet)
         {
             _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
+            _levelFinishedTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
 
-        private Task WaitForCompletionOrCancel(IEnumerable<Task> tasks) =>
-            Task.WhenAll(tasks.Select(task => task.ContinueWith(t => t.IsCanceled ? Task.CompletedTask : t)));
-
         public void SignalRequestReturnToMenu()
+            => _requestReturnToMenuCts?.Cancel();
+
+        private void HandleClientDisconnect(EndPoint endPoint, DisconnectReason reason)
         {
-            if (_requestReturnToMenuCts != null)
-            {
-                _requestReturnToMenuCts.Cancel();
-            }
+            var p = _playerRegistry.GetPlayer(endPoint);
+            _levelFinishedTcs.GetOrAdd(p.UserId, _ => new()).SetResult();
+            _sceneReadyTcs.GetOrAdd(p.UserId, _ => new()).SetResult();
+            _songReadyTcs.GetOrAdd(p.UserId, _ => new()).SetResult();
         }
     }
 }
