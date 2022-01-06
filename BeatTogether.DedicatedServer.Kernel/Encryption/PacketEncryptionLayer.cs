@@ -83,7 +83,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             _encryptionParameters.TryRemove(endPoint, out _);
         }
 
-        public void ProcessInboundPacket(EndPoint endPoint, ref Span<byte> data)
+        public void ProcessInboundPacket(EndPoint endPoint, Span<byte> data)
         {
             if (data.Length == 0)
                 return;
@@ -125,9 +125,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             }
         }
 
-        public void ProcessOutBoundPacket(IPEndPoint endPoint, ref Span<byte> data)
+        public void ProcessOutBoundPacket(EndPoint endPoint, Span<byte> data)
         {
-            if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
+            if (!_encryptionParameters.TryGetValue((IPEndPoint)endPoint, out var encryptionParameters))
             {
                 _logger.Warning(
                     "Failed to retrieve encryption parameters " +

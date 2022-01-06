@@ -8,7 +8,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
     public interface IPlayer
     {
         EndPoint Endpoint { get; }
-        IDedicatedServer Server { get; }
+        IDedicatedInstance Instance { get; }
         byte ConnectionId { get; }
         byte RemoteConnectionId { get; }
         string Secret { get; }

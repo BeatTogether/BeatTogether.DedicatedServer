@@ -1,4 +1,5 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using Serilog;
 using System.Threading.Tasks;
@@ -7,15 +8,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     public sealed class RequestReturnToMenuPacketHandler : BasePacketHandler<RequestReturnToMenuPacket>
     {
-        private IDedicatedServer _server;
         private IGameplayManager _gameplayManager;
         private ILogger _logger = Log.ForContext<SetGameplaySceneReadyPacketHandler>();
 
         public RequestReturnToMenuPacketHandler(
-            IDedicatedServer server,
             IGameplayManager gameplayManager)
         {
-            _server = server;
             _gameplayManager = gameplayManager;
         }
 

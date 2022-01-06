@@ -1,6 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Models;
 
-namespace BeatTogether.DedicatedServer.Kernel.Abstractions
+namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
 {
     public interface ILobbyManager
     {

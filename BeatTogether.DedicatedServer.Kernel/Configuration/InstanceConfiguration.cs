@@ -2,7 +2,7 @@
 
 namespace BeatTogether.DedicatedServer.Kernel.Configuration
 {
-    public sealed class ServerConfiguration
+    public sealed class InstanceConfiguration
     {
         public int Port { get; }
         public string Secret { get; }
@@ -14,7 +14,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
         public SongSelectionMode SongSelectionMode { get; }
         public GameplayServerControlSettings GameplayServerControlSettings { get; }
 
-        public ServerConfiguration(
+        public InstanceConfiguration(
             int port,
             string secret,
             string managerId,

@@ -6,12 +6,12 @@ using BeatTogether.LiteNetLib.Delegates;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
-    public interface IDedicatedServer
+    public interface IDedicatedInstance
     {
         public event ClientConnectHandler ClientConnectEvent;
         public event ClientDisconnectHandler ClientDisconnectEvent;
 
-        ServerConfiguration Configuration { get; }
+        InstanceConfiguration Configuration { get; }
         bool IsRunning { get; }
         float RunTime { get; }
         int Port { get; }

@@ -20,9 +20,9 @@ using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
-    public sealed class DedicatedServer : LiteNetServer, IDedicatedServer
+    public sealed class DedicatedInstance : LiteNetServer, Abstractions.IDedicatedInstance
     {
-        // Milliseconds server will wait for a player to connect.
+        // Milliseconds instance will wait for a player to connect.
         public const int WaitForPlayerTimeLimit = 10000;
 
         // Milliseconds between sync time updates
@@ -30,18 +30,18 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public string UserId => "ziuMSceapEuNN7wRGQXrZg";
         public string UserName => "";
-        public ServerConfiguration Configuration { get; private set; } = null!;
+        public InstanceConfiguration Configuration { get; private set; } = null!;
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => Endpoint.Port;
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
 
-        private readonly ServerConfiguration _configuration;
+        private readonly InstanceConfiguration _configuration;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly ConcurrentQueue<byte> _releasedConnectionIds = new();
         private readonly ConcurrentQueue<int> _releasedSortIndices = new();
-        private readonly ILogger _logger = Log.ForContext<DedicatedServer>();
+        private readonly ILogger _logger = Log.ForContext<DedicatedInstance>();
 
         private long _startTime;
         private int _connectionIdCount = 0;
@@ -49,8 +49,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         private CancellationTokenSource? _waitForPlayerCts;
         private CancellationTokenSource? _stopServerCts;
 
-        public DedicatedServer(
-            ServerConfiguration configuration,
+        public DedicatedInstance(
+            InstanceConfiguration configuration,
             IPlayerRegistry playerRegistry,
             LiteNetConfiguration liteNetConfiguration,
             LiteNetPacketRegistry registry,
@@ -78,7 +78,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _startTime = DateTime.UtcNow.Ticks;
 
             _logger.Information(
-                "Starting matchmaking server " +
+                "Starting dedicated server " +
                 $"(Port={Port}," +
                 $"Secret='{Configuration.Secret}', " +
                 $"ManagerId='{Configuration.ManagerId}', " +
@@ -115,7 +115,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return Task.CompletedTask;
 
             _logger.Information(
-                "Stopping matchmaking server " +
+                "Stopping dedicated server " +
                 $"(Port={Port}," +
                 $"Secret='{Configuration.Secret}', " +
                 $"ManagerId='{Configuration.ManagerId}', " +
@@ -227,7 +227,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             _playerRegistry.AddPlayer(player);
             _logger.Information(
-                "Player joined matchmaking server " +
+                "Player joined dedicated server " +
                 $"(RemoteEndPoint='{player.Endpoint}', " +
                 $"ConnectionId={player.ConnectionId}, " +
                 $"Secret='{player.Secret}', " +
@@ -357,7 +357,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return;
 
             _logger.Debug(
-                "Peer disconnected " +
+                "Endpoint disconnected " +
                 $"(RemoteEndPoint='{endPoint}', DisconnectReason={reason})."
             );
 

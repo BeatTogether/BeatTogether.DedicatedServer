@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Enums;
+using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
@@ -14,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
-    public sealed class GameplayManager : IGameplayManager
+    public sealed class GameplayManager : IGameplayManager, IDisposable
     {
         public string SessionGameId { get; private set; } = null!;
         public GameplayManagerState State { get; private set; } = GameplayManagerState.None;
@@ -30,7 +31,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private CancellationTokenSource? _requestReturnToMenuCts;
 
-        private readonly IDedicatedServer _server;
+        private readonly IDedicatedInstance _instance;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
 
@@ -42,13 +43,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private readonly ConcurrentDictionary<string, TaskCompletionSource> _songReadyTcs = new();
 
         public GameplayManager(
-            IDedicatedServer server,
+            IDedicatedInstance instance,
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher)
         {
-            _server = server;
+            _instance = instance;
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
+
+            _instance.ClientDisconnectEvent += HandleClientDisconnect;
+        }
+
+        public void Dispose()
+        {
+            _instance.ClientDisconnectEvent -= HandleClientDisconnect;
         }
 
         public async void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
@@ -56,7 +64,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (State != GameplayManagerState.None)
                 return;
 
-            _server.SetState(MultiplayerGameState.Game);
+            _instance.SetState(MultiplayerGameState.Game);
             CurrentBeatmap = beatmap;
             CurrentModifiers = modifiers;
 
@@ -118,7 +126,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Start song and wait for finish
             State = GameplayManagerState.Gameplay;
-            _songStartTime = _server.RunTime + SongStartDelay;
+            _songStartTime = _instance.RunTime + SongStartDelay;
             _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
                 StartTime = _songStartTime
@@ -136,14 +144,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             CurrentBeatmap = null;
             CurrentModifiers = null;
             _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-            _server.SetState(MultiplayerGameState.Lobby);
+            _instance.SetState(MultiplayerGameState.Lobby);
         }
 
         public void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet)
         {
             _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
 
-            if (_server.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
+            if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayerDidConnectLatePacket
                 {
                     UserId = player.UserId,
@@ -154,7 +162,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     SessionGameId = SessionGameId
                 }, DeliveryMethod.ReliableOrdered);
 
-            if (_server.State != MultiplayerGameState.Game)
+            if (_instance.State != MultiplayerGameState.Game)
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
 
             _sceneReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
@@ -162,13 +170,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void HandleGameSongLoaded(IPlayer player)
         {
-            if (_server.State == MultiplayerGameState.Game && State != GameplayManagerState.SongLoad)
+            if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SongLoad)
                 _packetDispatcher.SendToPlayer(player, new SetSongStartTimePacket
                 {
                     StartTime = _songStartTime
                 }, DeliveryMethod.ReliableOrdered);
 
-            if (_server.State != MultiplayerGameState.Game)
+            if (_instance.State != MultiplayerGameState.Game)
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
 
             _songReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();

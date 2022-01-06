@@ -8,15 +8,15 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     public sealed class GetMultiplayerGameStatePacketHandler : BasePacketHandler<GetMultiplayerGameStatePacket>
     {
-        private readonly IDedicatedServer _server;
+        private readonly IDedicatedInstance _instance;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly ILogger _logger = Log.ForContext<GetMultiplayerGameStatePacketHandler>();
 
         public GetMultiplayerGameStatePacketHandler(
-            IDedicatedServer server,
+            IDedicatedInstance instance,
             IPacketDispatcher packetDispatcher)
         {
-            _server = server;
+            _instance = instance;
             _packetDispatcher = packetDispatcher;
         }
 
@@ -29,7 +29,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 
             _packetDispatcher.SendToPlayer(sender, new SetMultiplayerGameStatePacket
             {
-                State = _server.State
+                State = _instance.State
             }, DeliveryMethod.ReliableOrdered);
 
             return Task.CompletedTask;

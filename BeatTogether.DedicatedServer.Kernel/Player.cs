@@ -11,7 +11,7 @@ namespace BeatTogether.DedicatedServer.Kernel
     public sealed class Player : IPlayer
     {
         public EndPoint Endpoint { get; }
-        public IDedicatedServer Server { get; }
+        public IDedicatedInstance Instance { get; }
         public byte ConnectionId { get; }
         public byte RemoteConnectionId => 0;
         public string Secret { get; }
@@ -19,8 +19,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public string UserName { get; }
         public RollingAverage Latency { get; } = new(30);
         public float SyncTime =>
-            Math.Min(Server.RunTime - Latency.CurrentAverage - _syncTimeOffset,
-                     Server.RunTime);
+            Math.Min(Instance.RunTime - Latency.CurrentAverage - _syncTimeOffset,
+                     Instance.RunTime);
         public int SortIndex { get; set; }
 
         public AvatarData Avatar { get; set; } = new();
@@ -31,13 +31,13 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public PlayerStateHash State { get; set; } = new();
 
-        public bool IsManager => UserId == Server.Configuration.ManagerId;
+        public bool IsManager => UserId == Instance.Configuration.ManagerId;
         public bool CanRecommendBeatmaps => true;
-        public bool CanRecommendModifiers => 
-            Server.Configuration.GameplayServerControlSettings is Enums.GameplayServerControlSettings.AllowModifierSelection or Enums.GameplayServerControlSettings.All;
-        public bool CanKickVote => UserId == Server.Configuration.ManagerId;
-        public bool CanInvite => 
-            Server.Configuration.DiscoveryPolicy is Enums.DiscoveryPolicy.WithCode or Enums.DiscoveryPolicy.Public;
+        public bool CanRecommendModifiers =>
+            Instance.Configuration.GameplayServerControlSettings is Enums.GameplayServerControlSettings.AllowModifierSelection or Enums.GameplayServerControlSettings.All;
+        public bool CanKickVote => UserId == Instance.Configuration.ManagerId;
+        public bool CanInvite =>
+            Instance.Configuration.DiscoveryPolicy is Enums.DiscoveryPolicy.WithCode or Enums.DiscoveryPolicy.Public;
 
         public bool IsPlayer => State.Contains("player");
         public bool IsSpectating => State.Contains("spectating");
@@ -53,11 +53,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         private const float _syncTimeOffset = 0.06f;
         private ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();
 
-        public Player(EndPoint endPoint, IDedicatedServer server,
+        public Player(EndPoint endPoint, IDedicatedInstance instance,
             byte connectionId, string secret, string userId, string userName)
         {
             Endpoint = endPoint;
-            Server = server;
+            Instance = instance;
             ConnectionId = connectionId;
             Secret = secret;
             UserId = userId;

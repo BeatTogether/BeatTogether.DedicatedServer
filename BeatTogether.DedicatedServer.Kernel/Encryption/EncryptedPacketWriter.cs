@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Security.Cryptography;
-using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions;
 using BinaryRecords;
 
 namespace BeatTogether.DedicatedServer.Kernel.Encryption
