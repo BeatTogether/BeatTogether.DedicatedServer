@@ -8,7 +8,7 @@ using BeatTogether.Core.Security.Abstractions;
 using BeatTogether.Core.Security.Models;
 using BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions;
 using BeatTogether.LiteNetLib.Abstractions;
-using BinaryRecords;
+using Krypton.Buffers;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.Encryption
@@ -90,7 +90,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             if (data.Length == 0)
                 return;
 
-            var bufferReader = new BinaryBufferReader(data);
+            var bufferReader = new SpanBufferReader(data);
             if (!bufferReader.ReadBool())  // isEncrypted
             {
                 _logger.Warning($"Received an unencrypted packet (RemoteEndPoint='{endPoint}').");
@@ -99,26 +99,32 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
             byte[]? decryptedData;
 
-            if (_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters) &&
-                !TryDecrypt(ref bufferReader, encryptionParameters, out decryptedData))
+            if (_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
             {
-                data = decryptedData;
+                if (TryDecrypt(ref bufferReader, encryptionParameters, out decryptedData))
+                    data = decryptedData;
+                else
+                    data = Array.Empty<byte>();
                 return;
             }
 
-            if (_potentialEncryptionParameters.TryGetValue(address, out encryptionParameters) &&
-                TryDecrypt(ref bufferReader, encryptionParameters, out decryptedData))
-            {
-                _potentialEncryptionParameters.TryRemove(address, out _);
-                _encryptionParameters[endPoint] = encryptionParameters;
-                data = decryptedData;
+            if (_potentialEncryptionParameters.TryGetValue(address, out encryptionParameters)) {
+                if (TryDecrypt(ref bufferReader, encryptionParameters, out decryptedData))
+                {
+                    _encryptionParameters[endPoint] = encryptionParameters;
+                    _potentialEncryptionParameters.TryRemove(address, out _);
+                    data = decryptedData;
+                }
+                else
+                    data = Array.Empty<byte>();
                 return;
             }
 
             _logger.Verbose(
-                "Failed to retrieve encryption parameters " +
+                "Failed to retrieve decryption parameters " +
                 $"(RemoteEndPoint='{endPoint}')."
             );
+            data = Array.Empty<byte>();
         }
 
         public void ProcessOutBoundPacket(EndPoint endPoint, ref Span<byte> data)
@@ -132,7 +138,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 return;
             }
 
-            var bufferWriter = new BinaryBufferWriter(stackalloc byte[412]);
+            var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
             bufferWriter.WriteBool(true);  // isEncrypted
             _encryptedPacketWriter.WriteTo(
                 ref bufferWriter, data.Slice(0, data.Length),
@@ -178,7 +184,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
         }
 
         private bool TryDecrypt(
-            ref BinaryBufferReader bufferReader,
+            ref SpanBufferReader bufferReader,
             EncryptionParameters encryptionParameters,
             [MaybeNullWhen(false)] out byte[] data)
         {

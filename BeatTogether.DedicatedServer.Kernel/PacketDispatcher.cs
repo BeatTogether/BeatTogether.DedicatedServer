@@ -36,7 +36,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={LocalConnectionId})"
             );
 
-            var writer = new SpanBufferWriter();
+            var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
             packet.WriteTo(ref writer);
 
@@ -51,7 +51,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(ExcludedId={excludedPlayer.ConnectionId})"
             );
 
-            var writer = new SpanBufferWriter();
+            var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
             packet.WriteTo(ref writer);
             foreach (IPlayer player in _playerRegistry.Players)
@@ -66,7 +66,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={fromPlayer.ConnectionId})"
             );
 
-            var writer = new SpanBufferWriter();
+            var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             packet.WriteTo(ref writer);
 
@@ -81,7 +81,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={LocalConnectionId})."
             );
 
-            var writer = new SpanBufferWriter();
+            var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             packet.WriteTo(ref writer);
             Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
@@ -94,7 +94,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={LocalConnectionId}, ReceiverId={LocalConnectionId})."
             );
 
-            var writer = new SpanBufferWriter();
+            var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
             packet.WriteTo(ref writer);
             Send(player.Endpoint, writer, deliveryMethod);

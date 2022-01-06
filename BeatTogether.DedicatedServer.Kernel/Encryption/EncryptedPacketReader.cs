@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Security.Cryptography;
 using BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions;
-using BinaryRecords;
+using Krypton.Buffers;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.Encryption
@@ -22,7 +22,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
         }
 
         /// <inheritdoc cref="IEncryptedMessageReader.ReadFrom"/>
-        public ReadOnlyMemory<byte> ReadFrom(ref BinaryBufferReader bufferReader, byte[] key, HMAC hmac)
+        public ReadOnlyMemory<byte> ReadFrom(ref SpanBufferReader bufferReader, byte[] key, HMAC hmac)
         {
             var sequenceId = bufferReader.ReadUInt32();
             var iv = bufferReader.ReadBytes(16).ToArray();
@@ -48,7 +48,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             var hmacStart = decryptedBuffer.Length - paddingByteCount - 10;
             var decryptedBufferSpan = decryptedBuffer.AsSpan();
             var hash = decryptedBufferSpan.Slice(hmacStart, 10);
-            var hashBufferWriter = new BinaryBufferWriter(stackalloc byte[decryptedBuffer.Length + 4]);
+            var hashBufferWriter = new SpanBufferWriter(stackalloc byte[decryptedBuffer.Length + 4]);
             hashBufferWriter.WriteBytes(decryptedBufferSpan.Slice(0, hmacStart));
             hashBufferWriter.WriteUInt32(sequenceId);
             Span<byte> computedHash = stackalloc byte[32];

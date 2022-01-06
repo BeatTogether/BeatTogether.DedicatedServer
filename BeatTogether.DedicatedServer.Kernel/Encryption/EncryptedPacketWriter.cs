@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography;
 using BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions;
-using BinaryRecords;
+using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Kernel.Encryption
 {
@@ -18,12 +18,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             _aesCryptoServiceProvider = aesCryptoServiceProvider;
         }
 
-        public void WriteTo(ref BinaryBufferWriter bufferWriter, ReadOnlySpan<byte> data, uint sequenceId, byte[] key, HMAC hmac)
+        public void WriteTo(ref SpanBufferWriter bufferWriter, ReadOnlySpan<byte> data, uint sequenceId, byte[] key, HMAC hmac)
         {
-            var unencryptedBufferWriter = new BinaryBufferWriter(stackalloc byte[data.Length]);
+            var unencryptedBufferWriter = new SpanBufferWriter(stackalloc byte[data.Length]);
             unencryptedBufferWriter.WriteBytes(data);
 
-            var hashBufferWriter = new BinaryBufferWriter(stackalloc byte[data.Length + 4]);
+            var hashBufferWriter = new SpanBufferWriter(stackalloc byte[data.Length + 4]);
             hashBufferWriter.WriteBytes(data);
             hashBufferWriter.WriteUInt32(sequenceId);
             Span<byte> hash = stackalloc byte[32];

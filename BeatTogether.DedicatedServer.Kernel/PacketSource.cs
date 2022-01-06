@@ -137,7 +137,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             ref SpanBufferReader reader, DeliveryMethod deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
-            var writer = new SpanBufferWriter();
+            var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
             writer.WriteBytes(reader.RemainingData);
             if (routingHeader.ReceiverId == AllConnectionIds)
