@@ -5,8 +5,10 @@ using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Dispatchers;
 using BeatTogether.LiteNetLib.Enums;
+using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 using Serilog;
+using System;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -15,10 +17,12 @@ namespace BeatTogether.DedicatedServer.Kernel
         public const byte LocalConnectionId = 0;
         public const byte AllConnectionIds = 127;
 
+        private readonly IPacketRegistry _packetRegistry;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly ILogger _logger = Log.ForContext<PacketDispatcher>();
 
         public PacketDispatcher(
+            IPacketRegistry packetRegistry,
             IPlayerRegistry playerRegistry,
             LiteNetConfiguration configuration,
             LiteNetServer server)
@@ -26,6 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                   configuration,
                   server)
         {
+            _packetRegistry = packetRegistry;
             _playerRegistry = playerRegistry;
         }
 
@@ -38,7 +43,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
-            packet.WriteTo(ref writer);
+            WriteOne(ref writer, packet);
 
             foreach (var player in _playerRegistry.Players)
                 Send(player.Endpoint, writer.Data, deliveryMethod);
@@ -53,7 +58,8 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
-            packet.WriteTo(ref writer);
+            WriteOne(ref writer, packet);
+
             foreach (IPlayer player in _playerRegistry.Players)
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
                     Send(player.Endpoint, writer.Data, deliveryMethod);
@@ -68,7 +74,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
-            packet.WriteTo(ref writer);
+            WriteOne(ref writer, packet);
 
             foreach (var player in _playerRegistry.Players)
                 Send(player.Endpoint, writer.Data, deliveryMethod);
@@ -83,7 +89,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
-            packet.WriteTo(ref writer);
+            WriteOne(ref writer, packet);
             Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
         }
 
@@ -96,8 +102,21 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
-            packet.WriteTo(ref writer);
+            WriteOne(ref writer, packet);
             Send(player.Endpoint, writer, deliveryMethod);
+        }
+
+        public void WriteOne(ref SpanBufferWriter writer, INetSerializable packet)
+        {
+            var type = packet.GetType();
+            if (!_packetRegistry.TryGetPacketIds(type, out var packetIds))
+                throw new Exception($"Failed to retrieve identifier for packet of type '{type.Name}'");
+            var packetWriter = new SpanBufferWriter(stackalloc byte[412]);
+            foreach (byte packetId in packetIds)
+                packetWriter.WriteUInt8(packetId);
+            packet.WriteTo(ref packetWriter);
+            writer.WriteVarUInt((uint)packetWriter.Size);
+            writer.WriteBytes(packetWriter.Data.ToArray());
         }
     }
 }

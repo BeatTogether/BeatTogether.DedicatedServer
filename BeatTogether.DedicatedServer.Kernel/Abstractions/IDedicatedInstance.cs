@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.LiteNetLib.Delegates;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
@@ -11,9 +10,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
     {
         event Action StartEvent;
         event Action StopEvent;
-
-        event ClientConnectHandler ClientConnectEvent;
-        event ClientDisconnectHandler ClientDisconnectEvent;
+        event Action<IPlayer> PlayerConnectedEvent;
+        event Action<IPlayer> PlayerDisconnectedEvent;
 
         InstanceConfiguration Configuration { get; }
         bool IsRunning { get; }

@@ -38,6 +38,8 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public event Action StartEvent = null!;
         public event Action StopEvent = null!;
+        public event Action<IPlayer> PlayerConnectedEvent = null!;
+        public event Action<IPlayer> PlayerDisconnectedEvent = null!;
 
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
@@ -359,6 +361,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }).ToList()
                 }
             }, DeliveryMethod.ReliableOrdered);
+
+            PlayerConnectedEvent?.Invoke(player);
         }
 
         public override void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
@@ -385,6 +389,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 _playerRegistry.RemovePlayer(player);
                 ReleaseSortIndex(player.SortIndex);
                 ReleaseConnectionId(player.ConnectionId);
+
+                PlayerDisconnectedEvent?.Invoke(player);
             }
 
             if (_playerRegistry.Players.Count == 0)
@@ -442,6 +448,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 return;
             }
+            SendSyncTime(cancellationToken);
         }
 
         #endregion

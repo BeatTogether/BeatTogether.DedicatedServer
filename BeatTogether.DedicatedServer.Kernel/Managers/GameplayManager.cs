@@ -51,12 +51,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
 
-            _instance.ClientDisconnectEvent += HandleClientDisconnect;
+            _instance.PlayerDisconnectedEvent += HandlePlayerDisconnected;
         }
 
         public void Dispose()
         {
-            _instance.ClientDisconnectEvent -= HandleClientDisconnect;
+            _instance.PlayerDisconnectedEvent -= HandlePlayerDisconnected;
         }
 
         public async void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
@@ -70,12 +70,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Reset
             SessionGameId = Guid.NewGuid().ToString();
-            _playerSpecificSettings.Clear();
-            _levelCompletionResults.Clear();
-            _levelFinishedTcs.Clear();
-            _sceneReadyTcs.Clear();
-            _songReadyTcs.Clear();
-            _songStartTime = 0;
             _requestReturnToMenuCts = new CancellationTokenSource();
 
             State = GameplayManagerState.SceneLoad;
@@ -139,7 +133,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared))
                 await Task.Delay((int)(ResultsScreenTime * 1000));
 
-            // End gameplay
+            // End gameplay and reset
+            _playerSpecificSettings.Clear();
+            _levelCompletionResults.Clear();
+            _levelFinishedTcs.Clear();
+            _sceneReadyTcs.Clear();
+            _songReadyTcs.Clear();
+            _songStartTime = 0;
             State = GameplayManagerState.None;
             CurrentBeatmap = null;
             CurrentModifiers = null;
@@ -192,12 +192,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public void SignalRequestReturnToMenu()
             => _requestReturnToMenuCts?.Cancel();
 
-        private void HandleClientDisconnect(EndPoint endPoint, DisconnectReason reason)
+        private void HandlePlayerDisconnected(IPlayer player)
         {
-            var p = _playerRegistry.GetPlayer(endPoint);
-            _levelFinishedTcs.GetOrAdd(p.UserId, _ => new()).SetResult();
-            _sceneReadyTcs.GetOrAdd(p.UserId, _ => new()).SetResult();
-            _songReadyTcs.GetOrAdd(p.UserId, _ => new()).SetResult();
+            _levelFinishedTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
+            _sceneReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
+            _songReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
     }
 }

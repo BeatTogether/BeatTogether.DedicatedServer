@@ -25,7 +25,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
 
             sender.IsReady = packet.IsReady;
-            _lobbyManager.Update();
 
             return Task.CompletedTask;
         }

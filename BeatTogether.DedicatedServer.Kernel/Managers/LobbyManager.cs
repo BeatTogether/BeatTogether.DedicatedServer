@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Enums;
@@ -36,13 +37,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private bool _lastSpectatorState;
         private bool _lastEntitlementState;
         private string _lastManagerId = null!;
+        private CancellationTokenSource _stopCts = new();
 
         private readonly InstanceConfiguration _configuration;
         private readonly IDedicatedInstance _instance;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IGameplayManager _gameplayManager;
-        private ILogger _logger = Log.ForContext<LobbyManager>();
+        private readonly ILogger _logger = Log.ForContext<LobbyManager>();
 
         public LobbyManager(
             InstanceConfiguration configuration,
@@ -57,21 +59,31 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _packetDispatcher = packetDispatcher;
             _gameplayManager = gameplayManager;
 
-            _instance.ClientConnectEvent += HandleClientConnect;
-            _instance.ClientDisconnectEvent += HandleClientDisconnect;
+            _instance.StopEvent += Stop;
+            Task.Run(() => UpdateLoop(_stopCts.Token)); // TODO: fuck this shit
         }
 
         public void Dispose()
         {
-            _instance.ClientConnectEvent -= HandleClientConnect;
-            _instance.ClientDisconnectEvent -= HandleClientDisconnect;
+            _instance.StopEvent -= Stop;
         }
 
-        private void HandleClientConnect(EndPoint endPoint)
-            => Update();
+        private void Stop()
+            => _stopCts.Cancel();
 
-        private void HandleClientDisconnect(EndPoint endPoint, DisconnectReason reason)
-            => Update();
+        private async void UpdateLoop(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Delay(100, cancellationToken);
+                Update();
+                UpdateLoop(cancellationToken);
+            }
+            catch
+            {
+
+            }
+        }
 
         public void Update()
         {

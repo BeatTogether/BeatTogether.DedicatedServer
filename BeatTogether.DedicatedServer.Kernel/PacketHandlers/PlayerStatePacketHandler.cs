@@ -26,7 +26,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             );
 
             sender.State = packet.PlayerState;
-            _lobbyManager.Update();
 
             return Task.CompletedTask;
         }
