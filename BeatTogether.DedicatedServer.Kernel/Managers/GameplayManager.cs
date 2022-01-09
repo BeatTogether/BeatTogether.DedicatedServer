@@ -149,6 +149,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet)
         {
+            if (_sceneReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
+                return;
+
             _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
 
             if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
@@ -170,6 +173,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void HandleGameSongLoaded(IPlayer player)
         {
+            if (_songReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
+                return;
+
             if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SongLoad)
                 _packetDispatcher.SendToPlayer(player, new SetSongStartTimePacket
                 {
@@ -180,11 +186,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
 
             _songReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
-
         }
 
         public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet)
         {
+            if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
+                return;
+
             _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
             _levelFinishedTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
@@ -194,9 +202,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private void HandlePlayerDisconnected(IPlayer player)
         {
-            _levelFinishedTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
-            _sceneReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
-            _songReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
+            var levelFinished = _levelFinishedTcs.GetOrAdd(player.UserId, _ => new());
+            var sceneReady = _sceneReadyTcs.GetOrAdd(player.UserId, _ => new());
+            var songReady = _songReadyTcs.GetOrAdd(player.UserId, _ => new());
+
+            if (!levelFinished.Task.IsCompleted)
+                levelFinished.SetResult();
+            if (!sceneReady.Task.IsCompleted)
+                sceneReady.SetResult();
+            if (!songReady.Task.IsCompleted)
+                songReady.SetResult();
         }
     }
 }
