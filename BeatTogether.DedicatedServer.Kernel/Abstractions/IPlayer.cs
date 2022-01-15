@@ -14,6 +14,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         string Secret { get; }
         string UserId { get; }
         string UserName { get; }
+        byte[] Random { get; set; }
+        byte[] PublicEncryptionKey { get; set; }
 
         RollingAverage Latency { get; }
         float SyncTime { get; }

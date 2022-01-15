@@ -22,6 +22,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             Math.Min(Instance.RunTime - Latency.CurrentAverage - _syncTimeOffset,
                      Instance.RunTime);
         public int SortIndex { get; set; }
+        public byte[] Random { get; set; }
+        public byte[] PublicEncryptionKey { get; set; }
 
         public AvatarData Avatar { get; set; } = new();
         public bool IsReady { get; set; }

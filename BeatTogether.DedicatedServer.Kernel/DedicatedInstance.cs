@@ -334,7 +334,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                     _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
                     {
                         PlayerState = p.State,
-                        PlayerAvatar = p.Avatar
+                        PlayerAvatar = p.Avatar,
+                        Random = new ByteArray { Data = p.Random },
+                        PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
                     }, DeliveryMethod.ReliableOrdered);
                 }
             }
