@@ -110,7 +110,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // Wait for song ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
             songReadyCts.CancelAfter((int)(SongLoadTimeLimit * 1000));
-            await Task.WhenAll(sceneReadyTasks);
+            await Task.WhenAll(songReadyTasks);
 
             // If no players are actually playing
             if (_playerRegistry.Players.All(player => !player.InGameplay))
