@@ -1,5 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
+using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System.Threading.Tasks;
 
@@ -7,7 +9,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     public sealed class SetIsInLobbyPacketHandler : BasePacketHandler<SetIsInLobbyPacket>
     {
-        private ILogger _logger = Log.ForContext<SetIsInLobbyPacketHandler>();
+        private readonly PacketDispatcher _packetDispatcher;
+        private readonly ILogger _logger = Log.ForContext<SetIsInLobbyPacketHandler>();
+
+        public SetIsInLobbyPacketHandler(
+            PacketDispatcher packetDispatcher)
+        {
+            _packetDispatcher = packetDispatcher;
+        }
 
         public override Task Handle(IPlayer sender, SetIsInLobbyPacket packet)
         {
@@ -15,6 +24,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(SetIsInLobbyPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, InLobby={packet.IsInLobby})."
             );
+
+            if (packet.IsInLobby && !sender.InLobby)
+                _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
+                {
+                    Reason = CannotStartGameReason.NoSongSelected
+                }, DeliveryMethod.ReliableOrdered);
 
             sender.InLobby = packet.IsInLobby;
             return Task.CompletedTask;
