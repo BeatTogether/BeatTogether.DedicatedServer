@@ -147,7 +147,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 foreach (var player in _playerRegistry.Players)
-                    _packetDispatcher.Send(player.Endpoint, writer, deliveryMethod);
+                    if (player != sender)
+                        _packetDispatcher.Send(player.Endpoint, writer, deliveryMethod);
             }
             else
             {
