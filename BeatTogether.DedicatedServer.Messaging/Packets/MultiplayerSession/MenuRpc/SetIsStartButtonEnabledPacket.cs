@@ -1,6 +1,5 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 
@@ -13,12 +12,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 		public override void ReadFrom(ref SpanBufferReader reader)
         {
 			base.ReadFrom(ref reader);
-			Reason = (CannotStartGameReason)reader.ReadVarInt();
+			
+	        if (reader.ReadUInt8() == 1)
+				Reason = (CannotStartGameReason)reader.ReadVarInt();
 		}
 
 		public override void WriteTo(ref SpanBufferWriter writer)
         {
 			base.WriteTo(ref writer);
+			
+			writer.WriteUInt8(1);
 			writer.WriteVarInt((int)Reason);
 		}
 	}

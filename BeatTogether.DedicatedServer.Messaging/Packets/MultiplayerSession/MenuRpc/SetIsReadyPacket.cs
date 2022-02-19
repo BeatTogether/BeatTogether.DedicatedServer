@@ -10,12 +10,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         public override void ReadFrom(ref SpanBufferReader reader)
         {
             base.ReadFrom(ref reader);
-            IsReady = reader.ReadBool();
+            
+            if (reader.ReadUInt8() == 1)
+                IsReady = reader.ReadBool();
         }
 
         public override void WriteTo(ref SpanBufferWriter writer)
         {
             base.WriteTo(ref writer);
+            
+            writer.WriteUInt8(1);
             writer.WriteBool(IsReady);
         }
     }

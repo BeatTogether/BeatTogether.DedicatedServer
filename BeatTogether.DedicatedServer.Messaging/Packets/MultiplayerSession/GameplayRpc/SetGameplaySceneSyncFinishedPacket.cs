@@ -13,14 +13,22 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
         public override void ReadFrom(ref SpanBufferReader reader)
         {
             base.ReadFrom(ref reader);
-            PlayersAtStart.ReadFrom(ref reader);
-            SessionGameId = reader.ReadString();
+            
+            if (reader.ReadUInt8() == 1)
+                PlayersAtStart.ReadFrom(ref reader);
+            
+            if (reader.ReadUInt8() == 1)
+                SessionGameId = reader.ReadString();
         }
 
         public override void WriteTo(ref SpanBufferWriter writer)
         {
             base.WriteTo(ref writer);
+
+            writer.WriteUInt8(1);
             PlayersAtStart.WriteTo(ref writer);
+            
+            writer.WriteUInt8(1);
             writer.WriteString(SessionGameId);
         }
     }
