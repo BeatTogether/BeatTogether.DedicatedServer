@@ -4,7 +4,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc
 {
-    public sealed class NoteMissPacket : BaseRpcPacket
+    public sealed class NoteMissPacket : BaseRpcWithValuesPacket
     {
         public float SongTime { get; set; }
         public NoteMissInfo Info { get; set; } = new();
@@ -12,22 +12,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
         public override void ReadFrom(ref SpanBufferReader reader)
         {
             base.ReadFrom(ref reader);
-            
-            if (reader.ReadUInt8() == 1)
+            if (HasValue0)
                 SongTime = reader.ReadFloat32();
-            
-            if (reader.ReadUInt8() == 1)
+            if (HasValue1)
                 Info.ReadFrom(ref reader);
         }
 
         public override void WriteTo(ref SpanBufferWriter writer)
         {
             base.WriteTo(ref writer);
-            
-            writer.WriteUInt8(1);
             writer.WriteFloat32(SongTime);
-            
-            writer.WriteUInt8(1);
             Info.WriteTo(ref writer);
         }
     }

@@ -5,7 +5,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
-    public sealed class SetPlayersMissingEntitlementsToLevelPacket : BaseRpcPacket
+    public sealed class SetPlayersMissingEntitlementsToLevelPacket : BaseRpcWithValuesPacket
     {
         public List<string> PlayersWithoutEntitlements { get; set; } = new();
 
@@ -13,11 +13,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         {
             base.ReadFrom(ref reader);
 
-            if (reader.ReadUInt8() == 1)
+            if (HasValue0)
             {
                 // PlayersMissingEntitlementsNetSerializable
-                var count = reader.ReadInt32();
-                for (var i = 0; i < count; i++)
+                int count = reader.ReadInt32();
+                for (int i = 0; i < count; i++)
                 {
                     PlayersWithoutEntitlements.Add(reader.ReadString());
                 }
@@ -27,11 +27,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         public override void WriteTo(ref SpanBufferWriter writer)
         {
             base.WriteTo(ref writer);
-
-            writer.WriteUInt8(1);
+            
             // PlayersMissingEntitlementsNetSerializable
             writer.WriteInt32(PlayersWithoutEntitlements.Count);
-            foreach (var player in PlayersWithoutEntitlements)
+            foreach (string player in PlayersWithoutEntitlements)
             {
                 writer.WriteString(player);
             }
