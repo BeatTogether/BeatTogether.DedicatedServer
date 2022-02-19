@@ -13,6 +13,8 @@
 		NoteMissed = 8,
 		LevelFinished = 9,
 		ReturnToMenu = 10,
-		RequestReturnToMenu = 11
+		RequestReturnToMenu = 11,
+		NoteSpawned = 12,
+		ObstacleSpawned = 13
 	}
 }

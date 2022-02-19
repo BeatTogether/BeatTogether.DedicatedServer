@@ -7,21 +7,32 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 {
     public sealed class MultiplayerLevelCompletionResults : INetSerializable
     {
-        public MultiplayerLevelEndState LevelEndState { get; set; }
+        public MultiplayerPlayerLevelEndState PlayerLevelEndState { get; set; }
+        public MultiplayerPlayerLevelEndReason PlayerLevelEndReason { get; set; }
         public LevelCompletionResults LevelCompletionResults { get; set; } = new();
 
         public void ReadFrom(ref SpanBufferReader reader)
         {
-            LevelEndState = (MultiplayerLevelEndState)reader.ReadVarInt();
-            if (LevelEndState == MultiplayerLevelEndState.Cleared || LevelEndState == MultiplayerLevelEndState.Failed)
+            PlayerLevelEndState = (MultiplayerPlayerLevelEndState) reader.ReadVarInt();
+            PlayerLevelEndReason = (MultiplayerPlayerLevelEndReason) reader.ReadVarInt();
+
+            if (HasAnyResult())
                 LevelCompletionResults.ReadFrom(ref reader);
         }
 
         public void WriteTo(ref SpanBufferWriter writer)
         {
-            writer.WriteVarInt((int)LevelEndState);
-            if (LevelEndState == MultiplayerLevelEndState.Cleared || LevelEndState == MultiplayerLevelEndState.Failed)
+            writer.WriteVarInt((int) PlayerLevelEndState);
+            writer.WriteVarInt((int) PlayerLevelEndReason);
+
+            if (HasAnyResult())
                 LevelCompletionResults.WriteTo(ref writer);
+        }
+
+        public bool HasAnyResult()
+        {
+            return PlayerLevelEndState is MultiplayerPlayerLevelEndState.SongFinished
+                or MultiplayerPlayerLevelEndState.NotFinished;
         }
     }
 }
