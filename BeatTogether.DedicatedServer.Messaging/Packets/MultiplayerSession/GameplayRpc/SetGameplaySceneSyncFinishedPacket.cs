@@ -5,7 +5,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc
 {
-    public sealed class SetGameplaySceneSyncFinishedPacket : BaseRpcPacket
+    public sealed class SetGameplaySceneSyncFinishedPacket : BaseRpcWithValuesPacket
     {
         public PlayerSpecificSettingsAtStart PlayersAtStart { get; set; } = new();
         public string SessionGameId { get; set; } = null!;
@@ -13,8 +13,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
         public override void ReadFrom(ref SpanBufferReader reader)
         {
             base.ReadFrom(ref reader);
-            PlayersAtStart.ReadFrom(ref reader);
-            SessionGameId = reader.ReadString();
+            if (HasValue0)
+                PlayersAtStart.ReadFrom(ref reader);
+            if (HasValue1)
+                SessionGameId = reader.ReadString();
         }
 
         public override void WriteTo(ref SpanBufferWriter writer)

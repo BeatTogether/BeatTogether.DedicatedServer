@@ -1,19 +1,19 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
-	public sealed class SetIsStartButtonEnabledPacket : BaseRpcPacket
+	public sealed class SetIsStartButtonEnabledPacket : BaseRpcWithValuesPacket
 	{
 		public CannotStartGameReason Reason { get; set; }
 
 		public override void ReadFrom(ref SpanBufferReader reader)
         {
 			base.ReadFrom(ref reader);
-			Reason = (CannotStartGameReason)reader.ReadVarInt();
+			if (HasValue0)
+				Reason = (CannotStartGameReason)reader.ReadVarInt();
 		}
 
 		public override void WriteTo(ref SpanBufferWriter writer)

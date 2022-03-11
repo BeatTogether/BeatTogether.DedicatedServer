@@ -4,7 +4,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
-    public sealed class StartLevelPacket : BaseRpcPacket
+    public sealed class StartLevelPacket : BaseRpcWithValuesPacket
     {
         public BeatmapIdentifier Beatmap { get; set; } = new();
         public GameplayModifiers Modifiers { get; set; } = new();
@@ -13,9 +13,12 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         public override void ReadFrom(ref SpanBufferReader reader)
         {
             base.ReadFrom(ref reader);
-            Beatmap.ReadFrom(ref reader);
-            Modifiers.ReadFrom(ref reader);
-            StartTime = reader.ReadFloat32();
+            if (HasValue0)
+                Beatmap.ReadFrom(ref reader);
+            if (HasValue1)
+                Modifiers.ReadFrom(ref reader);
+            if (HasValue2)
+                StartTime = reader.ReadFloat32();
         }
 
         public override void WriteTo(ref SpanBufferWriter writer)

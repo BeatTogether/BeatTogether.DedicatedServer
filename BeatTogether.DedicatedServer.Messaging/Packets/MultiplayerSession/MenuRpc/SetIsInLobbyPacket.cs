@@ -3,14 +3,15 @@ using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
-    public sealed class SetIsInLobbyPacket : BaseRpcPacket
+    public sealed class SetIsInLobbyPacket : BaseRpcWithValuesPacket
     {
         public bool IsInLobby { get; set; }
 
         public override void ReadFrom(ref SpanBufferReader reader)
         {
             base.ReadFrom(ref reader);
-            IsInLobby = reader.ReadBool();
+            if (HasValue0)
+                IsInLobby = reader.ReadBool();
         }
 
         public override void WriteTo(ref SpanBufferWriter writer)

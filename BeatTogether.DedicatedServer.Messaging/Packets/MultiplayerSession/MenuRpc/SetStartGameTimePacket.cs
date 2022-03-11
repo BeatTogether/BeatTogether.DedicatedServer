@@ -3,14 +3,15 @@ using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
-	public sealed class SetStartGameTimePacket : BaseRpcPacket
+	public sealed class SetStartGameTimePacket : BaseRpcWithValuesPacket
 	{
 		public float StartTime { get; set; }
 
 		public override void ReadFrom(ref SpanBufferReader reader)
         {
 			base.ReadFrom(ref reader);
-			StartTime = reader.ReadFloat32();
+			if (HasValue0)
+				StartTime = reader.ReadFloat32();
 		}
 
 		public override void WriteTo(ref SpanBufferWriter writer)

@@ -4,14 +4,15 @@ using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc
 {
-    public sealed class LevelFinishedPacket : BaseRpcPacket
+    public sealed class LevelFinishedPacket : BaseRpcWithValuesPacket
     {
         public MultiplayerLevelCompletionResults Results { get; set; } = new();
 
         public override void ReadFrom(ref SpanBufferReader reader)
         {
             base.ReadFrom(ref reader);
-            Results.ReadFrom(ref reader);
+            if (HasValue0)
+                Results.ReadFrom(ref reader);
         }
 
         public override void WriteTo(ref SpanBufferWriter writer)

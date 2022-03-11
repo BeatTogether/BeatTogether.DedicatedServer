@@ -4,14 +4,15 @@ using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
-    public sealed class GetIsEntitledToLevelPacket : BaseRpcPacket
+    public sealed class GetIsEntitledToLevelPacket : BaseRpcWithValuesPacket
     {
         public string LevelId { get; set; } = null!;
 
         public override void ReadFrom(ref SpanBufferReader reader)
         {
             base.ReadFrom(ref reader);
-            LevelId = reader.ReadString();
+            if (HasValue0)
+                LevelId = reader.ReadString();
         }
 
         public override void WriteTo(ref SpanBufferWriter writer)

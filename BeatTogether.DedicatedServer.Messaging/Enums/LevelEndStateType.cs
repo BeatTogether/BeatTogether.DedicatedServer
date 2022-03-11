@@ -2,7 +2,7 @@
 {
     public enum LevelEndStateType
     {
-        None,
+        Incomplete,
         Cleared,
         Failed
     }
