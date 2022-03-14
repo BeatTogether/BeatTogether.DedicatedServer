@@ -1,4 +1,5 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
+﻿using BeatTogether.DedicatedServer.Messaging.Enums;
+using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 
@@ -14,8 +15,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public Vector3 NotePosition { get; set; }
         public Vector3 NoteScale { get; set; }
         public Quaternion NoteRotation { get; set; }
+        public NoteGameplayType GameplayType { get; set; }
         public int ColorType { get; set; }
-        public int NoteLineLayer { get; set; }
+        public int LineLayer { get; set; }
         public int NoteLineIndex { get; set; }
         public float NoteTime { get; set; }
         public float TimeToNextNote { get; set; }
@@ -31,8 +33,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             NotePosition.ReadFrom(ref reader);
             NoteScale.ReadFrom(ref reader);
             NoteRotation.ReadFrom(ref reader);
+            GameplayType = (NoteGameplayType) reader.ReadVarInt();
             ColorType = reader.ReadVarInt();
-            NoteLineLayer = reader.ReadVarInt();
+            LineLayer = reader.ReadVarInt();
             NoteLineIndex = reader.ReadVarInt();
             NoteTime = reader.ReadFloat32();
             TimeToNextNote = reader.ReadFloat32();
@@ -49,8 +52,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             NotePosition.WriteTo(ref writer);
             NoteScale.WriteTo(ref writer);
             NoteRotation.WriteTo(ref writer);
+            writer.WriteVarInt((int)GameplayType);
             writer.WriteVarInt(ColorType);
-            writer.WriteVarInt(NoteLineLayer);
+            writer.WriteVarInt(LineLayer);
             writer.WriteVarInt(NoteLineIndex);
             writer.WriteFloat32(NoteTime);
             writer.WriteFloat32(TimeToNextNote);

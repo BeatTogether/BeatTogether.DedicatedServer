@@ -15,6 +15,7 @@
 		ReturnToMenu = 10,
 		RequestReturnToMenu = 11,
 		NoteSpawned = 12,
-		ObstacleSpawned = 13
+		ObstacleSpawned = 13,
+		SliderSpawned = 14
 	}
 }
