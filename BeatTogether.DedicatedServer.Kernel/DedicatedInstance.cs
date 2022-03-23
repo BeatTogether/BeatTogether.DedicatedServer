@@ -274,11 +274,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             // Update SyncTime
             _packetDispatcher.SendToNearbyPlayers(new SyncTimePacket
             {
-                SyncTime = player.SyncTime
+                SyncTime = RunTime
             }, DeliveryMethod.ReliableOrdered);
 
             // Send new player's connection data
-            _packetDispatcher.SendToNearbyPlayers(new PlayerConnectedPacket
+            _packetDispatcher.SendExcludingPlayer(player, new PlayerConnectedPacket
             {
                 RemoteConnectionId = player.ConnectionId,
                 UserId = player.UserId,
