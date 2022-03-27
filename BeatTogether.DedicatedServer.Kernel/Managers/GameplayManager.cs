@@ -81,7 +81,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             var linkedLevelFinishedCts = CancellationTokenSource.CreateLinkedTokenSource(levelFinishedCts.Token, _requestReturnToMenuCts.Token);
             IEnumerable<Task> levelFinishedTasks = _playerRegistry.Players.Select(p => {
                 var task = _levelFinishedTcs.GetOrAdd(p.UserId, _ => new());
-                linkedLevelFinishedCts.Token.Register(() => task.SetResult());
+                linkedLevelFinishedCts.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
 
@@ -90,7 +90,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             var linkedSceneReadyCts = CancellationTokenSource.CreateLinkedTokenSource(sceneReadyCts.Token, _requestReturnToMenuCts.Token);
             IEnumerable<Task> sceneReadyTasks = loadingPlayers.Select(p => {
                 var task = _sceneReadyTcs.GetOrAdd(p.UserId, _ => new());
-                linkedSceneReadyCts.Token.Register(() => task.SetResult());
+                linkedSceneReadyCts.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
 
@@ -115,7 +115,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             var linkedSongReadyCts = CancellationTokenSource.CreateLinkedTokenSource(songReadyCts.Token, _requestReturnToMenuCts.Token);
             IEnumerable<Task> songReadyTasks = loadingPlayers.Select(p => {
                 var task = _songReadyTcs.GetOrAdd(p.UserId, _ => new());
-                linkedSongReadyCts.Token.Register(() => task.SetResult());
+                linkedSongReadyCts.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
 
