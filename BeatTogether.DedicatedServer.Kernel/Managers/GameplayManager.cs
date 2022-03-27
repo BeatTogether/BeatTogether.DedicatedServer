@@ -79,12 +79,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // Create level finished tasks (players may send these at any time during gameplay)
             var levelFinishedCts = new CancellationTokenSource();
             var linkedLevelFinishedCts = CancellationTokenSource.CreateLinkedTokenSource(levelFinishedCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task> levelFinishedTasks = _playerRegistry.Players.Select(p => _levelFinishedTcs.GetOrAdd(p.UserId, _ => new()).Task);
+            IEnumerable<Task> levelFinishedTasks = _playerRegistry.Players.Select(p => {
+                var task = _levelFinishedTcs.GetOrAdd(p.UserId, _ => new());
+                linkedLevelFinishedCts.Token.Register(() => task.SetResult());
+                return task.Task;
+            });
 
             // Create scene ready tasks
             var sceneReadyCts = new CancellationTokenSource();
             var linkedSceneReadyCts = CancellationTokenSource.CreateLinkedTokenSource(sceneReadyCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task> sceneReadyTasks = loadingPlayers.Select(p => _sceneReadyTcs.GetOrAdd(p.UserId, _ => new()).Task);
+            IEnumerable<Task> sceneReadyTasks = loadingPlayers.Select(p => {
+                var task = _sceneReadyTcs.GetOrAdd(p.UserId, _ => new());
+                linkedSceneReadyCts.Token.Register(() => task.SetResult());
+                return task.Task;
+            });
 
             // Wait for scene ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
@@ -105,7 +113,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // Create song ready tasks
             var songReadyCts = new CancellationTokenSource();
             var linkedSongReadyCts = CancellationTokenSource.CreateLinkedTokenSource(songReadyCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task> songReadyTasks = loadingPlayers.Select(p => _songReadyTcs.GetOrAdd(p.UserId, _ => new()).Task);
+            IEnumerable<Task> songReadyTasks = loadingPlayers.Select(p => {
+                var task = _songReadyTcs.GetOrAdd(p.UserId, _ => new());
+                linkedSongReadyCts.Token.Register(() => task.SetResult());
+                return task.Task;
+            });
 
             // Wait for song ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);

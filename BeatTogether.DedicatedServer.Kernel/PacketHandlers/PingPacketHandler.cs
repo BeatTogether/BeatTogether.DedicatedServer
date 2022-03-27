@@ -18,7 +18,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
 
         public override Task Handle(IPlayer sender, PingPacket packet)
         {
-            _logger.Debug(
+            _logger.Verbose(
                 $"Handling packet of type '{nameof(PingPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, PingTime={packet.PingTime})."
             );
