@@ -137,7 +137,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
-            await Task.WhenAll(levelFinishedTasks);
+            await Task.WhenAll(levelFinishedTasks);  //TODO i think it might be something around this causing a bug i found, players are not sending level finished task if they die or end early/ this is not getting triggered if they do, also what happens if someone just never sends back any confirmation that they finished?
 
             State = GameplayManagerState.Results;
 
@@ -204,7 +204,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
                 return;
-
+            
             _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
             _levelFinishedTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
