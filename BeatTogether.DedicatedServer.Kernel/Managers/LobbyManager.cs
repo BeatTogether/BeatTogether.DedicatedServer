@@ -25,17 +25,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private const float CountdownAfterGameplayCooldown = 5f; //unsure but its not used so idk
 
         public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel); //if all players are ready OR spectating
-        public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady); //if any are ready
+        public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady); //if *any* are ready, dont we want this to be 50% not any?
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel); //players not ready or spectating 
         public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel); //if all spectating
+        public int PlayerCount { get => _playerRegistry.Players.Count; }                                  //counts players in lobby
+        public int PlayerCountInGame { get => _playerRegistry.Players.Count(p => p.InGameplay == true); } //counts players in gameplay
 
-        public BeatmapIdentifier? StartedBeatmap { get; private set; }           //presume this is the beatmap that will be played
-        public GameplayModifiers StartedModifiers { get; private set; } = new(); //presume this is the modifiers for the game
-        public float CountdownEndTime { get; private set; }                      //the instance time that the level/beatmap should start at
+        public BeatmapIdentifier? SelectedBeatmap { get; private set; }           //this is the beatmap that has been selected to be played
+        public GameplayModifiers SelectedModifiers { get; private set; } = new(); //these are the modifiers that have been selected to be played
+        public float CountdownEndTime { get; private set; }                       //the instance time that the level/beatmap should start at
 
         private BeatmapIdentifier? _lastBeatmap;     //beatmap selected in the last lobby loop
         private bool _lastSpectatorState;            //if all players were spectating in the last lobby loop
-        private bool _lastEntitlementState;          //if all players had the beatmap on or can download it on the last lobby loop
+        private bool _lastEntitlementState;          //if all players had the beatmap in the last lobby loop
         private string _lastManagerId = null!;       //id of manager in the last lobby loop
         private CancellationTokenSource _stopCts = new();   //token to stop the thread?
 
@@ -51,7 +53,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             IDedicatedInstance instance,
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
-            IGameplayManager gameplayManager)
+            IGameplayManager gameplayManager
+            )
         {
             _configuration = configuration;
             _instance = instance;
@@ -61,7 +64,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             _instance.StopEvent += Stop;
             Task.Run(() => UpdateLoop(_stopCts.Token)); // TODO: fuck this shit
-        }// run new thread when new lobby created
+        }// runs new thread when new lobby created
 
         public void Dispose()
         {
@@ -119,7 +122,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
                         {
                             Reason = CannotStartGameReason.DoNotOwnSong
-                        }, DeliveryMethod.ReliableOrdered); //o think this mean the manager cannot click start untill everyone has downloaded/or has the map ID/ability to download
+                        }, DeliveryMethod.ReliableOrdered);
                     }
                     // If all players have beatmap
                     else
@@ -178,7 +181,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         }
 
 
-        private void CountingDown(bool isReady,bool NotStartable, bool allPlayersOwnBeatmap, BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
+        private void CountingDown(bool isReady, bool NotStartable, bool allPlayersOwnBeatmap, BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
             // If not already counting down
             if (CountdownEndTime == 0)
@@ -191,71 +194,69 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 // If should be counting down, tell players
                 if (CountdownEndTime != 0)
                 {
-                    StartedBeatmap = beatmap;
-                    StartedModifiers = modifiers;
+                    UpdateBeatmap(beatmap, modifiers);
 
                     // Set countdown end time
                     _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
                     {
                         CountdownTime = CountdownEndTime
                     }, DeliveryMethod.ReliableOrdered);
+
+                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                    {
+                        Beatmap = SelectedBeatmap!,
+                        Modifiers = SelectedModifiers,
+                        StartTime = CountdownEndTime
+                    }, DeliveryMethod.ReliableOrdered);
                 }
             }
 
-            // If counting down
+            // If counting down / 
             else
             {
 
                 // If beatmap or modifiers changed, update them
-                if (StartedBeatmap != beatmap || StartedModifiers != modifiers)
-                {
-                    StartedBeatmap = beatmap;
-                    StartedModifiers = modifiers;
-                }
-
+                UpdateBeatmap(beatmap, modifiers);
 
                 // If countdown finished
                 if (CountdownEndTime < _instance.RunTime)
                 {
                     // If countdown just finished
-                    if (CountdownEndTime != 1)
+                    if (CountdownEndTime != -1)
                     {
-                        // Set start level
+                        // send players selected beatmap
                         _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                         {
-                            Beatmap = StartedBeatmap!,
-                            Modifiers = StartedModifiers,
+                            Beatmap = SelectedBeatmap!,
+                            Modifiers = SelectedModifiers,
                             StartTime = CountdownEndTime
                         }, DeliveryMethod.ReliableOrdered);
 
-                        CountdownEndTime = 1;
+                        CountdownEndTime = -1;
                     }
 
-                    // If all players have map
-                    if (_playerRegistry.Players.All(p => p.GetEntitlement(beatmap.LevelId) is EntitlementStatus.Ok))
+                    // If all players have map downloaded
+                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.Ok))
                     {
-                        // Reset
-                        CountdownEndTime = 0;
-                        StartedBeatmap = null;
-                        StartedModifiers = new();
+                        // Reset and stop counting down
+                        CountdownReset();
 
                         // Starts beatmap
-                        _gameplayManager.StartSong(beatmap, modifiers, CancellationToken.None);
-                        return; //self explanitory
+                        _gameplayManager.StartSong(SelectedBeatmap, SelectedModifiers, CancellationToken.None);
+                        return;
                     }
                 }
 
-                // If manager/players is/are no longer ready or not all players own beatmap
+                // If manager/players is/are no longer ready or not all players own beatmap(new player may have joined)
                 if (NotStartable || !allPlayersOwnBeatmap)
                 {
                     // Reset and stop counting down
-                    CountdownEndTime = 0;
+                    CountdownReset();
                     _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
                     _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
-                }
 
-                // If manager/players is/are still ready and all players own beatmap
-                else
+                }
+                else// If manager/players is/are still ready and all players own beatmap
                 {
                     // If all players are ready and countdown is too long
                     if (AllPlayersReady && CountdownEndTime - _instance.RunTime > CountdownTimeEveryoneReady)
@@ -273,15 +274,32 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         }, DeliveryMethod.ReliableOrdered);
 
                         // Set start level
-                        //TODO is this needed here?? i dont think it need to be
                         _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                         {
-                            Beatmap = StartedBeatmap!,
-                            Modifiers = StartedModifiers,
+                            Beatmap = SelectedBeatmap!,
+                            Modifiers = SelectedModifiers,
                             StartTime = CountdownEndTime
                         }, DeliveryMethod.ReliableOrdered);
-                    }//changes countdown time and sends new one to client
+                    }
                 }
+            }
+        }
+
+        private void CountdownReset()
+        { //Reset and stop counting down
+            CountdownEndTime = 0;
+            SelectedBeatmap = null;
+            SelectedModifiers = new();
+        }
+        private void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
+        {
+            if (SelectedBeatmap != beatmap)
+            {
+                SelectedBeatmap = beatmap;
+            }
+            if (SelectedModifiers != modifiers)
+            {
+                SelectedModifiers = modifiers;
             }
         }
 
