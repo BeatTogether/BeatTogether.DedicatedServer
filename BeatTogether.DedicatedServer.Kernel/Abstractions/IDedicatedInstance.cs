@@ -20,8 +20,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 		string UserId { get; }
 		string UserName { get; }
         MultiplayerGameState State { get; }
+        int PlayerCount { get; }       //counts players in lobby
+        int PlayerCountInGame { get; } //counts players in gameplay
 
-		Task Start(CancellationToken cancellationToken = default);
+        Task Start(CancellationToken cancellationToken = default);
         Task Stop(CancellationToken cancellationToken = default);
 
         int GetNextSortIndex();

@@ -82,6 +82,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             IEnumerable<Task> levelFinishedTasks = _playerRegistry.Players.Select(p => {
                 var task = _levelFinishedTcs.GetOrAdd(p.UserId, _ => new());
                 linkedLevelFinishedCts.Token.Register(() => task.TrySetResult());
+                Console.WriteLine("Player finished level: " + p.UserName);
                 return task.Task;
             });
 
@@ -200,7 +201,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _songReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
 
-        public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet)
+        public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet) //This not working properly?
         {
             if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
                 return;
@@ -209,7 +210,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _levelFinishedTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
 
-        public void SignalRequestReturnToMenu()
+        public void SignalRequestReturnToMenu() //this works i think as returning to lobby part way though beatmap does not cause it to stop working
             => _requestReturnToMenuCts?.Cancel();
 
         private void HandlePlayerDisconnected(IPlayer player)

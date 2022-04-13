@@ -238,11 +238,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     // If all players have map downloaded
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.Ok))
                     {
-                        // Reset and stop counting down
-                        CountdownReset();
-
                         // Starts beatmap
                         _gameplayManager.StartSong(SelectedBeatmap, SelectedModifiers, CancellationToken.None);
+                        Console.WriteLine("Starting song");
+                        // Reset and stop counting down
+                        CountdownReset();
                         return;
                     }
                 }
@@ -287,6 +287,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private void CountdownReset()
         { //Reset and stop counting down
+            Console.WriteLine("Resetting countdown, beatmap and modifiers");
             CountdownEndTime = 0;
             SelectedBeatmap = null;
             SelectedModifiers = new();
@@ -335,7 +336,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         if (beatmap.Value > topBeatmap.Value)
                             topBeatmap = beatmap;
                     });
-                    return topBeatmap.Key;
+                    //voteDictionary.OrderByDescending(n => n.Value);
+                    
+                    return topBeatmap.Key;// voteDictionary.First().Key;
             };
             return null;
         }
@@ -367,7 +370,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         if (modifiers.Value > topModifiers.Value)
                             topModifiers = modifiers;
                     });
-                    return topModifiers.Key;
+
+                    //voteDictionary.OrderByDescending(n => n.Value);
+                    return topModifiers.Key;// voteDictionary.First().Key;
             };
             return new GameplayModifiers();
 		}
