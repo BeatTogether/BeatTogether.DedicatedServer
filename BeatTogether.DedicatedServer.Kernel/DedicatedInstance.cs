@@ -28,16 +28,13 @@ namespace BeatTogether.DedicatedServer.Kernel
         // Milliseconds between sync time updates
         public const int SyncTimeDelay = 5000;
 
-        public string UserId => "ziuMSceapEuNN7wRGQXrZg";   //why does a server instance need a userID?
+        public string UserId => "ziuMSceapEuNN7wRGQXrZg";
         public string UserName => "";
         public InstanceConfiguration Configuration { get; private set; }
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => Endpoint.Port;
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
-
-        public int PlayerCount { get => _playerRegistry.Players.Count; }                                  //counts players in lobby
-        public int PlayerCountInGame { get => _playerRegistry.Players.Count(p => p.InGameplay == true); } //counts players in gameplay
 
         public event Action StartEvent = null!;
         public event Action StopEvent = null!;

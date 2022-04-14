@@ -128,7 +128,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // If no players are actually playing
             if (_playerRegistry.Players.All(player => !player.InGameplay))
             {
-                _requestReturnToMenuCts.Cancel();
+                _requestReturnToMenuCts.Cancel(); //last time i had this happen(clicked spectate as the game was starting) the lobby broke
             }
 
             // Start song and wait for finish
@@ -144,7 +144,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Wait at results screen if anyone cleared
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared))
+            {
                 await Task.Delay((int)(ResultsScreenTime * 1000));
+            }
 
             // End gameplay and reset
             _playerSpecificSettings.Clear();
@@ -163,8 +165,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet)
         {
             if (_sceneReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
+            {
                 return;
-
+            }
             _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
 
             if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
@@ -179,38 +182,43 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }, DeliveryMethod.ReliableOrdered);
 
             if (_instance.State != MultiplayerGameState.Game)
+            {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-
+            }
             _sceneReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
 
         public void HandleGameSongLoaded(IPlayer player)
         {
             if (_songReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
+            {
                 return;
-
+            }
             if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SongLoad)
+            {
                 _packetDispatcher.SendToPlayer(player, new SetSongStartTimePacket
                 {
                     StartTime = _songStartTime
                 }, DeliveryMethod.ReliableOrdered);
-
+            }
             if (_instance.State != MultiplayerGameState.Game)
+            {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-
+            }
             _songReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
 
-        public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet) //This not working properly?
+        public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet)
         {
             if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
+            {
                 return;
-            
+            }
             _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
             _levelFinishedTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
 
-        public void SignalRequestReturnToMenu() //this works i think as returning to lobby part way though beatmap does not cause it to stop working
+        public void SignalRequestReturnToMenu()
             => _requestReturnToMenuCts?.Cancel();
 
         private void HandlePlayerDisconnected(IPlayer player)

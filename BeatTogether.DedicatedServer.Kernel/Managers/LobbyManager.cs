@@ -235,12 +235,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         CountdownEndTime = -1;
                     }
 
-                    // If all players have map downloaded
-                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.Ok))
+                    // If all players have map downloaded, beatmap also should not be null(this code wont run anyway if it is null as there is a check at the beginning)
+                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // Starts beatmap
-                        _gameplayManager.StartSong(SelectedBeatmap, SelectedModifiers, CancellationToken.None);
-                        Console.WriteLine("Starting song");
+                        _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
+                        Console.WriteLine("Starting beatmap: " + SelectedBeatmap!.LevelId.ToString());
                         // Reset and stop counting down
                         CountdownReset();
                         return;
