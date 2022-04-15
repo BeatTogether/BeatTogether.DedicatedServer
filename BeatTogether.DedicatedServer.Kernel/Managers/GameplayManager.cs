@@ -132,7 +132,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // If no players are actually playing
             if (_playerRegistry.Players.All(player => !player.InGameplay))
             {
-                _requestReturnToMenuCts.Cancel(); //last time i had this happen(clicked spectate as the game was starting) the lobby broke
+                _requestReturnToMenuCts.Cancel();
             }
 
             // Start song and wait for finish
@@ -142,8 +142,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
-            await Task.WhenAll(levelFinishedTasks);  //TODO the server seems to be setting this to true instantly is the players failed the last beatmap
-            //Console.WriteLine("level finished tasks have been achieved");
+            await Task.WhenAll(levelFinishedTasks);
             State = GameplayManagerState.Results;
 
             // Wait at results screen if anyone cleared
@@ -210,7 +209,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet)
         {
-            //Console.WriteLine("Player finished: " + player.UserName + " Reason: " + packet.Results.PlayerLevelEndReason + " State: " + packet.Results.PlayerLevelEndState);
             if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
             {
                 return;

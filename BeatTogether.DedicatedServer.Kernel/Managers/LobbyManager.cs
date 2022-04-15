@@ -231,7 +231,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         // Starts beatmap
                         _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
-                        //Console.WriteLine("Starting beatmap: " + SelectedBeatmap!.LevelId.ToString());
                         // Reset and stop counting down
                         CountdownReset();
                         return;
@@ -278,7 +277,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private void CountdownReset()
         { //Reset and stop counting down
-            //Console.WriteLine("Resetting countdown, beatmap and modifiers");
             CountdownEndTime = 0;
             SelectedBeatmap = null;
             SelectedModifiers = new();
@@ -294,9 +292,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 SelectedModifiers = modifiers;
             }
         }
-
-
-
 
 
 
