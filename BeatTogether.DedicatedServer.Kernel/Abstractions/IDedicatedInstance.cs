@@ -13,6 +13,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         event Action<IPlayer> PlayerConnectedEvent;
         event Action<IPlayer> PlayerDisconnectedEvent;
 
+
+        int PlayerCount { get; }       //counts players in lobby
+        int PlayerCountInGame { get; } //counts players in gameplay
+
+
         InstanceConfiguration Configuration { get; }
         bool IsRunning { get; }
         float RunTime { get; }

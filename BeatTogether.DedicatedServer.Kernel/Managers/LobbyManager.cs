@@ -29,6 +29,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel); //players not ready or spectating 
         public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel); //if all spectating
 
+        public int PlayerCount { get => _playerRegistry.Players.Count; }                                  //counts players in lobby
+        public int PlayerCountInGame { get => _playerRegistry.Players.Count(p => p.InGameplay == true); } //counts players in gameplay
+
+
         public BeatmapIdentifier? SelectedBeatmap { get; private set; }           //this is the beatmap that has been selected to be played
         public GameplayModifiers SelectedModifiers { get; private set; } = new(); //these are the modifiers that have been selected to be played
         public float CountdownEndTime { get; private set; }                       //the instance time that the level/beatmap should start at

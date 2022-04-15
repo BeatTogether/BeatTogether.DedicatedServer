@@ -36,6 +36,10 @@ namespace BeatTogether.DedicatedServer.Kernel
         public int Port => Endpoint.Port;
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
 
+        public int PlayerCount { get => _playerRegistry.Players.Count; }                                  //counts players in lobby
+        public int PlayerCountInGame { get => _playerRegistry.Players.Count(p => p.InGameplay == true); } //counts players in gameplay
+
+
         public event Action StartEvent = null!;
         public event Action StopEvent = null!;
         public event Action<IPlayer> PlayerConnectedEvent = null!;
