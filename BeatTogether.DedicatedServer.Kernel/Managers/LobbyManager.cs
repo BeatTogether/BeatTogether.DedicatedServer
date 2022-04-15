@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
@@ -18,20 +17,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
     public sealed class LobbyManager : ILobbyManager, IDisposable
     {
-        private const float CountdownTimeForeverAlone = 5f;
-        private const float CountdownTimeSomeReady = 30.0f; 
+        private const float CountdownTimeSomeReady = 30.0f;
         private const float CountdownTimeManagerReady = 15.0f;
         private const float CountdownTimeEveryoneReady = 5.0f;
-        private const float CountdownAfterGameplayCooldown = 5f; 
+        private const float CountdownAfterGameplayCooldown = 5f;
 
         public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel); //if all players are ready OR spectating
         public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady); //if *any* are ready, dont we want this to be 50% not any?
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel); //players not ready or spectating 
         public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel); //if all spectating
-
-        public int PlayerCount { get => _playerRegistry.Players.Count; }                                  //counts players in lobby
-        public int PlayerCountInGame { get => _playerRegistry.Players.Count(p => p.InGameplay == true); } //counts players in gameplay
-
 
         public BeatmapIdentifier? SelectedBeatmap { get; private set; }           //this is the beatmap that has been selected to be played
         public GameplayModifiers SelectedModifiers { get; private set; } = new(); //these are the modifiers that have been selected to be played
@@ -96,7 +90,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 return;
 
             if (!_playerRegistry.TryGetPlayer(_configuration.ManagerId, out var manager) && _configuration.SongSelectionMode == SongSelectionMode.ManagerPicks)
-                return;
+                return; 
             
             BeatmapIdentifier? beatmap = GetSelectedBeatmap();
             GameplayModifiers modifiers = GetSelectedModifiers();
@@ -158,10 +152,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 switch (_configuration.SongSelectionMode)
                 {
                     case SongSelectionMode.ManagerPicks:
-                        CountingDown(manager!.IsReady, !manager!.IsReady, allPlayersOwnBeatmap, beatmap, modifiers);
+                        CountingDown(manager!.IsReady, CountdownTimeManagerReady, !manager!.IsReady, allPlayersOwnBeatmap, beatmap, modifiers);
                         break;
                     case SongSelectionMode.Vote:
-                        CountingDown(SomePlayersReady, NoPlayersReady, allPlayersOwnBeatmap, beatmap, modifiers);
+                        CountingDown(SomePlayersReady, CountdownTimeSomeReady, NoPlayersReady, allPlayersOwnBeatmap, beatmap, modifiers);
                         break;
                 }
             }
@@ -182,7 +176,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         }
 
 
-        private void CountingDown(bool isReady, bool NotStartable, bool allPlayersOwnBeatmap, BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
+        private void CountingDown(bool isReady, float CountDownTime, bool NotStartable, bool allPlayersOwnBeatmap, BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
             // If not already counting down
             if (CountdownEndTime == 0)
@@ -190,7 +184,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 if (AllPlayersReady && !AllPlayersSpectating && allPlayersOwnBeatmap)
                     CountdownEndTime = _instance.RunTime + CountdownTimeEveryoneReady;
                 else if (isReady && allPlayersOwnBeatmap)
-                    CountdownEndTime = _instance.RunTime + CountdownTimeManagerReady;
+                    CountdownEndTime = _instance.RunTime + CountDownTime;
 
                 // If should be counting down, tell players
                 if (CountdownEndTime != 0)
@@ -215,40 +209,36 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // If counting down / 
             else
             {
-
                 // If beatmap or modifiers changed, update them
                 UpdateBeatmap(beatmap, modifiers);
 
-                // If countdown finished
-                if (CountdownEndTime < _instance.RunTime)
+                if (CountdownEndTime <= _instance.RunTime)
                 {
                     // If countdown just finished
                     if (CountdownEndTime != -1)
                     {
-                        // send players selected beatmap
+                        // send players selected beatmap 
                         _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                         {
                             Beatmap = SelectedBeatmap!,
                             Modifiers = SelectedModifiers,
                             StartTime = CountdownEndTime
                         }, DeliveryMethod.ReliableOrdered);
-
                         CountdownEndTime = -1;
                     }
-
-                    // If all players have map downloaded, beatmap also should not be null(this code wont run anyway if it is null as there is a check at the beginning)
+                    // Once all players have map downloaded
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // Starts beatmap
                         _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
-                        Console.WriteLine("Starting beatmap: " + SelectedBeatmap!.LevelId.ToString());
+                        //Console.WriteLine("Starting beatmap: " + SelectedBeatmap!.LevelId.ToString());
                         // Reset and stop counting down
                         CountdownReset();
                         return;
                     }
                 }
 
-                // If manager/players is/are no longer ready or not all players own beatmap(new player may have joined)
+                // If manager/all players are no longer ready or not all players own beatmap(new player may have joined)
                 if (NotStartable || !allPlayersOwnBeatmap)
                 {
                     // Reset and stop counting down
@@ -288,7 +278,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private void CountdownReset()
         { //Reset and stop counting down
-            Console.WriteLine("Resetting countdown, beatmap and modifiers");
+            //Console.WriteLine("Resetting countdown, beatmap and modifiers");
             CountdownEndTime = 0;
             SelectedBeatmap = null;
             SelectedModifiers = new();
@@ -331,15 +321,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (!voteDictionary.Any())
                         return null;
 
-                    var topBeatmap = voteDictionary.First();
-                    voteDictionary.ToList().ForEach(beatmap =>
-                    {
-                        if (beatmap.Value > topBeatmap.Value)
-                            topBeatmap = beatmap;
-                    });
-                    //voteDictionary.OrderByDescending(n => n.Value);
-                    
-                    return topBeatmap.Key;// voteDictionary.First().Key;
+                    voteDictionary.OrderByDescending(n => n.Value);       
+                    return voteDictionary.First().Key;
             };
             return null;
         }
@@ -365,15 +348,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (!voteDictionary.Any())
                         return new GameplayModifiers();
 
-                    var topModifiers = voteDictionary.First();
-                    voteDictionary.ToList().ForEach(modifiers =>
-                    {
-                        if (modifiers.Value > topModifiers.Value)
-                            topModifiers = modifiers;
-                    });
-
-                    //voteDictionary.OrderByDescending(n => n.Value);
-                    return topModifiers.Key;// voteDictionary.First().Key;
+                    voteDictionary.OrderByDescending(n => n.Value);
+                    return voteDictionary.First().Key;
             };
             return new GameplayModifiers();
 		}
