@@ -18,18 +18,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
     public sealed class LobbyManager : ILobbyManager, IDisposable
     {
-        private const float CountdownTimeForeverAlone = 5f;//guessing this means 1 person
-        private const float CountdownTimeSomeReady = 30.0f; //if any players are ready
-        private const float CountdownTimeManagerReady = 15.0f;//manager presses start
+        private const float CountdownTimeForeverAlone = 5f;
+        private const float CountdownTimeSomeReady = 30.0f; 
+        private const float CountdownTimeManagerReady = 15.0f;
         private const float CountdownTimeEveryoneReady = 5.0f;
-        private const float CountdownAfterGameplayCooldown = 5f; //unsure but its not used so idk
+        private const float CountdownAfterGameplayCooldown = 5f; 
 
         public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel); //if all players are ready OR spectating
         public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady); //if *any* are ready, dont we want this to be 50% not any?
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel); //players not ready or spectating 
         public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel); //if all spectating
-        public int PlayerCount { get => _playerRegistry.Players.Count; }                                  //counts players in lobby
-        public int PlayerCountInGame { get => _playerRegistry.Players.Count(p => p.InGameplay == true); } //counts players in gameplay
 
         public BeatmapIdentifier? SelectedBeatmap { get; private set; }           //this is the beatmap that has been selected to be played
         public GameplayModifiers SelectedModifiers { get; private set; } = new(); //these are the modifiers that have been selected to be played
@@ -39,9 +37,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private bool _lastSpectatorState;            //if all players were spectating in the last lobby loop
         private bool _lastEntitlementState;          //if all players had the beatmap in the last lobby loop
         private string _lastManagerId = null!;       //id of manager in the last lobby loop
-        private CancellationTokenSource _stopCts = new();   //token to stop the thread?
+        private CancellationTokenSource _stopCts = new();
 
-        private readonly InstanceConfiguration _configuration;   //the lobby config(max players, join code etc)
+        private readonly InstanceConfiguration _configuration;
         private readonly IDedicatedInstance _instance;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
@@ -64,7 +62,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             _instance.StopEvent += Stop;
             Task.Run(() => UpdateLoop(_stopCts.Token)); // TODO: fuck this shit
-        }// runs new thread when new lobby created
+        }
 
         public void Dispose()
         {
@@ -72,7 +70,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         }
 
         private void Stop()
-            => _stopCts.Cancel(); //stops the lobby thread
+            => _stopCts.Cancel();
 
         private async void UpdateLoop(CancellationToken cancellationToken)
         {
@@ -86,14 +84,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
 
             }
-        }// every 100ms, run the update loop untill cancled
+        }
 
         public void Update()
         {
             if (_instance.State != MultiplayerGameState.Lobby)
                 return;
 
-            if (!_playerRegistry.TryGetPlayer(_configuration.ManagerId, out var manager) && _configuration.SongSelectionMode == SongSelectionMode.OwnerPicks)
+            if (!_playerRegistry.TryGetPlayer(_configuration.ManagerId, out var manager) && _configuration.SongSelectionMode == SongSelectionMode.ManagerPicks)
                 return;
             
             BeatmapIdentifier? beatmap = GetSelectedBeatmap();
@@ -149,14 +147,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 Reason = CannotStartGameReason.AllPlayersSpectating
                             }, DeliveryMethod.ReliableOrdered);
                     }
-                }
 
+                }
                 _lastEntitlementState = allPlayersOwnBeatmap; //updates last to current as it has just been processed
 
-                // condensed code into a function because it was simular
                 switch (_configuration.SongSelectionMode)
                 {
-                    case SongSelectionMode.OwnerPicks:
+                    case SongSelectionMode.ManagerPicks:
                         CountingDown(manager!.IsReady, !manager!.IsReady, allPlayersOwnBeatmap, beatmap, modifiers);
                         break;
                     case SongSelectionMode.Vote:
@@ -235,12 +232,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         CountdownEndTime = -1;
                     }
 
-                    // If all players have map downloaded
-                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.Ok))
+                    // If all players have map downloaded, beatmap also should not be null(this code wont run anyway if it is null as there is a check at the beginning)
+                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // Starts beatmap
-                        _gameplayManager.StartSong(SelectedBeatmap, SelectedModifiers, CancellationToken.None);
-                        Console.WriteLine("Starting song");
+                        _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
+                        Console.WriteLine("Starting beatmap: " + SelectedBeatmap!.LevelId.ToString());
                         // Reset and stop counting down
                         CountdownReset();
                         return;
@@ -313,7 +310,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             switch(_configuration.SongSelectionMode)
             {
-                case SongSelectionMode.OwnerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).BeatmapIdentifier;
+                case SongSelectionMode.ManagerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).BeatmapIdentifier;
                 case SongSelectionMode.Vote:
                     Dictionary<BeatmapIdentifier, int> voteDictionary = new();
                     foreach (IPlayer player in _playerRegistry.Players)
@@ -347,7 +344,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 		{
             switch(_configuration.SongSelectionMode)
 			{
-                case SongSelectionMode.OwnerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).Modifiers;
+                case SongSelectionMode.ManagerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).Modifiers;
                 case SongSelectionMode.Vote:
                     Dictionary<GameplayModifiers, int> voteDictionary = new();
                     foreach (IPlayer player in _playerRegistry.Players)

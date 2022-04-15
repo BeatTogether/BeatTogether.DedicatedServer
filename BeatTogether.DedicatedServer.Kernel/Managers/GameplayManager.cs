@@ -23,7 +23,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public GameplayModifiers? CurrentModifiers { get; private set; }
 
         private const float SongStartDelay = 0.5f;
-        private const float ResultsScreenTime = 30f;
+        private const float ResultsScreenTime = 25f;
         private const float SceneLoadTimeLimit = 15.0f;
         private const float SongLoadTimeLimit = 15.0f;
 
@@ -67,6 +67,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _instance.SetState(MultiplayerGameState.Game);
             CurrentBeatmap = beatmap;
             CurrentModifiers = modifiers;
+            //Reset these values Here
+            _levelFinishedTcs.Clear();
+            _sceneReadyTcs.Clear();
+            _songReadyTcs.Clear();
+            _songStartTime = 0;
 
             // Reset
             SessionGameId = Guid.NewGuid().ToString();
@@ -79,10 +84,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // Create level finished tasks (players may send these at any time during gameplay)
             var levelFinishedCts = new CancellationTokenSource();
             var linkedLevelFinishedCts = CancellationTokenSource.CreateLinkedTokenSource(levelFinishedCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task> levelFinishedTasks = _playerRegistry.Players.Select(p => {
+            IEnumerable<Task> levelFinishedTasks = _playerRegistry.Players.Select(p =>
+            {
                 var task = _levelFinishedTcs.GetOrAdd(p.UserId, _ => new());
                 linkedLevelFinishedCts.Token.Register(() => task.TrySetResult());
-                Console.WriteLine("Player finished level: " + p.UserName);
                 return task.Task;
             });
 
@@ -128,7 +133,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // If no players are actually playing
             if (_playerRegistry.Players.All(player => !player.InGameplay))
             {
-                _requestReturnToMenuCts.Cancel();
+                _requestReturnToMenuCts.Cancel(); //last time i had this happen(clicked spectate as the game was starting) the lobby broke
             }
 
             // Start song and wait for finish
@@ -138,21 +143,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
-            await Task.WhenAll(levelFinishedTasks);  //TODO i think it might be something around this causing a bug i found, players are not sending level finished task if they die or end early/ this is not getting triggered if they do, also what happens if someone just never sends back any confirmation that they finished?
-
+            await Task.WhenAll(levelFinishedTasks);  //TODO the server seems to be setting this to true instantly is the players failed the last beatmap
+            //Console.WriteLine("level finished tasks have been achieved");
             State = GameplayManagerState.Results;
 
             // Wait at results screen if anyone cleared
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared))
+            {
                 await Task.Delay((int)(ResultsScreenTime * 1000));
+            }
 
             // End gameplay and reset
             _playerSpecificSettings.Clear();
             _levelCompletionResults.Clear();
-            _levelFinishedTcs.Clear();
-            _sceneReadyTcs.Clear();
-            _songReadyTcs.Clear();
-            _songStartTime = 0;
             State = GameplayManagerState.None;
             CurrentBeatmap = null;
             CurrentModifiers = null;
@@ -163,8 +166,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet)
         {
             if (_sceneReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
+            {
                 return;
-
+            }
             _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
 
             if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
@@ -179,38 +183,44 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }, DeliveryMethod.ReliableOrdered);
 
             if (_instance.State != MultiplayerGameState.Game)
+            {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-
+            }
             _sceneReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
 
         public void HandleGameSongLoaded(IPlayer player)
         {
             if (_songReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
+            {
                 return;
-
+            }
             if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SongLoad)
+            {
                 _packetDispatcher.SendToPlayer(player, new SetSongStartTimePacket
                 {
                     StartTime = _songStartTime
                 }, DeliveryMethod.ReliableOrdered);
-
+            }
             if (_instance.State != MultiplayerGameState.Game)
+            {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-
+            }
             _songReadyTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
 
-        public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet) //This not working properly?
+        public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet)
         {
+            //Console.WriteLine("Player finished: " + player.UserName + " Reason: " + packet.Results.PlayerLevelEndReason + " State: " + packet.Results.PlayerLevelEndState);
             if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
+            {
                 return;
-            
+            }
             _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
             _levelFinishedTcs.GetOrAdd(player.UserId, _ => new()).SetResult();
         }
 
-        public void SignalRequestReturnToMenu() //this works i think as returning to lobby part way though beatmap does not cause it to stop working
+        public void SignalRequestReturnToMenu()
             => _requestReturnToMenuCts?.Cancel();
 
         private void HandlePlayerDisconnected(IPlayer player)
