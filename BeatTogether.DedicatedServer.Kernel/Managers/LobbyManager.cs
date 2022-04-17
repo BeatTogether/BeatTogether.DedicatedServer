@@ -154,7 +154,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     case SongSelectionMode.ManagerPicks:
                         CountingDown(manager!.IsReady, CountdownTimeManagerReady, !manager!.IsReady, allPlayersOwnBeatmap, beatmap, modifiers);
                         break;
-                    case SongSelectionMode.Vote:
+                    case SongSelectionMode.Vote: //quickplay
                         CountingDown(SomePlayersReady, CountdownTimeSomeReady, NoPlayersReady, allPlayersOwnBeatmap, beatmap, modifiers);
                         break;
                 }
@@ -192,12 +192,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     UpdateBeatmap(beatmap, modifiers);
 
                     // Set countdown end time
-                    _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
+                    _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket //first countdown sent
                     {
                         CountdownTime = CountdownEndTime
                     }, DeliveryMethod.ReliableOrdered);
 
-                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket                              //Not in old quickplay logic
                     {
                         Beatmap = SelectedBeatmap!,
                         Modifiers = SelectedModifiers,
@@ -217,14 +217,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     // If countdown just finished
                     if (CountdownEndTime != -1)
                     {
-                        // send players selected beatmap 
-                        _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
-                        {
-                            Beatmap = SelectedBeatmap!,
-                            Modifiers = SelectedModifiers,
-                            StartTime = CountdownEndTime
-                        }, DeliveryMethod.ReliableOrdered);
-                        CountdownEndTime = -1;
+                        ChangeStartTime();
                     }
                     // Once all players have map downloaded
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
@@ -249,27 +242,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 else// If manager/players is/are still ready and all players own beatmap
                 {
                     // If all players are ready and countdown is too long
-                    if (AllPlayersReady && CountdownEndTime - _instance.RunTime > CountdownTimeEveryoneReady)
+                    if (AllPlayersReady && (CountdownEndTime - _instance.RunTime) >= CountdownTimeEveryoneReady)
                     {
                         // Shorten countdown time
                         CountdownEndTime = _instance.RunTime + CountdownTimeEveryoneReady;
 
-                        // Cancel countdown (bc of stupid client garbage) 
-                        _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
-
-                        // Set countdown end time
-                        _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
-                        {
-                            CountdownTime = CountdownEndTime
-                        }, DeliveryMethod.ReliableOrdered);
-
-                        // Set start level
-                        _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
-                        {
-                            Beatmap = SelectedBeatmap!,
-                            Modifiers = SelectedModifiers,
-                            StartTime = CountdownEndTime
-                        }, DeliveryMethod.ReliableOrdered);
+                        ChangeStartTime();
                     }
                 }
             }
@@ -291,6 +269,25 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 SelectedModifiers = modifiers;
             }
+        }
+        private void ChangeStartTime()
+        {
+            // Cancel countdown (bc of stupid client garbage) 
+            _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered); //Not in old quickplay logic
+
+            // Set countdown end time
+            _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket                                 //Not in old quickplay logic
+            {
+                CountdownTime = CountdownEndTime
+            }, DeliveryMethod.ReliableOrdered);
+
+            // Set start level
+            _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+            {
+                Beatmap = SelectedBeatmap!,
+                Modifiers = SelectedModifiers,
+                StartTime = CountdownEndTime
+            }, DeliveryMethod.ReliableOrdered);
         }
 
 
