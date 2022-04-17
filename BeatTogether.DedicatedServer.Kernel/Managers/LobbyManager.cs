@@ -13,6 +13,23 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
+
+/*TODO
+ *  The lobbymanager and gamemanager code works fine in manager lobby mode.
+ *  When tested on quickplay, some fun errors occured (yay (sarcasm))
+ *  
+ * 
+ * 
+ * 
+ * 
+ */
+
+
+
+
+
+
+
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
     public sealed class LobbyManager : ILobbyManager, IDisposable
@@ -197,12 +214,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         CountdownTime = CountdownEndTime
                     }, DeliveryMethod.ReliableOrdered);
 
-                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket                              //Not in old quickplay logic
+                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket          //Not in old quickplay logic
                     {
                         Beatmap = SelectedBeatmap!,
                         Modifiers = SelectedModifiers,
                         StartTime = CountdownEndTime
                     }, DeliveryMethod.ReliableOrdered);
+                    Console.WriteLine("starting countdown, Countdown at" + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining, ManagerID: " + _instance.Configuration.ManagerId);
                 }
             }
 
@@ -217,13 +235,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     // If countdown just finished
                     if (CountdownEndTime != -1)
                     {
-                        ChangeStartTime();
+                        UpdateMapStartTime();
+                        CountdownEndTime = -1;
                     }
                     // Once all players have map downloaded
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // Starts beatmap
                         _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
+                        Console.WriteLine("Swapping over to GameManager, Countdown at: " + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining,  ManagerID: " + _instance.Configuration.ManagerId);
                         // Reset and stop counting down
                         CountdownReset();
                         return;
@@ -247,7 +267,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         // Shorten countdown time
                         CountdownEndTime = _instance.RunTime + CountdownTimeEveryoneReady;
 
-                        ChangeStartTime();
+                        UpdateMapStartTime();
                     }
                 }
             }
@@ -270,11 +290,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 SelectedModifiers = modifiers;
             }
         }
-        private void ChangeStartTime()
+        private async void UpdateMapStartTime()
         {
             // Cancel countdown (bc of stupid client garbage) 
             _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered); //Not in old quickplay logic
-
             // Set countdown end time
             _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket                                 //Not in old quickplay logic
             {
@@ -288,6 +307,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 Modifiers = SelectedModifiers,
                 StartTime = CountdownEndTime
             }, DeliveryMethod.ReliableOrdered);
+            Console.WriteLine("Updated map start time, Countdown at: " + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining, ManagerID: " + _instance.Configuration.ManagerId);
         }
 
 
@@ -324,7 +344,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             switch(_configuration.SongSelectionMode)
 			{
                 case SongSelectionMode.ManagerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).Modifiers;
-                case SongSelectionMode.Vote:
+                case SongSelectionMode.Vote: //in quickplay, you cannot select modifiers anyway.
+                    return new GameplayModifiers();
+                    /*
                     Dictionary<GameplayModifiers, int> voteDictionary = new();
                     foreach (IPlayer player in _playerRegistry.Players)
                     {
@@ -342,6 +364,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
                     voteDictionary.OrderByDescending(n => n.Value);
                     return voteDictionary.First().Key;
+                    */
             };
             return new GameplayModifiers();
 		}
