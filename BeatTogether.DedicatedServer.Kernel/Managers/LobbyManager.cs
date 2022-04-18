@@ -9,26 +9,10 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-
-
-/*TODO
- *  The lobbymanager and gamemanager code works fine in manager lobby mode.
- *  When tested on quickplay, some fun errors occured (yay (sarcasm))
- *  
- * 
- * 
- * 
- * 
- */
-
-
-
-
-
-
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
@@ -104,7 +88,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public void Update()
         {
             if (_instance.State != MultiplayerGameState.Lobby)
+            {
+                
+                if (_playerRegistry.Players.All(p => p.InLobby))
+                {
+                    _instance.SetState(MultiplayerGameState.Lobby);//new adition
+                    _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered); 
+                }
                 return;
+            }
 
             if (!_playerRegistry.TryGetPlayer(_configuration.ManagerId, out var manager) && _configuration.SongSelectionMode == SongSelectionMode.ManagerPicks)
                 return; 
@@ -214,12 +206,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         CountdownTime = CountdownEndTime
                     }, DeliveryMethod.ReliableOrdered);
 
-                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket          //Not in old quickplay logic
+                    if (_instance.Configuration.ManagerId != "ziuMSceapEuNN7wRGQXrZg")
                     {
-                        Beatmap = SelectedBeatmap!,
-                        Modifiers = SelectedModifiers,
-                        StartTime = CountdownEndTime
-                    }, DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket          //Not in old quickplay logic
+                        {
+                            Beatmap = SelectedBeatmap!,
+                            Modifiers = SelectedModifiers,
+                            StartTime = CountdownEndTime
+                        }, DeliveryMethod.ReliableOrdered);
+                    }
+
                     Console.WriteLine("starting countdown, Countdown at" + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining, ManagerID: " + _instance.Configuration.ManagerId);
                 }
             }
@@ -242,8 +238,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // Starts beatmap
+                        Console.WriteLine("Swapped over to GameManager, ManagerID: " + _instance.Configuration.ManagerId);
                         _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
-                        Console.WriteLine("Swapping over to GameManager, Countdown at: " + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining,  ManagerID: " + _instance.Configuration.ManagerId);
                         // Reset and stop counting down
                         CountdownReset();
                         return;
@@ -262,12 +258,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 else// If manager/players is/are still ready and all players own beatmap
                 {
                     // If all players are ready and countdown is too long
-                    if (AllPlayersReady && (CountdownEndTime - _instance.RunTime) >= CountdownTimeEveryoneReady)
+                    if (AllPlayersReady && (CountdownEndTime - _instance.RunTime) > CountdownTimeEveryoneReady )
                     {
                         // Shorten countdown time
                         CountdownEndTime = _instance.RunTime + CountdownTimeEveryoneReady;
-
-                        UpdateMapStartTime();
+                        Console.WriteLine("Shortening countdown");
+                        UpdateMapStartTime(); //wierd stuff going on in quest when everyone is seleced and ready
                     }
                 }
             }
@@ -290,17 +286,22 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 SelectedModifiers = modifiers;
             }
         }
-        private async void UpdateMapStartTime()
+        private void UpdateMapStartTime()
         {
-            // Cancel countdown (bc of stupid client garbage) 
-            _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered); //Not in old quickplay logic
-            // Set countdown end time
-            _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket                                 //Not in old quickplay logic
+            //ok so quest quickplay will not change scenes properly if the countdown is shortened
+            
+            if(_instance.Configuration.ManagerId != "ziuMSceapEuNN7wRGQXrZg")
             {
-                CountdownTime = CountdownEndTime
-            }, DeliveryMethod.ReliableOrdered);
+                // Cancel countdown (bc of stupid client garbage) 
+                _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered); //Not in old quickplay logic
 
-            // Set start level
+                _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket                                 //Not in old quickplay logic
+                {
+                    CountdownTime = CountdownEndTime
+                }, DeliveryMethod.ReliableOrdered);
+            }
+            
+            // Set start level & start level time
             _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
             {
                 Beatmap = SelectedBeatmap!,

@@ -223,7 +223,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return false;
             }
 
-            if (_playerRegistry.Players.Count == Configuration.MaxPlayerCount)
+            if (_playerRegistry.Players.Count >= Configuration.MaxPlayerCount)
                 return false;
 
             var connectionId = GetNextConnectionId();
