@@ -14,6 +14,13 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
+/*TODO
+ * Why is lobby and gameplay manager ran seperatly, i think it may work better if its all managed together.
+ * 
+ * 
+ * 
+ */
+
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
     public sealed class LobbyManager : ILobbyManager, IDisposable
@@ -231,14 +238,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     // If countdown just finished
                     if (CountdownEndTime != -1)
                     {
-                        UpdateMapStartTime();
+                        _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                        {
+                            Beatmap = SelectedBeatmap!,
+                            Modifiers = SelectedModifiers,
+                            StartTime = CountdownEndTime
+                        }, DeliveryMethod.ReliableOrdered);
                         CountdownEndTime = -1;
                     }
                     // Once all players have map downloaded
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // Starts beatmap
-                        Console.WriteLine("Swapped over to GameManager, ManagerID: " + _instance.Configuration.ManagerId);
+                        Console.WriteLine("Starting GameplayManager, ManagerID: " + _instance.Configuration.ManagerId);
                         _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
                         // Reset and stop counting down
                         CountdownReset();
@@ -262,8 +274,29 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         // Shorten countdown time
                         CountdownEndTime = _instance.RunTime + CountdownTimeEveryoneReady;
-                        Console.WriteLine("Shortening countdown");
-                        UpdateMapStartTime(); //wierd stuff going on in quest when everyone is seleced and ready
+
+                        //ok so quest quickplay will not change scenes properly if the countdown is shortened
+
+                        if (_instance.Configuration.ManagerId != "ziuMSceapEuNN7wRGQXrZg")
+                        {
+                            // Cancel countdown (bc of stupid client garbage) 
+                            _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered); //Not in old quickplay logic
+                            
+                            _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket                                 //Not in old quickplay logic
+                            {
+                                CountdownTime = CountdownEndTime
+                            }, DeliveryMethod.ReliableOrdered);
+                        }
+
+                        // Set start time & start level time
+                        _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                        {
+                            Beatmap = SelectedBeatmap!,
+                            Modifiers = SelectedModifiers,
+                            StartTime = CountdownEndTime
+                        }, DeliveryMethod.ReliableOrdered);
+                        Console.WriteLine("Shortened map start time, Countdown at: " + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining, ManagerID: " + _instance.Configuration.ManagerId);
+
                     }
                 }
             }
@@ -286,32 +319,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 SelectedModifiers = modifiers;
             }
         }
-        private void UpdateMapStartTime()
-        {
-            //ok so quest quickplay will not change scenes properly if the countdown is shortened
-            
-            if(_instance.Configuration.ManagerId != "ziuMSceapEuNN7wRGQXrZg")
-            {
-                // Cancel countdown (bc of stupid client garbage) 
-                _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered); //Not in old quickplay logic
-
-                _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket                                 //Not in old quickplay logic
-                {
-                    CountdownTime = CountdownEndTime
-                }, DeliveryMethod.ReliableOrdered);
-            }
-            
-            // Set start level & start level time
-            _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
-            {
-                Beatmap = SelectedBeatmap!,
-                Modifiers = SelectedModifiers,
-                StartTime = CountdownEndTime
-            }, DeliveryMethod.ReliableOrdered);
-            Console.WriteLine("Updated map start time, Countdown at: " + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining, ManagerID: " + _instance.Configuration.ManagerId);
-        }
-
-
 
         public BeatmapIdentifier? GetSelectedBeatmap()
         {
