@@ -8,7 +8,6 @@ using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Enums;
-using GalaSoft.MvvmLight.Messaging;
 using Krypton.Buffers;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -18,6 +17,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using WinFormsLibrary;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -103,7 +103,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             SendSyncTime(_stopServerCts.Token);
             _ = Task.Delay(WaitForPlayerTimeLimit, _waitForPlayerCts.Token).ContinueWith(t =>
             {
-                if (!t.IsCanceled)
+                if (!t.IsCanceled && Configuration.Secret != "SpecialServer")
                 {
                     _logger.Warning("Timed out waiting for player to join, stopping server.");
                     _ = Stop(CancellationToken.None);
@@ -373,10 +373,15 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
 
             PlayerConnectedEvent?.Invoke(player);
-            Task.Factory.StartNew(() => {
-                Messenger.Default.Send<Boolean>(true);
-            });
+            MessageForm.Updt();
         }
+
+        public void StopDedicatedInstance()
+        {
+            _ = Stop(CancellationToken.None);
+        }
+
+
 
         public override void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
         {
@@ -404,12 +409,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                 ReleaseConnectionId(player.ConnectionId);
 
                 PlayerDisconnectedEvent?.Invoke(player);
-                Task.Factory.StartNew(() => {
-                    Messenger.Default.Send<Boolean>(true);
-                });
+                MessageForm.Updt();
             }
 
-            if (_playerRegistry.Players.Count == 0)
+            if (_playerRegistry.Players.Count == 0 && Configuration.Secret != "SpecialServer")
                 _ = Stop(CancellationToken.None);
             else
             {

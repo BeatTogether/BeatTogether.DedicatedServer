@@ -9,7 +9,6 @@
   <ItemGroup>
     <PackageReference Include="BeatTogether.Core.Security" Version="1.1.0" />
     <PackageReference Include="BeatTogether.Extensions.Serilog" Version="2.0.0" />
-    <PackageReference Include="MvvmLightLibs" Version="5.4.1.1" />
     <PackageReference Include="System.Collections" Version="4.3.0" />
     <PackageReference Include="System.IO" Version="4.3.0" />
 	<PackageReference Include="System.IO.FileSystem.Primitives" Version="4.3.0" />
@@ -23,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BeatTogether.DedicatedServer.Messaging\BeatTogether.DedicatedServer.Messaging.csproj" />
+    <ProjectReference Include="..\WinFormsLibrary\WinFormsLibrary.csproj" />
   </ItemGroup>
 
 </Project>

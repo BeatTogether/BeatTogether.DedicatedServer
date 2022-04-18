@@ -13,6 +13,7 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Gameplay
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
+using WinFormsLibrary;
 
 /*TODO
  * Why is lobby and gameplay manager ran seperatly, i think it may work better if its all managed together.
@@ -84,6 +85,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 await Task.Delay(100, cancellationToken);
                 Update();
+                MessageForm.UpdtFromLobby(CountdownEndTime);
                 UpdateLoop(cancellationToken);
             }
             catch

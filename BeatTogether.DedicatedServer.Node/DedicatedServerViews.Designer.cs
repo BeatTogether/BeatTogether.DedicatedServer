@@ -29,8 +29,17 @@
         private void InitializeComponent()
         {
             this.DedicatedServerInstances = new System.Windows.Forms.ListBox();
-            this.LobbyManager = new System.Windows.Forms.Label();
+            this.InstanceManager = new System.Windows.Forms.Label();
             this.PlayersDataGrid = new System.Windows.Forms.DataGridView();
+            this.InstanceInfo = new System.Windows.Forms.Label();
+            this.MaxPlayers = new System.Windows.Forms.Label();
+            this.Port = new System.Windows.Forms.Label();
+            this.PlayerCount = new System.Windows.Forms.Label();
+            this.RunTime = new System.Windows.Forms.Label();
+            this.GameState = new System.Windows.Forms.Label();
+            this.Countdown = new System.Windows.Forms.Label();
+            this.AddInstanceButton = new System.Windows.Forms.Button();
+            this.StopSelectedInstance = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.PlayersDataGrid)).BeginInit();
             this.SuspendLayout();
             // 
@@ -38,19 +47,19 @@
             // 
             this.DedicatedServerInstances.FormattingEnabled = true;
             this.DedicatedServerInstances.ItemHeight = 15;
-            this.DedicatedServerInstances.Location = new System.Drawing.Point(12, 12);
+            this.DedicatedServerInstances.Location = new System.Drawing.Point(12, 57);
             this.DedicatedServerInstances.Name = "DedicatedServerInstances";
-            this.DedicatedServerInstances.Size = new System.Drawing.Size(274, 319);
+            this.DedicatedServerInstances.Size = new System.Drawing.Size(274, 274);
             this.DedicatedServerInstances.TabIndex = 0;
             // 
-            // LobbyManager
+            // InstanceManager
             // 
-            this.LobbyManager.AutoSize = true;
-            this.LobbyManager.Location = new System.Drawing.Point(316, 12);
-            this.LobbyManager.Name = "LobbyManager";
-            this.LobbyManager.Size = new System.Drawing.Size(87, 15);
-            this.LobbyManager.TabIndex = 1;
-            this.LobbyManager.Text = "LobbyManager";
+            this.InstanceManager.AutoSize = true;
+            this.InstanceManager.Location = new System.Drawing.Point(316, 12);
+            this.InstanceManager.Name = "InstanceManager";
+            this.InstanceManager.Size = new System.Drawing.Size(98, 15);
+            this.InstanceManager.TabIndex = 1;
+            this.InstanceManager.Text = "InstanceManager";
             // 
             // PlayersDataGrid
             // 
@@ -58,16 +67,108 @@
             this.PlayersDataGrid.Location = new System.Drawing.Point(316, 30);
             this.PlayersDataGrid.Name = "PlayersDataGrid";
             this.PlayersDataGrid.RowTemplate.Height = 25;
-            this.PlayersDataGrid.Size = new System.Drawing.Size(596, 301);
+            this.PlayersDataGrid.Size = new System.Drawing.Size(352, 301);
             this.PlayersDataGrid.TabIndex = 4;
+            // 
+            // InstanceInfo
+            // 
+            this.InstanceInfo.AutoSize = true;
+            this.InstanceInfo.Location = new System.Drawing.Point(674, 30);
+            this.InstanceInfo.Name = "InstanceInfo";
+            this.InstanceInfo.Size = new System.Drawing.Size(75, 15);
+            this.InstanceInfo.TabIndex = 5;
+            this.InstanceInfo.Text = "Instance Info";
+            // 
+            // MaxPlayers
+            // 
+            this.MaxPlayers.AutoSize = true;
+            this.MaxPlayers.Location = new System.Drawing.Point(674, 48);
+            this.MaxPlayers.Name = "MaxPlayers";
+            this.MaxPlayers.Size = new System.Drawing.Size(70, 15);
+            this.MaxPlayers.TabIndex = 6;
+            this.MaxPlayers.Text = "Max players";
+            // 
+            // Port
+            // 
+            this.Port.AutoSize = true;
+            this.Port.Location = new System.Drawing.Point(674, 78);
+            this.Port.Name = "Port";
+            this.Port.Size = new System.Drawing.Size(29, 15);
+            this.Port.TabIndex = 7;
+            this.Port.Text = "Port";
+            // 
+            // PlayerCount
+            // 
+            this.PlayerCount.AutoSize = true;
+            this.PlayerCount.Location = new System.Drawing.Point(674, 63);
+            this.PlayerCount.Name = "PlayerCount";
+            this.PlayerCount.Size = new System.Drawing.Size(44, 15);
+            this.PlayerCount.TabIndex = 8;
+            this.PlayerCount.Text = "Players";
+            // 
+            // RunTime
+            // 
+            this.RunTime.AutoSize = true;
+            this.RunTime.Location = new System.Drawing.Point(674, 93);
+            this.RunTime.Name = "RunTime";
+            this.RunTime.Size = new System.Drawing.Size(124, 15);
+            this.RunTime.TabIndex = 9;
+            this.RunTime.Text = "Running for _ seconds";
+            // 
+            // GameState
+            // 
+            this.GameState.AutoSize = true;
+            this.GameState.Location = new System.Drawing.Point(674, 108);
+            this.GameState.Name = "GameState";
+            this.GameState.Size = new System.Drawing.Size(64, 15);
+            this.GameState.TabIndex = 10;
+            this.GameState.Text = "GameState";
+            // 
+            // Countdown
+            // 
+            this.Countdown.AutoSize = true;
+            this.Countdown.Location = new System.Drawing.Point(674, 123);
+            this.Countdown.Name = "Countdown";
+            this.Countdown.Size = new System.Drawing.Size(124, 15);
+            this.Countdown.TabIndex = 11;
+            this.Countdown.Text = "Countdown _ seconds";
+            // 
+            // AddInstanceButton
+            // 
+            this.AddInstanceButton.Location = new System.Drawing.Point(12, 11);
+            this.AddInstanceButton.Name = "AddInstanceButton";
+            this.AddInstanceButton.Size = new System.Drawing.Size(274, 40);
+            this.AddInstanceButton.TabIndex = 12;
+            this.AddInstanceButton.Text = "Add instance";
+            this.AddInstanceButton.UseVisualStyleBackColor = true;
+            this.AddInstanceButton.Click += new System.EventHandler(this.AddInstanceButton_Click);
+            // 
+            // StopSelectedInstance
+            // 
+            this.StopSelectedInstance.Location = new System.Drawing.Point(694, 291);
+            this.StopSelectedInstance.Name = "StopSelectedInstance";
+            this.StopSelectedInstance.Size = new System.Drawing.Size(226, 40);
+            this.StopSelectedInstance.TabIndex = 13;
+            this.StopSelectedInstance.Text = "Stop instance";
+            this.StopSelectedInstance.UseVisualStyleBackColor = true;
+            this.StopSelectedInstance.Click += new System.EventHandler(this.StopSelectedInstance_Click);
             // 
             // DedicatedServerViews
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(932, 343);
+            this.Controls.Add(this.StopSelectedInstance);
+            this.Controls.Add(this.AddInstanceButton);
+            this.Controls.Add(this.Countdown);
+            this.Controls.Add(this.GameState);
+            this.Controls.Add(this.RunTime);
+            this.Controls.Add(this.PlayerCount);
+            this.Controls.Add(this.Port);
+            this.Controls.Add(this.MaxPlayers);
+            this.Controls.Add(this.InstanceInfo);
             this.Controls.Add(this.PlayersDataGrid);
-            this.Controls.Add(this.LobbyManager);
+            this.Controls.Add(this.InstanceManager);
             this.Controls.Add(this.DedicatedServerInstances);
             this.Name = "DedicatedServerViews";
             this.Text = "Form1";
@@ -80,7 +181,16 @@
         #endregion
 
         private System.Windows.Forms.ListBox DedicatedServerInstances;
-        private System.Windows.Forms.Label LobbyManager;
+        private System.Windows.Forms.Label InstanceManager;
         private System.Windows.Forms.DataGridView PlayersDataGrid;
+        private System.Windows.Forms.Label InstanceInfo;
+        private System.Windows.Forms.Label MaxPlayers;
+        private System.Windows.Forms.Label Port;
+        private System.Windows.Forms.Label PlayerCount;
+        private System.Windows.Forms.Label RunTime;
+        private System.Windows.Forms.Label GameState;
+        private System.Windows.Forms.Label Countdown;
+        private System.Windows.Forms.Button AddInstanceButton;
+        private System.Windows.Forms.Button StopSelectedInstance;
     }
 }
