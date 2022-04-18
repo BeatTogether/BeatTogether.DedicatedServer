@@ -13,8 +13,7 @@
 
   <ItemGroup>
 	<PackageReference Include="BeatTogether.Extensions.Autobus.RabbitMQ" Version="1.0.2" />
-	<PackageReference Include="BeatTogether.MasterServer.Interface" Version="1.0.4" />
-	<PackageReference Include="MvvmLightLibs" Version="5.4.1.1" />	
+	<PackageReference Include="BeatTogether.MasterServer.Interface" Version="1.0.4" />	
   </ItemGroup>
 	
   <ItemGroup>
@@ -27,10 +26,6 @@
     <Compile Update="DedicatedServerViews.cs">
       <SubType>Form</SubType>
     </Compile>
-  </ItemGroup>
-	
-  <ItemGroup>
-    <Folder Include="Properties\DataSources\" />
   </ItemGroup>
 
 </Project>
