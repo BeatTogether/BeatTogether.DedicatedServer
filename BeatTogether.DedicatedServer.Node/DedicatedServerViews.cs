@@ -79,13 +79,14 @@ namespace WinFormsLibrary
                     RunTime.Text = "Running for: " + selectedInstance.RunTime.ToString() + " Seconds";
                     GameState.Text = selectedInstance.State.ToString();
                     if (countdownendtime != 0)
-                        Countdown.Text = (selectedInstance.RunTime - countdownendtime).ToString();
+                        Countdown.Text = (countdownendtime - selectedInstance.RunTime).ToString();
                     else
                         Countdown.Text = ("Not counting down");
                 }
                 else
                 {
-                    PlayerCount.Text = "NaN";
+                    MaxPlayers.Text = "NaN Max players";
+                    PlayerCount.Text = "NaN Players";
                     Port.Text = "NAN";
                     RunTime.Text = "NAN";
                     GameState.Text = "NAN";
@@ -125,19 +126,26 @@ namespace WinFormsLibrary
                     PlayersDataGrid.Columns["IsActive"].Visible = false;
                     PlayersDataGrid.Columns["InMenu"].Visible = false;
                     PlayersDataGrid.Columns["IsModded"].Visible = false;
+                    PlayersDataGrid.Columns["Secret"].Visible = false;
+                    PlayersDataGrid.Columns["WantsToPlayNextLevel"].Visible = false;
+                    PlayersDataGrid.Columns["FinishedLevel"].Visible = false;
+                    PlayersDataGrid.Columns["Endpoint"].Visible = false;
+                    PlayersDataGrid.RowHeadersVisible = false;
 
                     PlayersDataGrid.Columns["UserName"].DisplayIndex = 0;
+                    PlayersDataGrid.Columns["UserName"].Width = 75;
                     PlayersDataGrid.Columns["InLobby"].DisplayIndex = 1;
-                    PlayersDataGrid.Columns["InLobby"].Width = 15;
+                    PlayersDataGrid.Columns["InLobby"].Width = 55;
                     PlayersDataGrid.Columns["IsReady"].DisplayIndex = 2;
-                    PlayersDataGrid.Columns["IsReady"].Width = 15;
+                    PlayersDataGrid.Columns["IsReady"].Width = 50;
                     PlayersDataGrid.Columns["UserID"].DisplayIndex = 3;
+                    PlayersDataGrid.Columns["UserID"].Width = 60;
                     PlayersDataGrid.Columns["IsSpectating"].DisplayIndex = 4;
-                    PlayersDataGrid.Columns["IsSpectating"].Width = 15;
+                    PlayersDataGrid.Columns["IsSpectating"].Width = 50;
                     PlayersDataGrid.Columns["InGameplay"].DisplayIndex = 5;
-                    PlayersDataGrid.Columns["InGameplay"].Width = 15;
+                    PlayersDataGrid.Columns["InGameplay"].Width = 50;
                     PlayersDataGrid.Columns["WasActiveAtLevelStart"].DisplayIndex = 6;
-                    PlayersDataGrid.Columns["WasActiveAtLevelStart"].Width = 15;
+                    PlayersDataGrid.Columns["WasActiveAtLevelStart"].Width = 50;
 
 
 
@@ -150,11 +158,13 @@ namespace WinFormsLibrary
                 else
                 {
                     PlayersDataGrid.DataSource = null;
+                    InstanceManager.Text = "None selected";
                 }
             }
             else
             {
                 PlayersDataGrid.DataSource = null;
+                InstanceManager.Text = "No instances avaliable";
             }
 
         }
@@ -178,6 +188,19 @@ namespace WinFormsLibrary
                 if (((InstanceRegistry)_instanceRegistry).TryGetInstance(DedicatedServerInstances.SelectedValue.ToString()!, out var instance))
                 ((DedicatedInstance)instance).StopDedicatedInstance();
             }
+
+        }
+
+        private void KickPlayerButton_Click(object sender, EventArgs e)
+        {
+            if(PlayersDataGrid.Rows.Count >= 1 && ((InstanceRegistry)_instanceRegistry).TryGetInstance(DedicatedServerInstances.SelectedValue.ToString()!, out var instance))
+            {
+                int SelectedIndex = PlayersDataGrid.SelectedCells[0].RowIndex;
+                string userToKick = ((DedicatedInstance)instance).GetPlayerRegistry().Players[SelectedIndex].UserId;
+                ((DedicatedInstance)instance).KickPlayer(userToKick);
+            }
+
+
 
         }
     }

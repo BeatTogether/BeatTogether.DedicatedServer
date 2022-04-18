@@ -180,7 +180,27 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             return (PlayerRegistry)_playerRegistry;
         }
+        public void KickPlayer(string UserId)
+        {
+            if (_playerRegistry.TryGetPlayer(UserId, out var player))
+            {
+                _packetDispatcher.SendFromPlayer(player!, new PlayerDisconnectedPacket
+                {
+                    DisconnectedReason = DisconnectedReason.Kicked
+                }, DeliveryMethod.ReliableOrdered);
 
+                if (Configuration.ManagerId == player.UserId)
+                    Configuration.ManagerId = "";
+
+                _playerRegistry.RemovePlayer(player);
+                ReleaseSortIndex(player.SortIndex);
+                ReleaseConnectionId(player.ConnectionId);
+
+                PlayerDisconnectedEvent?.Invoke(player);
+                MessageForm.Updt();
+                OnDisconnect(player.Endpoint, DisconnectReason.ConnectionRejected);
+            }
+        }
 
 
 
