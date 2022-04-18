@@ -1,19 +1,34 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Node.Abstractions;
+using GalaSoft.MvvmLight.Messaging;
+using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
+using WinFormsLibrary;
 
 namespace BeatTogether.DedicatedServer.Node
 {
     public sealed class InstanceRegistry : IInstanceRegistry
     {
-        private readonly ConcurrentDictionary<string, IDedicatedInstance> _instances = new();
+        public readonly ConcurrentDictionary<string, IDedicatedInstance> _instances = new();
 
-        public bool AddInstance(IDedicatedInstance instance) =>
-            _instances.TryAdd(instance.Configuration.Secret, instance);
+        public bool AddInstance(IDedicatedInstance instance) {
+            bool a = _instances.TryAdd(instance.Configuration.Secret, instance);
+            Task.Factory.StartNew(() => {
+                Messenger.Default.Send<Boolean>(true);
+            });
+            return a;
+        }
 
-        public bool RemoveInstance(IDedicatedInstance instance) =>
-            _instances.TryRemove(instance.Configuration.Secret, out _);
+        public bool RemoveInstance(IDedicatedInstance instance)
+        {
+            bool a = _instances.TryRemove(instance.Configuration.Secret, out _);
+            Task.Factory.StartNew(() => {
+                Messenger.Default.Send<Boolean>(true);
+            });
+            return a;
+        }
 
         public IDedicatedInstance GetInstance(string secret) =>
             _instances[secret];

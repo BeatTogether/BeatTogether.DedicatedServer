@@ -8,6 +8,7 @@ using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Enums;
+using GalaSoft.MvvmLight.Messaging;
 using Krypton.Buffers;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -174,6 +175,10 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 State = state
             }, DeliveryMethod.ReliableOrdered);
+        }
+        public PlayerRegistry GetPlayerRegistry()
+        {
+            return (PlayerRegistry)_playerRegistry;
         }
 
 
@@ -368,6 +373,9 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
 
             PlayerConnectedEvent?.Invoke(player);
+            Task.Factory.StartNew(() => {
+                Messenger.Default.Send<Boolean>(true);
+            });
         }
 
         public override void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
@@ -396,6 +404,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                 ReleaseConnectionId(player.ConnectionId);
 
                 PlayerDisconnectedEvent?.Invoke(player);
+                Task.Factory.StartNew(() => {
+                    Messenger.Default.Send<Boolean>(true);
+                });
             }
 
             if (_playerRegistry.Players.Count == 0)

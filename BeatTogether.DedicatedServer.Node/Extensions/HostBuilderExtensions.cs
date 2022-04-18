@@ -10,6 +10,7 @@ using BeatTogether.LiteNetLib.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Security.Cryptography;
+using WinFormsLibrary;
 
 namespace BeatTogether.DedicatedServer.Node.Extensions
 {
@@ -40,6 +41,7 @@ namespace BeatTogether.DedicatedServer.Node.Extensions
                             services.GetRequiredService<PacketEncryptionLayer>())
                         .AddSingleton<IPortAllocator, PortAllocator>()
                         .AddSingleton<IInstanceRegistry, InstanceRegistry>()
+                        .AddSingleton<DedicatedServerViews>()
                         .AddSingleton<IInstanceFactory, InstanceFactory>()
                         .AddServiceKernel<IMatchmakingService, NodeService>()
                         .AddHostedService<MasterServerEventHandler>()

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net5.0-windows</TargetFramework>
     <LangVersion>9</LangVersion>
     <PackageIcon>icon.png</PackageIcon>
     <Authors>pythonology</Authors>
@@ -13,12 +13,24 @@
 
   <ItemGroup>
 	<PackageReference Include="BeatTogether.Extensions.Autobus.RabbitMQ" Version="1.0.2" />
-	<PackageReference Include="BeatTogether.MasterServer.Interface" Version="1.0.4" />	
+	<PackageReference Include="BeatTogether.MasterServer.Interface" Version="1.0.4" />
+	<PackageReference Include="MvvmLightLibs" Version="5.4.1.1" />	
   </ItemGroup>
 	
   <ItemGroup>
     <ProjectReference Include="..\BeatTogether.DedicatedServer.Interface\BeatTogether.DedicatedServer.Interface.csproj" />
     <ProjectReference Include="..\BeatTogether.DedicatedServer.Kernel\BeatTogether.DedicatedServer.Kernel.csproj" />
+    <ProjectReference Include="..\WinFormsLibrary\WinFormsLibrary.csproj" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Compile Update="DedicatedServerViews.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Folder Include="Properties\DataSources\" />
   </ItemGroup>
 
 </Project>

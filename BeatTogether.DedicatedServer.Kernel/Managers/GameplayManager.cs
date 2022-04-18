@@ -64,7 +64,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             
             if (State != GameplayManagerState.None)
             {
-                _requestReturnToMenuCts.Cancel();
+                _requestReturnToMenuCts!.Cancel();
                 return;
             }
             _instance.SetState(MultiplayerGameState.Game);

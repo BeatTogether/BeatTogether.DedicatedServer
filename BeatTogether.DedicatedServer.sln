@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30626.31
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32407.343
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServer", "BeatTogether.DedicatedServer\BeatTogether.DedicatedServer.csproj", "{F6DF0421-F1E9-4DD3-982D-5BAD7B9B83F0}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServer.Messaging", "BeatTogether.DedicatedServer.Messaging\BeatTogether.DedicatedServer.Messaging.csproj", "{1217B128-4589-4307-94A6-FCFAECF855DC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServer.Node", "BeatTogether.DedicatedServer.Node\BeatTogether.DedicatedServer.Node.csproj", "{D2B3DC3B-FECD-4E06-8B20-7A60A0BE3C2E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinFormsLibrary", "WinFormsLibrary\WinFormsLibrary.csproj", "{CFC96307-2DCB-42B3-B08E-E10F364CA797}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{D2B3DC3B-FECD-4E06-8B20-7A60A0BE3C2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2B3DC3B-FECD-4E06-8B20-7A60A0BE3C2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2B3DC3B-FECD-4E06-8B20-7A60A0BE3C2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CFC96307-2DCB-42B3-B08E-E10F364CA797}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFC96307-2DCB-42B3-B08E-E10F364CA797}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFC96307-2DCB-42B3-B08E-E10F364CA797}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFC96307-2DCB-42B3-B08E-E10F364CA797}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
