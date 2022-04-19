@@ -53,6 +53,7 @@
             this.DedicatedServerInstances.Name = "DedicatedServerInstances";
             this.DedicatedServerInstances.Size = new System.Drawing.Size(274, 274);
             this.DedicatedServerInstances.TabIndex = 0;
+            this.DedicatedServerInstances.SelectedIndexChanged += new System.EventHandler(this.DedicatedServerInstances_SelectedIndexChanged);
             // 
             // InstanceManager
             // 

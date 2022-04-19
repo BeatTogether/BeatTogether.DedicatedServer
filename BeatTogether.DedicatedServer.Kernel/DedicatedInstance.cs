@@ -103,7 +103,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             SendSyncTime(_stopServerCts.Token);
             _ = Task.Delay(WaitForPlayerTimeLimit, _waitForPlayerCts.Token).ContinueWith(t =>
             {
-                if (!t.IsCanceled && Configuration.Secret != "SpecialServer")
+                if (!t.IsCanceled && !Configuration.Secret.Contains("SpecialServer"))
                 {
                     _logger.Warning("Timed out waiting for player to join, stopping server.");
                     _ = Stop(CancellationToken.None);

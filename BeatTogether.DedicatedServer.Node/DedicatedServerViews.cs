@@ -179,12 +179,20 @@ namespace WinFormsLibrary
             {
                 string secret = "SpecialServer" + RoomCodeTextBox.Text;
 
-                GameplayServerConfiguration configuration = new GameplayServerConfiguration(10, DiscoveryPolicy.Public, InvitePolicy.AnyoneCanInvite, GameplayServerMode.Countdown, SongSelectionMode.Vote, GameplayServerControlSettings.All);
+                GameplayServerConfiguration configuration = new GameplayServerConfiguration(10, DiscoveryPolicy.Public, InvitePolicy.AnyoneCanInvite, GameplayServerMode.Managed, SongSelectionMode.Vote, GameplayServerControlSettings.All);
                 
                 //CreateMatchmakingServerRequest request = new CreateMatchmakingServerRequest("SpecialServer", "ziuMSceapEuNN7wRGQXrZg", configuration);
                 //_ = ((NodeService)_nodeService).CreateMatchmakingServer(request);
 
-                _autobus.Publish(new FromServerCreateServerEvent(configuration, secret, RoomCodeTextBox.Text, "ziuMSceapEuNN7wRGQXrZg"));
+                _autobus.Publish(new FromServerCreateServerEvent(configuration, secret, RoomCodeTextBox.Text, ""));
+            }
+            else if(RoomCodeTextBox.Text.Length == 0)
+            {
+                //should make an exp+ quickplay lobby
+                string secret = "";
+                GameplayServerConfiguration configuration = new GameplayServerConfiguration(5, DiscoveryPolicy.Public, InvitePolicy.AnyoneCanInvite, GameplayServerMode.Countdown, SongSelectionMode.Vote, GameplayServerControlSettings.All);
+                _autobus.Publish(new FromServerCreateServerEvent(configuration, secret, "", "ziuMSceapEuNN7wRGQXrZg"));
+
             }
         }
 
@@ -209,6 +217,11 @@ namespace WinFormsLibrary
 
 
 
+        }
+
+        private void DedicatedServerInstances_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateScreen();
         }
     }
 }
