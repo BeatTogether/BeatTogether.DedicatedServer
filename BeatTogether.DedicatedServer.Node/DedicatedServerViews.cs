@@ -18,6 +18,8 @@ using BeatTogether.DedicatedServer.Interface.Requests;
 using Microsoft.Extensions.DependencyInjection;
 using BeatTogether.DedicatedServer.Interface.Enums;
 using BeatTogether.DedicatedServer.Interface;
+using BeatTogether.DedicatedServer.Interface.Events;
+using Autobus;
 
 namespace WinFormsLibrary
 {
@@ -27,14 +29,16 @@ namespace WinFormsLibrary
         private readonly IMatchmakingService _nodeService;
         private readonly IInstanceRegistry _instanceRegistry;
         private readonly IInstanceFactory instanceFactory;
+        private readonly IAutobus _autobus;
 
-        public DedicatedServerViews(IServiceProvider _serviceProvider, IInstanceRegistry _instanceRegistry, IMatchmakingService _nodeService, IInstanceFactory instanceFactory)
+        public DedicatedServerViews(IServiceProvider _serviceProvider, IInstanceRegistry _instanceRegistry, IMatchmakingService _nodeService, IInstanceFactory instanceFactory, IAutobus _autobus)
         {
             InitializeComponent();
             this._serviceProvider = _serviceProvider;
             this._instanceRegistry = _instanceRegistry;
             this._nodeService = _nodeService;
             this.instanceFactory = instanceFactory;
+            this._autobus = _autobus;
             DedicatedServerInstances.DataSource = ((InstanceRegistry)_instanceRegistry)._instances.ToList();
             Messenger.Default.Register<UpdateForm>(this, (action) => FormRecieveMsg());
             Messenger.Default.Register<LobbyUpdateMessage>(this, (action) => FormRecieveLobbyMsg(action));
@@ -171,14 +175,17 @@ namespace WinFormsLibrary
 
         private void AddInstanceButton_Click(object sender, EventArgs e)
         {
-            var scope = _serviceProvider.CreateScope();
+            if (RoomCodeTextBox.Text.Length == 5)
+            {
+                string secret = "SpecialServer" + RoomCodeTextBox.Text;
 
+                GameplayServerConfiguration configuration = new GameplayServerConfiguration(10, DiscoveryPolicy.Public, InvitePolicy.AnyoneCanInvite, GameplayServerMode.Countdown, SongSelectionMode.Vote, GameplayServerControlSettings.All);
+                
+                //CreateMatchmakingServerRequest request = new CreateMatchmakingServerRequest("SpecialServer", "ziuMSceapEuNN7wRGQXrZg", configuration);
+                //_ = ((NodeService)_nodeService).CreateMatchmakingServer(request);
 
-            GameplayServerConfiguration configuration = new GameplayServerConfiguration(10, DiscoveryPolicy.Public, InvitePolicy.AnyoneCanInvite, GameplayServerMode.Countdown, SongSelectionMode.Vote, GameplayServerControlSettings.All);
-            CreateMatchmakingServerRequest request = new CreateMatchmakingServerRequest("SpecialServer", "ziuMSceapEuNN7wRGQXrZg", configuration);
-
-
-            _ = ((NodeService)_nodeService).CreateMatchmakingServer(request);
+                _autobus.Publish(new FromServerCreateServerEvent(configuration, secret, RoomCodeTextBox.Text, "ziuMSceapEuNN7wRGQXrZg"));
+            }
         }
 
         private void StopSelectedInstance_Click(object sender, EventArgs e)

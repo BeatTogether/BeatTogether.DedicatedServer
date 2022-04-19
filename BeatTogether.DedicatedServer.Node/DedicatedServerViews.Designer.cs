@@ -41,6 +41,7 @@
             this.AddInstanceButton = new System.Windows.Forms.Button();
             this.StopSelectedInstance = new System.Windows.Forms.Button();
             this.KickPlayerButton = new System.Windows.Forms.Button();
+            this.RoomCodeTextBox = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.PlayersDataGrid)).BeginInit();
             this.SuspendLayout();
             // 
@@ -136,9 +137,9 @@
             // 
             // AddInstanceButton
             // 
-            this.AddInstanceButton.Location = new System.Drawing.Point(12, 11);
+            this.AddInstanceButton.Location = new System.Drawing.Point(12, 12);
             this.AddInstanceButton.Name = "AddInstanceButton";
-            this.AddInstanceButton.Size = new System.Drawing.Size(274, 40);
+            this.AddInstanceButton.Size = new System.Drawing.Size(131, 40);
             this.AddInstanceButton.TabIndex = 12;
             this.AddInstanceButton.Text = "Add instance";
             this.AddInstanceButton.UseVisualStyleBackColor = true;
@@ -164,11 +165,20 @@
             this.KickPlayerButton.UseVisualStyleBackColor = true;
             this.KickPlayerButton.Click += new System.EventHandler(this.KickPlayerButton_Click);
             // 
+            // RoomCodeTextBox
+            // 
+            this.RoomCodeTextBox.Location = new System.Drawing.Point(149, 22);
+            this.RoomCodeTextBox.MaxLength = 5;
+            this.RoomCodeTextBox.Name = "RoomCodeTextBox";
+            this.RoomCodeTextBox.Size = new System.Drawing.Size(137, 23);
+            this.RoomCodeTextBox.TabIndex = 15;
+            // 
             // DedicatedServerViews
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(932, 343);
+            this.Controls.Add(this.RoomCodeTextBox);
             this.Controls.Add(this.KickPlayerButton);
             this.Controls.Add(this.StopSelectedInstance);
             this.Controls.Add(this.AddInstanceButton);
@@ -205,5 +215,6 @@
         private System.Windows.Forms.Button AddInstanceButton;
         private System.Windows.Forms.Button StopSelectedInstance;
         private System.Windows.Forms.Button KickPlayerButton;
+        private System.Windows.Forms.TextBox RoomCodeTextBox;
     }
 }
