@@ -120,8 +120,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             _gameplayManager.HandleLevelFinished(p, packet);
                             _packetDispatcher.SendToPlayer(p, new StartLevelPacket
                             {
-                                Beatmap = SelectedBeatmap!,
-                                Modifiers = SelectedModifiers,
+                                Beatmap = _gameplayManager.CurrentBeatmap!,
+                                Modifiers = _gameplayManager.CurrentModifiers!,
                                 StartTime = CountdownEndTime
                             }, DeliveryMethod.ReliableOrdered);
                         }
