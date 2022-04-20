@@ -242,15 +242,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 // If beatmap or modifiers changed, update them
                 UpdateBeatmap(beatmap, modifiers);
                 //If someone has ping over 1 second, well rip them
-                if (CountdownEndTime <= _instance.RunTime + 1 && !_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok)) //will repeat untill everyone has the map downloaded, because anoying quest bug
-                {
-                    _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
-                    CountdownEndTime = 0;
-                    QuickReset = true;
-                    return;
-                }
+                //if (CountdownEndTime <= _instance.RunTime + 1 && !_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok)) //will repeat untill everyone has the map downloaded, because anoying quest bug
+                //{
+                //    _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+                //    CountdownEndTime = 0;
+                //    QuickReset = true;
+                //    return;
+                //}
 
-                else if (CountdownEndTime <= _instance.RunTime)
+                /*else*/
+                if (CountdownEndTime <= _instance.RunTime)
                 {
 
                     // If countdown just finished, send map one last time then pause lobby untill all players have map downloaded
@@ -266,6 +267,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
+                        // sends entitlements to players
+                        _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
+                        {
+                            PlayersWithoutEntitlements = _playerRegistry.Players
+                                .Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.NotDownloaded)
+                                .Select(p => p.UserId).ToList()
+                        }, DeliveryMethod.ReliableOrdered);
                         // Starts beatmap
                         Console.WriteLine("Starting GameplayManager, ManagerID: " + _instance.Configuration.ManagerId);
                         _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
