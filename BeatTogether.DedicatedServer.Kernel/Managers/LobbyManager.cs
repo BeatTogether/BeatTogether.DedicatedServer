@@ -107,11 +107,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_instance.State != MultiplayerGameState.Lobby)
             {
-                if (_playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game && _gameplayManager.State != GameplayManagerState.None)
+                if (_playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game && (_gameplayManager.State == GameplayManagerState.Gameplay || _gameplayManager.State == GameplayManagerState.Results))
                 {
                     foreach (var p in _playerRegistry.Players)
                     {
-                        if (p.InLobby && p.WasActiveAtLevelStart)
+                        if (p.InLobby && p.WasActiveAtLevelStart && _gameplayManager.CurrentBeatmap != null)
                         {
                             LevelFinishedPacket packet = new LevelFinishedPacket();
                             packet.Results.PlayerLevelEndState = MultiplayerPlayerLevelEndState.NotStarted;
