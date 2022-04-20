@@ -242,7 +242,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 // If beatmap or modifiers changed, update them
                 UpdateBeatmap(beatmap, modifiers);
                 //If someone has ping over 1 second, well rip them
-                if (CountdownEndTime <= _instance.RunTime + 1 && !_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok)) //will repeat untill everyone has the map downloaded
+                if (CountdownEndTime <= _instance.RunTime + 1 && !_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok)) //will repeat untill everyone has the map downloaded, because anoying quest bug
                 {
                     _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                     CountdownEndTime = 0;
@@ -253,38 +253,26 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 else if (CountdownEndTime <= _instance.RunTime)
                 {
 
-                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                    // If countdown just finished, send map one last time then pause lobby untill all players have map downloaded
+                    if (CountdownEndTime != -1)
                     {
-                        Beatmap = SelectedBeatmap!,
-                        Modifiers = SelectedModifiers,
-                        StartTime = CountdownEndTime
-                    }, DeliveryMethod.ReliableOrdered);
-                    Console.WriteLine("Starting GameplayManager, ManagerID: " + _instance.Configuration.ManagerId);
-                    _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
-                    // Reset and stop counting down
-                    CountdownReset();
-                    return;
-                    //// If countdown just finished
-                    //if (CountdownEndTime != -1)
-                    //{
-                    //    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
-                    //    {
-                    //        Beatmap = SelectedBeatmap!,
-                    //        Modifiers = SelectedModifiers,
-                    //        StartTime = CountdownEndTime
-                    //    }, DeliveryMethod.ReliableOrdered);
-                    //    CountdownEndTime = -1;
-                    //}
-                    //// Once all players have map downloaded
-                    //if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
-                    //{
-                    //    // Starts beatmap
-                    //    Console.WriteLine("Starting GameplayManager, ManagerID: " + _instance.Configuration.ManagerId);
-                    //    _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
-                    //    // Reset and stop counting down
-                    //    CountdownReset();
-                    //    return;
-                    //}
+                        _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                        {
+                            Beatmap = SelectedBeatmap!,
+                            Modifiers = SelectedModifiers,
+                            StartTime = CountdownEndTime
+                        }, DeliveryMethod.ReliableOrdered);
+                        CountdownEndTime = -1;
+                    }
+                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
+                    {
+                        // Starts beatmap
+                        Console.WriteLine("Starting GameplayManager, ManagerID: " + _instance.Configuration.ManagerId);
+                        _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
+                        // Reset and stop counting down
+                        CountdownReset();
+                        return;
+                    }
                 }
 
                 // If manager/all players are no longer ready or not all players own beatmap(new player may have joined)
