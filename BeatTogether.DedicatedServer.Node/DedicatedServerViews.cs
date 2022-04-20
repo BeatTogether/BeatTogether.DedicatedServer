@@ -86,6 +86,11 @@ namespace WinFormsLibrary
                         Countdown.Text = (countdownendtime - selectedInstance.RunTime).ToString();
                     else
                         Countdown.Text = ("Not counting down");
+                    SongSelectionModeBox.Text = selectedInstance.Configuration.SongSelectionMode.ToString();
+                    GameplayServerControlSettingBox.Text = selectedInstance.Configuration.GameplayServerControlSettings.ToString();
+                    DiscoveryPolicyBox.Text = selectedInstance.Configuration.DiscoveryPolicy.ToString();
+                    InvitePolicyBox.Text = selectedInstance.Configuration.InvitePolicy.ToString();
+                    GameplayServerModeBox.Text = selectedInstance.Configuration.GameplayServerMode.ToString();
                 }
                 else
                 {
@@ -95,6 +100,14 @@ namespace WinFormsLibrary
                     RunTime.Text = "NAN";
                     GameState.Text = "NAN";
                     Countdown.Text = "NAN";
+
+                    SongSelectionModeBox.Text = "NAN";
+                    GameplayServerControlSettingBox.Text = "NAN";
+                    DiscoveryPolicyBox.Text = "NAN";
+                    InvitePolicyBox.Text = "NAN";
+                    GameplayServerModeBox.Text = "NAN";
+
+
                 }
             }
         }
@@ -179,20 +192,9 @@ namespace WinFormsLibrary
             {
                 string secret = "SpecialServer" + RoomCodeTextBox.Text;
 
-                GameplayServerConfiguration configuration = new GameplayServerConfiguration(10, DiscoveryPolicy.Public, InvitePolicy.AnyoneCanInvite, GameplayServerMode.Managed, SongSelectionMode.Vote, GameplayServerControlSettings.All);
-                
-                //CreateMatchmakingServerRequest request = new CreateMatchmakingServerRequest("SpecialServer", "ziuMSceapEuNN7wRGQXrZg", configuration);
-                //_ = ((NodeService)_nodeService).CreateMatchmakingServer(request);
+                GameplayServerConfiguration configuration = new GameplayServerConfiguration(500, DiscoveryPolicy.Public, InvitePolicy.AnyoneCanInvite, GameplayServerMode.Countdown, SongSelectionMode.Vote, GameplayServerControlSettings.All);
 
-                _autobus.Publish(new FromServerCreateServerEvent(configuration, secret, RoomCodeTextBox.Text, ""));
-            }
-            else if(RoomCodeTextBox.Text.Length == 0)
-            {
-                //should make an exp+ quickplay lobby
-                string secret = "";
-                GameplayServerConfiguration configuration = new GameplayServerConfiguration(5, DiscoveryPolicy.Public, InvitePolicy.AnyoneCanInvite, GameplayServerMode.Countdown, SongSelectionMode.Vote, GameplayServerControlSettings.All);
-                _autobus.Publish(new FromServerCreateServerEvent(configuration, secret, "", "ziuMSceapEuNN7wRGQXrZg"));
-
+                _autobus.Publish(new FromServerCreateServerEvent(configuration, secret, RoomCodeTextBox.Text.ToUpper(), "ziuMSceapEuNN7wRGQXrZg"));
             }
         }
 
@@ -214,14 +216,12 @@ namespace WinFormsLibrary
                 string userToKick = ((DedicatedInstance)instance).GetPlayerRegistry().Players[SelectedIndex].UserId;
                 ((DedicatedInstance)instance).KickPlayer(userToKick);
             }
-
-
-
         }
 
         private void DedicatedServerInstances_SelectedIndexChanged(object sender, EventArgs e)
         {
-            UpdateScreen();
+            UpdatePlayerList();
+            UpdateInstanceStats(0);
         }
     }
 }

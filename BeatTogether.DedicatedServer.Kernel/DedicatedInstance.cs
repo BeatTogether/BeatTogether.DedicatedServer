@@ -432,7 +432,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 MessageForm.Updt();
             }
 
-            if (_playerRegistry.Players.Count == 0 && Configuration.Secret != "SpecialServer")
+            if (_playerRegistry.Players.Count == 0 && !Configuration.Secret.Contains("SpecialServer"))
                 _ = Stop(CancellationToken.None);
             else
             {

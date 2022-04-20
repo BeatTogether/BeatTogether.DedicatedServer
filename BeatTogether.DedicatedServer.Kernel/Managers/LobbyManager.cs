@@ -18,7 +18,16 @@ using WinFormsLibrary;
 /*TODO
  * Why is lobby and gameplay manager ran seperatly, i think it may work better if its all managed together.
  * 
- * 
+ * and so, when the countdown gets shortened,
+ * for the client end it seems to cancel the countdown, 
+ * thus removing all there song selections. 
+ * Whilst on server side, the countdown is still going down. 
+ * When the countdown gets to 0 though, because no one has songs selected anymore 
+ * the game does not start and the countdown starts instantly again 
+ * and just repeats like that. 
+ * The only reason we got into final-boss-chan song, 
+ * is because i clicked it whilst looking at the server countdown on the laptop, 
+ * it saw i had it selected when the countdown hit 0 and told everyone to play
  * 
  */
 
@@ -45,6 +54,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private bool _lastEntitlementState;          //if all players had the beatmap in the last lobby loop
         private string _lastManagerId = null!;       //id of manager in the last lobby loop
         private CancellationTokenSource _stopCts = new();
+
+        private bool QuickReset = false; //for starting the countdown at all ready, and sending the beatmap
 
         private readonly InstanceConfiguration _configuration;
         private readonly IDedicatedInstance _instance;
@@ -199,34 +210,30 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // If not already counting down
             if (CountdownEndTime == 0)
             {
-                if (AllPlayersReady && !AllPlayersSpectating && allPlayersOwnBeatmap)
-                    CountdownEndTime = _instance.RunTime + CountdownTimeEveryoneReady;
-                else if (isReady && allPlayersOwnBeatmap)
-                    CountdownEndTime = _instance.RunTime + CountDownTime;
-
-                // If should be counting down, tell players
-                if (CountdownEndTime != 0)
+                UpdateBeatmap(beatmap, modifiers);
+                if ((AllPlayersReady && !AllPlayersSpectating && allPlayersOwnBeatmap) || QuickReset)
                 {
-                    UpdateBeatmap(beatmap, modifiers);
+                    QuickReset = false;
+                    CountdownEndTime = _instance.RunTime + CountdownTimeEveryoneReady;
+                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                    {
+                        Beatmap = SelectedBeatmap!,
+                        Modifiers = SelectedModifiers,
+                        StartTime = CountdownEndTime
+                    }, DeliveryMethod.ReliableOrdered);
+                    Console.WriteLine("starting countdown, Countdown at " + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining, ManagerID: " + _instance.Configuration.ManagerId);
+                }
 
-                    // Set countdown end time
-                    _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket //first countdown sent
+                else if (isReady && allPlayersOwnBeatmap)
+                {
+                    CountdownEndTime = _instance.RunTime + CountDownTime;
+                    _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
                     {
                         CountdownTime = CountdownEndTime
                     }, DeliveryMethod.ReliableOrdered);
-
-                    if (_instance.Configuration.ManagerId != "ziuMSceapEuNN7wRGQXrZg")
-                    {
-                        _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket          //Not in old quickplay logic
-                        {
-                            Beatmap = SelectedBeatmap!,
-                            Modifiers = SelectedModifiers,
-                            StartTime = CountdownEndTime
-                        }, DeliveryMethod.ReliableOrdered);
-                    }
-
-                    Console.WriteLine("starting countdown, Countdown at" + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining, ManagerID: " + _instance.Configuration.ManagerId);
+                    Console.WriteLine("starting countdown, Countdown at " + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining, ManagerID: " + _instance.Configuration.ManagerId);
                 }
+
             }
 
             // If counting down / 
@@ -234,30 +241,50 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 // If beatmap or modifiers changed, update them
                 UpdateBeatmap(beatmap, modifiers);
-
-                if (CountdownEndTime <= _instance.RunTime)
+                //If someone has ping over 1 second, well rip them
+                if (CountdownEndTime <= _instance.RunTime + 1 && !_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok)) //will repeat untill everyone has the map downloaded
                 {
-                    // If countdown just finished
-                    if (CountdownEndTime != -1)
+                    _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+                    CountdownEndTime = 0;
+                    QuickReset = true;
+                    return;
+                }
+
+                else if (CountdownEndTime <= _instance.RunTime)
+                {
+
+                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                     {
-                        _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
-                        {
-                            Beatmap = SelectedBeatmap!,
-                            Modifiers = SelectedModifiers,
-                            StartTime = CountdownEndTime
-                        }, DeliveryMethod.ReliableOrdered);
-                        CountdownEndTime = -1;
-                    }
-                    // Once all players have map downloaded
-                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
-                    {
-                        // Starts beatmap
-                        Console.WriteLine("Starting GameplayManager, ManagerID: " + _instance.Configuration.ManagerId);
-                        _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
-                        // Reset and stop counting down
-                        CountdownReset();
-                        return;
-                    }
+                        Beatmap = SelectedBeatmap!,
+                        Modifiers = SelectedModifiers,
+                        StartTime = CountdownEndTime
+                    }, DeliveryMethod.ReliableOrdered);
+                    Console.WriteLine("Starting GameplayManager, ManagerID: " + _instance.Configuration.ManagerId);
+                    _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
+                    // Reset and stop counting down
+                    CountdownReset();
+                    return;
+                    //// If countdown just finished
+                    //if (CountdownEndTime != -1)
+                    //{
+                    //    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                    //    {
+                    //        Beatmap = SelectedBeatmap!,
+                    //        Modifiers = SelectedModifiers,
+                    //        StartTime = CountdownEndTime
+                    //    }, DeliveryMethod.ReliableOrdered);
+                    //    CountdownEndTime = -1;
+                    //}
+                    //// Once all players have map downloaded
+                    //if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
+                    //{
+                    //    // Starts beatmap
+                    //    Console.WriteLine("Starting GameplayManager, ManagerID: " + _instance.Configuration.ManagerId);
+                    //    _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
+                    //    // Reset and stop counting down
+                    //    CountdownReset();
+                    //    return;
+                    //}
                 }
 
                 // If manager/all players are no longer ready or not all players own beatmap(new player may have joined)
@@ -277,13 +304,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         // Shorten countdown time
                         CountdownEndTime = _instance.RunTime + CountdownTimeEveryoneReady;
 
-                        //ok so quest quickplay will not change scenes properly if the countdown is shortened
+                        //ok so do not send Cancel CountdownPacket to quest, will completely screw the countdown for some reason
 
                         if (_instance.Configuration.ManagerId != "ziuMSceapEuNN7wRGQXrZg")
                         {
                             // Cancel countdown (bc of stupid client garbage) 
                             _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered); //Not in old quickplay logic
-                            
+
                             _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket                                 //Not in old quickplay logic
                             {
                                 CountdownTime = CountdownEndTime
@@ -298,7 +325,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             StartTime = CountdownEndTime
                         }, DeliveryMethod.ReliableOrdered);
                         Console.WriteLine("Shortened map start time, Countdown at: " + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining, ManagerID: " + _instance.Configuration.ManagerId);
-
                     }
                 }
             }
@@ -354,9 +380,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             switch(_configuration.SongSelectionMode)
 			{
                 case SongSelectionMode.ManagerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).Modifiers;
-                case SongSelectionMode.Vote: //in quickplay, you cannot select modifiers anyway.
-                    return new GameplayModifiers();
-                    /*
+                case SongSelectionMode.Vote: //I added server side servers that use the voting system
                     Dictionary<GameplayModifiers, int> voteDictionary = new();
                     foreach (IPlayer player in _playerRegistry.Players)
                     {
@@ -374,7 +398,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
                     voteDictionary.OrderByDescending(n => n.Value);
                     return voteDictionary.First().Key;
-                    */
+                    
             };
             return new GameplayModifiers();
 		}

@@ -42,6 +42,11 @@
             this.StopSelectedInstance = new System.Windows.Forms.Button();
             this.KickPlayerButton = new System.Windows.Forms.Button();
             this.RoomCodeTextBox = new System.Windows.Forms.TextBox();
+            this.SongSelectionModeBox = new System.Windows.Forms.Label();
+            this.GameplayServerControlSettingBox = new System.Windows.Forms.Label();
+            this.DiscoveryPolicyBox = new System.Windows.Forms.Label();
+            this.InvitePolicyBox = new System.Windows.Forms.Label();
+            this.GameplayServerModeBox = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.PlayersDataGrid)).BeginInit();
             this.SuspendLayout();
             // 
@@ -174,11 +179,61 @@
             this.RoomCodeTextBox.Size = new System.Drawing.Size(137, 23);
             this.RoomCodeTextBox.TabIndex = 15;
             // 
+            // SongSelectionModeBox
+            // 
+            this.SongSelectionModeBox.AutoSize = true;
+            this.SongSelectionModeBox.Location = new System.Drawing.Point(694, 151);
+            this.SongSelectionModeBox.Name = "SongSelectionModeBox";
+            this.SongSelectionModeBox.Size = new System.Drawing.Size(121, 15);
+            this.SongSelectionModeBox.TabIndex = 16;
+            this.SongSelectionModeBox.Text = "SongSelectionMode _";
+            // 
+            // GameplayServerControlSettingBox
+            // 
+            this.GameplayServerControlSettingBox.AutoSize = true;
+            this.GameplayServerControlSettingBox.Location = new System.Drawing.Point(694, 166);
+            this.GameplayServerControlSettingBox.Name = "GameplayServerControlSettingBox";
+            this.GameplayServerControlSettingBox.Size = new System.Drawing.Size(176, 15);
+            this.GameplayServerControlSettingBox.TabIndex = 17;
+            this.GameplayServerControlSettingBox.Text = "GameplayServerContollSetting _";
+            // 
+            // DiscoveryPolicyBox
+            // 
+            this.DiscoveryPolicyBox.AutoSize = true;
+            this.DiscoveryPolicyBox.Location = new System.Drawing.Point(694, 181);
+            this.DiscoveryPolicyBox.Name = "DiscoveryPolicyBox";
+            this.DiscoveryPolicyBox.Size = new System.Drawing.Size(98, 15);
+            this.DiscoveryPolicyBox.TabIndex = 18;
+            this.DiscoveryPolicyBox.Text = "DiscoveryPolicy _";
+            // 
+            // InvitePolicyBox
+            // 
+            this.InvitePolicyBox.AutoSize = true;
+            this.InvitePolicyBox.Location = new System.Drawing.Point(694, 196);
+            this.InvitePolicyBox.Name = "InvitePolicyBox";
+            this.InvitePolicyBox.Size = new System.Drawing.Size(76, 15);
+            this.InvitePolicyBox.TabIndex = 19;
+            this.InvitePolicyBox.Text = "InvitePolicy _";
+            // 
+            // GameplayServerModeBox
+            // 
+            this.GameplayServerModeBox.AutoSize = true;
+            this.GameplayServerModeBox.Location = new System.Drawing.Point(694, 211);
+            this.GameplayServerModeBox.Name = "GameplayServerModeBox";
+            this.GameplayServerModeBox.Size = new System.Drawing.Size(131, 15);
+            this.GameplayServerModeBox.TabIndex = 20;
+            this.GameplayServerModeBox.Text = "GameplayServerMode _";
+            // 
             // DedicatedServerViews
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(932, 343);
+            this.Controls.Add(this.GameplayServerModeBox);
+            this.Controls.Add(this.InvitePolicyBox);
+            this.Controls.Add(this.DiscoveryPolicyBox);
+            this.Controls.Add(this.GameplayServerControlSettingBox);
+            this.Controls.Add(this.SongSelectionModeBox);
             this.Controls.Add(this.RoomCodeTextBox);
             this.Controls.Add(this.KickPlayerButton);
             this.Controls.Add(this.StopSelectedInstance);
@@ -217,5 +272,10 @@
         private System.Windows.Forms.Button StopSelectedInstance;
         private System.Windows.Forms.Button KickPlayerButton;
         private System.Windows.Forms.TextBox RoomCodeTextBox;
+        private System.Windows.Forms.Label SongSelectionModeBox;
+        private System.Windows.Forms.Label GameplayServerControlSettingBox;
+        private System.Windows.Forms.Label DiscoveryPolicyBox;
+        private System.Windows.Forms.Label InvitePolicyBox;
+        private System.Windows.Forms.Label GameplayServerModeBox;
     }
 }
