@@ -137,16 +137,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 _requestReturnToMenuCts.Cancel(); //this will cancel the gameplay if someone is in the lobby
             }
-            /*                                    //this will continue the gameplay if someone is in the lobby still
-            foreach (var p in loadingPlayers) //stops the instance from soft-locking
-            {
-                if (p.InLobby)
-                {
-                    Console.WriteLine(p.UserName + " is in lobby still when game should be starting");
-                    HandlePlayerDisconnected(p); //makes sure that the player in the lobby does not cause the instance to hang
-                }
-            }
-            */
             Console.WriteLine("Starting beatmap in lobby: " + _instance.Configuration.SongSelectionMode + ", LobbySize: " + _instance.Configuration.MaxPlayerCount + ", ManagerID: " + _instance.Configuration.ManagerId);
             
             // Start song and wait for finish
@@ -249,7 +239,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public void SignalRequestReturnToMenu()
             => _requestReturnToMenuCts?.Cancel();
 
-        private void HandlePlayerDisconnected(IPlayer player)
+        public void HandlePlayerDisconnected(IPlayer player)
         {
             PlayerFinishLevel(player);
             PlayerSceneReady(player);
