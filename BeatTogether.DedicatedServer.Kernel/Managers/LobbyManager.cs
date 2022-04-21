@@ -107,11 +107,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_instance.State != MultiplayerGameState.Lobby)
             {
-                if (_playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game && (_gameplayManager.State == GameplayManagerState.Gameplay || _gameplayManager.State == GameplayManagerState.Results))
+                /*
+                if (_playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game && _gameplayManager.State != GameplayManagerState.None)
                 {
                     foreach (var p in _playerRegistry.Players)
                     {
-                        if (p.InLobby && p.WasActiveAtLevelStart && _gameplayManager.CurrentBeatmap != null)
+                        if (p.InLobby && p.WasActiveAtLevelStart && _gameplayManager.CurrentBeatmap != null && p.FinishedLevel == false)
                         {
                             LevelFinishedPacket packet = new LevelFinishedPacket();
                             packet.Results.PlayerLevelEndState = MultiplayerPlayerLevelEndState.NotStarted;
@@ -127,6 +128,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         }
                     }
                 }
+                */
                 return;
             }
 
@@ -265,7 +267,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         // sends entitlements to players
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
-                            PlayersWithoutEntitlements = new List<string>()
+                            PlayersWithoutEntitlements = _playerRegistry.Players
+                                .Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.NotDownloaded)
+                                .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
                         // Starts beatmap
                         Console.WriteLine("Starting GameplayManager, ManagerID: " + _instance.Configuration.ManagerId);
