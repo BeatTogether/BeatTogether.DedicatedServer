@@ -15,22 +15,6 @@ using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using WinFormsLibrary;
 
-/*TODO
- * Why is lobby and gameplay manager ran seperatly, i think it may work better if its all managed together.
- * 
- * and so, when the countdown gets shortened,
- * for the client end it seems to cancel the countdown, 
- * thus removing all there song selections. 
- * Whilst on server side, the countdown is still going down. 
- * When the countdown gets to 0 though, because no one has songs selected anymore 
- * the game does not start and the countdown starts instantly again 
- * and just repeats like that. 
- * The only reason we got into final-boss-chan song, 
- * is because i clicked it whilst looking at the server countdown on the laptop, 
- * it saw i had it selected when the countdown hit 0 and told everyone to play
- * 
- */
-
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
     public sealed class LobbyManager : ILobbyManager, IDisposable
@@ -107,28 +91,34 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_instance.State != MultiplayerGameState.Lobby)
             {
-                /*
-                if (_playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game && _gameplayManager.State != GameplayManagerState.None)
+                if (_playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game)
                 {
                     foreach (var p in _playerRegistry.Players)
                     {
-                        if (p.InLobby && p.WasActiveAtLevelStart && _gameplayManager.CurrentBeatmap != null && p.FinishedLevel == false)
+                        if (p.InLobby && p.WasActiveAtLevelStart && _gameplayManager.CurrentBeatmap != null)
                         {
-                            LevelFinishedPacket packet = new LevelFinishedPacket();
-                            packet.Results.PlayerLevelEndState = MultiplayerPlayerLevelEndState.NotStarted;
-                            packet.Results.LevelCompletionResults = new LevelCompletionResults();
-                            packet.Results.PlayerLevelEndReason = MultiplayerPlayerLevelEndReason.StartupFailed;
-                            _gameplayManager.HandleLevelFinished(p, packet);
                             _packetDispatcher.SendToPlayer(p, new StartLevelPacket
                             {
                                 Beatmap = _gameplayManager.CurrentBeatmap!,
                                 Modifiers = _gameplayManager.CurrentModifiers!,
                                 StartTime = CountdownEndTime
                             }, DeliveryMethod.ReliableOrdered);
+                            _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
+                            {
+                                PlayersWithoutEntitlements = _playerRegistry.Players
+                                    .Where(p => p.GetEntitlement(_gameplayManager.CurrentBeatmap!.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.NotDownloaded)
+                                    .Select(p => p.UserId).ToList()
+                            }, DeliveryMethod.ReliableOrdered);
+                            LevelFinishedPacket packet = new LevelFinishedPacket();
+                            packet.Results.PlayerLevelEndState = MultiplayerPlayerLevelEndState.NotStarted;
+                            packet.Results.LevelCompletionResults = new LevelCompletionResults();
+                            packet.Results.PlayerLevelEndReason = MultiplayerPlayerLevelEndReason.StartupFailed;
+                            _gameplayManager.HandleLevelFinished(p, packet);
+
                         }
                     }
                 }
-                */
+                
                 return;
             }
 
