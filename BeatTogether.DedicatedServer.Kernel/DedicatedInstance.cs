@@ -155,7 +155,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void ReleaseSortIndex(int sortIndex) =>
             _releasedSortIndices.Enqueue(sortIndex);
 
-        public byte GetNextConnectionId()
+        public byte GetNextConnectionId() //I would like it to be known, cubic does not like connectionIDs
         {
             if (_releasedConnectionIds.TryDequeue(out var connectionId))
                 return (byte)(connectionId % 127);
@@ -180,6 +180,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             return (PlayerRegistry)_playerRegistry;
         }
+
         public void KickPlayer(string UserId)
         {
             if (_playerRegistry.TryGetPlayer(UserId, out var player))
@@ -321,7 +322,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SortIndex = player.SortIndex
             }, DeliveryMethod.ReliableOrdered);
 
-            // Send host player to new player
+            // Send host player to new player //What does this actually do? isnt the server just the host
             _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
             {
                 RemoteConnectionId = 0,
@@ -330,43 +331,44 @@ namespace BeatTogether.DedicatedServer.Kernel
                 IsConnectionOwner = true
             }, DeliveryMethod.ReliableOrdered);
 
-            // Send host player sort order to new player
+            // Send host player sort order to new player       //havnt we already sent the UserId to the new player
             _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
             {
                 UserId = Configuration.Secret,
                 SortIndex = 0
             }, DeliveryMethod.ReliableOrdered);
 
-            foreach (IPlayer p in _playerRegistry.Players)
+
+            IPlayerRegistry SendTo = _playerRegistry;
+            SendTo.RemovePlayer(player); //Changed doing an endpoint check for each player, to a .Remove player then send to eveyone in the sublist, instead of using connectionID
+
+            foreach (IPlayer p in SendTo.Players)
             {
-                if (p.ConnectionId != player.ConnectionId)
+                // Send all player connection data packets to new player
+                _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
                 {
-                    // Send all player connection data packets to new player
-                    _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
+                    RemoteConnectionId = p.ConnectionId,
+                    UserId = p.UserId,
+                    UserName = p.UserName,
+                    IsConnectionOwner = false
+                }, DeliveryMethod.ReliableOrdered);
+
+                // Send all player sort index packets to new player
+                if (p.SortIndex != -1)
+                    _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
                     {
-                        RemoteConnectionId = p.ConnectionId,
                         UserId = p.UserId,
-                        UserName = p.UserName,
-                        IsConnectionOwner = false
+                        SortIndex = p.SortIndex
                     }, DeliveryMethod.ReliableOrdered);
 
-                    // Send all player sort index packets to new player
-                    if (p.SortIndex != -1)
-                        _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
-                        {
-                            UserId = p.UserId,
-                            SortIndex = p.SortIndex
-                        }, DeliveryMethod.ReliableOrdered);
-
-                    // Send all player identity packets to new player
-                    _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
-                    {
-                        PlayerState = p.State,
-                        PlayerAvatar = p.Avatar,
-                        Random = new ByteArray { Data = p.Random },
-                        PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
-                    }, DeliveryMethod.ReliableOrdered);
-                }
+                // Send all player identity packets to new player
+                _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
+                {
+                    PlayerState = p.State,
+                    PlayerAvatar = p.Avatar,
+                    Random = new ByteArray { Data = p.Random },
+                    PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
+                }, DeliveryMethod.ReliableOrdered);
             }
 
             // Disable start button if they are manager without selected song

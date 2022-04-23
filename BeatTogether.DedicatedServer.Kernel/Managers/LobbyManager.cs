@@ -15,6 +15,12 @@ using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using WinFormsLibrary;
 
+/*
+ * quest and pc have issues displaying 5 or more people in a lobby (some people dont seem to be sent the fact a another has joined)/ could be server side, make sure to send data to all players when a player joins
+ * need to fix that chroma maps crash quest when pc selects them, they dont get stopped from loading
+ * Make sure that clients get sent the countdown time on joining
+ */
+
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
     public sealed class LobbyManager : ILobbyManager, IDisposable
@@ -91,12 +97,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_instance.State != MultiplayerGameState.Lobby)
             {
-                if (_playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game)
+
+                //This will send any players that somehow end up in the lobby as a beatmap is being played to spectate the beatmap, it also tells the game they failed the beatmap
+                //This prevents certain rare cases where for example someones quest looses tracking as a map is loading and the game pauses, but the server still sets them as a player in the gameplay manager
+                if (_playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game && _gameplayManager.State == GameplayManagerState.Gameplay)
                 {
                     foreach (var p in _playerRegistry.Players)
                     {
                         if (p.InLobby && p.WasActiveAtLevelStart && _gameplayManager.CurrentBeatmap != null)
                         {
+                            Console.WriteLine("Sending " + p.UserName + " To spectate becasuse they got stuck in the lobby somehow");
                             _packetDispatcher.SendToPlayer(p, new StartLevelPacket
                             {
                                 Beatmap = _gameplayManager.CurrentBeatmap!,
@@ -179,14 +189,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             }, DeliveryMethod.ReliableOrdered);
                     }
                 }
-                _lastEntitlementState = allPlayersOwnBeatmap; //updates last to current as it has just been processed
+                _lastEntitlementState = allPlayersOwnBeatmap;
 
-                switch (_configuration.SongSelectionMode)
+                switch (_configuration.SongSelectionMode) //server modes
                 {
                     case SongSelectionMode.ManagerPicks:
                         CountingDown(manager!.IsReady, CountdownTimeManagerReady, !manager!.IsReady, allPlayersOwnBeatmap, beatmap, modifiers);
                         break;
-                    case SongSelectionMode.Vote: //quickplay
+                    case SongSelectionMode.Vote:
+                        CountingDown(SomePlayersReady, CountdownTimeSomeReady, NoPlayersReady, allPlayersOwnBeatmap, beatmap, modifiers);
+                        break;
+                    case SongSelectionMode.Random:
+                        CountingDown(SomePlayersReady, CountdownTimeSomeReady, NoPlayersReady, allPlayersOwnBeatmap, beatmap, modifiers);
+                        break;
+                    case SongSelectionMode.RandomPlayerPicks:
                         CountingDown(SomePlayersReady, CountdownTimeSomeReady, NoPlayersReady, allPlayersOwnBeatmap, beatmap, modifiers);
                         break;
                 }
@@ -350,9 +366,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     if (!voteDictionary.Any())
                         return null;
-
                     voteDictionary.OrderByDescending(n => n.Value);       
                     return voteDictionary.First().Key;
+
+                case SongSelectionMode.RandomPlayerPicks: //Just realised this would do horrible things as it could end up setting a different map each instance loop... the countdown would just get canceled constantly as the selected map would just keep changing
+                    List<BeatmapIdentifier> beatmapPool = new List<BeatmapIdentifier>(); //Thusly i think the logic for random map selection would have to be done a tad differently
+                    foreach (IPlayer player in _playerRegistry.Players)
+                    {
+                        if (player.BeatmapIdentifier != null)
+                        {
+                            if (!beatmapPool.Contains(player.BeatmapIdentifier))
+                                beatmapPool.Add(player.BeatmapIdentifier);
+                        }
+                    }
+                    return beatmapPool[new Random().Next(beatmapPool.Count)];
             };
             return null;
         }

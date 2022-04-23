@@ -61,7 +61,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteOne(ref writer, packet);
 
             foreach (IPlayer player in _playerRegistry.Players)
-                if (player.ConnectionId != excludedPlayer.ConnectionId)
+                if (player.UserId != excludedPlayer.UserId)//This could be what is messing up with not having every player appear in the lobby, gonna test that connectionIDs works (connectionIDs look like a nightmare of sorts.... ima swap this to something else and test if people dissapear when joining still)
                     Send(player.Endpoint, writer.Data, deliveryMethod);
         }
 
