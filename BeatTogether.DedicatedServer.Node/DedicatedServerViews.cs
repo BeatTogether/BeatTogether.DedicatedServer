@@ -128,7 +128,6 @@ namespace WinFormsLibrary
                         PlayersDataGrid.Columns["PublicEncryptionKey"].Visible = false;
                         PlayersDataGrid.Columns["Latency"].Visible = false;
                         PlayersDataGrid.Columns["SyncTime"].Visible = false;
-                        PlayersDataGrid.Columns["SortIndex"].Visible = false;
                         PlayersDataGrid.Columns["Avatar"].Visible = false;
                         PlayersDataGrid.Columns["BeatmapIdentifier"].Visible = false;
                         PlayersDataGrid.Columns["Modifiers"].Visible = false;
@@ -163,8 +162,11 @@ namespace WinFormsLibrary
                         PlayersDataGrid.Columns["InGameplay"].Width = 50;
                         PlayersDataGrid.Columns["ConnectionId"].DisplayIndex = 6;
                         PlayersDataGrid.Columns["ConnectionId"].Width = 50;
-                        PlayersDataGrid.Columns["Endpoint"].DisplayIndex = 6;
+                        PlayersDataGrid.Columns["SortIndex"].DisplayIndex = 7;
+                        PlayersDataGrid.Columns["SortIndex"].Width = 50;
+                        PlayersDataGrid.Columns["Endpoint"].DisplayIndex = 8;
                         PlayersDataGrid.Columns["Endpoint"].Width = 200;
+
 
 
 
