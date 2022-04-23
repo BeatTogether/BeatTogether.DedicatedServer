@@ -47,6 +47,7 @@
             this.DiscoveryPolicyBox = new System.Windows.Forms.Label();
             this.InvitePolicyBox = new System.Windows.Forms.Label();
             this.GameplayServerModeBox = new System.Windows.Forms.Label();
+            this.ConnectionIDCount = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.PlayersDataGrid)).BeginInit();
             this.SuspendLayout();
             // 
@@ -182,7 +183,7 @@
             // SongSelectionModeBox
             // 
             this.SongSelectionModeBox.AutoSize = true;
-            this.SongSelectionModeBox.Location = new System.Drawing.Point(694, 151);
+            this.SongSelectionModeBox.Location = new System.Drawing.Point(697, 168);
             this.SongSelectionModeBox.Name = "SongSelectionModeBox";
             this.SongSelectionModeBox.Size = new System.Drawing.Size(121, 15);
             this.SongSelectionModeBox.TabIndex = 16;
@@ -191,7 +192,7 @@
             // GameplayServerControlSettingBox
             // 
             this.GameplayServerControlSettingBox.AutoSize = true;
-            this.GameplayServerControlSettingBox.Location = new System.Drawing.Point(694, 166);
+            this.GameplayServerControlSettingBox.Location = new System.Drawing.Point(697, 183);
             this.GameplayServerControlSettingBox.Name = "GameplayServerControlSettingBox";
             this.GameplayServerControlSettingBox.Size = new System.Drawing.Size(176, 15);
             this.GameplayServerControlSettingBox.TabIndex = 17;
@@ -200,7 +201,7 @@
             // DiscoveryPolicyBox
             // 
             this.DiscoveryPolicyBox.AutoSize = true;
-            this.DiscoveryPolicyBox.Location = new System.Drawing.Point(694, 181);
+            this.DiscoveryPolicyBox.Location = new System.Drawing.Point(697, 198);
             this.DiscoveryPolicyBox.Name = "DiscoveryPolicyBox";
             this.DiscoveryPolicyBox.Size = new System.Drawing.Size(98, 15);
             this.DiscoveryPolicyBox.TabIndex = 18;
@@ -209,7 +210,7 @@
             // InvitePolicyBox
             // 
             this.InvitePolicyBox.AutoSize = true;
-            this.InvitePolicyBox.Location = new System.Drawing.Point(694, 196);
+            this.InvitePolicyBox.Location = new System.Drawing.Point(697, 213);
             this.InvitePolicyBox.Name = "InvitePolicyBox";
             this.InvitePolicyBox.Size = new System.Drawing.Size(76, 15);
             this.InvitePolicyBox.TabIndex = 19;
@@ -218,17 +219,27 @@
             // GameplayServerModeBox
             // 
             this.GameplayServerModeBox.AutoSize = true;
-            this.GameplayServerModeBox.Location = new System.Drawing.Point(694, 211);
+            this.GameplayServerModeBox.Location = new System.Drawing.Point(697, 228);
             this.GameplayServerModeBox.Name = "GameplayServerModeBox";
             this.GameplayServerModeBox.Size = new System.Drawing.Size(131, 15);
             this.GameplayServerModeBox.TabIndex = 20;
             this.GameplayServerModeBox.Text = "GameplayServerMode _";
+            // 
+            // ConnectionIDCount
+            // 
+            this.ConnectionIDCount.AutoSize = true;
+            this.ConnectionIDCount.Location = new System.Drawing.Point(694, 135);
+            this.ConnectionIDCount.Name = "ConnectionIDCount";
+            this.ConnectionIDCount.Size = new System.Drawing.Size(130, 15);
+            this.ConnectionIDCount.TabIndex = 21;
+            this.ConnectionIDCount.Text = "ConnectionID counter: ";
             // 
             // DedicatedServerViews
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(932, 343);
+            this.Controls.Add(this.ConnectionIDCount);
             this.Controls.Add(this.GameplayServerModeBox);
             this.Controls.Add(this.InvitePolicyBox);
             this.Controls.Add(this.DiscoveryPolicyBox);
@@ -277,5 +288,6 @@
         private System.Windows.Forms.Label DiscoveryPolicyBox;
         private System.Windows.Forms.Label InvitePolicyBox;
         private System.Windows.Forms.Label GameplayServerModeBox;
+        private System.Windows.Forms.Label ConnectionIDCount;
     }
 }

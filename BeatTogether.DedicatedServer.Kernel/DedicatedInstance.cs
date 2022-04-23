@@ -145,7 +145,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             return Task.CompletedTask;
         }
 
-        public int GetNextSortIndex()
+        public int GetNextSortIndex() //Sort index and ID will be identical untill the connectionID goes over 127 BECAUSE one is a byte. whyyyyy do we have both
         {
             if (_releasedSortIndices.TryDequeue(out var sortIndex))
                 return sortIndex;
@@ -155,14 +155,19 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void ReleaseSortIndex(int sortIndex) =>
             _releasedSortIndices.Enqueue(sortIndex);
 
-        public byte GetNextConnectionId() //I would like it to be known, cubic does not like connectionIDs
+        public int GetConnectionIDcount()
+        {
+            return _connectionIdCount;
+        }
+
+        public byte GetNextConnectionId() //A max of 128 players huh
         {
             if (_releasedConnectionIds.TryDequeue(out var connectionId))
-                return (byte)(connectionId % 127);
-            var connectionIdCount = Interlocked.Increment(ref _connectionIdCount);
-            if (connectionIdCount >= 127)
+                return (byte)(connectionId % 127); //returns the first connectionID that is in the que of connectionID's that have left the server(and makes sure it will convert to a byte correctly)
+            var connectionIdCount = Interlocked.Increment(ref _connectionIdCount); //adds one to connectionIDcount IF there was no released ID avaliable
+            if (connectionIdCount >= 127)//if the connectionIDcount is over 127 then return 0, and so any more players that join are gonna have lots of fun recieving packets and having crashes
                 return 0;
-            return (byte)connectionIdCount;
+            return (byte)connectionIdCount;//else just return the a new connectionID
         }
 
         public void ReleaseConnectionId(byte connectionId) =>

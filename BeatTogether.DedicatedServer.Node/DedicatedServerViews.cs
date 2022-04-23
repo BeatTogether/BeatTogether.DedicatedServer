@@ -12,10 +12,7 @@ using BeatTogether.DedicatedServer.Node;
 using BeatTogether.DedicatedServer.Kernel;
 using GalaSoft.MvvmLight.Messaging;
 using WinFormsLibrary.Messages;
-using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Interface.Models;
-using BeatTogether.DedicatedServer.Interface.Requests;
-using Microsoft.Extensions.DependencyInjection;
 using BeatTogether.DedicatedServer.Interface.Enums;
 using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Interface.Events;
@@ -82,6 +79,7 @@ namespace WinFormsLibrary
                     Port.Text = selectedInstance.Configuration.Port.ToString();
                     RunTime.Text = "Running for: " + selectedInstance.RunTime.ToString() + " Seconds";
                     GameState.Text = selectedInstance.State.ToString();
+                    ConnectionIDCount.Text = "ConnectionID count: " + selectedInstance.GetConnectionIDcount();
                     if (countdownendtime != 0)
                         Countdown.Text = (countdownendtime - selectedInstance.RunTime).ToString();
                     else
@@ -100,6 +98,7 @@ namespace WinFormsLibrary
                     RunTime.Text = "NAN";
                     GameState.Text = "NAN";
                     Countdown.Text = "NAN";
+                    ConnectionIDCount.Text = "ConnectionID count: ";
 
                     SongSelectionModeBox.Text = "NAN";
                     GameplayServerControlSettingBox.Text = "NAN";
