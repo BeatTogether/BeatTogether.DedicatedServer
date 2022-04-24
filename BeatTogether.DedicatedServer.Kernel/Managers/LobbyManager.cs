@@ -45,7 +45,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             No = 1,
             Yes = 2
         }
-        private PlayersMeetRequirements playersMeetRequirements = PlayersMeetRequirements.Waiting;
+        private PlayersMeetRequirements playersMeetRequirements = PlayersMeetRequirements.Waiting; //Whether all players meet the beatmap requirements
 
         private BeatmapIdentifier? _lastBeatmap;     //beatmap selected in the last lobby loop
         private bool _lastSpectatorState;            //if all players were spectating in the last lobby loop
