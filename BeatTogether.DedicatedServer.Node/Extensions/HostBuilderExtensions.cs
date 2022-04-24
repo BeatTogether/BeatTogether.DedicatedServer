@@ -10,7 +10,6 @@ using BeatTogether.LiteNetLib.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Security.Cryptography;
-using WinFormsLibrary;
 
 namespace BeatTogether.DedicatedServer.Node.Extensions
 {
