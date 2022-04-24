@@ -45,15 +45,36 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public async Task<bool> DoAllPlayersMeetRequirements(PlayerRegistry players, BeatmapIdentifier? beatmap)
         {
-            bool Met = true;
-            foreach (var player in players.Players)
+            Task<Beatmap?> FetchBeatmap = beatSaverAPI.Beatmap(beatmap!.LevelId);
+            await FetchBeatmap.ConfigureAwait(false);
+            if(FetchBeatmap.Result != null)
             {
-                if(await DoesPlayerMeetMapRequirements(((Player)player), beatmap))
+                BeatSaverSharp.Models.BeatmapDifficulty beatmapDifficulty = FetchBeatmap.Result.LatestVersion.Difficulties[((int)beatmap.Difficulty)];
+                bool chroma = beatmapDifficulty.Chroma;
+                bool ME = beatmapDifficulty.MappingExtensions;
+                bool NE = beatmapDifficulty.NoodleExtensions;
+                Console.WriteLine("The map is: " + FetchBeatmap.Result.Name + " And has requirements: NE: " + NE + " ME: " + ME + " Chroma: " + chroma);
+                foreach (Player player in players.Players)
                 {
-                    Met = false;
+                    if (chroma != player.Chroma_Installed)
+                    {
+                        return false;
+                    }
+                    if (ME != player.ME_Installed)
+                    {
+                        return false;
+                    }
+                    if (NE != player.NE_Installed)
+                    {
+                        return false;
+                    }
                 }
+                return true; //when all players have the requirements
             }
-            return Met;
+            else
+            {
+                return false; //if map was not found on beatsaver
+            }
         }
     }
 }

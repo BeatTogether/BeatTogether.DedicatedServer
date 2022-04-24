@@ -434,13 +434,5 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             else
                 playersMeetRequirements = PlayersMeetRequirements.No;
         }
-
-
-
-
-
-
-
-
     }
 }
