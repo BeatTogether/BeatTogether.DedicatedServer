@@ -32,25 +32,25 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private const float CountdownAfterGameplayCooldown = 5f;
 
         public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel); //if all players are ready OR spectating
-        public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady); //if *any* are ready, dont we want this to be 50% not any?
+        public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady);                           //if *any* are ready
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel); //players not ready or spectating 
-        public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel); //if all spectating
+        public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel);         //if all spectating
 
-        public BeatmapIdentifier? SelectedBeatmap { get; private set; }           //this is the beatmap that has been selected to be played
-        public GameplayModifiers SelectedModifiers { get; private set; } = new(); //these are the modifiers that have been selected to be played
-        public float CountdownEndTime { get; private set; }                       //the instance time that the level/beatmap should start at
+        public BeatmapIdentifier? SelectedBeatmap { get; private set; }           
+        public GameplayModifiers SelectedModifiers { get; private set; } = new(); 
+        public float CountdownEndTime { get; private set; }                       
         public enum PlayersMeetRequirements : byte 
         {
             Waiting = 0,
             No = 1,
             Yes = 2
-        }
-        private PlayersMeetRequirements playersMeetRequirements = PlayersMeetRequirements.Waiting; //Whether all players meet the beatmap requirements
+        }       
+        private PlayersMeetRequirements playersMeetRequirements = PlayersMeetRequirements.Waiting; //Whether all players meet the beatmap mod requirements
 
-        private BeatmapIdentifier? _lastBeatmap;     //beatmap selected in the last lobby loop
-        private bool _lastSpectatorState;            //if all players were spectating in the last lobby loop
-        private bool _lastEntitlementState;          //if all players had the beatmap in the last lobby loop
-        private string _lastManagerId = null!;       //id of manager in the last lobby loop
+        private BeatmapIdentifier? _lastBeatmap;     
+        private bool _lastSpectatorState;            
+        private bool _lastEntitlementState;          
+        private string _lastManagerId = null!;       
         private CancellationTokenSource _stopCts = new();
 
 
@@ -111,8 +111,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_instance.State != MultiplayerGameState.Lobby)
             {
 
-                //This will send any players that somehow end up in the lobby as a beatmap is being played to spectate the beatmap, it also tells the game they failed the beatmap
-                //This prevents certain rare cases where for example someones quest looses tracking as a map is loading and the game pauses, but the server still sets them as a player in the gameplay manager
+                //Sends players stuck in the lobby to spectate the ongoing game, prevents a rare quest issue with loss of tracking causing the game to pause on map start
                 if (_playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game && _gameplayManager.State == GameplayManagerState.Gameplay)
                 {
                     foreach (var p in _playerRegistry.Players)
@@ -389,7 +388,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     return voteDictionary.First().Key;
 
                 case SongSelectionMode.RandomPlayerPicks: //Just realised this would do horrible things as it could end up setting a different map each instance loop... the countdown would just get canceled constantly as the selected map would just keep changing
-                    List<BeatmapIdentifier> beatmapPool = new List<BeatmapIdentifier>(); //Thusly i think the logic for random map selection would have to be done a tad differently
+                    List<BeatmapIdentifier> beatmapPool = new List<BeatmapIdentifier>();
                     foreach (IPlayer player in _playerRegistry.Players)
                     {
                         if (player.BeatmapIdentifier != null)

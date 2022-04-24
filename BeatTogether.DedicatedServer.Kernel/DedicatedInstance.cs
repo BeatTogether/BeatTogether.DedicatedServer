@@ -165,12 +165,12 @@ namespace BeatTogether.DedicatedServer.Kernel
         }
 
         //TODO should probably code a hard limit of 128 players somewhere (unless anyone would like to change connectionID to an int)
-        public byte GetNextConnectionId() //A max of 128 players
+        public byte GetNextConnectionId()
         {
             if (_releasedConnectionIds.TryDequeue(out var connectionId))
                 return (byte)(connectionId % 127);
             var connectionIdCount = Interlocked.Increment(ref _connectionIdCount);
-            if (connectionIdCount >= 127)//if the connectionIDcount is over 127 then return 0, and so any more players that join are gonna have lots of fun recieving packets and having crashes
+            if (connectionIdCount >= 127)
                 return 0;
             return (byte)connectionIdCount;
         }
@@ -212,7 +212,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 OnDisconnect(player.Endpoint, DisconnectReason.ConnectionRejected);
             }
         }
-
 
 
         #endregion
@@ -332,7 +331,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SortIndex = player.SortIndex
             }, DeliveryMethod.ReliableOrdered);
 
-            // Send host player to new player //What does this actually do? isnt the server just the host
+            // Send host player to new player                                    //TODO test without this
             _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
             {
                 RemoteConnectionId = 0,
@@ -341,7 +340,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 IsConnectionOwner = true
             }, DeliveryMethod.ReliableOrdered);
 
-            // Send host player sort order to new player       //havnt we already sent the UserId to the new player
+            // Send host player sort order to new player                        //TODO test without this
             _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
             {
                 UserId = Configuration.Secret,
@@ -405,15 +404,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
             }, DeliveryMethod.ReliableOrdered);
 
-            //Should handle sending players that join the countdown time, if the lobby is waiting for everyone to download the map then they get sent the map to download
-            if(_lobbyManager.CountdownEndTime != 0)
-            {
-                _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
-                {
-                    CountdownTime = _lobbyManager.CountdownEndTime
-                }, DeliveryMethod.ReliableOrdered);
-            }
-            else if(_lobbyManager.CountdownEndTime < 0)
+            //handles sending players that join the countdown time, if the lobby is waiting for everyone to download the map then they get sent the map to download
+            if (_lobbyManager.CountdownEndTime < 0)
             {
                 _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                 {
@@ -422,7 +414,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                     StartTime = _lobbyManager.CountdownEndTime
                 }, DeliveryMethod.ReliableOrdered);
             }
-
+            else if (_lobbyManager.CountdownEndTime != 0)
+            {
+                _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
+                {
+                    CountdownTime = _lobbyManager.CountdownEndTime
+                }, DeliveryMethod.ReliableOrdered);
+            }
             PlayerConnectedEvent?.Invoke(player);
             MessageForm.Updt();
         }
