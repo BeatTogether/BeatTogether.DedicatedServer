@@ -45,7 +45,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
-        private readonly ILobbyManager _lobbyManager;
+        //private readonly ILobbyManager _lobbyManager;
         private readonly ConcurrentQueue<byte> _releasedConnectionIds = new();
         private readonly ConcurrentQueue<int> _releasedSortIndices = new();
         private readonly ILogger _logger = Log.ForContext<DedicatedInstance>();
@@ -63,8 +63,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             LiteNetConfiguration liteNetConfiguration,
             LiteNetPacketRegistry registry,
             IServiceProvider serviceProvider,
-            IPacketLayer packetLayer,
-            ILobbyManager lobbyManager)
+            IPacketLayer packetLayer//,
+            /*ILobbyManager lobbyManager*/)
             : base (
                   new IPEndPoint(IPAddress.Any, configuration.Port),
                   liteNetConfiguration,
@@ -75,7 +75,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             Configuration = configuration;
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
-            _lobbyManager = lobbyManager;
+           // _lobbyManager = lobbyManager;
         }
 
         #region Public Methods
@@ -351,7 +351,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             foreach (IPlayer p in _playerRegistry.Players)
             {
-                if (p.Endpoint != player.Endpoint)
+                if (p.ConnectionId != player.ConnectionId)
                 {
                     // Send all player connection data packets to new player
                     _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
@@ -405,6 +405,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
 
             //handles sending players that join the countdown time, if the lobby is waiting for everyone to download the map then they get sent the map to download
+            /*
             if (_lobbyManager.CountdownEndTime < 0)
             {
                 _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
@@ -421,6 +422,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     CountdownTime = _lobbyManager.CountdownEndTime
                 }, DeliveryMethod.ReliableOrdered);
             }
+            */
             PlayerConnectedEvent?.Invoke(player);
             MessageForm.Updt();
         }

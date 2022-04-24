@@ -32,15 +32,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public BeatmapIdentifier? SelectedBeatmap { get; private set; }           
         public GameplayModifiers SelectedModifiers { get; private set; } = new(); 
         public float CountdownEndTime { get; private set; }   
-        /*
-        public enum PlayersMeetRequirements : byte 
-        {
-            Waiting = 0,
-            No = 1,
-            Yes = 2
-        }       
-        private PlayersMeetRequirements playersMeetRequirements = PlayersMeetRequirements.Waiting; //Whether all players meet the beatmap mod requirements
-        */
+
         private BeatmapIdentifier? _lastBeatmap;     
         private bool _lastSpectatorState;            
         private bool _lastEntitlementState;          
@@ -277,7 +269,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         //CheckPlayersHaveMapRequirements();
                         CountdownEndTime = -1;
                     }
-                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok)/* && playersMeetRequirements == PlayersMeetRequirements.Yes*/)
+                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // sends entitlements to players
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
@@ -293,12 +285,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         CountdownReset();
                         return;
                     }
-                    /*
-                    else if(playersMeetRequirements == PlayersMeetRequirements.No)
-                    {
-                        NotStartable = true;  //will cancel the beatmap and reset everything
-                    }
-                    */
                 }
 
                 // If manager/all players are no longer ready or not all players own beatmap(new player may have joined)
@@ -425,16 +411,5 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             };
             return new GameplayModifiers();
 		}
-
-        /*
-        private async void CheckPlayersHaveMapRequirements()
-        {
-            bool check =  await _requirementCheck.DoAllPlayersMeetRequirements(((PlayerRegistry)_playerRegistry), SelectedBeatmap);
-            if (check)
-                playersMeetRequirements = PlayersMeetRequirements.Yes;
-            else
-                playersMeetRequirements = PlayersMeetRequirements.No;
-        }
-        */
     }
 }
