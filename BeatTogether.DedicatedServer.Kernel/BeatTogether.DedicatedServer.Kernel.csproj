@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <LangVersion>9</LangVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -23,7 +23,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BeatTogether.DedicatedServer.Messaging\BeatTogether.DedicatedServer.Messaging.csproj" />
-    <ProjectReference Include="..\WinFormsLibrary\WinFormsLibrary.csproj" />
   </ItemGroup>
 
 </Project>

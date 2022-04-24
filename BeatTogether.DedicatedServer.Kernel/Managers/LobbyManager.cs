@@ -13,7 +13,6 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Gameplay
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using WinFormsLibrary;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
@@ -80,7 +79,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 await Task.Delay(100, cancellationToken);
                 Update();
-                MessageForm.UpdtFromLobby(CountdownEndTime);
                 UpdateLoop(cancellationToken);
             }
             catch
@@ -367,7 +365,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         return null;
                     voteDictionary.OrderByDescending(n => n.Value);
                     return voteDictionary.First().Key;
-
+                    /*
                 case SongSelectionMode.RandomPlayerPicks: //Just realised this would do horrible things as it could end up setting a different map each instance loop... the countdown would just get canceled constantly as the selected map would just keep changing
                     List<BeatmapIdentifier> beatmapPool = new List<BeatmapIdentifier>();
                     foreach (IPlayer player in _playerRegistry.Players)
@@ -379,6 +377,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         }
                     }
                     return beatmapPool[new Random().Next(beatmapPool.Count)];
+                    */
             };
             return null;
         }

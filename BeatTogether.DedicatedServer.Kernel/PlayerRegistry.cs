@@ -13,7 +13,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public List<IPlayer> Players { get => _playersByUserId.Values.ToList(); }
 
         private readonly ConcurrentDictionary<EndPoint, IPlayer> _playersByRemoteEndPoint = new();
-        private readonly ConcurrentDictionary<byte, IPlayer> _playersByConnectionId = new();    //Max of 128 players in a lobby (if using connectionID's) I dislike connection IDs
+        private readonly ConcurrentDictionary<byte, IPlayer> _playersByConnectionId = new();
         private readonly ConcurrentDictionary<string, IPlayer> _playersByUserId = new();
 
         public void AddPlayer(IPlayer player)

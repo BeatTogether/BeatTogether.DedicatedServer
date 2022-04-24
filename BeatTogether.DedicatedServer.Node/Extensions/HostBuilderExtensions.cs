@@ -41,7 +41,6 @@ namespace BeatTogether.DedicatedServer.Node.Extensions
                             services.GetRequiredService<PacketEncryptionLayer>())
                         .AddSingleton<IPortAllocator, PortAllocator>()
                         .AddSingleton<IInstanceRegistry, InstanceRegistry>()
-                        .AddSingleton<DedicatedServerViews>()
                         .AddSingleton<IInstanceFactory, InstanceFactory>()
                         .AddServiceKernel<IMatchmakingService, NodeService>()
                         .AddHostedService<MasterServerEventHandler>()

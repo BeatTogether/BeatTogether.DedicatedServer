@@ -1,6 +1,5 @@
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
-using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets;
@@ -18,7 +17,6 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using WinFormsLibrary;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -104,7 +102,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             SendSyncTime(_stopServerCts.Token);
             _ = Task.Delay(WaitForPlayerTimeLimit, _waitForPlayerCts.Token).ContinueWith(t =>
             {
-                if (!t.IsCanceled && !Configuration.Secret.Contains("SpecialServer"))
+                if (!t.IsCanceled)
                 {
                     _logger.Warning("Timed out waiting for player to join, stopping server.");
                     _ = Stop(CancellationToken.None);
@@ -156,11 +154,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void ReleaseSortIndex(int sortIndex) =>
             _releasedSortIndices.Enqueue(sortIndex);
 
-        public int GetConnectionIDcount()
-        {
-            return _connectionIdCount;
-        }
-
         //TODO should probably code a hard limit of 128 players somewhere (unless anyone would like to change connectionID to an int)
         public byte GetNextConnectionId()
         {
@@ -186,28 +179,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public PlayerRegistry GetPlayerRegistry()
         {
             return (PlayerRegistry)_playerRegistry;
-        }
-
-        public void KickPlayer(string UserId)
-        {
-            if (_playerRegistry.TryGetPlayer(UserId, out var player))
-            {
-                _packetDispatcher.SendFromPlayer(player!, new PlayerDisconnectedPacket
-                {
-                    DisconnectedReason = DisconnectedReason.Kicked
-                }, DeliveryMethod.ReliableOrdered);
-
-                if (Configuration.ManagerId == player.UserId)
-                    Configuration.ManagerId = "";
-
-                _playerRegistry.RemovePlayer(player);
-                ReleaseSortIndex(player.SortIndex);
-                ReleaseConnectionId(player.ConnectionId);
-
-                PlayerDisconnectedEvent?.Invoke(player);
-                MessageForm.Updt();
-                OnDisconnect(player.Endpoint, DisconnectReason.ConnectionRejected);
-            }
         }
 
 
@@ -401,14 +372,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
             }, DeliveryMethod.ReliableOrdered);
             PlayerConnectedEvent?.Invoke(player);
-            MessageForm.Updt();
         }
-
-        public void StopDedicatedInstance()
-        {
-            _ = Stop(CancellationToken.None);
-        }
-
 
 
         public override void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
@@ -437,10 +401,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                 ReleaseConnectionId(player.ConnectionId);
 
                 PlayerDisconnectedEvent?.Invoke(player);
-                MessageForm.Updt();
             }
 
-            if (_playerRegistry.Players.Count == 0 && !Configuration.Secret.Contains("SpecialServer"))
+            if (_playerRegistry.Players.Count == 0)
                 _ = Stop(CancellationToken.None);
             else
             {
