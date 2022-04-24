@@ -101,7 +101,6 @@ namespace WinFormsLibrary
                     GameState.Text = "NAN";
                     Countdown.Text = "NAN";
                     ConnectionIDCount.Text = "ConnectionID count: ";
-                    AllMeetRequirementsLabel.Text = "NAN";
 
                     SongSelectionModeBox.Text = "NAN";
                     GameplayServerControlSettingBox.Text = "NAN";

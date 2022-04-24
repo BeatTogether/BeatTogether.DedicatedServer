@@ -10,7 +10,7 @@ namespace BeatTogether.DedicatedServer.Kernel
     public interface IRequirementCheck
     {
         Task<bool> DoesPlayerMeetMapRequirements(Player player, BeatmapIdentifier? beatmap);
-        Task<bool> DoAllPlayersMeetRequirements(PlayerRegistry players, BeatmapIdentifier? beatmap)
+        Task<bool> DoAllPlayersMeetRequirements(PlayerRegistry players, BeatmapIdentifier? beatmap);
 
     }
 }

@@ -14,13 +14,6 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using WinFormsLibrary;
-using BeatSaverSharp;
-
-/*TODO
- * quest and pc have issues displaying 5 or more people in a lobby (some people dont seem to be sent the fact a another has joined)/ could be server side, make sure to send data to all players when a player joins
- * need to fix that chroma maps crash quest when pc selects them, they dont get stopped from loading (client side mods)
- * Make sure that clients get sent the countdown time on joining
- */
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {

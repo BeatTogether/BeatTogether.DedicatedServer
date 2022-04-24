@@ -37,10 +37,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     return false;
                 }
-                return true;
+                return true; //all requirements met
             }
             else
-                return false;
+                return false; //map not found
         }
 
         public async Task<bool> DoAllPlayersMeetRequirements(PlayerRegistry players, BeatmapIdentifier? beatmap)
