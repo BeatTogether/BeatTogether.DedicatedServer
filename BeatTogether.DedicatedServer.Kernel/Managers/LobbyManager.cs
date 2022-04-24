@@ -298,6 +298,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         CountdownReset();
                         return;
                     }
+                    else if(playersMeetRequirements == PlayersMeetRequirements.No)
+                    {
+                        NotStartable = true;  //will cancel the beatmap and reset everything
+                    }
                 }
 
                 // If manager/all players are no longer ready or not all players own beatmap(new player may have joined)
