@@ -14,10 +14,11 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using WinFormsLibrary;
+using BeatSaverSharp;
 
-/*
+/*TODO
  * quest and pc have issues displaying 5 or more people in a lobby (some people dont seem to be sent the fact a another has joined)/ could be server side, make sure to send data to all players when a player joins
- * need to fix that chroma maps crash quest when pc selects them, they dont get stopped from loading
+ * need to fix that chroma maps crash quest when pc selects them, they dont get stopped from loading (client side mods)
  * Make sure that clients get sent the countdown time on joining
  */
 
@@ -38,6 +39,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public BeatmapIdentifier? SelectedBeatmap { get; private set; }           //this is the beatmap that has been selected to be played
         public GameplayModifiers SelectedModifiers { get; private set; } = new(); //these are the modifiers that have been selected to be played
         public float CountdownEndTime { get; private set; }                       //the instance time that the level/beatmap should start at
+        public enum PlayersMeetRequirements : byte 
+        {
+            Waiting = 0,
+            No = 1,
+            Yes = 2
+        }
+        private PlayersMeetRequirements playersMeetRequirements = PlayersMeetRequirements.Waiting;
 
         private BeatmapIdentifier? _lastBeatmap;     //beatmap selected in the last lobby loop
         private bool _lastSpectatorState;            //if all players were spectating in the last lobby loop
@@ -45,11 +53,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private string _lastManagerId = null!;       //id of manager in the last lobby loop
         private CancellationTokenSource _stopCts = new();
 
+
+
         private readonly InstanceConfiguration _configuration;
         private readonly IDedicatedInstance _instance;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IGameplayManager _gameplayManager;
+        private readonly IRequirementCheck _requirementCheck;
         private readonly ILogger _logger = Log.ForContext<LobbyManager>();
 
         public LobbyManager(
@@ -57,7 +68,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             IDedicatedInstance instance,
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
-            IGameplayManager gameplayManager
+            IGameplayManager gameplayManager,
+            IRequirementCheck requirementCheck
             )
         {
             _configuration = configuration;
@@ -65,6 +77,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
             _gameplayManager = gameplayManager;
+            _requirementCheck = requirementCheck;
 
             _instance.StopEvent += Stop;
             Task.Run(() => UpdateLoop(_stopCts.Token)); // TODO: fuck this shit
@@ -266,9 +279,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             Modifiers = SelectedModifiers,
                             StartTime = CountdownEndTime
                         }, DeliveryMethod.ReliableOrdered);
+                        CheckPlayersHaveMapRequirements();
                         CountdownEndTime = -1;
                     }
-                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
+                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) && playersMeetRequirements == PlayersMeetRequirements.Yes)
                     {
                         // sends entitlements to players
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
@@ -302,7 +316,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         CountdownEndTime = _instance.RunTime + CountdownTimeEveryoneReady;
 
-                        //ok so do not send Cancel CountdownPacket to quest, will completely screw the countdown for some reason
+                        //ok so do not send Cancel CountdownPacket to quest, will completely screw the countdown for them and end up causing some fun bugs
                         /*
                         if (_instance.Configuration.ManagerId != "ziuMSceapEuNN7wRGQXrZg")
                         {
@@ -334,6 +348,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             CountdownEndTime = 0;
             SelectedBeatmap = null;
             SelectedModifiers = new();
+            playersMeetRequirements = PlayersMeetRequirements.Waiting;
         }
         private void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
@@ -409,5 +424,23 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             };
             return new GameplayModifiers();
 		}
+
+
+        private async void CheckPlayersHaveMapRequirements()
+        {
+            bool check =  await _requirementCheck.DoAllPlayersMeetRequirements(((PlayerRegistry)_playerRegistry), SelectedBeatmap);
+            if (check)
+                playersMeetRequirements = PlayersMeetRequirements.Yes;
+            else
+                playersMeetRequirements = PlayersMeetRequirements.No;
+        }
+
+
+
+
+
+
+
+
     }
 }

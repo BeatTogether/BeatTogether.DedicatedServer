@@ -1,5 +1,6 @@
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets;
@@ -44,6 +45,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILobbyManager _lobbyManager;
         private readonly ConcurrentQueue<byte> _releasedConnectionIds = new();
         private readonly ConcurrentQueue<int> _releasedSortIndices = new();
         private readonly ILogger _logger = Log.ForContext<DedicatedInstance>();
@@ -61,7 +63,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             LiteNetConfiguration liteNetConfiguration,
             LiteNetPacketRegistry registry,
             IServiceProvider serviceProvider,
-            IPacketLayer packetLayer)
+            IPacketLayer packetLayer,
+            ILobbyManager lobbyManager)
             : base (
                   new IPEndPoint(IPAddress.Any, configuration.Port),
                   liteNetConfiguration,
@@ -72,6 +75,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             Configuration = configuration;
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
+            _lobbyManager = lobbyManager;
         }
 
         #region Public Methods
@@ -145,7 +149,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             return Task.CompletedTask;
         }
 
-        public int GetNextSortIndex() //Sort index and ID will be identical untill the connectionID goes over 127 BECAUSE one is a byte. whyyyyy do we have both
+        public int GetNextSortIndex()
         {
             if (_releasedSortIndices.TryDequeue(out var sortIndex))
                 return sortIndex;
@@ -160,14 +164,15 @@ namespace BeatTogether.DedicatedServer.Kernel
             return _connectionIdCount;
         }
 
-        public byte GetNextConnectionId() //A max of 128 players huh
+        //TODO should probably code a hard limit of 128 players somewhere (unless anyone would like to change connectionID to an int)
+        public byte GetNextConnectionId() //A max of 128 players
         {
             if (_releasedConnectionIds.TryDequeue(out var connectionId))
-                return (byte)(connectionId % 127); //returns the first connectionID that is in the que of connectionID's that have left the server(and makes sure it will convert to a byte correctly)
-            var connectionIdCount = Interlocked.Increment(ref _connectionIdCount); //adds one to connectionIDcount IF there was no released ID avaliable
+                return (byte)(connectionId % 127);
+            var connectionIdCount = Interlocked.Increment(ref _connectionIdCount);
             if (connectionIdCount >= 127)//if the connectionIDcount is over 127 then return 0, and so any more players that join are gonna have lots of fun recieving packets and having crashes
                 return 0;
-            return (byte)connectionIdCount;//else just return the a new connectionID
+            return (byte)connectionIdCount;
         }
 
         public void ReleaseConnectionId(byte connectionId) =>
@@ -344,36 +349,37 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
 
 
-            IPlayerRegistry SendTo = _playerRegistry;
-            SendTo.RemovePlayer(player); //Changed doing an endpoint check for each player, to a .Remove player then send to eveyone in the sublist, instead of using connectionID
 
-            foreach (IPlayer p in SendTo.Players)
+            foreach (IPlayer p in _playerRegistry.Players)
             {
-                // Send all player connection data packets to new player
-                _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
+                if (p.Endpoint != player.Endpoint)
                 {
-                    RemoteConnectionId = p.ConnectionId,
-                    UserId = p.UserId,
-                    UserName = p.UserName,
-                    IsConnectionOwner = false
-                }, DeliveryMethod.ReliableOrdered);
-
-                // Send all player sort index packets to new player
-                if (p.SortIndex != -1)
-                    _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
+                    // Send all player connection data packets to new player
+                    _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
                     {
+                        RemoteConnectionId = p.ConnectionId,
                         UserId = p.UserId,
-                        SortIndex = p.SortIndex
+                        UserName = p.UserName,
+                        IsConnectionOwner = false
                     }, DeliveryMethod.ReliableOrdered);
 
-                // Send all player identity packets to new player
-                _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
-                {
-                    PlayerState = p.State,
-                    PlayerAvatar = p.Avatar,
-                    Random = new ByteArray { Data = p.Random },
-                    PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
-                }, DeliveryMethod.ReliableOrdered);
+                    // Send all player sort index packets to new player
+                    if (p.SortIndex != -1)
+                        _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
+                        {
+                            UserId = p.UserId,
+                            SortIndex = p.SortIndex
+                        }, DeliveryMethod.ReliableOrdered);
+
+                    // Send all player identity packets to new player
+                    _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
+                    {
+                        PlayerState = p.State,
+                        PlayerAvatar = p.Avatar,
+                        Random = new ByteArray { Data = p.Random },
+                        PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
+                    }, DeliveryMethod.ReliableOrdered);
+                }
             }
 
             // Disable start button if they are manager without selected song
@@ -398,6 +404,24 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }).ToList()
                 }
             }, DeliveryMethod.ReliableOrdered);
+
+            //Should handle sending players that join the countdown time, if the lobby is waiting for everyone to download the map then they get sent the map to download
+            if(_lobbyManager.CountdownEndTime != 0)
+            {
+                _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
+                {
+                    CountdownTime = _lobbyManager.CountdownEndTime
+                }, DeliveryMethod.ReliableOrdered);
+            }
+            else if(_lobbyManager.CountdownEndTime < 0)
+            {
+                _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                {
+                    Beatmap = _lobbyManager.SelectedBeatmap!,
+                    Modifiers = _lobbyManager.SelectedModifiers,
+                    StartTime = _lobbyManager.CountdownEndTime
+                }, DeliveryMethod.ReliableOrdered);
+            }
 
             PlayerConnectedEvent?.Invoke(player);
             MessageForm.Updt();

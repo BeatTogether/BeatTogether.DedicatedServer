@@ -80,9 +80,11 @@ namespace WinFormsLibrary
                     RunTime.Text = "Running for: " + selectedInstance.RunTime.ToString() + " Seconds";
                     GameState.Text = selectedInstance.State.ToString();
                     ConnectionIDCount.Text = "ConnectionID count: " + selectedInstance.GetConnectionIDcount();
-                    if (countdownendtime != 0)
+                    if (countdownendtime - selectedInstance.RunTime < 0)
+                        Countdown.Text = ("Players downloading/loading: " + (countdownendtime - selectedInstance.RunTime).ToString());
+                    else if (countdownendtime != 0)
                         Countdown.Text = (countdownendtime - selectedInstance.RunTime).ToString();
-                    else
+                    else 
                         Countdown.Text = ("Not counting down");
                     SongSelectionModeBox.Text = selectedInstance.Configuration.SongSelectionMode.ToString();
                     GameplayServerControlSettingBox.Text = selectedInstance.Configuration.GameplayServerControlSettings.ToString();

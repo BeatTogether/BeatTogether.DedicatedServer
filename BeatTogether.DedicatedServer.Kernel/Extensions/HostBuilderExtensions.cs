@@ -35,6 +35,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Extensions
                         .AddExisting<ConnectedMessageDispatcher, PacketDispatcher>()
                         .AddScoped<ILobbyManager, LobbyManager>()
                         .AddScoped<IGameplayManager, GameplayManager>()
+                        .AddScoped<IRequirementCheck, RequirementCheck>()
                         .AddAllPacketHandlersFromAssembly(typeof(PacketSource).Assembly)
                 );
     }

@@ -51,6 +51,9 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool FinishedLevel => State.Contains("finished_level");
         public bool InMenu => State.Contains("in_menu");
         public bool IsModded => State.Contains("modded");
+        public bool ME_Installed => State.Contains("ME_Installed");
+        public bool NE_Installed => State.Contains("NE_Installed");
+        public bool Chroma_Installed => State.Contains("Chroma_Installed");
 
         private const float _syncTimeOffset = 0.06f;
         private ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();
