@@ -205,12 +205,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     case SongSelectionMode.Vote:
                         CountingDown(SomePlayersReady, CountdownTimeSomeReady, NoPlayersReady, allPlayersOwnBeatmap, beatmap, modifiers);
                         break;
+                    /*
                     case SongSelectionMode.Random:
                         CountingDown(SomePlayersReady, CountdownTimeSomeReady, NoPlayersReady, allPlayersOwnBeatmap, beatmap, modifiers);
                         break;
                     case SongSelectionMode.RandomPlayerPicks:
                         CountingDown(SomePlayersReady, CountdownTimeSomeReady, NoPlayersReady, allPlayersOwnBeatmap, beatmap, modifiers);
                         break;
+                    */
                 }
             }
 
@@ -315,7 +317,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         CountdownEndTime = _instance.RunTime + CountdownTimeEveryoneReady;
 
-                        //ok so do not send Cancel CountdownPacket to quest, will completely screw the countdown for them and end up causing some fun bugs
+                        //This caused the countdown to stop working on quest
                         /*
                         if (_instance.Configuration.ManagerId != "ziuMSceapEuNN7wRGQXrZg")
                         {
@@ -380,7 +382,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     if (!voteDictionary.Any())
                         return null;
-                    voteDictionary.OrderByDescending(n => n.Value);       
+                    voteDictionary.OrderByDescending(n => n.Value);
                     return voteDictionary.First().Key;
 
                 case SongSelectionMode.RandomPlayerPicks: //Just realised this would do horrible things as it could end up setting a different map each instance loop... the countdown would just get canceled constantly as the selected map would just keep changing
