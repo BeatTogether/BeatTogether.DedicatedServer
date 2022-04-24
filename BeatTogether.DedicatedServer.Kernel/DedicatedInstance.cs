@@ -154,6 +154,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void ReleaseSortIndex(int sortIndex) =>
             _releasedSortIndices.Enqueue(sortIndex);
 
+        //TODO should probably code a hard limit of 128 players somewhere (unless anyone would like to change connectionID to an int)
         public byte GetNextConnectionId()
         {
             if (_releasedConnectionIds.TryDequeue(out var connectionId))
@@ -175,8 +176,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                 State = state
             }, DeliveryMethod.ReliableOrdered);
         }
-
-
+        public PlayerRegistry GetPlayerRegistry()
+        {
+            return (PlayerRegistry)_playerRegistry;
+        }
 
 
         #endregion
@@ -312,6 +315,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SortIndex = 0
             }, DeliveryMethod.ReliableOrdered);
 
+
+
             foreach (IPlayer p in _playerRegistry.Players)
             {
                 if (p.ConnectionId != player.ConnectionId)
@@ -366,9 +371,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }).ToList()
                 }
             }, DeliveryMethod.ReliableOrdered);
-
             PlayerConnectedEvent?.Invoke(player);
         }
+
 
         public override void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
         {
