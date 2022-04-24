@@ -22,19 +22,13 @@ namespace WinFormsLibrary
 {
     public partial class DedicatedServerViews : Form
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly IMatchmakingService _nodeService;
         private readonly IInstanceRegistry _instanceRegistry;
-        private readonly IInstanceFactory instanceFactory;
         private readonly IAutobus _autobus;
 
-        public DedicatedServerViews(IServiceProvider _serviceProvider, IInstanceRegistry _instanceRegistry, IMatchmakingService _nodeService, IInstanceFactory instanceFactory, IAutobus _autobus)
+        public DedicatedServerViews(IInstanceRegistry _instanceRegistry, IAutobus _autobus)
         {
             InitializeComponent();
-            this._serviceProvider = _serviceProvider;
             this._instanceRegistry = _instanceRegistry;
-            this._nodeService = _nodeService;
-            this.instanceFactory = instanceFactory;
             this._autobus = _autobus;
             DedicatedServerInstances.DataSource = ((InstanceRegistry)_instanceRegistry)._instances.ToList();
             Messenger.Default.Register<UpdateForm>(this, (action) => FormRecieveMsg());

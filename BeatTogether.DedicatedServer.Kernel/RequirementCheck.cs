@@ -73,7 +73,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             else
             {
-                return false; //if map was not found on beatsaver
+                return false; //if map was not found on beatsaver This would make base game un-playable
             }
         }
     }

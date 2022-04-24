@@ -331,7 +331,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SortIndex = player.SortIndex
             }, DeliveryMethod.ReliableOrdered);
 
-            // Send host player to new player                                    //TODO test without this
+            // Send host player to new player
             _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
             {
                 RemoteConnectionId = 0,
@@ -340,7 +340,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 IsConnectionOwner = true
             }, DeliveryMethod.ReliableOrdered);
 
-            // Send host player sort order to new player                        //TODO test without this
+            // Send host player sort order to new player
             _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
             {
                 UserId = Configuration.Secret,
