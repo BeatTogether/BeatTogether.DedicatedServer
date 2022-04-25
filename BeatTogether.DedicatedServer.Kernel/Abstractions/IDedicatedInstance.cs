@@ -21,7 +21,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 		string UserName { get; }
         MultiplayerGameState State { get; }
 
-        Task Start(CancellationToken cancellationToken = default);
+		Task Start(CancellationToken cancellationToken = default);
         Task Stop(CancellationToken cancellationToken = default);
 
         int GetNextSortIndex();

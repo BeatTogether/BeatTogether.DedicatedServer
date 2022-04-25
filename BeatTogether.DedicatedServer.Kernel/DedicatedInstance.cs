@@ -176,6 +176,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 State = state
             }, DeliveryMethod.ReliableOrdered);
         }
+
         #endregion
 
         #region LiteNetServer
@@ -309,8 +310,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SortIndex = 0
             }, DeliveryMethod.ReliableOrdered);
 
-
-
             foreach (IPlayer p in _playerRegistry.Players)
             {
                 if (p.ConnectionId != player.ConnectionId)
@@ -365,9 +364,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }).ToList()
                 }
             }, DeliveryMethod.ReliableOrdered);
+
             PlayerConnectedEvent?.Invoke(player);
         }
-
 
         public override void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
         {
