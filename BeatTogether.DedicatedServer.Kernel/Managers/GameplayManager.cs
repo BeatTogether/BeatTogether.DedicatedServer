@@ -130,24 +130,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
             songReadyCts.CancelAfter((int)(SongLoadTimeLimit * 1000)); //after 10 sec cancel, should find a way to end gameplay if this is cancled
             await Task.WhenAll(songReadyTasks);
-            Console.WriteLine("Song ready, ManagerID: " + _instance.Configuration.ManagerId);
 
             // If no players are actually playing, or not all players are not in the lobby(if at least one player is then true)
             if (loadingPlayers.All(player => !player.InGameplay) || !loadingPlayers.All(player => !player.InLobby))
             {
                 _requestReturnToMenuCts.Cancel(); //this will cancel the gameplay if someone is in the lobby
             }
-            /*                                    //this will continue the gameplay if someone is in the lobby still
-            foreach (var p in loadingPlayers) //stops the instance from soft-locking
-            {
-                if (p.InLobby)
-                {
-                    Console.WriteLine(p.UserName + " is in lobby still when game should be starting");
-                    HandlePlayerDisconnected(p); //makes sure that the player in the lobby does not cause the instance to hang
-                }
-            }
-            */
-            Console.WriteLine("Starting beatmap in lobby: " + _instance.Configuration.SongSelectionMode + ", LobbySize: " + _instance.Configuration.MaxPlayerCount + ", ManagerID: " + _instance.Configuration.ManagerId);
             
             // Start song and wait for finish
             State = GameplayManagerState.Gameplay;

@@ -222,8 +222,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             StartTime = CountdownEndTime
                         }, DeliveryMethod.ReliableOrdered);
                     }
-
-                    Console.WriteLine("starting countdown, Countdown at" + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining, ManagerID: " + _instance.Configuration.ManagerId);
                 }
             }
 
@@ -250,7 +248,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // Starts beatmap
-                        Console.WriteLine("Starting GameplayManager, ManagerID: " + _instance.Configuration.ManagerId);
                         _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
                         // Reset and stop counting down
                         CountdownReset();
@@ -295,8 +292,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             Modifiers = SelectedModifiers,
                             StartTime = CountdownEndTime
                         }, DeliveryMethod.ReliableOrdered);
-                        Console.WriteLine("Shortened map start time, Countdown at: " + (CountdownEndTime - _instance.RunTime).ToString() + " Seconds remaining, ManagerID: " + _instance.Configuration.ManagerId);
-
                     }
                 }
             }

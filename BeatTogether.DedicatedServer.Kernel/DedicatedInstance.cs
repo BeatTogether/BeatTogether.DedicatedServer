@@ -176,9 +176,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
         }
 
-
-
-
         #endregion
 
         #region LiteNetServer
