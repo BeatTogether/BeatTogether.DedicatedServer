@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-	  <PackageReference Include="Autobus.Abstractions" Version="0.1.5" />
+    <PackageReference Include="Autobus.Abstractions" Version="0.1.5" />
   </ItemGroup>
 
 </Project>
