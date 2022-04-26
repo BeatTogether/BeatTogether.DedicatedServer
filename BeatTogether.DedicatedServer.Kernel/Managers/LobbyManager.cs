@@ -105,7 +105,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 Modifiers = _gameplayManager.CurrentModifiers!,
                                 StartTime = CountdownEndTime
                             }, DeliveryMethod.ReliableOrdered);
-                            _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
+                            _packetDispatcher.SendToPlayer(p, new SetPlayersMissingEntitlementsToLevelPacket
                             {
                                 PlayersWithoutEntitlements = _playerRegistry.Players
                                     .Where(p => p.GetEntitlement(_gameplayManager.CurrentBeatmap!.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.NotDownloaded)
