@@ -154,6 +154,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void ReleaseSortIndex(int sortIndex) =>
             _releasedSortIndices.Enqueue(sortIndex);
 
+        //TODO should probably code a hard limit of 128 players somewhere (unless anyone would like to change connectionID to an int)
         public byte GetNextConnectionId()
         {
             if (_releasedConnectionIds.TryDequeue(out var connectionId))
@@ -220,7 +221,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return false;
             }
 
-            if (_playerRegistry.Players.Count == Configuration.MaxPlayerCount)
+            if (_playerRegistry.Players.Count >= Configuration.MaxPlayerCount)
                 return false;
 
             var connectionId = GetNextConnectionId();
@@ -401,33 +402,34 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 // Set new manager if manager left
                 if (Configuration.ManagerId == "" && Configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
-                    Configuration.ManagerId = _playerRegistry.Players.Last().UserId;
-
-                var manager = _playerRegistry.GetPlayer(Configuration.ManagerId);
-
-                // Disable start button if they are manager without selected song
-                if (manager.BeatmapIdentifier == null)
-                    _packetDispatcher.SendToPlayer(manager, new SetIsStartButtonEnabledPacket
-                    {
-                        Reason = CannotStartGameReason.NoSongSelected
-                    }, DeliveryMethod.ReliableOrdered);
-
-                // Update permissions
-                _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
                 {
-                    PermissionConfiguration = new PlayersPermissionConfiguration
-                    {
-                        PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
+                    Configuration.ManagerId = _playerRegistry.Players.Last().UserId;
+                    var manager = _playerRegistry.GetPlayer(Configuration.ManagerId);
+
+                    // Disable start button if they are manager without selected song
+                    if (manager.BeatmapIdentifier == null)
+                        _packetDispatcher.SendToPlayer(manager, new SetIsStartButtonEnabledPacket
                         {
-                            UserId = x.UserId,
-                            IsServerOwner = x.IsManager,
-                            HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
-                            HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
-                            HasKickVotePermission = x.CanKickVote,
-                            HasInvitePermission = x.CanInvite
-                        }).ToList()
-                    }
-                }, DeliveryMethod.ReliableOrdered);
+                            Reason = CannotStartGameReason.NoSongSelected
+                        }, DeliveryMethod.ReliableOrdered);
+
+                    // Update permissions
+                    _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
+                    {
+                        PermissionConfiguration = new PlayersPermissionConfiguration
+                        {
+                            PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
+                            {
+                                UserId = x.UserId,
+                                IsServerOwner = x.IsManager,
+                                HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
+                                HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
+                                HasKickVotePermission = x.CanKickVote,
+                                HasInvitePermission = x.CanInvite
+                            }).ToList()
+                        }
+                    }, DeliveryMethod.ReliableOrdered);
+                } 
             }
         }
 

@@ -4,7 +4,7 @@
     {
         Vote = 0,
         Random = 1,
-        OwnerPicks = 2,
+        ManagerPicks = 2,
         RandomPlayerPicks = 3
     }
 }
