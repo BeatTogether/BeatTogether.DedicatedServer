@@ -21,21 +21,21 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private const float CountdownTimeSomeReady = 30.0f;
         private const float CountdownTimeManagerReady = 15.0f;
         private const float CountdownTimeEveryoneReady = 5.0f;
-        private const float CountdownAfterGameplayCooldown = 5f;
+        //private const float CountdownAfterGameplayCooldown = 5f;
 
         public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel); //if all players are ready OR spectating
         public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady);                           //if *any* are ready
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel); //players not ready or spectating 
         public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel);         //if all spectating
 
-        public BeatmapIdentifier? SelectedBeatmap { get; private set; }           
-        public GameplayModifiers SelectedModifiers { get; private set; } = new(); 
-        public float CountdownEndTime { get; private set; }   
+        public BeatmapIdentifier? SelectedBeatmap { get; private set; }
+        public GameplayModifiers SelectedModifiers { get; private set; } = new();
+        public float CountdownEndTime { get; private set; }
 
-        private BeatmapIdentifier? _lastBeatmap;     
-        private bool _lastSpectatorState;            
+        private BeatmapIdentifier? _lastBeatmap;
+        private bool _lastSpectatorState;
         private bool _lastEntitlementState;          
-        private string _lastManagerId = null!;       
+        private string _lastManagerId = null!;
         private CancellationTokenSource _stopCts = new();
 
 
@@ -91,13 +91,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_instance.State != MultiplayerGameState.Lobby)
             {
-
                 //Sends players stuck in the lobby to spectate the ongoing game, prevents a rare quest issue with loss of tracking causing the game to pause on map start
                 if (_playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game && _gameplayManager.State == GameplayManagerState.Gameplay)
                 {
-                    foreach (var p in _playerRegistry.Players)
+                    var InLobby = _playerRegistry.Players.FindAll(p => p.InLobby);
+                    foreach (var p in InLobby)
                     {
-                        if (p.InLobby && p.WasActiveAtLevelStart && _gameplayManager.CurrentBeatmap != null)
+                        if (p.InLobby && _gameplayManager.CurrentBeatmap != null)
                         {
                             _packetDispatcher.SendToPlayer(p, new StartLevelPacket
                             {
@@ -116,11 +116,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             packet.Results.LevelCompletionResults = new LevelCompletionResults();
                             packet.Results.PlayerLevelEndReason = MultiplayerPlayerLevelEndReason.StartupFailed;
                             _gameplayManager.HandleLevelFinished(p, packet);
-
                         }
                     }
                 }
-                
+
                 return;
             }
 
@@ -288,20 +287,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         CountdownEndTime = _instance.RunTime + CountdownTimeEveryoneReady;
 
-                        //This caused the countdown to stop working on quest
-                        /*
-                        if (_instance.Configuration.ManagerId != "ziuMSceapEuNN7wRGQXrZg")
-                        {
-                            // Cancel countdown (bc of stupid client garbage) 
-                            _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered); //Not in old quickplay logic
-
-                            _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket                                 //Not in old quickplay logic
-                            {
-                                CountdownTime = CountdownEndTime
-                            }, DeliveryMethod.ReliableOrdered);
-                        }
-                        */
-
                         // Set start time & start level time
                         _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                         {
@@ -320,6 +305,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             SelectedBeatmap = null;
             SelectedModifiers = new();
         }
+
         private void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
             if (SelectedBeatmap != beatmap)

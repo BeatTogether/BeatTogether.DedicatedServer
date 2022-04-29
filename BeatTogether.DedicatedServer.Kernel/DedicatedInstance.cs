@@ -429,7 +429,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                             }).ToList()
                         }
                     }, DeliveryMethod.ReliableOrdered);
-                } 
+                }
             }
         }
 
