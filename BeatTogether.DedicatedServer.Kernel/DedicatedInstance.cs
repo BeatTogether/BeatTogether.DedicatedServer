@@ -339,6 +339,22 @@ namespace BeatTogether.DedicatedServer.Kernel
                         Random = new ByteArray { Data = p.Random },
                         PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
                     }, DeliveryMethod.ReliableOrdered);
+
+                    //TODO test this, send suggested beatmap and modifiers if not null
+                    if (p.BeatmapIdentifier != null)
+                    {
+                        _packetDispatcher.SendFromPlayerToPlayer(p, player, new SetRecommendedBeatmapPacket
+                        {
+                            BeatmapIdentifier = p.BeatmapIdentifier,
+                        }, DeliveryMethod.ReliableOrdered);
+                    }
+                    if(p.Modifiers != null)
+                    {
+                        _packetDispatcher.SendFromPlayerToPlayer(p, player, new SetRecommendedModifiersPacket
+                        {
+                            Modifiers = p.Modifiers,
+                        }, DeliveryMethod.ReliableOrdered);
+                    }
                 }
             }
 
