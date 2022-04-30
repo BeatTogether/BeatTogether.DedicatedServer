@@ -139,7 +139,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
 
-            await Task.WhenAll(levelFinishedTasks);
+            await Task.WhenAll(levelFinishedTasks); //will only freeze lobby if a player does not tell the server they finished the map, and if they stay in the game
             State = GameplayManagerState.Results;
 
             // Wait at results screen if anyone cleared

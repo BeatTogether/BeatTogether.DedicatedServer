@@ -40,7 +40,7 @@ namespace BeatTogether.DedicatedServer.Node
             instanceConfig.Port = (int)port!;
             instanceConfig.Secret = secret;
             instanceConfig.ManagerId = managerId;
-            instanceConfig.MaxPlayerCount = config.MaxPlayerCount;
+            instanceConfig.MaxPlayerCount = Math.Min(config.MaxPlayerCount,127); //max size of 127
             instanceConfig.DiscoveryPolicy = (DiscoveryPolicy)config.DiscoveryPolicy;
             instanceConfig.InvitePolicy = (InvitePolicy)config.InvitePolicy;
             instanceConfig.GameplayServerMode = (GameplayServerMode)config.GameplayServerMode;

@@ -1,5 +1,6 @@
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets;
@@ -35,6 +36,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => Endpoint.Port;
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
+
+        public BeatmapIdentifier? SelectedBeatmap { get; private set; }
+        public GameplayModifiers SelectedModifiers { get; private set; } = new();
+        public CountdownState CountDownState { get; private set; } = CountdownState.NotCountingDown;
+        public float CountdownEndTime { get; private set; } = 0;
 
         public event Action StartEvent = null!;
         public event Action StopEvent = null!;
@@ -154,7 +160,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void ReleaseSortIndex(int sortIndex) =>
             _releasedSortIndices.Enqueue(sortIndex);
 
-        //TODO should probably code a hard limit of 128 players somewhere (unless anyone would like to change connectionID to an int)
         public byte GetNextConnectionId()
         {
             if (_releasedConnectionIds.TryDequeue(out var connectionId))
@@ -175,6 +180,78 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 State = state
             }, DeliveryMethod.ReliableOrdered);
+        }
+
+        public void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
+        {
+            if (SelectedBeatmap != beatmap)
+            {
+                SelectedBeatmap = beatmap;
+            }
+            if (SelectedModifiers != modifiers)
+            {
+                SelectedModifiers = modifiers;
+            }
+        }
+
+        public void SetCountdown(CountdownState countdownState, float countdown = 0)
+        {
+            CountDownState = countdownState;
+            switch (CountDownState)
+            {
+                case CountdownState.NotCountingDown:
+                    CountdownEndTime = 0;
+                    SelectedBeatmap = null;
+                    SelectedModifiers = new();
+                    break;
+                case CountdownState.CountingDown:
+                    if (countdown == 0)
+                        countdown = 30f;
+                    CountdownEndTime = RunTime + countdown;
+                    _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
+                    {
+                        CountdownTime = CountdownEndTime
+                    }, DeliveryMethod.ReliableOrdered);
+                    break;
+                case CountdownState.StartBeatmapCountdown:
+                    if (countdown == 0)
+                        countdown = 5f;
+                    CountdownEndTime = RunTime + countdown;
+                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                    {
+                        Beatmap = SelectedBeatmap!,
+                        Modifiers = SelectedModifiers,
+                        StartTime = CountdownEndTime
+                    }, DeliveryMethod.ReliableOrdered);
+                    break;
+                case CountdownState.WaitingForEntitlement:
+                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                    {
+                        Beatmap = SelectedBeatmap!,
+                        Modifiers = SelectedModifiers,
+                        StartTime = CountdownEndTime
+                    }, DeliveryMethod.ReliableOrdered);
+                    CountdownEndTime = -1;
+                    break;
+            }
+        }
+
+        public void CancelCountdown()
+        {
+            switch (CountDownState)
+            {
+                case CountdownState.CountingDown:
+                    _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
+                    break;
+                case CountdownState.StartBeatmapCountdown or CountdownState.WaitingForEntitlement:
+                    _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+                    break;
+                default:
+                    _logger.Information("Canceling countdown when there is no countdown to cancel");
+                    Console.WriteLine("Canceling countdown when there is no countdown to cancel");
+                    break;
+            }
+            SetCountdown(CountdownState.NotCountingDown);
         }
 
         #endregion
@@ -381,6 +458,22 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
             }, DeliveryMethod.ReliableOrdered);
 
+            if(CountDownState == CountdownState.CountingDown)
+            {
+                _packetDispatcher.SendToPlayer(player, new SetCountdownEndTimePacket
+                {
+                    CountdownTime = CountdownEndTime
+                }, DeliveryMethod.ReliableOrdered);
+            }
+            else if(CountDownState == CountdownState.StartBeatmapCountdown || CountDownState == CountdownState.WaitingForEntitlement)
+            {
+                _packetDispatcher.SendToPlayer(player, new StartLevelPacket
+                {
+                    Beatmap = SelectedBeatmap!,
+                    Modifiers = SelectedModifiers,
+                    StartTime = CountdownEndTime
+                }, DeliveryMethod.ReliableOrdered);
+            }
             PlayerConnectedEvent?.Invoke(player);
         }
 
