@@ -46,11 +46,11 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             }
             else
 			{
-                if (_lobbyManager.SelectedBeatmap != null)
+                if (_instance.SelectedBeatmap != null)
                 {
                     _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
                     {
-                        LevelId = _lobbyManager.SelectedBeatmap.LevelId
+                        LevelId = _instance.SelectedBeatmap.LevelId
                     }, DeliveryMethod.ReliableOrdered);
                 }
                 else
