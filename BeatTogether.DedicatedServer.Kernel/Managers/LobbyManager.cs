@@ -14,6 +14,15 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
+/*Lobby manager code
+ * Contains the logic code for
+ * - different game modes
+ * - setting the beatmap
+ * - setting the modifiers
+ * - managing the countdown
+ * - checking player entitlements
+ * - when to start gameplay
+ */
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
     public sealed class LobbyManager : ILobbyManager, IDisposable
@@ -195,7 +204,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _lastSpectatorState = AllPlayersSpectating;
             _lastBeatmap = _instance.SelectedBeatmap;
         }
-
 
         private void CountingDown(bool isReady, float CountDownTime, bool NotStartable, bool allPlayersOwnBeatmap)
         {

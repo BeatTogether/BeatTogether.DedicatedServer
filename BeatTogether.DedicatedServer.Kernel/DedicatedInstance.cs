@@ -19,6 +19,14 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
+/*Dedicated instance
+ * Handles whether a player should be allowed to connect
+ * Handles when a player connects
+ * Handles when a player disconnects
+ * sets new instance managers
+ * sends countdown, beatmap, and modifiers to players when needed
+ */
+
 namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class DedicatedInstance : LiteNetServer, IDedicatedInstance

@@ -12,6 +12,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+/*Gameplay manager code
+ * Waits for players to have loaded the beatmap and be ready
+ * Tells clients when to start beatmap
+ * Waits for clients to finish before setting the dedicated server back to Lobby state
+ * Handles when a client leaves gameplay mode
+ */
+
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
     public sealed class GameplayManager : IGameplayManager, IDisposable
@@ -50,12 +57,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
 
-            _instance.PlayerDisconnectedEvent += HandlePlayerDisconnected;
+            _instance.PlayerDisconnectedEvent += HandlePlayerLeaveGameplay;
         }
 
         public void Dispose()
         {
-            _instance.PlayerDisconnectedEvent -= HandlePlayerDisconnected;
+            _instance.PlayerDisconnectedEvent -= HandlePlayerLeaveGameplay;
         }
 
         public async void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
@@ -76,12 +83,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             State = GameplayManagerState.SceneLoad;
 
-            var loadingPlayers = _playerRegistry.Players; // During scene and song, only wait for players that were already connected
+            var loadingPlayers = _playerRegistry.Players; // Should only wait for players that were already connected
 
             // Create level finished tasks (players may send these at any time during gameplay)
             var levelFinishedCts = new CancellationTokenSource();
             var linkedLevelFinishedCts = CancellationTokenSource.CreateLinkedTokenSource(levelFinishedCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task> levelFinishedTasks = _playerRegistry.Players.Select(p =>
+            IEnumerable<Task> levelFinishedTasks = loadingPlayers.Select(p =>
             {
                 var task = _levelFinishedTcs.GetOrAdd(p.UserId, _ => new());
                 linkedLevelFinishedCts.Token.Register(() => task.TrySetResult());
@@ -171,7 +178,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_sceneReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
                 return;
             _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
-
             if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayerDidConnectLatePacket
                 {
@@ -186,7 +192,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_instance.State != MultiplayerGameState.Game)
             {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-                HandlePlayerDisconnected(player);//Added this incase this is why instance stops
+                HandlePlayerLeaveGameplay(player);
             }
             PlayerSceneReady(player);
         }
@@ -203,7 +209,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_instance.State != MultiplayerGameState.Game)
             {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-                HandlePlayerDisconnected(player);//Added this incase this is why instance stops
+                HandlePlayerLeaveGameplay(player);
             }
             PlayerSongReady(player);
         }
@@ -219,7 +225,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public void SignalRequestReturnToMenu()
             => _requestReturnToMenuCts?.Cancel();
 
-        private void HandlePlayerDisconnected(IPlayer player)
+        //will set players tasks as done if they leave gameplay due to disconnect or returning to the menu
+        private void HandlePlayerLeaveGameplay(IPlayer player)
         {
             PlayerFinishLevel(player);
             PlayerSceneReady(player);
@@ -228,21 +235,27 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private void PlayerFinishLevel(IPlayer player)
         {
-            var levelFinished = _levelFinishedTcs.GetOrAdd(player.UserId, _ => new());
-            if (!levelFinished.Task.IsCompleted)
-                levelFinished.SetResult();
+            //var levelFinished = _levelFinishedTcs.GetOrAdd(player.UserId, _ => new());
+            //if (!levelFinished.Task.IsCompleted)
+            //    levelFinished.SetResult();
+            if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)     //TODO test this, hopefully should now instead of adding a new value if done on a plyer who was not there before, should only do it for starting players
+                tcs.SetResult();
         }
         private void PlayerSceneReady(IPlayer player)
         {
-            var sceneReady = _sceneReadyTcs.GetOrAdd(player.UserId, _ => new());
-            if (!sceneReady.Task.IsCompleted)
-                sceneReady.SetResult();
+            //var sceneReady = _sceneReadyTcs.GetOrAdd(player.UserId, _ => new());
+            //if (!sceneReady.Task.IsCompleted)
+            //    sceneReady.SetResult();
+            if (_sceneReadyTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)
+                tcs.SetResult();
         }
         private void PlayerSongReady(IPlayer player)
         {
-            var songReady = _songReadyTcs.GetOrAdd(player.UserId, _ => new());
-            if (!songReady.Task.IsCompleted)
-                songReady.SetResult();
+            //var songReady = _songReadyTcs.GetOrAdd(player.UserId, _ => new());
+            //if (!songReady.Task.IsCompleted)
+            //    songReady.SetResult();
+            if (_songReadyTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)
+                tcs.SetResult();
         }
     }
 }
