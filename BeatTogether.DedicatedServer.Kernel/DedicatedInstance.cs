@@ -417,20 +417,23 @@ namespace BeatTogether.DedicatedServer.Kernel
                         PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
                     }, DeliveryMethod.ReliableOrdered);
 
-                    //TODO test this, send suggested beatmap and modifiers if not null
+                    //TODO test this, send suggested beatmap and modifiers if not null (SHOULD BE DONE CLIENT SIDE ANYWAY)
                     if (p.BeatmapIdentifier != null)
                     {
-                        _packetDispatcher.SendFromPlayerToPlayer(p, player, new SetRecommendedBeatmapPacket
-                        {
-                            BeatmapIdentifier = p.BeatmapIdentifier,
-                        }, DeliveryMethod.ReliableOrdered);
+                        //should send a packet to p, from the new player, to get there reccommended beatmap.
+                        _packetDispatcher.SendFromPlayerToPlayer(player, p, new GetRecommendedBeatmapPacket(), DeliveryMethod.ReliableOrdered);
+                        //_packetDispatcher.SendFromPlayerToPlayer(p, player, new SetRecommendedBeatmapPacket
+                        //{
+                        //    BeatmapIdentifier = p.BeatmapIdentifier,
+                        //}, DeliveryMethod.ReliableOrdered);
                     }
                     if(p.Modifiers != null)
                     {
-                        _packetDispatcher.SendFromPlayerToPlayer(p, player, new SetRecommendedModifiersPacket
-                        {
-                            Modifiers = p.Modifiers,
-                        }, DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendFromPlayerToPlayer(player, p, new GetRecommendedModifiersPacket(), DeliveryMethod.ReliableOrdered);
+                        //_packetDispatcher.SendFromPlayerToPlayer(p, player, new SetRecommendedModifiersPacket
+                        //{
+                        //    Modifiers = p.Modifiers,
+                        //}, DeliveryMethod.ReliableOrdered);
                     }
                 }
             }
@@ -458,22 +461,19 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
             }, DeliveryMethod.ReliableOrdered);
 
+            //sends countdown to player that has joined
             if(CountDownState == CountdownState.CountingDown)
-            {
                 _packetDispatcher.SendToPlayer(player, new SetCountdownEndTimePacket
                 {
                     CountdownTime = CountdownEndTime
                 }, DeliveryMethod.ReliableOrdered);
-            }
             else if(CountDownState == CountdownState.StartBeatmapCountdown || CountDownState == CountdownState.WaitingForEntitlement)
-            {
                 _packetDispatcher.SendToPlayer(player, new StartLevelPacket
                 {
                     Beatmap = SelectedBeatmap!,
                     Modifiers = SelectedModifiers,
                     StartTime = CountdownEndTime
                 }, DeliveryMethod.ReliableOrdered);
-            }
             PlayerConnectedEvent?.Invoke(player);
         }
 
