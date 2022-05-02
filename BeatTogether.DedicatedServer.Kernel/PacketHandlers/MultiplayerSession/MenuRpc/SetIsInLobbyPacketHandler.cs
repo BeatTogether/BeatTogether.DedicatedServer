@@ -34,8 +34,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(SetIsInLobbyPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, InLobby={packet.IsInLobby})."
             );
-
-            if (_instance.State == MultiplayerGameState.Game && sender.InLobby == false && sender.InLobby == true && _playerRegistry.Players.TrueForAll(p => p.InLobby))
+            //TODO fix this.../test that my fix does not break the server
+            if (_instance.State == MultiplayerGameState.Game && packet.IsInLobby == false && sender.InLobby == true && _playerRegistry.Players.TrueForAll(p => p.InLobby))
                 _gameplayManager.SignalRequestReturnToMenu();
 
             if (packet.IsInLobby && !sender.InLobby)

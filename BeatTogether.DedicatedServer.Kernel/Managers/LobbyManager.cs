@@ -94,31 +94,31 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_instance.State != MultiplayerGameState.Lobby)
             {
                 //Sends players stuck in the lobby to spectate the ongoing game, prevents a rare quest issue with loss of tracking causing the game to pause on map start
-                if (_gameplayManager.State == GameplayManagerState.Gameplay && _playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game)
-                {   //TODO make this better
-                    var InLobby = _playerRegistry.Players.FindAll(p => p.InLobby);
-                    foreach (var p in InLobby)
+                if (_gameplayManager.State == GameplayManagerState.Gameplay && _playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null)
+                {
+                    foreach (var p in _playerRegistry.Players.FindAll(p => p.InLobby))
                     {
-                        if (p.InLobby && _gameplayManager.CurrentBeatmap != null)
+                        _packetDispatcher.SendToPlayer(p, new SetPlayersMissingEntitlementsToLevelPacket
                         {
-                            _packetDispatcher.SendToPlayer(p, new StartLevelPacket
+                            PlayersWithoutEntitlements = _playerRegistry.Players
+                                .Where(p => p.GetEntitlement(_gameplayManager.CurrentBeatmap!.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.NotDownloaded)
+                                .Select(p => p.UserId).ToList()
+                        }, DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToPlayer(p, new StartLevelPacket
+                        {
+                            Beatmap = _gameplayManager.CurrentBeatmap!,
+                            Modifiers = _gameplayManager.CurrentModifiers!,
+                            StartTime = _instance.RunTime
+                        }, DeliveryMethod.ReliableOrdered);
+                        _gameplayManager.HandleLevelFinished(p, new LevelFinishedPacket
+                        {
+                            Results = new MultiplayerLevelCompletionResults
                             {
-                                Beatmap = _gameplayManager.CurrentBeatmap!,
-                                Modifiers = _gameplayManager.CurrentModifiers!,
-                                StartTime = _instance.RunTime
-                            }, DeliveryMethod.ReliableOrdered);
-                            _packetDispatcher.SendToPlayer(p, new SetPlayersMissingEntitlementsToLevelPacket
-                            {
-                                PlayersWithoutEntitlements = _playerRegistry.Players
-                                    .Where(p => p.GetEntitlement(_gameplayManager.CurrentBeatmap!.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.NotDownloaded)
-                                    .Select(p => p.UserId).ToList()
-                            }, DeliveryMethod.ReliableOrdered);
-                            LevelFinishedPacket packet = new();
-                            packet.Results.PlayerLevelEndState = MultiplayerPlayerLevelEndState.NotStarted;
-                            packet.Results.LevelCompletionResults = new LevelCompletionResults();
-                            packet.Results.PlayerLevelEndReason = MultiplayerPlayerLevelEndReason.StartupFailed;
-                            _gameplayManager.HandleLevelFinished(p, packet);
-                        }
+                                PlayerLevelEndState = MultiplayerPlayerLevelEndState.NotStarted,
+                                LevelCompletionResults = new LevelCompletionResults(),
+                                PlayerLevelEndReason = MultiplayerPlayerLevelEndReason.StartupFailed
+                            }
+                        });
                     }
                 }
                 return;
