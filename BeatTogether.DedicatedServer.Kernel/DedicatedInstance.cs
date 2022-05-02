@@ -24,7 +24,6 @@ using System.Threading.Tasks;
  * Handles when a player connects
  * Handles when a player disconnects
  * sets new lobby managers
- * sends countdown and co to players
  */
 
 namespace BeatTogether.DedicatedServer.Kernel
@@ -44,11 +43,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => Endpoint.Port;
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
-
-        public BeatmapIdentifier? SelectedBeatmap { get; private set; }
-        public GameplayModifiers SelectedModifiers { get; private set; } = new();
-        public CountdownState CountDownState { get; private set; } = CountdownState.NotCountingDown;
-        public float CountdownEndTime { get; private set; } = 0;
 
         public event Action StartEvent = null!;
         public event Action StopEvent = null!;
@@ -190,80 +184,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
         }
 
-        public void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
-        {
-            if (SelectedBeatmap != beatmap)
-            {
-                SelectedBeatmap = beatmap;
-            }
-            if (SelectedModifiers != modifiers)
-            {
-                SelectedModifiers = modifiers;
-            }
-        }
-
-        // Sets countdown and beatmap how the client would expect it to
-        // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled
-        public void SetCountdown(CountdownState countdownState, float countdown = 0)
-        {
-            CountDownState = countdownState;
-            switch (CountDownState)
-            {
-                case CountdownState.NotCountingDown:
-                    CountdownEndTime = 0;
-                    SelectedBeatmap = null;
-                    SelectedModifiers = new();
-                    break;
-                case CountdownState.CountingDown:
-                    if (countdown == 0)
-                        countdown = 30f;
-                    CountdownEndTime = RunTime + countdown;
-                    _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
-                    {
-                        CountdownTime = CountdownEndTime
-                    }, DeliveryMethod.ReliableOrdered);
-                    break;
-                case CountdownState.StartBeatmapCountdown:
-                    if (countdown == 0)
-                        countdown = 5f;
-                    CountdownEndTime = RunTime + countdown;
-                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
-                    {
-                        Beatmap = SelectedBeatmap!,
-                        Modifiers = SelectedModifiers,
-                        StartTime = CountdownEndTime
-                    }, DeliveryMethod.ReliableOrdered);
-                    break;
-                case CountdownState.WaitingForEntitlement:
-                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
-                    {
-                        Beatmap = SelectedBeatmap!,
-                        Modifiers = SelectedModifiers,
-                        StartTime = CountdownEndTime
-                    }, DeliveryMethod.ReliableOrdered);
-                    CountdownEndTime = -1;
-                    break;
-            }
-        }
-
-        public void CancelCountdown()
-        {
-            switch (CountDownState)
-            {
-                case CountdownState.CountingDown:
-                    _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
-                    break;
-                case CountdownState.StartBeatmapCountdown or CountdownState.WaitingForEntitlement:
-                    _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
-                    break;
-                default:
-                    _logger.Information("Canceling countdown when there is no countdown to cancel");
-                    Console.WriteLine("Canceling countdown when there is no countdown to cancel");
-                    break;
-            }
-            SetCountdown(CountdownState.NotCountingDown);
-        }
-
         #endregion
 
         #region LiteNetServer
@@ -397,7 +317,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SortIndex = 0
             }, DeliveryMethod.ReliableOrdered);
 
-            foreach (IPlayer p in _playerRegistry.Players.SkipWhile(p => p.ConnectionId == player.ConnectionId))
+            foreach (IPlayer p in _playerRegistry.Players.Where(p => p.ConnectionId != player.ConnectionId))
             {
                 // Send all player connection data packets to new player
                 _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
@@ -448,21 +368,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }).ToList()
                 }
             }, DeliveryMethod.ReliableOrdered);
-
-            //sends countdown to player that has joined
-            if(CountDownState == CountdownState.CountingDown)
-                _packetDispatcher.SendToPlayer(player, new SetCountdownEndTimePacket
-                {
-                    CountdownTime = CountdownEndTime
-                }, DeliveryMethod.ReliableOrdered);
-            else if(CountDownState == CountdownState.StartBeatmapCountdown || CountDownState == CountdownState.WaitingForEntitlement)
-                _packetDispatcher.SendToPlayer(player, new StartLevelPacket
-                {
-                    Beatmap = SelectedBeatmap!,
-                    Modifiers = SelectedModifiers,
-                    StartTime = CountdownEndTime
-                }, DeliveryMethod.ReliableOrdered);
-            PlayerConnectedEvent?.Invoke(player);
         }
 
         public override void OnDisconnect(EndPoint endPoint, DisconnectReason reason)

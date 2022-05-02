@@ -22,6 +22,9 @@ using Serilog;
  * - managing the countdown
  * - checking player entitlements
  * - when to start gameplay
+ * 
+ * TODO Test countdown being sent correctly on player join
+ * 
  */
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
@@ -35,6 +38,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady);                           //if *any* are ready
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel); //players not ready or spectating 
         public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel);         //if all spectating
+
+        public BeatmapIdentifier? SelectedBeatmap { get; private set; }
+        public GameplayModifiers SelectedModifiers { get; private set; } = new();
+        public CountdownState CountDownState { get; private set; } = CountdownState.NotCountingDown;
+        public float CountdownEndTime { get; private set; } = 0;
 
         private BeatmapIdentifier? _lastBeatmap;
         private bool _lastSpectatorState;
@@ -127,15 +135,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (!_playerRegistry.TryGetPlayer(_configuration.ManagerId, out var manager) && _configuration.SongSelectionMode == SongSelectionMode.ManagerPicks)
                 return;
             
-            _instance.UpdateBeatmap(GetSelectedBeatmap(), GetSelectedModifiers());
+            UpdateBeatmap(GetSelectedBeatmap(), GetSelectedModifiers());
 
-            if (_instance.SelectedBeatmap != null)
+            if (SelectedBeatmap != null)
             {
                 bool allPlayersOwnBeatmap = _playerRegistry.Players
-                    .All(p => p.GetEntitlement(_instance.SelectedBeatmap.LevelId) is EntitlementStatus.Ok or EntitlementStatus.NotDownloaded);
+                    .All(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.Ok or EntitlementStatus.NotDownloaded);
 
                 // If new beatmap selected or entitlement state changed or spectator state changed or manager changed
-                if (_lastBeatmap != _instance.SelectedBeatmap || _lastAllOwnMap != allPlayersOwnBeatmap || _lastSpectatorState != AllPlayersSpectating || _lastManagerId != _configuration.ManagerId)
+                if (_lastBeatmap != SelectedBeatmap || _lastAllOwnMap != allPlayersOwnBeatmap || _lastSpectatorState != AllPlayersSpectating || _lastManagerId != _configuration.ManagerId)
                 {
                     // If not all players have beatmap
                     if (!allPlayersOwnBeatmap)
@@ -144,7 +152,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
-                                .Where(p => p.GetEntitlement(_instance.SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned)
+                                .Where(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned)
                                 .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
 
@@ -192,7 +200,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }
             }
             // If beatmap is null and it wasn't previously or manager changed
-            else if (_lastBeatmap != _instance.SelectedBeatmap || _lastManagerId != _configuration.ManagerId)
+            else if (_lastBeatmap != SelectedBeatmap || _lastManagerId != _configuration.ManagerId)
             {
                 // Cannot select song because no song is selected
                 _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
@@ -203,50 +211,125 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             _lastManagerId = _configuration.ManagerId;
             _lastSpectatorState = AllPlayersSpectating;
-            _lastBeatmap = _instance.SelectedBeatmap;
+            _lastBeatmap = SelectedBeatmap;
         }
 
         private void CountingDown(bool isReady, float CountDownTime, bool NotStartable, bool allPlayersOwnBeatmap)
         {
             // If not already counting down
-            if (_instance.CountDownState == CountdownState.NotCountingDown)
+            if (CountDownState == CountdownState.NotCountingDown)
             {
                 if ((AllPlayersReady && !AllPlayersSpectating && allPlayersOwnBeatmap))
-                    _instance.SetCountdown(CountdownState.StartBeatmapCountdown);
+                    SetCountdown(CountdownState.StartBeatmapCountdown);
                 else if (isReady && allPlayersOwnBeatmap)
-                    _instance.SetCountdown(CountdownState.CountingDown, CountDownTime);
+                    SetCountdown(CountdownState.CountingDown, CountDownTime);
             }
             // If counting down
             else
             {
-                if (_instance.CountdownEndTime <= _instance.RunTime)
+                if (CountdownEndTime <= _instance.RunTime)
                 {
                     // If countdown just finished, send map then pause lobby untill all players have map downloaded
-                    if (_instance.CountDownState != CountdownState.WaitingForEntitlement)
-                        _instance.SetCountdown(CountdownState.WaitingForEntitlement);
-                    if (_playerRegistry.Players.All(p => p.GetEntitlement(_instance.SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
+                    if (CountDownState != CountdownState.WaitingForEntitlement)
+                        SetCountdown(CountdownState.WaitingForEntitlement);
+                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // sends entitlements to players
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
-                                .Where(p => p.GetEntitlement(_instance.SelectedBeatmap!.LevelId) is EntitlementStatus.NotOwned)
+                                .Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.NotOwned)
                                 .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
                         //starts beatmap
-                        _gameplayManager.StartSong(_instance.SelectedBeatmap!, _instance.SelectedModifiers, CancellationToken.None);
+                        _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
                         //stops countdown
-                        _instance.SetCountdown(CountdownState.NotCountingDown);
+                        SetCountdown(CountdownState.NotCountingDown);
                         return;
                     }
                 }
                 // If manager/all players are no longer ready or not all players own beatmap
                 if (NotStartable || !allPlayersOwnBeatmap)
-                    _instance.CancelCountdown();
-                else if (AllPlayersReady && (_instance.CountdownEndTime - _instance.RunTime) > CountdownTimeEveryoneReady)
-                    _instance.SetCountdown(CountdownState.StartBeatmapCountdown);
+                    CancelCountdown();
+                else if (AllPlayersReady && (CountdownEndTime - _instance.RunTime) > CountdownTimeEveryoneReady)
+                    SetCountdown(CountdownState.StartBeatmapCountdown);
             }
         }
+
+        public void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
+        {
+            if (SelectedBeatmap != beatmap)
+            {
+                SelectedBeatmap = beatmap;
+            }
+            if (SelectedModifiers != modifiers)
+            {
+                SelectedModifiers = modifiers;
+            }
+        }
+
+        // Sets countdown and beatmap how the client would expect it to
+        // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled
+        public void SetCountdown(CountdownState countdownState, float countdown = 0)
+        {
+            CountDownState = countdownState;
+            switch (CountDownState)
+            {
+                case CountdownState.NotCountingDown:
+                    CountdownEndTime = 0;
+                    SelectedBeatmap = null;
+                    SelectedModifiers = new();
+                    break;
+                case CountdownState.CountingDown:
+                    if (countdown == 0)
+                        countdown = 30f;
+                    CountdownEndTime = _instance.RunTime + countdown;
+                    _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
+                    {
+                        CountdownTime = CountdownEndTime
+                    }, DeliveryMethod.ReliableOrdered);
+                    break;
+                case CountdownState.StartBeatmapCountdown:
+                    if (countdown == 0)
+                        countdown = 5f;
+                    CountdownEndTime = _instance.RunTime + countdown;
+                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                    {
+                        Beatmap = SelectedBeatmap!,
+                        Modifiers = SelectedModifiers,
+                        StartTime = CountdownEndTime
+                    }, DeliveryMethod.ReliableOrdered);
+                    break;
+                case CountdownState.WaitingForEntitlement:
+                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                    {
+                        Beatmap = SelectedBeatmap!,
+                        Modifiers = SelectedModifiers,
+                        StartTime = CountdownEndTime
+                    }, DeliveryMethod.ReliableOrdered);
+                    CountdownEndTime = -1;
+                    break;
+            }
+        }
+
+        public void CancelCountdown()
+        {
+            switch (CountDownState)
+            {
+                case CountdownState.CountingDown:
+                    _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
+                    break;
+                case CountdownState.StartBeatmapCountdown or CountdownState.WaitingForEntitlement:
+                    _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+                    break;
+                default:
+                    _logger.Information("Canceling countdown when there is no countdown to cancel");
+                    Console.WriteLine("Canceling countdown when there is no countdown to cancel");
+                    break;
+            }
+            SetCountdown(CountdownState.NotCountingDown);
+        }
+
 
         public BeatmapIdentifier? GetSelectedBeatmap()
         {
@@ -266,9 +349,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         return null;
                     return voteDictionary.OrderByDescending(n => n.Value).First().Key;
                 case SongSelectionMode.RandomPlayerPicks:
-                    if (_instance.SelectedBeatmap == null)
+                    if (SelectedBeatmap == null)
                         return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier;
-                    return null;
+                    return SelectedBeatmap;
             };
             return null;
         }
