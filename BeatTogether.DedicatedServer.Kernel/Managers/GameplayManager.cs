@@ -67,7 +67,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public async void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
         {
-            
             if (State != GameplayManagerState.None)
             {
                 _requestReturnToMenuCts!.Cancel();
@@ -235,25 +234,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private void PlayerFinishLevel(IPlayer player)
         {
-            //var levelFinished = _levelFinishedTcs.GetOrAdd(player.UserId, _ => new());
-            //if (!levelFinished.Task.IsCompleted)
-            //    levelFinished.SetResult();
-            if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)     //TODO test this ending gameplay with someone spectating, ending gameplay with someone joining mid way, someone leaving mid way who was playing, and someone leaving mid way who was spectating and someone leaving mid way who joined mid way
+            if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)//TODO test this with mid join and mid leave
                 tcs.SetResult();
         }
         private void PlayerSceneReady(IPlayer player)
         {
-            //var sceneReady = _sceneReadyTcs.GetOrAdd(player.UserId, _ => new());
-            //if (!sceneReady.Task.IsCompleted)
-            //    sceneReady.SetResult();
             if (_sceneReadyTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)
                 tcs.SetResult();
         }
         private void PlayerSongReady(IPlayer player)
         {
-            //var songReady = _songReadyTcs.GetOrAdd(player.UserId, _ => new());
-            //if (!songReady.Task.IsCompleted)
-            //    songReady.SetResult();
             if (_songReadyTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)
                 tcs.SetResult();
         }

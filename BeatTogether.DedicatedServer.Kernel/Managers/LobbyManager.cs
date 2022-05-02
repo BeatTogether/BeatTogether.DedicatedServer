@@ -244,7 +244,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 if (NotStartable || !allPlayersOwnBeatmap)
                     _instance.CancelCountdown();
                 else if (AllPlayersReady && (_instance.CountdownEndTime - _instance.RunTime) > CountdownTimeEveryoneReady)
-                        _instance.SetCountdown(CountdownState.StartBeatmapCountdown);
+                    _instance.SetCountdown(CountdownState.StartBeatmapCountdown);
             }
         }
 
