@@ -64,7 +64,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _gameplayManager = gameplayManager;
 
             _instance.StopEvent += Stop;
-            Task.Run(() => UpdateLoop(_stopCts.Token)); // TODO: fuck this shit
+            Task.Run(() => UpdateLoop(_stopCts.Token));
         }
 
         public void Dispose()
@@ -95,7 +95,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 //Sends players stuck in the lobby to spectate the ongoing game, prevents a rare quest issue with loss of tracking causing the game to pause on map start
                 if (_gameplayManager.State == GameplayManagerState.Gameplay && _playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game)
-                {
+                {   //TODO make this better
                     var InLobby = _playerRegistry.Players.FindAll(p => p.InLobby);
                     foreach (var p in InLobby)
                     {
@@ -113,7 +113,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                     .Where(p => p.GetEntitlement(_gameplayManager.CurrentBeatmap!.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.NotDownloaded)
                                     .Select(p => p.UserId).ToList()
                             }, DeliveryMethod.ReliableOrdered);
-                            LevelFinishedPacket packet = new LevelFinishedPacket();
+                            LevelFinishedPacket packet = new();
                             packet.Results.PlayerLevelEndState = MultiplayerPlayerLevelEndState.NotStarted;
                             packet.Results.LevelCompletionResults = new LevelCompletionResults();
                             packet.Results.PlayerLevelEndReason = MultiplayerPlayerLevelEndReason.StartupFailed;
@@ -209,7 +209,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             // If not already counting down
             //_instance.UpdateBeatmap(beatmap, modifiers);
-            if (_instance.CountDownState != CountdownState.NotCountingDown)
+            if (_instance.CountDownState == CountdownState.NotCountingDown)
             {
                 if ((AllPlayersReady && !AllPlayersSpectating && allPlayersOwnBeatmap))
                     _instance.SetCountdown(CountdownState.StartBeatmapCountdown);
@@ -267,8 +267,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     if (!voteDictionary.Any())
                         return null;
-                    voteDictionary.OrderByDescending(n => n.Value);
-                    return voteDictionary.First().Key;
+                    return voteDictionary.OrderByDescending(n => n.Value).First().Key;
+                case SongSelectionMode.RandomPlayerPicks:
+                    if (_instance.SelectedBeatmap == null)
+                    {
+                        return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier;
+                    }
+                    return null;
+                     
             };
             return null;
         }
@@ -278,7 +284,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             switch(_configuration.SongSelectionMode)
 			{
                 case SongSelectionMode.ManagerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).Modifiers;
-                case SongSelectionMode.Vote:
+                case SongSelectionMode.Vote or SongSelectionMode.RandomPlayerPicks:
                     Dictionary<GameplayModifiers, int> voteDictionary = new();
                     foreach (IPlayer player in _playerRegistry.Players)
                     {
@@ -292,9 +298,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     if (!voteDictionary.Any())
                         return new GameplayModifiers();
-
-                    voteDictionary.OrderByDescending(n => n.Value);
-                    return voteDictionary.First().Key;
+                    return voteDictionary.OrderByDescending(n => n.Value).First().Key;
             };
             return new GameplayModifiers();
 		}

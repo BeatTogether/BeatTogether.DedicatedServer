@@ -238,7 +238,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             //var levelFinished = _levelFinishedTcs.GetOrAdd(player.UserId, _ => new());
             //if (!levelFinished.Task.IsCompleted)
             //    levelFinished.SetResult();
-            if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)     //TODO test this, hopefully should now instead of adding a new value if done on a plyer who was not there before, should only do it for starting players
+            if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)     //TODO test this ending gameplay with someone spectating, ending gameplay with someone joining mid way, someone leaving mid way who was playing, and someone leaving mid way who was spectating and someone leaving mid way who joined mid way
                 tcs.SetResult();
         }
         private void PlayerSceneReady(IPlayer player)

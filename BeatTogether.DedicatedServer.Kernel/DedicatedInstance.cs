@@ -23,8 +23,8 @@ using System.Threading.Tasks;
  * Handles whether a player should be allowed to connect
  * Handles when a player connects
  * Handles when a player disconnects
- * sets new instance managers
- * sends countdown, beatmap, and modifiers to players when needed
+ * sets new lobby managers
+ * sends countdown and co to players
  */
 
 namespace BeatTogether.DedicatedServer.Kernel
@@ -202,6 +202,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
         }
 
+        // Sets countdown and beatmap how the client would expect it to
+        // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() also informs the clients it has been canceled
         public void SetCountdown(CountdownState countdownState, float countdown = 0)
         {
             CountDownState = countdownState;
@@ -395,55 +397,33 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SortIndex = 0
             }, DeliveryMethod.ReliableOrdered);
 
-            foreach (IPlayer p in _playerRegistry.Players)
+            foreach (IPlayer p in _playerRegistry.Players.SkipWhile(p => p.ConnectionId == player.ConnectionId))
             {
-                if (p.ConnectionId != player.ConnectionId)
+                // Send all player connection data packets to new player
+                _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
                 {
-                    // Send all player connection data packets to new player
-                    _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
+                    RemoteConnectionId = p.ConnectionId,
+                    UserId = p.UserId,
+                    UserName = p.UserName,
+                    IsConnectionOwner = false
+                }, DeliveryMethod.ReliableOrdered);
+
+                // Send all player sort index packets to new player
+                if (p.SortIndex != -1)
+                    _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
                     {
-                        RemoteConnectionId = p.ConnectionId,
                         UserId = p.UserId,
-                        UserName = p.UserName,
-                        IsConnectionOwner = false
+                        SortIndex = p.SortIndex
                     }, DeliveryMethod.ReliableOrdered);
 
-                    // Send all player sort index packets to new player
-                    if (p.SortIndex != -1)
-                        _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
-                        {
-                            UserId = p.UserId,
-                            SortIndex = p.SortIndex
-                        }, DeliveryMethod.ReliableOrdered);
-
-                    // Send all player identity packets to new player
-                    _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
-                    {
-                        PlayerState = p.State,
-                        PlayerAvatar = p.Avatar,
-                        Random = new ByteArray { Data = p.Random },
-                        PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
-                    }, DeliveryMethod.ReliableOrdered);
-
-                    //TODO test this, send suggested beatmap and modifiers if not null (SHOULD BE DONE CLIENT SIDE ANYWAY)
-                    if (p.BeatmapIdentifier != null)
-                    {
-                        //should send a packet to p, from the new player, to get there reccommended beatmap.
-                        _packetDispatcher.SendFromPlayerToPlayer(player, p, new GetRecommendedBeatmapPacket(), DeliveryMethod.ReliableOrdered);
-                        //_packetDispatcher.SendFromPlayerToPlayer(p, player, new SetRecommendedBeatmapPacket
-                        //{
-                        //    BeatmapIdentifier = p.BeatmapIdentifier,
-                        //}, DeliveryMethod.ReliableOrdered);
-                    }
-                    if(p.Modifiers != null)
-                    {
-                        _packetDispatcher.SendFromPlayerToPlayer(player, p, new GetRecommendedModifiersPacket(), DeliveryMethod.ReliableOrdered);
-                        //_packetDispatcher.SendFromPlayerToPlayer(p, player, new SetRecommendedModifiersPacket
-                        //{
-                        //    Modifiers = p.Modifiers,
-                        //}, DeliveryMethod.ReliableOrdered);
-                    }
-                }
+                // Send all player identity packets to new player
+                _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
+                {
+                    PlayerState = p.State,
+                    PlayerAvatar = p.Avatar,
+                    Random = new ByteArray { Data = p.Random },
+                    PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
+                }, DeliveryMethod.ReliableOrdered);
             }
 
             // Disable start button if they are manager without selected song
