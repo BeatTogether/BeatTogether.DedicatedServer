@@ -125,10 +125,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
 
             if (!_playerRegistry.TryGetPlayer(_configuration.ManagerId, out var manager) && _configuration.SongSelectionMode == SongSelectionMode.ManagerPicks)
-                return; 
+                return;
             
-            //BeatmapIdentifier? beatmap = GetSelectedBeatmap();
-            //GameplayModifiers modifiers = GetSelectedModifiers();
             _instance.UpdateBeatmap(GetSelectedBeatmap(), GetSelectedModifiers());
 
             if (_instance.SelectedBeatmap != null)
@@ -146,7 +144,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
-                                .Where(p => p.GetEntitlement(_instance.SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned /*or EntitlementStatus.NotDownloaded*/)
+                                .Where(p => p.GetEntitlement(_instance.SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned)
                                 .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
 
@@ -188,6 +186,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     case SongSelectionMode.Vote:
                         CountingDown(SomePlayersReady, CountdownTimeSomeReady, NoPlayersReady, allPlayersOwnBeatmap);
                         break;
+                    case SongSelectionMode.RandomPlayerPicks:
+                        CountingDown(SomePlayersReady, CountdownTimeSomeReady, NoPlayersReady, allPlayersOwnBeatmap);
+                        break;
                 }
             }
             // If beatmap is null and it wasn't previously or manager changed
@@ -208,7 +209,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private void CountingDown(bool isReady, float CountDownTime, bool NotStartable, bool allPlayersOwnBeatmap)
         {
             // If not already counting down
-            //_instance.UpdateBeatmap(beatmap, modifiers);
             if (_instance.CountDownState == CountdownState.NotCountingDown)
             {
                 if ((AllPlayersReady && !AllPlayersSpectating && allPlayersOwnBeatmap))
@@ -221,7 +221,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 if (_instance.CountdownEndTime <= _instance.RunTime)
                 {
-                    // If countdown just finished, send map one last time then pause lobby untill all players have map downloaded
+                    // If countdown just finished, send map then pause lobby untill all players have map downloaded
                     if (_instance.CountDownState != CountdownState.WaitingForEntitlement)
                         _instance.SetCountdown(CountdownState.WaitingForEntitlement);
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(_instance.SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
@@ -230,12 +230,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
-                                .Where(p => p.GetEntitlement(_instance.SelectedBeatmap!.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.NotDownloaded)
+                                .Where(p => p.GetEntitlement(_instance.SelectedBeatmap!.LevelId) is EntitlementStatus.NotOwned)
                                 .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
-                        // Starts beatmap
+                        //starts beatmap
                         _gameplayManager.StartSong(_instance.SelectedBeatmap!, _instance.SelectedModifiers, CancellationToken.None);
-                        //resets countdown
+                        //stops countdown
                         _instance.SetCountdown(CountdownState.NotCountingDown);
                         return;
                     }
@@ -255,26 +255,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 case SongSelectionMode.ManagerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).BeatmapIdentifier;
                 case SongSelectionMode.Vote:
                     Dictionary<BeatmapIdentifier, int> voteDictionary = new();
-                    foreach (IPlayer player in _playerRegistry.Players)
+                    foreach (IPlayer player in _playerRegistry.Players.Where(p => p.BeatmapIdentifier != null))
                     {
-                        if (player.BeatmapIdentifier != null)
-                        {
-                            if (voteDictionary.ContainsKey(player.BeatmapIdentifier))
-                                voteDictionary[player.BeatmapIdentifier]++;
-                            else
-                                voteDictionary[player.BeatmapIdentifier] = 1;
-                        }
+                        if (voteDictionary.ContainsKey(player.BeatmapIdentifier!))
+                            voteDictionary[player.BeatmapIdentifier!]++;
+                        else
+                            voteDictionary.Add(player.BeatmapIdentifier!, 1);
                     }
                     if (!voteDictionary.Any())
                         return null;
                     return voteDictionary.OrderByDescending(n => n.Value).First().Key;
                 case SongSelectionMode.RandomPlayerPicks:
                     if (_instance.SelectedBeatmap == null)
-                    {
                         return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier;
-                    }
                     return null;
-                     
             };
             return null;
         }
@@ -286,15 +280,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 case SongSelectionMode.ManagerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).Modifiers;
                 case SongSelectionMode.Vote or SongSelectionMode.RandomPlayerPicks:
                     Dictionary<GameplayModifiers, int> voteDictionary = new();
-                    foreach (IPlayer player in _playerRegistry.Players)
+                    foreach (IPlayer player in _playerRegistry.Players.Where(p => p.Modifiers != null))
                     {
-                        if (player.Modifiers != null)
-                        {
-                            if (voteDictionary.ContainsKey(player.Modifiers))
-                                voteDictionary[player.Modifiers]++;
-                            else
-                                voteDictionary[player.Modifiers] = 1;
-                        }
+                        if (voteDictionary.ContainsKey(player.Modifiers))
+                            voteDictionary[player.Modifiers]++;
+                        else
+                            voteDictionary.Add(player.Modifiers!, 1);
                     }
                     if (!voteDictionary.Any())
                         return new GameplayModifiers();

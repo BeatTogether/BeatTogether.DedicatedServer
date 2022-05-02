@@ -203,7 +203,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         }
 
         // Sets countdown and beatmap how the client would expect it to
-        // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() also informs the clients it has been canceled
+        // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled
         public void SetCountdown(CountdownState countdownState, float countdown = 0)
         {
             CountDownState = countdownState;
