@@ -367,6 +367,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }).ToList()
                 }
             }, DeliveryMethod.ReliableOrdered);
+            PlayerConnectedEvent?.Invoke(player);
         }
 
         public override void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
