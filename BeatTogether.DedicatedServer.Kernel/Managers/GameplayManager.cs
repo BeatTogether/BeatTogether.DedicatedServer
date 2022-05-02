@@ -222,7 +222,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         }
 
         public void SignalRequestReturnToMenu()
-            => _requestReturnToMenuCts?.Cancel();
+        {
+            foreach(var p in _playerRegistry.Players)
+            {
+                HandlePlayerLeaveGameplay(p);
+            }
+            ResetValues(null, null);
+            _requestReturnToMenuCts?.Cancel();
+        }
 
         //will set players tasks as done if they leave gameplay due to disconnect or returning to the menu
         private void HandlePlayerLeaveGameplay(IPlayer player)
@@ -234,7 +241,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private void PlayerFinishLevel(IPlayer player)
         {
-            if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)//TODO test this with mid join and mid leave
+            if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)
                 tcs.SetResult();
         }
         private void PlayerSceneReady(IPlayer player)

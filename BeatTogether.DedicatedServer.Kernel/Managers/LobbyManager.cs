@@ -22,9 +22,6 @@ using Serilog;
  * - managing the countdown
  * - checking player entitlements
  * - when to start gameplay
- * 
- * TODO Test countdown being sent correctly on player join
- * 
  */
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
