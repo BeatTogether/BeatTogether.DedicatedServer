@@ -18,6 +18,13 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
+/*Dedicated instance
+ * Handles whether a player should be allowed to connect
+ * Handles when a player connects
+ * Handles when a player disconnects
+ * sets new lobby managers
+ */
+
 namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class DedicatedInstance : LiteNetServer, IDedicatedInstance
@@ -154,7 +161,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void ReleaseSortIndex(int sortIndex) =>
             _releasedSortIndices.Enqueue(sortIndex);
 
-        //TODO should probably code a hard limit of 128 players somewhere (unless anyone would like to change connectionID to an int)
         public byte GetNextConnectionId()
         {
             if (_releasedConnectionIds.TryDequeue(out var connectionId))
@@ -310,36 +316,33 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SortIndex = 0
             }, DeliveryMethod.ReliableOrdered);
 
-            foreach (IPlayer p in _playerRegistry.Players)
+            foreach (IPlayer p in _playerRegistry.Players.Where(p => p.ConnectionId != player.ConnectionId))
             {
-                if (p.ConnectionId != player.ConnectionId)
+                // Send all player connection data packets to new player
+                _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
                 {
-                    // Send all player connection data packets to new player
-                    _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
+                    RemoteConnectionId = p.ConnectionId,
+                    UserId = p.UserId,
+                    UserName = p.UserName,
+                    IsConnectionOwner = false
+                }, DeliveryMethod.ReliableOrdered);
+
+                // Send all player sort index packets to new player
+                if (p.SortIndex != -1)
+                    _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
                     {
-                        RemoteConnectionId = p.ConnectionId,
                         UserId = p.UserId,
-                        UserName = p.UserName,
-                        IsConnectionOwner = false
+                        SortIndex = p.SortIndex
                     }, DeliveryMethod.ReliableOrdered);
 
-                    // Send all player sort index packets to new player
-                    if (p.SortIndex != -1)
-                        _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
-                        {
-                            UserId = p.UserId,
-                            SortIndex = p.SortIndex
-                        }, DeliveryMethod.ReliableOrdered);
-
-                    // Send all player identity packets to new player
-                    _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
-                    {
-                        PlayerState = p.State,
-                        PlayerAvatar = p.Avatar,
-                        Random = new ByteArray { Data = p.Random },
-                        PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
-                    }, DeliveryMethod.ReliableOrdered);
-                }
+                // Send all player identity packets to new player
+                _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
+                {
+                    PlayerState = p.State,
+                    PlayerAvatar = p.Avatar,
+                    Random = new ByteArray { Data = p.Random },
+                    PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
+                }, DeliveryMethod.ReliableOrdered);
             }
 
             // Disable start button if they are manager without selected song
@@ -364,7 +367,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }).ToList()
                 }
             }, DeliveryMethod.ReliableOrdered);
-
             PlayerConnectedEvent?.Invoke(player);
         }
 
@@ -429,7 +431,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                             }).ToList()
                         }
                     }, DeliveryMethod.ReliableOrdered);
-                } 
+                }
             }
         }
 

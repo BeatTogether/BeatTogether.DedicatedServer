@@ -1,11 +1,4 @@
-﻿using BeatTogether.DedicatedServer.Kernel;
-using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Kernel.Configuration;
-using BeatTogether.DedicatedServer.Kernel.Managers;
-using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
-using BeatTogether.LiteNetLib;
-using BeatTogether.LiteNetLib.Dispatchers;
-using BeatTogether.LiteNetLib.Sources;
+﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using System.Reflection;
