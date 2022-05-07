@@ -346,8 +346,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         return null;
                     return voteDictionary.OrderByDescending(n => n.Value).First().Key;
                 case SongSelectionMode.RandomPlayerPicks:
-                    if (SelectedBeatmap == null)
-                        return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier;
+                    if (SelectedBeatmap != _lastBeatmap)
+                        return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier; //TODO, make a random player the manager for that beatmap round for randomplayer chooses setting
                     return SelectedBeatmap;
             };
             return null;
