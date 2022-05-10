@@ -33,6 +33,8 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public PlayerStateHash State { get; set; } = new();
 
+        public bool WasActiveAtCountdownStart { get; set; } = false;
+
         public bool IsManager => UserId == Instance.Configuration.ManagerId;
         public bool CanRecommendBeatmaps => true;
         public bool CanRecommendModifiers =>
