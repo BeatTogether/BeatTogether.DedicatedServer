@@ -194,16 +194,24 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     case SongSelectionMode.RandomPlayerPicks:
                         CountingDown(SomePlayersReady, CountdownTimeSomeReady, NoPlayersReady, allPlayersOwnBeatmap);
                         break;
+                    case SongSelectionMode.ServerPicks:
+                        TournamentCountDown();
+                        break;
                 }
             }
             // If beatmap is null and it wasn't previously or manager changed
             else if (_lastBeatmap != SelectedBeatmap || _lastManagerId != _configuration.ManagerId)
             {
-                // Cannot select song because no song is selected
+                // Cannot select beatmap because no beatmap is selected
                 _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
                 {
                     Reason = CannotStartGameReason.NoSongSelected
                 }, DeliveryMethod.ReliableOrdered);
+                //Send stop countdown packet if the beatmap is somehow set to null (manager may disconnect, or if tournament server setting the beatmap to null should stop the countdown)
+                if(CountDownState != CountdownState.NotCountingDown)
+                {
+                    CancelCountdown();
+                }
             }
 
             _lastManagerId = _configuration.ManagerId;
@@ -245,6 +253,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         return;
                     }
                 }
+                else if (CountDownState == CountdownState.CountingDown)
+                {
+                    SendNotCountingPlayersCountdown();
+                }
                 // If manager/all players are no longer ready or not all players own beatmap
                 if (NotStartable || !allPlayersOwnBeatmap)
                     CancelCountdown();
@@ -252,6 +264,39 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     SetCountdown(CountdownState.StartBeatmapCountdown);
             }
         }
+
+        private void TournamentCountDown()
+        {
+            if (CountDownState != CountdownState.NotCountingDown)
+            {
+                if (CountdownEndTime <= _instance.RunTime)
+                {
+                    // If countdown just finished, send map then pause lobby untill all players have map downloaded
+                    if (CountDownState != CountdownState.WaitingForEntitlement)
+                        SetCountdown(CountdownState.WaitingForEntitlement);
+                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
+                    {
+                        // sends entitlements to players
+                        _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
+                        {
+                            PlayersWithoutEntitlements = _playerRegistry.Players
+                                .Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.NotOwned)
+                                .Select(p => p.UserId).ToList()
+                        }, DeliveryMethod.ReliableOrdered);
+                        //starts beatmap
+                        _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
+                        //stops countdown
+                        SetCountdown(CountdownState.NotCountingDown);
+                        return;
+                    }
+                }
+            }
+            else if(CountDownState == CountdownState.NotCountingDown && SelectedBeatmap != null)
+            {
+                SetCountdown(CountdownState.StartBeatmapCountdown, 30);
+            }
+        }
+
 
         public void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
@@ -276,6 +321,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     CountdownEndTime = 0;
                     SelectedBeatmap = null;
                     SelectedModifiers = new();
+                    SetActivePlayersCountdown(false);
                     break;
                 case CountdownState.CountingDown:
                     if (countdown == 0)
@@ -285,6 +331,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         CountdownTime = CountdownEndTime
                     }, DeliveryMethod.ReliableOrdered);
+                    SetActivePlayersCountdown(true);
                     break;
                 case CountdownState.StartBeatmapCountdown:
                     if (countdown == 0)
@@ -306,6 +353,27 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }, DeliveryMethod.ReliableOrdered);
                     CountdownEndTime = -1;
                     break;
+            }
+        }
+
+        private void SetActivePlayersCountdown(bool CountingDown)
+        {
+            foreach (var player in _playerRegistry.Players)
+                player.WasActiveAtCountdownStart = CountingDown;
+        }
+
+        private void SendNotCountingPlayersCountdown()
+        {
+            foreach (var player in _playerRegistry.Players)
+            {
+                if (!player.WasActiveAtCountdownStart)
+                {
+                    _packetDispatcher.SendToPlayer(player, new SetCountdownEndTimePacket
+                    {
+                        CountdownTime = CountdownEndTime
+                    }, DeliveryMethod.ReliableOrdered);
+                    player.WasActiveAtCountdownStart = true;
+                }
             }
         }
 
@@ -349,6 +417,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (SelectedBeatmap != _lastBeatmap)
                         return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier; //TODO, make a random player the manager for that beatmap round for randomplayer chooses setting
                     return SelectedBeatmap;
+                case SongSelectionMode.ServerPicks:
+                    return null; //Fancy code here to gather a bsr request or something similar, then play the beatmap. As long as a beatmap is set the server will count down
             };
             return null;
         }
@@ -370,6 +440,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (!voteDictionary.Any())
                         return new GameplayModifiers();
                     return voteDictionary.OrderByDescending(n => n.Value).First().Key;
+                case SongSelectionMode.ServerPicks:
+                    return new GameplayModifiers(); //code to get modifiers from external source
             };
             return new GameplayModifiers();
 		}
