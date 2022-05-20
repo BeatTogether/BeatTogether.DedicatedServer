@@ -405,7 +405,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 case SongSelectionMode.ManagerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).BeatmapIdentifier;
                 case SongSelectionMode.Vote:
                     Dictionary<BeatmapIdentifier, int> voteDictionary = new();
-                    foreach (IPlayer player in _playerRegistry.Players.Where(p => p.BeatmapIdentifier != null))
+                    foreach (IPlayer player in _playerRegistry.Players.Where(p => p.BeatmapIdentifier != null && p.IsReady))
                     {
                         if (voteDictionary.ContainsKey(player.BeatmapIdentifier!))
                             voteDictionary[player.BeatmapIdentifier!]++;
