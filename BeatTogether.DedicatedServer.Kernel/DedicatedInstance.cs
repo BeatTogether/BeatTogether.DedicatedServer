@@ -106,7 +106,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             _waitForPlayerCts = new CancellationTokenSource();
             _stopServerCts = new CancellationTokenSource();
-            SendSyncTime(_stopServerCts.Token);
+            Task.Run(async () => await SendSyncTime(_stopServerCts.Token));
             _ = Task.Delay(WaitForPlayerTimeLimit, _waitForPlayerCts.Token).ContinueWith(t =>
             {
                 if (!t.IsCanceled)
@@ -439,22 +439,24 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         #region Private Methods
 
-        private async void SendSyncTime(CancellationToken cancellationToken)
+        private async Task SendSyncTime(CancellationToken cancellationToken)
         {
-            foreach (IPlayer player in _playerRegistry.Players)
-                _packetDispatcher.SendToPlayer(player, new SyncTimePacket
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                foreach (IPlayer player in _playerRegistry.Players)
+                    _packetDispatcher.SendToPlayer(player, new SyncTimePacket
+                    {
+                        SyncTime = player.SyncTime
+                    }, DeliveryMethod.ReliableOrdered);
+                try
                 {
-                    SyncTime = player.SyncTime
-                }, DeliveryMethod.ReliableOrdered);
-            try
-            {
-                await Task.Delay(SyncTimeDelay, cancellationToken);
+                    await Task.Delay(SyncTimeDelay, cancellationToken);
+                }
+                catch (TaskCanceledException)
+                {
+                    return;
+                }
             }
-            catch (TaskCanceledException)
-            {
-                return;
-            }
-            SendSyncTime(cancellationToken);
         }
 
         #endregion

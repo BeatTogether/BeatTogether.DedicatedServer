@@ -3,6 +3,7 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
 {
@@ -16,7 +17,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
 		void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet);
         void HandleGameSongLoaded(IPlayer player);
         void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet);
-		void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken);
+		Task StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken);
 
         void SignalRequestReturnToMenu();
     }
