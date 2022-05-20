@@ -69,7 +69,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _gameplayManager = gameplayManager;
 
             _instance.StopEvent += Stop;
-            Task.Run(() => UpdateLoop(_stopCts.Token));
+            Task.Run(async () => await UpdateLoop(_stopCts.Token));
         }
 
         public void Dispose()
@@ -80,7 +80,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private void Stop()
             => _stopCts.Cancel();
 
-        private async void UpdateLoop(CancellationToken cancellationToken)
+        private async Task UpdateLoop(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
