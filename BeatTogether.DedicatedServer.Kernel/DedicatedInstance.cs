@@ -106,7 +106,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             _waitForPlayerCts = new CancellationTokenSource();
             _stopServerCts = new CancellationTokenSource();
-            Task.Run(async () => await SendSyncTime(_stopServerCts.Token));
+            Task.Run(() => SendSyncTime(_stopServerCts.Token));
             _ = Task.Delay(WaitForPlayerTimeLimit, _waitForPlayerCts.Token).ContinueWith(t =>
             {
                 if (!t.IsCanceled)
