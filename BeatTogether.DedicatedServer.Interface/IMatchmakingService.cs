@@ -16,6 +16,7 @@ namespace BeatTogether.DedicatedServer.Interface
         Task<AdvancedPlayerResponce> GetAdvancedPlayer(GetPlayerAdvancedRequest request);
         Task<KickPlayerResponse> KickPlayer(KickPlayerRequest request);
         Task<AdvancedInstanceResponce> GetAdvancedInstance(GetAdvancedInstanceRequest request);
+        Task<SetInstanceBeatmapResponse> SetInstanceBeatmap(SetInstanceBeatmapRequest request);
         //TODO add tasks to set beatmaps, modifiers, countdowns though autobus
     }
 }
