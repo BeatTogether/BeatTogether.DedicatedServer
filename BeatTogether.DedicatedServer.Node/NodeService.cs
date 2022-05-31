@@ -99,7 +99,7 @@ namespace BeatTogether.DedicatedServer.Node
             return Task.FromResult(new PublicServerCountResponse(_instanceRegistry.GetPublicServerCount()));
         }
 
-        public Task<SimplePlayersListResponce> GetSimplePlayerList(GetPlayersSimple request)
+        public Task<SimplePlayersListResponce> GetSimplePlayerList(GetPlayersSimpleRequest request)
         {
             if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
             {
@@ -113,7 +113,7 @@ namespace BeatTogether.DedicatedServer.Node
             return Task.FromResult(new SimplePlayersListResponce(null));
         }
 
-        public Task<AdvancedPlayersListResponce> GetAdvancedPlayerList(GetPlayersAdvanced request)
+        public Task<AdvancedPlayersListResponce> GetAdvancedPlayerList(GetPlayersAdvancedRequest request)
         {
             if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
             {
@@ -145,7 +145,7 @@ namespace BeatTogether.DedicatedServer.Node
             return Task.FromResult(new AdvancedPlayersListResponce(null));
         }
 
-        public Task<AdvancedPlayerResponce> GetAdvancedPlayer(GetPlayerAdvanced request)
+        public Task<AdvancedPlayerResponce> GetAdvancedPlayer(GetPlayerAdvancedRequest request)
         {
             if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
             {
@@ -267,6 +267,7 @@ namespace BeatTogether.DedicatedServer.Node
             }
             return beatmap;
         }
+
         private GameplayModifiers GetInstanceModifiers(IDedicatedInstance instance, ILobbyManager lobby, IGameplayManager GameplayManager)
         {
             GameplayModifiers modifiers;
@@ -331,6 +332,53 @@ namespace BeatTogether.DedicatedServer.Node
                     break;
             }
             return modifiers;
+        }
+    
+        public Task<SetInstanceBeatmapResponse> SetInstanceBeatmap(SetInstanceBeatmapRequest request)
+        {
+            if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
+            {
+                ILobbyManager lobby = (ILobbyManager)instance.GetServiceProvider().GetService(typeof(ILobbyManager))!;
+
+                if (request.countdownState != CountdownState.NotCountingDown  && request.countdownState != CountdownState.WaitingForEntitlement)
+                {
+                    Messaging.Models.BeatmapIdentifier beatmap = new();
+                    beatmap.LevelId = request.beatmap.LevelId;
+                    beatmap.Characteristic = request.beatmap.Characteristic;
+                    beatmap.Difficulty = (Messaging.Models.BeatmapDifficulty)request.beatmap.Difficulty;
+                    Messaging.Models.GameplayModifiers gameplayModifiers = new();
+                    gameplayModifiers.Energy = (Messaging.Models.GameplayModifiers.EnergyType)request.modifiers.Energy;
+                    gameplayModifiers.NoFailOn0Energy = request.modifiers.NoFailOn0Energy;
+                    gameplayModifiers.DemoNoFail = request.modifiers.DemoNoFail;
+                    gameplayModifiers.InstaFail = request.modifiers.InstaFail;
+                    gameplayModifiers.FailOnSaberClash = request.modifiers.FailOnSaberClash;
+                    gameplayModifiers.EnabledObstacle = (Messaging.Models.GameplayModifiers.EnabledObstacleType)request.modifiers.EnabledObstacle;
+                    gameplayModifiers.DemoNoObstacles = request.modifiers.DemoNoObstacles;
+                    gameplayModifiers.FastNotes = request.modifiers.FastNotes;
+                    gameplayModifiers.StrictAngles = request.modifiers.StrictAngles;
+                    gameplayModifiers.DisappearingArrows = request.modifiers.DisappearingArrows;
+                    gameplayModifiers.GhostNotes = request.modifiers.GhostNotes;
+                    gameplayModifiers.NoBombs = request.modifiers.NoBombs;
+                    gameplayModifiers.Speed = (Messaging.Models.GameplayModifiers.SongSpeed)request.modifiers.Speed;
+                    gameplayModifiers.NoArrows = request.modifiers.NoArrows;
+                    gameplayModifiers.ProMode = request.modifiers.ProMode;
+                    gameplayModifiers.ZenMode = request.modifiers.ZenMode;
+                    gameplayModifiers.SmallCubes = request.modifiers.SmallCubes;
+                    lobby.UpdateBeatmap(beatmap, gameplayModifiers);
+                    lobby.SetCountdown((Kernel.Enums.CountdownState)request.countdownState, request.countdown);
+                }
+                else
+                {
+                    lobby.UpdateBeatmap(null, new());
+                    lobby.SetCountdown(Kernel.Enums.CountdownState.NotCountingDown, 0);
+                }
+                if(request.countdownState == CountdownState.WaitingForEntitlement)
+                {
+                    return Task.FromResult(new SetInstanceBeatmapResponse(false));
+                }
+                return Task.FromResult(new SetInstanceBeatmapResponse(true));
+            }
+            return Task.FromResult(new SetInstanceBeatmapResponse(false));
         }
     }
 }

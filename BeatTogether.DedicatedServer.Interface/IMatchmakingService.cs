@@ -11,9 +11,9 @@ namespace BeatTogether.DedicatedServer.Interface
         Task<PublicMatchmakingServerListResponse> GetPublicMatchmakingServerList(GetPublicMatchmakingServerListRequest request);
         Task<PublicServerCountResponse> GetPublicServerCount(GetPublicMatchmakingServerCountRequest request);
         Task<ServerCountResponse> GetServerCount(GetMatchmakingServerCountRequest request);
-        Task<SimplePlayersListResponce>? GetSimplePlayerList(GetPlayersSimple request);
-        Task<AdvancedPlayersListResponce>? GetAdvancedPlayerList(GetPlayersAdvanced request);
-        Task<AdvancedPlayerResponce> GetAdvancedPlayer(GetPlayerAdvanced request);
+        Task<SimplePlayersListResponce>? GetSimplePlayerList(GetPlayersSimpleRequest request);
+        Task<AdvancedPlayersListResponce>? GetAdvancedPlayerList(GetPlayersAdvancedRequest request);
+        Task<AdvancedPlayerResponce> GetAdvancedPlayer(GetPlayerAdvancedRequest request);
         Task<KickPlayerResponse> KickPlayer(KickPlayerRequest request);
         Task<AdvancedInstanceResponce> GetAdvancedInstance(GetAdvancedInstanceRequest request);
         //TODO add tasks to set beatmaps, modifiers, countdowns though autobus

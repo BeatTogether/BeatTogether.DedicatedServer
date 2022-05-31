@@ -2,5 +2,5 @@
 
 namespace BeatTogether.DedicatedServer.Interface.Requests
 {
-    public record GetPlayersSimple(string Secret);
+    public record GetPlayersAdvancedRequest(string Secret);
 }
