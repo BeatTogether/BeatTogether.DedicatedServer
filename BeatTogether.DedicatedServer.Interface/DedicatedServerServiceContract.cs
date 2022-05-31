@@ -10,6 +10,7 @@ namespace BeatTogether.DedicatedServer.Interface
                 .UseName("DedicatedServer")
                 .AddInterface<IMatchmakingService>()
                 .AddEvent<MatchmakingServerStartedEvent>()
+                .AddEvent<StopMatchmakingServerEvent>()
                 .AddEvent<MatchmakingServerStoppedEvent>();
     }
 }

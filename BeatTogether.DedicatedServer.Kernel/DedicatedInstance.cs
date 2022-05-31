@@ -36,12 +36,16 @@ namespace BeatTogether.DedicatedServer.Kernel
         public const int SyncTimeDelay = 5000;
 
         public string UserId => "ziuMSceapEuNN7wRGQXrZg";
-        public string UserName => "";
+        public string UserName => ""; //Dedicated servers name
         public InstanceConfiguration Configuration { get; private set; }
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public int Port => Endpoint.Port;
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
+
+        public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
+        public float DestroyInstanceTimeout { get; private set; } = 0f; //set to -1 for no timeout, set this number on instance creation for a 0 player lobby on a timer
+        public string SetManagerFromUserId { get; private set; } = ""; //If a user creates a server using the api and enteres there userId (eg uses discord bot with linked account))
 
         public event Action StartEvent = null!;
         public event Action StopEvent = null!;
@@ -78,9 +82,27 @@ namespace BeatTogether.DedicatedServer.Kernel
             Configuration = configuration;
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
+
         }
 
         #region Public Methods
+
+        public void SetupPermanentManager(string ManagerUserId)
+        {
+            SetManagerFromUserId = ManagerUserId;
+        }
+        public void SetupInstanceTimeout(float Timeout)
+        {
+            DestroyInstanceTimeout = Timeout;
+        }
+        public IPlayerRegistry GetPlayerRegistry()
+        {
+            return _playerRegistry;
+        }
+        public IServiceProvider GetServiceProvider()
+        {
+            return _serviceProvider;
+        }
 
         public Task Start(CancellationToken cancellationToken = default)
         {
@@ -111,8 +133,10 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 if (!t.IsCanceled)
                 {
-                    _logger.Warning("Timed out waiting for player to join, stopping server.");
-                    _ = Stop(CancellationToken.None);
+                    _logger.Warning("Timed out waiting for player to join,waiting for destroy time out before stopping server.");
+                    NoPlayersTime = RunTime;
+                    //_logger.Warning("Timed out waiting for player to join, stopping server.");
+                    //_ = Stop(CancellationToken.None);
                 }
                 else
                 {
@@ -352,6 +376,9 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
 
             // Update permissions
+            if ((SetManagerFromUserId == player.UserId || _playerRegistry.Players.Count == 1) && Configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
+                Configuration.ManagerId = player.UserId;
+
             _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
             {
                 PermissionConfiguration = new PlayersPermissionConfiguration
@@ -399,7 +426,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
 
             if (_playerRegistry.Players.Count == 0)
-                _ = Stop(CancellationToken.None);
+                NoPlayersTime = RunTime;
+                //_ = Stop(CancellationToken.None);
             else
             {
                 // Set new manager if manager left

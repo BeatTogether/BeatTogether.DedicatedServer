@@ -9,5 +9,10 @@ namespace BeatTogether.DedicatedServer.Node.Abstractions
         public bool RemoveInstance(IDedicatedInstance instance);
         public IDedicatedInstance GetInstance(string secret);
         public bool TryGetInstance(string secret, [MaybeNullWhen(false)] out IDedicatedInstance instance);
+
+
+        public string[] ListPublicInstanceSecrets();
+        public int GetPublicServerCount();
+        public int GetServerCount();
     }
 }

@@ -96,6 +96,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void Update()
         {
+            if(_playerRegistry.Players.Count == 0 && _instance.NoPlayersTime != -1)
+            {
+                if (_instance.DestroyInstanceTimeout == -1)
+                    return;
+                if(_instance.NoPlayersTime + _instance.DestroyInstanceTimeout < _instance.RunTime)
+                {
+                    _logger.Warning("Timed out as no players have joined within the timeout, stopping server.");
+                    _instance.Stop(CancellationToken.None);
+                }
+                return;
+            }
+
+
+
             if (_instance.State != MultiplayerGameState.Lobby)
             {
                 //Sends players stuck in the lobby to spectate the ongoing game, prevents a rare quest issue with loss of tracking causing the game to pause on map start
@@ -414,7 +428,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         return null;
                     return voteDictionary.OrderByDescending(n => n.Value).First().Key;
                 case SongSelectionMode.RandomPlayerPicks:
-                    if (SelectedBeatmap != _lastBeatmap)
+                    if (SelectedBeatmap != _lastBeatmap || SelectedBeatmap == null)
                         return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier; //TODO, make a random player the manager for that beatmap round for randomplayer chooses setting
                     return SelectedBeatmap;
                 case SongSelectionMode.ServerPicks:
