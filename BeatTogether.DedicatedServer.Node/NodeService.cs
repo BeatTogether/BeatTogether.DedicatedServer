@@ -58,7 +58,7 @@ namespace BeatTogether.DedicatedServer.Node
                 return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
 
             await matchmakingServer.Start();
-            _autobus.Publish(new MatchmakingServerStartedEvent(request.Secret, request.ManagerId, request.Configuration));//Tells the master server to add a server
+            //_autobus.Publish(new MatchmakingServerStartedEvent(request.Secret, request.ManagerId, request.Configuration));//Tells the master server to add a server, NOT USED
             matchmakingServer.StopEvent += () => _autobus.Publish(new MatchmakingServerStoppedEvent(request.Secret));//Tells the master server when the newly added server has stopped
 
             return new CreateMatchmakingServerResponse(

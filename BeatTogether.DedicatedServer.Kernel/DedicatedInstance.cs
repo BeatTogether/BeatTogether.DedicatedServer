@@ -44,7 +44,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
 
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
-        public float DestroyInstanceTimeout { get; private set; } = 0f; //set to -1 for no timeout, set this number on instance creation for a 0 player lobby on a timer
+        public float DestroyInstanceTimeout { get; private set; } = 0f; //set to -1 for no timeout(Permanant server, close using api), 0 would be for lobbies made the usaual way, or a number for a timeout
         public string SetManagerFromUserId { get; private set; } = ""; //If a user creates a server using the api and enteres there userId (eg uses discord bot with linked account))
 
         public event Action StartEvent = null!;

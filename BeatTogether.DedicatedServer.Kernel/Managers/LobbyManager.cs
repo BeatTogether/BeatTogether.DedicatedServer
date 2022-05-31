@@ -46,6 +46,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private bool _lastAllOwnMap;          
         private string _lastManagerId = null!;
         private CancellationTokenSource _stopCts = new();
+        private const int ActiveLoopTime = 100;
+        private const int NoPlayersLoopTIme = 1000;
+        private int LoopTime = 100;
 
         private readonly InstanceConfiguration _configuration;
         private readonly IDedicatedInstance _instance;
@@ -84,7 +87,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             try
             {
-                await Task.Delay(100, cancellationToken);
+                await Task.Delay(LoopTime, cancellationToken);
                 Update();
                 UpdateLoop(cancellationToken);
             }
@@ -96,16 +99,21 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void Update()
         {
-            if(_playerRegistry.Players.Count == 0 && _instance.NoPlayersTime != -1)
+            if(_playerRegistry.Players.Count == 0)
             {
-                if (_instance.DestroyInstanceTimeout == -1)
+                LoopTime = NoPlayersLoopTIme;
+                if (_instance.DestroyInstanceTimeout == -1 || _instance.NoPlayersTime == -1)
                     return;
                 if(_instance.NoPlayersTime + _instance.DestroyInstanceTimeout < _instance.RunTime)
                 {
                     _logger.Warning("Timed out as no players have joined within the timeout, stopping server.");
-                    _instance.Stop(CancellationToken.None);
+                    _ = _instance.Stop(CancellationToken.None);
                 }
                 return;
+            }
+            else
+            {
+                LoopTime = ActiveLoopTime;
             }
 
 
