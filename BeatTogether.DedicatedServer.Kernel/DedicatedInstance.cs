@@ -36,7 +36,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public const int SyncTimeDelay = 5000;
 
         public string UserId => "ziuMSceapEuNN7wRGQXrZg";
-        public string UserName => ""; //Dedicated servers name
+        public string UserName { get; private set; } = "";
         public InstanceConfiguration Configuration { get; private set; }
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
@@ -91,9 +91,10 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             SetManagerFromUserId = ManagerUserId;
         }
-        public void SetupInstanceTimeout(float Timeout)
+        public void SetupInstance(float Timeout, string ServerName)
         {
             DestroyInstanceTimeout = Timeout;
+            UserName = ServerName;
         }
         public IPlayerRegistry GetPlayerRegistry()
         {
@@ -205,6 +206,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 State = state
             }, DeliveryMethod.ReliableOrdered);
+        }
+
+        public void DisconnectPlayer(IPlayer player)
+        {
+            OnDisconnect(player.Endpoint, DisconnectReason.ConnectionRejected);
         }
 
         #endregion

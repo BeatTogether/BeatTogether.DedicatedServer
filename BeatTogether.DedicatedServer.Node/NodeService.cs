@@ -6,9 +6,13 @@ using BeatTogether.DedicatedServer.Interface.Responses;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
+using BeatTogether.DedicatedServer.Interface.Models;
+using BeatTogether.DedicatedServer.Interface.Enums;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using Serilog;
 using System;
 using System.Threading.Tasks;
+using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 
 namespace BeatTogether.DedicatedServer.Node
 {
@@ -51,8 +55,9 @@ namespace BeatTogether.DedicatedServer.Node
                 request.Secret,
                 request.ManagerId,
                 request.Configuration,
-                request.permanentManager,
-                request.Timeout
+                request.PermanentManager,
+                request.Timeout,
+                request.ServerName
             );
             if (matchmakingServer is null) // TODO: can also be no available slots
                 return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
@@ -68,30 +73,184 @@ namespace BeatTogether.DedicatedServer.Node
                 _packetEncryptionLayer.KeyPair.PublicKey
             );
         }
-        //TODO add code to make custom dedicated instances here from an autobus packet(is literally the code above)-Done
 
         public async Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request)
         {
             if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
             {
                 await instance.Stop();
-                _autobus.Publish(new MatchmakingServerStoppedEvent(request.Secret));
-                return new StopMatchmakingServerResponse(true, true);
+                return new StopMatchmakingServerResponse(true);
             }
-            return new StopMatchmakingServerResponse(false, false);
+            return new StopMatchmakingServerResponse(false);
         }
 
         public Task<PublicMatchmakingServerListResponse> GetPublicMatchmakingServerList(GetPublicMatchmakingServerListRequest request)
         {
             return Task.FromResult(new PublicMatchmakingServerListResponse(_instanceRegistry.ListPublicInstanceSecrets()));
         }
+
         public Task<ServerCountResponse> GetServerCount(GetMatchmakingServerCountRequest request)
         {
             return Task.FromResult(new ServerCountResponse(_instanceRegistry.GetServerCount()));
         }
+
         public Task<PublicServerCountResponse> GetPublicServerCount(GetPublicMatchmakingServerCountRequest request)
         {
             return Task.FromResult(new PublicServerCountResponse(_instanceRegistry.GetPublicServerCount()));
         }
+
+        public Task<SimplePlayersListResponce> GetSimplePlayerList(GetPlayersSimple request)
+        {
+            if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
+            {
+                SimplePlayer[] simplePlayers = new SimplePlayer[instance.GetPlayerRegistry().Players.Count - 1];
+                for (int i = 0; i < instance.GetPlayerRegistry().Players.Count - 1; i++)
+                {
+                    simplePlayers[i] = new SimplePlayer(instance.GetPlayerRegistry().Players[i].UserName, instance.GetPlayerRegistry().Players[i].UserId);
+                }
+                return Task.FromResult(new SimplePlayersListResponce(simplePlayers));
+            }
+            return Task.FromResult(new SimplePlayersListResponce(null));
+        }
+
+        public Task<AdvancedPlayersListResponce> GetAdvancedPlayerList(GetPlayersAdvanced request)
+        {
+            if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
+            {
+                AdvancedPlayer[] advancedPlayers = new AdvancedPlayer[instance.GetPlayerRegistry().Players.Count - 1];
+                for (int i = 0; i < instance.GetPlayerRegistry().Players.Count - 1; i++)
+                {
+                    IPlayer player = instance.GetPlayerRegistry().Players[i];
+                    advancedPlayers[i] = new AdvancedPlayer(
+                        new SimplePlayer(
+                            player.UserName,
+                            player.UserId),
+                        player.ConnectionId,
+                        player.IsManager,
+                        player.IsPlayer,
+                        player.IsSpectating,
+                        player.WantsToPlayNextLevel,
+                        player.IsBackgrounded,
+                        player.InGameplay,
+                        player.WasActiveAtLevelStart,
+                        player.IsActive,
+                        player.FinishedLevel,
+                        player.InMenu,
+                        player.IsModded,
+                        player.InLobby
+                        );
+                }
+                return Task.FromResult(new AdvancedPlayersListResponce(advancedPlayers));
+            }
+            return Task.FromResult(new AdvancedPlayersListResponce(null));
+        }
+
+        public Task<AdvancedPlayerResponce> GetAdvancedPlayer(GetPlayerAdvanced request)
+        {
+            if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
+            {
+
+                IPlayer player = instance.GetPlayerRegistry().GetPlayer(request.UserId);
+                AdvancedPlayer AdvancedPlayer = new(
+                    new SimplePlayer(
+                        player.UserName,
+                        player.UserId),
+                    player.ConnectionId,
+                    player.IsManager,
+                    player.IsPlayer,
+                    player.IsSpectating,
+                    player.WantsToPlayNextLevel,
+                    player.IsBackgrounded,
+                    player.InGameplay,
+                    player.WasActiveAtLevelStart,
+                    player.IsActive,
+                    player.FinishedLevel,
+                    player.InMenu,
+                    player.IsModded,
+                    player.InLobby
+                    );
+                return Task.FromResult(new AdvancedPlayerResponce(AdvancedPlayer));
+            }
+            return Task.FromResult(new AdvancedPlayerResponce(null));
+        }
+
+        public Task<KickPlayerResponse> KickPlayer(KickPlayerRequest request)
+        {
+            if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
+            {
+                instance.DisconnectPlayer(instance.GetPlayerRegistry().GetPlayer(request.UserId));                
+                return Task.FromResult(new KickPlayerResponse(true));
+            }
+            return Task.FromResult(new KickPlayerResponse(false));
+        }
+
+        public Task<AdvancedInstanceResponce> GetAdvancedInstance(GetAdvancedInstanceRequest request)
+        {
+            if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
+            {
+                ILobbyManager lobby = (ILobbyManager)instance.GetServiceProvider().GetService(typeof(ILobbyManager))!;
+
+                GameplayServerConfiguration config = new(
+                    instance.Configuration.MaxPlayerCount,
+                    (DiscoveryPolicy)instance.Configuration.DiscoveryPolicy,
+                    (InvitePolicy)instance.Configuration.InvitePolicy,
+                    (GameplayServerMode)instance.Configuration.GameplayServerMode,
+                    (SongSelectionMode)instance.Configuration.SongSelectionMode,
+                    (GameplayServerControlSettings)instance.Configuration.GameplayServerControlSettings
+                    );
+
+                GameplayModifiers modifiers = new((EnergyType)lobby.SelectedModifiers.Energy,
+                    lobby.SelectedModifiers.NoFailOn0Energy,
+                    lobby.SelectedModifiers.DemoNoFail,
+                    lobby.SelectedModifiers.InstaFail,
+                    lobby.SelectedModifiers.FailOnSaberClash,
+                    (EnabledObstacleType)lobby.SelectedModifiers.EnabledObstacle,
+                    lobby.SelectedModifiers.DemoNoObstacles,
+                    lobby.SelectedModifiers.FastNotes,
+                    lobby.SelectedModifiers.StrictAngles,
+                    lobby.SelectedModifiers.DisappearingArrows,
+                    lobby.SelectedModifiers.GhostNotes,
+                    lobby.SelectedModifiers.NoBombs,
+                    (SongSpeed)lobby.SelectedModifiers.Speed,
+                    lobby.SelectedModifiers.NoArrows,
+                    lobby.SelectedModifiers.ProMode,
+                    lobby.SelectedModifiers.ZenMode,
+                    lobby.SelectedModifiers.SmallCubes);
+
+                AdvancedInstance advancedInstance = new(
+                    config,
+                    instance.IsRunning,
+                    instance.RunTime,
+                    instance.Port,
+                    instance.UserId,
+                    instance.UserName,
+                    (MultiplayerGameState)instance.State,
+                    instance.NoPlayersTime,
+                    instance.DestroyInstanceTimeout,
+                    instance.SetManagerFromUserId,
+                    lobby.CountdownEndTime,
+                    (CountdownState)lobby.CountDownState,
+                    modifiers);
+                Beatmap beatmap;
+                if (lobby.SelectedBeatmap != null)
+                {
+                    beatmap = new(
+                        lobby.SelectedBeatmap.LevelId,
+                        lobby.SelectedBeatmap.Characteristic,
+                        (BeatmapDifficulty)lobby.SelectedBeatmap.Difficulty);
+                }
+                else
+                {
+                    beatmap = new(
+                        "NULL",
+                        "NULL",
+                        BeatmapDifficulty.Normal);
+                }
+
+                return Task.FromResult(new AdvancedInstanceResponce(advancedInstance, beatmap));
+            }
+            return Task.FromResult(new AdvancedInstanceResponce(null, null));
+        }
+
     }
 }

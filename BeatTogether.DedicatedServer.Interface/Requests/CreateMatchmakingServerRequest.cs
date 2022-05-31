@@ -6,6 +6,7 @@ namespace BeatTogether.DedicatedServer.Interface.Requests
         string Secret,
         string ManagerId,
         GameplayServerConfiguration Configuration,
-        bool permanentManager = false,
-        float Timeout = 0f);
+        bool PermanentManager = false,
+        float Timeout = 0f,
+        string ServerName = "");
 }

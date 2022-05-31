@@ -25,7 +25,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         string SetManagerFromUserId { get; }
 
         void SetupPermanentManager(string ManagerUsername);
-        void SetupInstanceTimeout(float Timeout);
+        void SetupInstance(float Timeout, string ServerName);
+        void DisconnectPlayer(IPlayer player);
+
+        IPlayerRegistry GetPlayerRegistry();
+        IServiceProvider GetServiceProvider();
 
         Task Start(CancellationToken cancellationToken = default);
         Task Stop(CancellationToken cancellationToken = default);
