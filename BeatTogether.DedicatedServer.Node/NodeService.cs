@@ -189,6 +189,7 @@ namespace BeatTogether.DedicatedServer.Node
             if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
             {
                 ILobbyManager lobby = (ILobbyManager)instance.GetServiceProvider().GetService(typeof(ILobbyManager))!;
+                IGameplayManager GameplayManager = (IGameplayManager)instance.GetServiceProvider().GetService(typeof(ILobbyManager))!;
 
                 GameplayServerConfiguration config = new(
                     instance.Configuration.MaxPlayerCount,
@@ -198,24 +199,6 @@ namespace BeatTogether.DedicatedServer.Node
                     (SongSelectionMode)instance.Configuration.SongSelectionMode,
                     (GameplayServerControlSettings)instance.Configuration.GameplayServerControlSettings
                     );
-
-                GameplayModifiers modifiers = new((EnergyType)lobby.SelectedModifiers.Energy,
-                    lobby.SelectedModifiers.NoFailOn0Energy,
-                    lobby.SelectedModifiers.DemoNoFail,
-                    lobby.SelectedModifiers.InstaFail,
-                    lobby.SelectedModifiers.FailOnSaberClash,
-                    (EnabledObstacleType)lobby.SelectedModifiers.EnabledObstacle,
-                    lobby.SelectedModifiers.DemoNoObstacles,
-                    lobby.SelectedModifiers.FastNotes,
-                    lobby.SelectedModifiers.StrictAngles,
-                    lobby.SelectedModifiers.DisappearingArrows,
-                    lobby.SelectedModifiers.GhostNotes,
-                    lobby.SelectedModifiers.NoBombs,
-                    (SongSpeed)lobby.SelectedModifiers.Speed,
-                    lobby.SelectedModifiers.NoArrows,
-                    lobby.SelectedModifiers.ProMode,
-                    lobby.SelectedModifiers.ZenMode,
-                    lobby.SelectedModifiers.SmallCubes);
 
                 AdvancedInstance advancedInstance = new(
                     config,
@@ -230,27 +213,124 @@ namespace BeatTogether.DedicatedServer.Node
                     instance.SetManagerFromUserId,
                     lobby.CountdownEndTime,
                     (CountdownState)lobby.CountDownState,
-                    modifiers);
-                Beatmap beatmap;
-                if (lobby.SelectedBeatmap != null)
-                {
-                    beatmap = new(
-                        lobby.SelectedBeatmap.LevelId,
-                        lobby.SelectedBeatmap.Characteristic,
-                        (BeatmapDifficulty)lobby.SelectedBeatmap.Difficulty);
-                }
-                else
-                {
+                    GetInstanceModifiers(instance, lobby, GameplayManager),
+                    GetInstanceBeatmap(instance, lobby, GameplayManager));
+
+                return Task.FromResult(new AdvancedInstanceResponce(advancedInstance));
+            }
+            return Task.FromResult(new AdvancedInstanceResponce(null));
+        }
+
+        private Beatmap GetInstanceBeatmap(IDedicatedInstance instance, ILobbyManager lobby, IGameplayManager GameplayManager)
+        {
+            Beatmap beatmap;
+            switch (instance.State)
+            {
+                case Messaging.Enums.MultiplayerGameState.Lobby:
+                    if (lobby.SelectedBeatmap != null)
+                    {
+                        beatmap = new(
+                            lobby.SelectedBeatmap.LevelId,
+                            lobby.SelectedBeatmap.Characteristic,
+                            (BeatmapDifficulty)lobby.SelectedBeatmap.Difficulty);
+                    }
+                    else
+                    {
+                        beatmap = new(
+                            "NULL",
+                            "NULL",
+                            BeatmapDifficulty.Normal);
+                    }
+                    break;
+                case Messaging.Enums.MultiplayerGameState.Game:
+                    if (GameplayManager.CurrentBeatmap != null)
+                    {
+                        beatmap = new(
+                            GameplayManager.CurrentBeatmap.LevelId,
+                            GameplayManager.CurrentBeatmap.Characteristic,
+                            (BeatmapDifficulty)GameplayManager.CurrentBeatmap.Difficulty);
+                    }
+                    else
+                    {
+                        beatmap = new(
+                            "NULL",
+                            "NULL",
+                            BeatmapDifficulty.Normal);
+                    }
+                    break;
+                default:
                     beatmap = new(
                         "NULL",
                         "NULL",
                         BeatmapDifficulty.Normal);
-                }
-
-                return Task.FromResult(new AdvancedInstanceResponce(advancedInstance, beatmap));
+                    break;
             }
-            return Task.FromResult(new AdvancedInstanceResponce(null, null));
+            return beatmap;
         }
-
+        private GameplayModifiers GetInstanceModifiers(IDedicatedInstance instance, ILobbyManager lobby, IGameplayManager GameplayManager)
+        {
+            GameplayModifiers modifiers;
+            switch (instance.State)
+            {
+                case Messaging.Enums.MultiplayerGameState.Lobby:
+                    modifiers = new((EnergyType)lobby.SelectedModifiers.Energy,
+                        lobby.SelectedModifiers.NoFailOn0Energy,
+                        lobby.SelectedModifiers.DemoNoFail,
+                        lobby.SelectedModifiers.InstaFail,
+                        lobby.SelectedModifiers.FailOnSaberClash,
+                        (EnabledObstacleType)lobby.SelectedModifiers.EnabledObstacle,
+                        lobby.SelectedModifiers.DemoNoObstacles,
+                        lobby.SelectedModifiers.FastNotes,
+                        lobby.SelectedModifiers.StrictAngles,
+                        lobby.SelectedModifiers.DisappearingArrows,
+                        lobby.SelectedModifiers.GhostNotes,
+                        lobby.SelectedModifiers.NoBombs,
+                        (SongSpeed)lobby.SelectedModifiers.Speed,
+                        lobby.SelectedModifiers.NoArrows,
+                        lobby.SelectedModifiers.ProMode,
+                        lobby.SelectedModifiers.ZenMode,
+                        lobby.SelectedModifiers.SmallCubes);
+                    break;
+                case Messaging.Enums.MultiplayerGameState.Game:
+                    modifiers = new((EnergyType)GameplayManager.CurrentModifiers.Energy,
+                        GameplayManager.CurrentModifiers.NoFailOn0Energy,
+                        GameplayManager.CurrentModifiers.DemoNoFail,
+                        GameplayManager.CurrentModifiers.InstaFail,
+                        GameplayManager.CurrentModifiers.FailOnSaberClash,
+                        (EnabledObstacleType)GameplayManager.CurrentModifiers.EnabledObstacle,
+                        GameplayManager.CurrentModifiers.DemoNoObstacles,
+                        GameplayManager.CurrentModifiers.FastNotes,
+                        GameplayManager.CurrentModifiers.StrictAngles,
+                        GameplayManager.CurrentModifiers.DisappearingArrows,
+                        GameplayManager.CurrentModifiers.GhostNotes,
+                        GameplayManager.CurrentModifiers.NoBombs,
+                        (SongSpeed)GameplayManager.CurrentModifiers.Speed,
+                        GameplayManager.CurrentModifiers.NoArrows,
+                        GameplayManager.CurrentModifiers.ProMode,
+                        GameplayManager.CurrentModifiers.ZenMode,
+                        GameplayManager.CurrentModifiers.SmallCubes);
+                    break;
+                default:
+                    modifiers = new((EnergyType)lobby.SelectedModifiers.Energy,
+                        lobby.SelectedModifiers.NoFailOn0Energy,
+                        lobby.SelectedModifiers.DemoNoFail,
+                        lobby.SelectedModifiers.InstaFail,
+                        lobby.SelectedModifiers.FailOnSaberClash,
+                        (EnabledObstacleType)lobby.SelectedModifiers.EnabledObstacle,
+                        lobby.SelectedModifiers.DemoNoObstacles,
+                        lobby.SelectedModifiers.FastNotes,
+                        lobby.SelectedModifiers.StrictAngles,
+                        lobby.SelectedModifiers.DisappearingArrows,
+                        lobby.SelectedModifiers.GhostNotes,
+                        lobby.SelectedModifiers.NoBombs,
+                        (SongSpeed)lobby.SelectedModifiers.Speed,
+                        lobby.SelectedModifiers.NoArrows,
+                        lobby.SelectedModifiers.ProMode,
+                        lobby.SelectedModifiers.ZenMode,
+                        lobby.SelectedModifiers.SmallCubes);
+                    break;
+            }
+            return modifiers;
+        }
     }
 }

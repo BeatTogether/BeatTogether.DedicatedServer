@@ -79,5 +79,6 @@ namespace BeatTogether.DedicatedServer.Interface.Models
         string SetManagerFromUserId,
         float CountdownEndTime,
 		CountdownState CountdownState,
-		GameplayModifiers SelectedGameplayModifiers);
+		GameplayModifiers SelectedGameplayModifiers,
+		Beatmap beatmap);
 }

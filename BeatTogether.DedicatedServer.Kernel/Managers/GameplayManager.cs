@@ -26,7 +26,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public string SessionGameId { get; private set; } = null!;
         public GameplayManagerState State { get; private set; } = GameplayManagerState.None;
         public BeatmapIdentifier? CurrentBeatmap { get; private set; }
-        public GameplayModifiers? CurrentModifiers { get; private set; }
+        public GameplayModifiers CurrentModifiers { get; private set; } = new();
 
         private const float SongStartDelay = 0.5f;
         private const float ResultsScreenTime = 20f; //changing this to 20 sec as on quest i think it is that
@@ -153,13 +153,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 await Task.Delay((int)(ResultsScreenTime * 1000));
 
             // End gameplay and reset
-            ResetValues(null, null);
+            ResetValues(null, new());
             State = GameplayManagerState.None;
             _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered); //quest ignores this, has already returned to the lobby
             _instance.SetState(MultiplayerGameState.Lobby);
         }
 
-        private void ResetValues(BeatmapIdentifier? map, GameplayModifiers? modifiers)
+        private void ResetValues(BeatmapIdentifier? map, GameplayModifiers modifiers)
         {
             CurrentBeatmap = map;
             CurrentModifiers = modifiers;
@@ -227,7 +227,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 HandlePlayerLeaveGameplay(p);
             }
-            ResetValues(null, null);
+            ResetValues(null, new());
             _requestReturnToMenuCts?.Cancel();
         }
 
