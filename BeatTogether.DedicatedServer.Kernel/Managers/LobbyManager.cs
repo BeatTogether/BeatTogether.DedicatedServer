@@ -101,12 +101,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if(_playerRegistry.Players.Count == 0)
             {
+                Console.WriteLine("NoPlayers");
                 LoopTime = NoPlayersLoopTIme;
                 if (_instance.DestroyInstanceTimeout == -1 || _instance.NoPlayersTime == -1)
                     return;
                 if(_instance.NoPlayersTime + _instance.DestroyInstanceTimeout < _instance.RunTime)
                 {
-                    _logger.Warning("Timed out as no players have joined within the timeout, stopping server.");
+                    _logger.Warning("Server has Timed out, stopping");
                     _ = _instance.Stop(CancellationToken.None);
                 }
                 return;

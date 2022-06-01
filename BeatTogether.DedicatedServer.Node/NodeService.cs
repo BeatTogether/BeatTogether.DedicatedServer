@@ -72,7 +72,7 @@ namespace BeatTogether.DedicatedServer.Node
                 _packetEncryptionLayer.Random,
                 _packetEncryptionLayer.KeyPair.PublicKey
             );
-        } //Done
+        }
 
         public async Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request)
         {
@@ -266,7 +266,7 @@ namespace BeatTogether.DedicatedServer.Node
             if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
             {
                 ILobbyManager lobby = (ILobbyManager)instance.GetServiceProvider().GetService(typeof(ILobbyManager))!;
-                IGameplayManager GameplayManager = (IGameplayManager)instance.GetServiceProvider().GetService(typeof(ILobbyManager))!;
+                IGameplayManager GameplayManager = (IGameplayManager)instance.GetServiceProvider().GetService(typeof(IGameplayManager))!;
 
                 GameplayServerConfiguration config = new(
                     instance.Configuration.MaxPlayerCount,

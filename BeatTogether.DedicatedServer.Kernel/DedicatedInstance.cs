@@ -134,9 +134,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 if (!t.IsCanceled)
                 {
-                    _logger.Warning("Timed out waiting for player to join,waiting for destroy time out before stopping server.");
+                    if(DestroyInstanceTimeout != -1)
+                    {
+                        _logger.Warning("Timed out waiting for player to join, Server will close after no players timeout");
+                        _waitForPlayerCts = null;
+                    }
                     NoPlayersTime = RunTime;
-                    //_logger.Warning("Timed out waiting for player to join, stopping server.");
                     //_ = Stop(CancellationToken.None);
                 }
                 else
