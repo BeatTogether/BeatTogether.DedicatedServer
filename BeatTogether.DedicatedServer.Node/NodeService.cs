@@ -72,7 +72,7 @@ namespace BeatTogether.DedicatedServer.Node
                 _packetEncryptionLayer.Random,
                 _packetEncryptionLayer.KeyPair.PublicKey
             );
-        }
+        } //Done
 
         public async Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request)
         {
@@ -82,22 +82,22 @@ namespace BeatTogether.DedicatedServer.Node
                 return new StopMatchmakingServerResponse(true);
             }
             return new StopMatchmakingServerResponse(false);
-        }
+        } //Done
 
         public Task<PublicMatchmakingServerListResponse> GetPublicMatchmakingServerList(GetPublicMatchmakingServerListRequest request)
         {
             return Task.FromResult(new PublicMatchmakingServerListResponse(_instanceRegistry.ListPublicInstanceSecrets()));
-        }
+        }  //Done
 
         public Task<ServerCountResponse> GetServerCount(GetMatchmakingServerCountRequest request)
         {
             return Task.FromResult(new ServerCountResponse(_instanceRegistry.GetServerCount()));
-        }
+        }   //Probably wont use as master server does this
 
         public Task<PublicServerCountResponse> GetPublicServerCount(GetPublicMatchmakingServerCountRequest request)
         {
             return Task.FromResult(new PublicServerCountResponse(_instanceRegistry.GetPublicServerCount()));
-        }
+        }   //Probably wont use
 
         public Task<SimplePlayersListResponce> GetSimplePlayerList(GetPlayersSimpleRequest request)
         {
@@ -121,7 +121,23 @@ namespace BeatTogether.DedicatedServer.Node
                 for (int i = 0; i < instance.GetPlayerRegistry().Players.Count - 1; i++)
                 {
                     IPlayer player = instance.GetPlayerRegistry().Players[i];
-                    advancedPlayers[i] = new AdvancedPlayer(
+                    Beatmap beatmap;
+                    if (player.BeatmapIdentifier != null)
+                    {
+                        beatmap = new(
+                            player.BeatmapIdentifier.LevelId,
+                            player.BeatmapIdentifier.Characteristic,
+                            (BeatmapDifficulty)player.BeatmapIdentifier.Difficulty);
+                    }
+                    else
+                    {
+                        beatmap = new(
+                            "NULL",
+                            "NULL",
+                            BeatmapDifficulty.Normal);
+                    }
+
+                    advancedPlayers[i] = new(
                         new SimplePlayer(
                             player.UserName,
                             player.UserId),
@@ -137,7 +153,29 @@ namespace BeatTogether.DedicatedServer.Node
                         player.FinishedLevel,
                         player.InMenu,
                         player.IsModded,
-                        player.InLobby
+                        player.InLobby,
+                        beatmap,
+                        new GameplayModifiers((EnergyType)player.Modifiers.Energy,
+                            player.Modifiers.NoFailOn0Energy,
+                            player.Modifiers.DemoNoFail,
+                            player.Modifiers.InstaFail,
+                            player.Modifiers.FailOnSaberClash,
+                            (EnabledObstacleType)player.Modifiers.EnabledObstacle,
+                            player.Modifiers.DemoNoObstacles,
+                            player.Modifiers.FastNotes,
+                            player.Modifiers.StrictAngles,
+                            player.Modifiers.DisappearingArrows,
+                            player.Modifiers.GhostNotes,
+                            player.Modifiers.NoBombs,
+                            (SongSpeed)player.Modifiers.Speed,
+                            player.Modifiers.NoArrows,
+                            player.Modifiers.ProMode,
+                            player.Modifiers.ZenMode,
+                            player.Modifiers.SmallCubes),
+                        player.CanRecommendBeatmaps,
+                        player.CanRecommendModifiers,
+                        player.CanKickVote,
+                        player.CanInvite
                         );
                 }
                 return Task.FromResult(new AdvancedPlayersListResponce(advancedPlayers));
@@ -151,6 +189,23 @@ namespace BeatTogether.DedicatedServer.Node
             {
 
                 IPlayer player = instance.GetPlayerRegistry().GetPlayer(request.UserId);
+
+                Beatmap beatmap;
+                if (player.BeatmapIdentifier != null)
+                {
+                    beatmap = new(
+                        player.BeatmapIdentifier.LevelId,
+                        player.BeatmapIdentifier.Characteristic,
+                        (BeatmapDifficulty)player.BeatmapIdentifier.Difficulty);
+                }
+                else
+                {
+                    beatmap = new(
+                        "NULL",
+                        "NULL",
+                        BeatmapDifficulty.Normal);
+                }
+
                 AdvancedPlayer AdvancedPlayer = new(
                     new SimplePlayer(
                         player.UserName,
@@ -167,7 +222,29 @@ namespace BeatTogether.DedicatedServer.Node
                     player.FinishedLevel,
                     player.InMenu,
                     player.IsModded,
-                    player.InLobby
+                    player.InLobby,
+                    beatmap,
+                    new GameplayModifiers((EnergyType)player.Modifiers.Energy,
+                        player.Modifiers.NoFailOn0Energy,
+                        player.Modifiers.DemoNoFail,
+                        player.Modifiers.InstaFail,
+                        player.Modifiers.FailOnSaberClash,
+                        (EnabledObstacleType)player.Modifiers.EnabledObstacle,
+                        player.Modifiers.DemoNoObstacles,
+                        player.Modifiers.FastNotes,
+                        player.Modifiers.StrictAngles,
+                        player.Modifiers.DisappearingArrows,
+                        player.Modifiers.GhostNotes,
+                        player.Modifiers.NoBombs,
+                        (SongSpeed)player.Modifiers.Speed,
+                        player.Modifiers.NoArrows,
+                        player.Modifiers.ProMode,
+                        player.Modifiers.ZenMode,
+                        player.Modifiers.SmallCubes),
+                    player.CanRecommendBeatmaps,
+                    player.CanRecommendModifiers,
+                    player.CanKickVote,
+                    player.CanInvite
                     );
                 return Task.FromResult(new AdvancedPlayerResponce(AdvancedPlayer));
             }
@@ -202,12 +279,14 @@ namespace BeatTogether.DedicatedServer.Node
 
                 AdvancedInstance advancedInstance = new(
                     config,
+                    instance.GetPlayerRegistry().Players.Count,
                     instance.IsRunning,
                     instance.RunTime,
                     instance.Port,
                     instance.UserId,
                     instance.UserName,
                     (MultiplayerGameState)instance.State,
+                    (GameplayManagerState)GameplayManager.State,
                     instance.NoPlayersTime,
                     instance.DestroyInstanceTimeout,
                     instance.SetManagerFromUserId,
@@ -266,7 +345,7 @@ namespace BeatTogether.DedicatedServer.Node
                     break;
             }
             return beatmap;
-        }
+        } //Not a request
 
         private GameplayModifiers GetInstanceModifiers(IDedicatedInstance instance, ILobbyManager lobby, IGameplayManager GameplayManager)
         {
@@ -332,7 +411,7 @@ namespace BeatTogether.DedicatedServer.Node
                     break;
             }
             return modifiers;
-        }
+        } //Not a rrquest
     
         public Task<SetInstanceBeatmapResponse> SetInstanceBeatmap(SetInstanceBeatmapRequest request)
         {

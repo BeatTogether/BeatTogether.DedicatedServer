@@ -4,6 +4,9 @@
     <TargetFramework>net5.0</TargetFramework>
     <LangVersion>9</LangVersion>
     <Nullable>enable</Nullable>
+    <Version>1.0.0</Version>
+    <PackageId>BeatTogether.DedicatedServer.Kernel</PackageId>
+    <Authors>Pythonology, cubic</Authors>
   </PropertyGroup>
 
   <ItemGroup>

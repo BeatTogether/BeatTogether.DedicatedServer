@@ -16,5 +16,12 @@ namespace BeatTogether.DedicatedServer.Interface.Models
         bool FinishedLevel,
         bool InMenu,
         bool IsModded,
-        bool InLobby);
+        bool InLobby,
+        Beatmap SelectedBeatmap,
+        GameplayModifiers GameplayModifiers,
+        bool CanRecommendBeatmaps,
+        bool CanRecommendModifiers,
+        bool CanKickVote,
+        bool CanInvite);
+
 }
