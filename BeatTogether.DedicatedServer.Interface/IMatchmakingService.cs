@@ -1,6 +1,8 @@
 ﻿using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Interface.Requests;
 using BeatTogether.DedicatedServer.Interface.Responses;
+using Autobus;
+using BeatTogether.DedicatedServer.Interface.Events;
 
 namespace BeatTogether.DedicatedServer.Interface
 {
@@ -18,5 +20,15 @@ namespace BeatTogether.DedicatedServer.Interface
         Task<AdvancedInstanceResponce> GetAdvancedInstance(GetAdvancedInstanceRequest request);
         Task<SetInstanceBeatmapResponse> SetInstanceBeatmap(SetInstanceBeatmapRequest request);
         //TODO add tasks to set beatmaps, modifiers, countdowns though autobus
+
+        public class DedicatedServerServiceContract : BaseServiceContract
+        {
+            public override void Build(IServiceContractBuilder builder) =>
+                builder
+                    .UseName("DedicatedServer")
+                    .AddInterface<IMatchmakingService>()
+                    //.AddEvent<MatchmakingServerStartedEvent>()
+                    .AddEvent<MatchmakingServerStoppedEvent>();
+        }
     }
 }

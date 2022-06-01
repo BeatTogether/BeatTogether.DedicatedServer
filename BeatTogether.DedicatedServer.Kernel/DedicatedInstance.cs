@@ -130,17 +130,16 @@ namespace BeatTogether.DedicatedServer.Kernel
             _waitForPlayerCts = new CancellationTokenSource();
             _stopServerCts = new CancellationTokenSource();
             SendSyncTime(_stopServerCts.Token);
-            _ = Task.Delay(WaitForPlayerTimeLimit, _waitForPlayerCts.Token).ContinueWith(t =>
+            _ = Task.Delay((WaitForPlayerTimeLimit + (int)(DestroyInstanceTimeout*1000)), _waitForPlayerCts.Token).ContinueWith(t =>
             {
                 if (!t.IsCanceled)
                 {
                     if(DestroyInstanceTimeout != -1)
                     {
-                        _logger.Warning("Timed out waiting for player to join, Server will close after no players timeout");
+                        _logger.Warning("Timed out waiting for player to join, Server will close now");
                         _waitForPlayerCts = null;
+                        _ = Stop(CancellationToken.None);
                     }
-                    NoPlayersTime = RunTime;
-                    //_ = Stop(CancellationToken.None);
                 }
                 else
                 {
