@@ -82,22 +82,22 @@ namespace BeatTogether.DedicatedServer.Node
                 return new StopMatchmakingServerResponse(true);
             }
             return new StopMatchmakingServerResponse(false);
-        } //Done
+        }
 
         public Task<PublicMatchmakingServerListResponse> GetPublicMatchmakingServerList(GetPublicMatchmakingServerListRequest request)
         {
             return Task.FromResult(new PublicMatchmakingServerListResponse(_instanceRegistry.ListPublicInstanceSecrets()));
-        }  //Done
+        }
 
         public Task<ServerCountResponse> GetServerCount(GetMatchmakingServerCountRequest request)
         {
             return Task.FromResult(new ServerCountResponse(_instanceRegistry.GetServerCount()));
-        }   //Probably wont use as master server does this
+        }
 
         public Task<PublicServerCountResponse> GetPublicServerCount(GetPublicMatchmakingServerCountRequest request)
         {
             return Task.FromResult(new PublicServerCountResponse(_instanceRegistry.GetPublicServerCount()));
-        }   //Probably wont use
+        }
 
         public Task<SimplePlayersListResponce> GetSimplePlayerList(GetPlayersSimpleRequest request)
         {
