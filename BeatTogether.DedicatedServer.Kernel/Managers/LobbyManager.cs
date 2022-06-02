@@ -101,7 +101,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if(_playerRegistry.Players.Count == 0)
             {
-                Console.WriteLine("NoPlayers");
                 LoopTime = NoPlayersLoopTIme;
                 if (_instance.DestroyInstanceTimeout == -1 || _instance.NoPlayersTime == -1)
                     return;
