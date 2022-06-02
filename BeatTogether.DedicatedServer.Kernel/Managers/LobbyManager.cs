@@ -11,6 +11,7 @@ using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
+using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
@@ -56,6 +57,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IGameplayManager _gameplayManager;
         private readonly ILogger _logger = Log.ForContext<LobbyManager>();
+        private readonly IBeatmapRepository _beatmapRepository;
 
         public LobbyManager(
             InstanceConfiguration configuration,

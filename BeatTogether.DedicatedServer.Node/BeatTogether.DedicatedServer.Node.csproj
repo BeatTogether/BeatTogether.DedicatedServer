@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+	<PackageReference Include="BeatSaverSharper" Version="3.4.2" />
 	<PackageReference Include="BeatTogether.Extensions.Autobus.RabbitMQ" Version="1.0.3" />
 	<PackageReference Include="BeatTogether.MasterServer.Interface" Version="1.1.11" />	
   </ItemGroup>
