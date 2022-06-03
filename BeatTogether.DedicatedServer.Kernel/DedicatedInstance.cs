@@ -137,7 +137,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                     if(DestroyInstanceTimeout != -1)
                     {
                         _logger.Warning("Timed out waiting for player to join, Server will close now");
-                        _waitForPlayerCts = null;
                         _ = Stop(CancellationToken.None);
                     }
                 }
@@ -298,6 +297,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public override void OnConnect(EndPoint endPoint)
         {
+            Console.WriteLine("Player connecting")
             _logger.Debug($"Endpoint connected (RemoteEndPoint='{endPoint}').");
 
             if (!_playerRegistry.TryGetPlayer(endPoint, out var player))
@@ -348,33 +348,42 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SortIndex = 0
             }, DeliveryMethod.ReliableOrdered);
 
+
             foreach (IPlayer p in _playerRegistry.Players.Where(p => p.ConnectionId != player.ConnectionId))
             {
-                // Send all player connection data packets to new player
-                _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
+                try
                 {
-                    RemoteConnectionId = p.ConnectionId,
-                    UserId = p.UserId,
-                    UserName = p.UserName,
-                    IsConnectionOwner = false
-                }, DeliveryMethod.ReliableOrdered);
-
-                // Send all player sort index packets to new player
-                if (p.SortIndex != -1)
-                    _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
+                    // Send all player connection data packets to new player
+                    _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
                     {
+                        RemoteConnectionId = p.ConnectionId,
                         UserId = p.UserId,
-                        SortIndex = p.SortIndex
+                        UserName = p.UserName,
+                        IsConnectionOwner = false
                     }, DeliveryMethod.ReliableOrdered);
 
-                // Send all player identity packets to new player
-                _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
+                    // Send all player sort index packets to new player
+                    if (p.SortIndex != -1)
+                        _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
+                        {
+                            UserId = p.UserId,
+                            SortIndex = p.SortIndex
+                        }, DeliveryMethod.ReliableOrdered);
+
+                    // Send all player identity packets to new player
+                    if (p.Avatar != null)
+                        _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
+                        {
+                            PlayerState = p.State,
+                            PlayerAvatar = p.Avatar,
+                            Random = new ByteArray { Data = p.Random },
+                            PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
+                        }, DeliveryMethod.ReliableOrdered);
+                }
+                catch (Exception ex)
                 {
-                    PlayerState = p.State,
-                    PlayerAvatar = p.Avatar,
-                    Random = new ByteArray { Data = p.Random },
-                    PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
-                }, DeliveryMethod.ReliableOrdered);
+                    _logger.Error("Player: " + p.UserId + " Has caused an error when sending a packet to a new player, Something was null", ex);
+                }
             }
 
             // Disable start button if they are manager without selected song

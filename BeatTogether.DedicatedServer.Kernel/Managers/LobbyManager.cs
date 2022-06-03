@@ -11,7 +11,6 @@ using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
@@ -64,7 +63,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             IDedicatedInstance instance,
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
-            IGameplayManager gameplayManager
+            IGameplayManager gameplayManager,
+            IBeatmapRepository beatmapRepository
             )
         {
             _configuration = configuration;
@@ -72,6 +72,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
             _gameplayManager = gameplayManager;
+            _beatmapRepository = beatmapRepository;
 
             _instance.StopEvent += Stop;
             Task.Run(() => UpdateLoop(_stopCts.Token));
@@ -322,11 +323,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         }
 
 
-        public void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
+        public async void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
             if (SelectedBeatmap != beatmap)
             {
-                SelectedBeatmap = beatmap;
+                if (beatmap == null || !await _beatmapRepository.CheckBeatmap(beatmap, true, true, false))//Checks here if we can play the beatmap
+                    SelectedBeatmap = null;
+                else
+                    SelectedBeatmap = beatmap;
             }
             if (SelectedModifiers != modifiers)
             {
@@ -335,7 +339,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         }
 
         // Sets countdown and beatmap how the client would expect it to
-        // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled
+        // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled, whereas SetCountdown will now
         public void SetCountdown(CountdownState countdownState, float countdown = 0)
         {
             CountDownState = countdownState;

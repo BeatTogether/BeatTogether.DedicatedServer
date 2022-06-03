@@ -1,71 +1,89 @@
 ﻿using BeatSaverSharp;
 using BeatSaverSharp.Models;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using BeatTogether.DedicatedServer.Node.Abstractions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace BeatTogether.DedicatedServer.Node
+namespace BeatTogether.DedicatedServer.Kernel
 {
+    /**
+     * Stores commonly played beatmaps so lots of beatsaver requests are not going to be made
+     * Checks beatsaver to find out if a map contains requirements and if the requirement is allowed or not
+     */
+
+
     public class BeatmapDifficultyStats
     {
         public bool Chroma { get; }
         public bool MappingExtensions { get; }
         public bool NoodleExtensions { get; }
-        //public int Plays { get; set; }
+
         public BeatmapDifficultyStats(bool chroma, bool mappingExtensions, bool noodleExtensions)
         {
             Chroma = chroma;
             MappingExtensions = mappingExtensions;
             NoodleExtensions = noodleExtensions;
-            //Plays = 0;
         }
     }
     public class BeatmapData
     {
-        public float BeatmapLength { get; }
+        public int BeatmapLength { get; }
         public ConcurrentDictionary<BeatmapIdentifier, BeatmapDifficultyStats> Difficulties;
+        public int Activity { get; set; }
 
-        public BeatmapData(float beatmapLength, ConcurrentDictionary<BeatmapIdentifier, BeatmapDifficultyStats> difficulties)
+        public BeatmapData(int beatmapLength, ConcurrentDictionary<BeatmapIdentifier, BeatmapDifficultyStats> difficulties)
         {
             BeatmapLength = beatmapLength;
             Difficulties = difficulties;
+            Activity = 0;
         }
     }
 
     public class BeatmapRepository : IBeatmapRepository
     {
+        private int CleanUpCounter = 0;
         private BeatSaver beatSaverAPI = new("BeatTogetherDedicatedInstance", new Version("1.0.0"));
         private ConcurrentDictionary<string, BeatmapData> _BeatmapRepository = new();
 
         public async Task<bool> CheckBeatmap(BeatmapIdentifier beatmap, bool AllowChroma, bool AllowMappingExtensions, bool AllowNoodleExtensions)
         {
+            if (!beatmap.LevelId.StartsWith("custom_level_"))
+                return true;//Returns true for base game levels
             if(_BeatmapRepository.TryGetValue(beatmap.LevelId, out var beatmapData))
                 return CheckDifficulties(beatmap, beatmapData, AllowChroma, AllowMappingExtensions, AllowNoodleExtensions);
-            if(await FetchBeatmap(beatmap))
+            if(await FetchBeatmap(beatmap)) //Fetches beatmap
                 return await CheckBeatmap(beatmap, AllowChroma, AllowMappingExtensions, AllowNoodleExtensions);
-            return false;
+            return false; //Not found beatmap or not met requirements
         }
 
         private bool CheckDifficulties(BeatmapIdentifier beatmap, BeatmapData beatmapData, bool AllowChroma, bool AllowMappingExtensions, bool AllowNoodleExtensions)
         {
-            if(beatmapData.Difficulties.TryGetValue(beatmap, out var beatmapDifficulty))
-                return !(beatmapDifficulty.Chroma && !AllowChroma) && !(beatmapDifficulty.MappingExtensions && !AllowMappingExtensions) && !(beatmapDifficulty.NoodleExtensions && !AllowNoodleExtensions);
+            CleanUpCounter++;
+            beatmapData.Activity++;
+            if (CleanUpCounter > 400)
+            {
+                beatmapData.Activity++;
+                CleanCachedBeatmapsByActivity();
+            }
+            Console.WriteLine("Beatmap activity is: " + beatmapData.Activity + " CleanUpCounter is: " + CleanUpCounter);
+            if (beatmapData.Difficulties.TryGetValue(beatmap, out var beatmapDifficulty))
+                return !((beatmapDifficulty.Chroma && !AllowChroma) || (beatmapDifficulty.MappingExtensions && !AllowMappingExtensions) || (beatmapDifficulty.NoodleExtensions && !AllowNoodleExtensions));
             return false;
         }
 
-        public float GetBeatmapLength(BeatmapIdentifier beatmap)
+        public int GetBeatmapLength(BeatmapIdentifier beatmap)
         {
             if (_BeatmapRepository.TryGetValue(beatmap.LevelId, out var beatmapData))
                 return beatmapData.BeatmapLength;
             return -1;
         }
 
-        public async Task<bool> FetchBeatmap(BeatmapIdentifier beatmap)
+        public async Task<bool> FetchBeatmap(BeatmapIdentifier beatmap) //Fetches beatmap from beatsaver and stores it how we need it
         {
-            Beatmap? FetchBeatmap = await beatSaverAPI.Beatmap(beatmap!.LevelId);
+            Beatmap? FetchBeatmap = await beatSaverAPI.Beatmap(beatmap!.LevelId[13..]);
             if (FetchBeatmap != null)
             {
                 ConcurrentDictionary<BeatmapIdentifier, BeatmapDifficultyStats> difficulties = new();
@@ -82,10 +100,26 @@ namespace BeatTogether.DedicatedServer.Node
                     difficulties.TryAdd(identifier, difficultyStats);
 
                 }
-                BeatmapData data = new BeatmapData((float)FetchBeatmap.Metadata.Duration, difficulties);
+                BeatmapData data = new BeatmapData(FetchBeatmap.Metadata.Duration, difficulties);
                 return _BeatmapRepository.TryAdd(beatmap.LevelId, data);
             }
             return false;
+        }
+
+        public void CleanCachedBeatmapsByActivity() //Halves the activity on all the beatmaps and if it hits 0 then it removes the beatmap
+        {
+            List<string> ToRemove = new();
+            foreach (var Beatmap in _BeatmapRepository)
+            {
+                Beatmap.Value.Activity = Beatmap.Value.Activity / 2;
+                if (Beatmap.Value.Activity == 0)
+                    ToRemove.Add(Beatmap.Key);
+            }
+            foreach (string LevelId in ToRemove)
+            {
+                _BeatmapRepository[LevelId].Difficulties.Clear();
+                _BeatmapRepository.Remove(LevelId, out _);
+            }
         }
     }
 }
