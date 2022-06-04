@@ -4,6 +4,6 @@ namespace BeatTogether.DedicatedServer.Interface.Responses
 {
     public record SimplePlayersListResponce(SimplePlayer[]? SimplePlayers)
     {
-        public bool success = SimplePlayers != null;
+        public bool Success => SimplePlayers != null;
     }
 }

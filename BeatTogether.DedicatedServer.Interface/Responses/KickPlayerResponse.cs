@@ -2,6 +2,6 @@
 {
     public record KickPlayerResponse(bool Kicked)
     {
-        public bool Success = Kicked;
+        public bool Success => Kicked;
     }
 }

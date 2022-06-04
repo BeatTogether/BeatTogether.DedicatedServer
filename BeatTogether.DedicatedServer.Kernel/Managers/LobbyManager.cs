@@ -450,10 +450,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     return voteDictionary.OrderByDescending(n => n.Value).First().Key;
                 case SongSelectionMode.RandomPlayerPicks:
                     if (SelectedBeatmap != _lastBeatmap || SelectedBeatmap == null)
-                        return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier; //TODO, make a random player the manager for that beatmap round for randomplayer chooses setting
+                        return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier; //TODO, Fix this to work correctly i guess
                     return SelectedBeatmap;
                 case SongSelectionMode.ServerPicks:
-                    return null; //Fancy code here to gather a bsr request or something similar, then play the beatmap. As long as a beatmap is set the server will count down
+                    return SelectedBeatmap;
             };
             return null;
         }
@@ -476,7 +476,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         return new GameplayModifiers();
                     return voteDictionary.OrderByDescending(n => n.Value).First().Key;
                 case SongSelectionMode.ServerPicks:
-                    return new GameplayModifiers(); //code to get modifiers from external source
+                    return SelectedModifiers;
             };
             return new GameplayModifiers();
 		}

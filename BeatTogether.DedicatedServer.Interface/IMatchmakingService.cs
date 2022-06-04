@@ -10,9 +10,6 @@ namespace BeatTogether.DedicatedServer.Interface
     {
         Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request);
         Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request);
-        Task<PublicMatchmakingServerListResponse> GetPublicMatchmakingServerList(GetPublicMatchmakingServerListRequest request);
-        Task<PublicServerCountResponse> GetPublicServerCount(GetPublicMatchmakingServerCountRequest request);
-        Task<ServerCountResponse> GetServerCount(GetMatchmakingServerCountRequest request);
         Task<SimplePlayersListResponce>? GetSimplePlayerList(GetPlayersSimpleRequest request);
         Task<AdvancedPlayersListResponce>? GetAdvancedPlayerList(GetPlayersAdvancedRequest request);
         Task<AdvancedPlayerResponce> GetAdvancedPlayer(GetPlayerAdvancedRequest request);
