@@ -138,10 +138,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             routingHeader.SenderId = sender.ConnectionId;
             var writer = new SpanBufferWriter(stackalloc byte[412]);
-            writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
-            writer.WriteBytes(reader.RemainingData);
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
+                writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
+                writer.WriteBytes(reader.RemainingData);
+
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
@@ -152,6 +153,9 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             else
             {
+                writer.WriteRoutingHeader(routingHeader.SenderId, LocalConnectionId);
+                writer.WriteBytes(reader.RemainingData);
+
                 if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
                 {
                     _logger.Warning(

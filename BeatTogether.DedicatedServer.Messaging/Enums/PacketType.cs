@@ -12,6 +12,8 @@
 		MultiplayerSession = 7,
 		KickPlayer = 8,
 		PlayerStateUpdate = 9,
-		PlayerAvatarUpdate = 10
+		PlayerAvatarUpdate = 10,
+		Ping = 11,
+		Pong = 12
 	}
 }

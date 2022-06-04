@@ -27,6 +27,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         GameplayModifiers Modifiers { get; set; }
         PlayerStateHash State { get; set; }
 
+        bool WasActiveAtCountdownStart { get; set; }
+
         public bool IsManager { get; }
         public bool CanRecommendBeatmaps { get; }
         public bool CanRecommendModifiers { get; }

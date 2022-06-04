@@ -1,0 +1,18 @@
+﻿using BeatTogether.DedicatedServer.Messaging.Models;
+using System.Threading.Tasks;
+
+namespace BeatTogether.DedicatedServer.Kernel.Abstractions
+{
+    public interface IBeatmapRepository
+    {
+        bool AllowChroma { get; }
+        bool AllowMappingExtensions { get; }
+        bool AllowNoodleExtensions { get; }
+        Task<bool> CheckBeatmap(BeatmapIdentifier beatmap);
+        int GetBeatmapLength(BeatmapIdentifier beatmap);
+        Task<bool> FetchBeatmap(BeatmapIdentifier beatmap);
+        void CleanCachedBeatmapsByActivity();
+        void ClearCachedBeatmaps();
+        void SetRequirements(bool chroma, bool MappingExtensions, bool NoodleExtensions);
+    }
+}
