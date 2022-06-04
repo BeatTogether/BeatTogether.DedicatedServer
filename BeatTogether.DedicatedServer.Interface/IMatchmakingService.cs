@@ -16,6 +16,8 @@ namespace BeatTogether.DedicatedServer.Interface
         Task<KickPlayerResponse> KickPlayer(KickPlayerRequest request);
         Task<AdvancedInstanceResponce> GetAdvancedInstance(GetAdvancedInstanceRequest request);
         Task<SetInstanceBeatmapResponse> SetInstanceBeatmap(SetInstanceBeatmapRequest request);
+        Task<SetAllowedRequirementsResponse> SetAllowedRequirements(SetAllowedRequirementsRequest request);
+        Task<GetAllowedRequirementsResponse> GetAllowedRequirements(GetAllowedRequirementsRequest request);
 
         public class DedicatedServerServiceContract : BaseServiceContract
         {

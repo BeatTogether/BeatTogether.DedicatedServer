@@ -24,19 +24,22 @@ namespace BeatTogether.DedicatedServer.Node
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IAutobus _autobus;
         private readonly ILogger _logger = Log.ForContext<NodeService>();
+        private readonly IBeatmapRepository _beatmapRepository;
 
         public NodeService(
             NodeConfiguration configuration,
             IInstanceFactory instanceFactory,
             IInstanceRegistry instanceRegistry,
             PacketEncryptionLayer packetEncryptionLayer,
-            IAutobus autobus)
+            IAutobus autobus,
+            IBeatmapRepository beatmapRepository)
         {
             _configuration = configuration;
             _instanceFactory = instanceFactory;
             _instanceRegistry = instanceRegistry;
             _packetEncryptionLayer = packetEncryptionLayer;
             _autobus = autobus;
+            _beatmapRepository = beatmapRepository;
         }
 
         public async Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request)
@@ -445,5 +448,23 @@ namespace BeatTogether.DedicatedServer.Node
             }
             return Task.FromResult(new SetInstanceBeatmapResponse(false));
         }
+
+        public Task<SetAllowedRequirementsResponse> SetAllowedRequirements(SetAllowedRequirementsRequest request)
+        {
+            _beatmapRepository.SetRequirements(request.AllowChroma, request.AllowMappingExtensions, request.AllowNoodleExtensions);
+            return Task.FromResult(new SetAllowedRequirementsResponse(_beatmapRepository.AllowChroma == request.AllowChroma && _beatmapRepository.AllowMappingExtensions == request.AllowMappingExtensions && _beatmapRepository.AllowNoodleExtensions == request.AllowNoodleExtensions));
+        }
+
+        public Task<GetAllowedRequirementsResponse> GetAllowedRequirements(GetAllowedRequirementsRequest request)
+        {
+            return Task.FromResult(new GetAllowedRequirementsResponse(_beatmapRepository.AllowChroma, _beatmapRepository.AllowMappingExtensions, _beatmapRepository.AllowNoodleExtensions));
+        }
+
+        public Task<ClearCachedBeatmapsResponse> ClearCachedBeatmaps(ClearCachedBeatmapsRequest request)
+        {
+            _beatmapRepository.ClearCachedBeatmaps();
+            return Task.FromResult(new ClearCachedBeatmapsResponse(true));
+        }
+
     }
 }
