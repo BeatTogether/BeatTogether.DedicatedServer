@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -13,7 +13,7 @@
 
   <ItemGroup>
 	<PackageReference Include="BeatTogether.Extensions.Autobus.RabbitMQ" Version="1.0.3" />
-	<PackageReference Include="BeatTogether.MasterServer.Interface" Version="1.1.11" />	
+	<PackageReference Include="BeatTogether.MasterServer.Interface" Version="1.1.13" />	
   </ItemGroup>
 	
   <ItemGroup>

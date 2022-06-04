@@ -338,7 +338,7 @@ namespace BeatTogether.DedicatedServer.Node
             GameplayModifiers modifiers;
             switch (instance.State)
             {
-                case Messaging.Enums.MultiplayerGameState.Lobby:
+                case Messaging.Enums.MultiplayerGameState.Lobby or Messaging.Enums.MultiplayerGameState.None:
                     modifiers = new((EnergyType)lobby.SelectedModifiers.Energy,
                         lobby.SelectedModifiers.NoFailOn0Energy,
                         lobby.SelectedModifiers.DemoNoFail,
@@ -398,7 +398,7 @@ namespace BeatTogether.DedicatedServer.Node
             }
             return modifiers;
         } //Not a rrquest
-    
+
         public Task<SetInstanceBeatmapResponse> SetInstanceBeatmap(SetInstanceBeatmapRequest request)
         {
             if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
