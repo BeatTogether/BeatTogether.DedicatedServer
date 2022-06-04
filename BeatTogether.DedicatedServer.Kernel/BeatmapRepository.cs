@@ -52,11 +52,22 @@ namespace BeatTogether.DedicatedServer.Kernel
 
     public class BeatmapRepository : IBeatmapRepository
     {
+        public bool AllowChroma { get; private set; }
+        public bool AllowMappingExtensions { get; private set; }
+        public bool AllowNoodleExtensions { get; private set; }
+
         private int CleanUpCounter = 0;
         private BeatSaver beatSaverAPI = new("BeatTogetherDedicatedInstance", new Version("1.0.0"));
         private ConcurrentDictionary<string, BeatmapData> _BeatmapRepository = new();
 
-        public async Task<bool> CheckBeatmap(BeatmapIdentifier beatmap, bool AllowChroma, bool AllowMappingExtensions, bool AllowNoodleExtensions)
+        public BeatmapRepository()
+        {
+            AllowChroma = true;
+            AllowMappingExtensions = true;
+            AllowNoodleExtensions = false;
+        }
+
+        public async Task<bool> CheckBeatmap(BeatmapIdentifier beatmap)
         {
             if (!beatmap.LevelId.StartsWith("custom_level_"))
                 return true;//Returns true for base game levels
@@ -68,7 +79,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 else
                     return false;
             if (await FetchBeatmap(beatmap)) //Fetches beatmap
-                return await CheckBeatmap(beatmap, AllowChroma, AllowMappingExtensions, AllowNoodleExtensions);
+                return await CheckBeatmap(beatmap);
             return false; //Not found beatmap or not met requirements
         }
 
@@ -140,5 +151,22 @@ namespace BeatTogether.DedicatedServer.Kernel
                 _BeatmapRepository.Remove(LevelId, out _);
             }
         }
+        public void ClearCachedBeatmaps()
+        {
+            foreach (var Beatmap in _BeatmapRepository)
+            {
+                _BeatmapRepository[Beatmap.Key].Difficulties.Clear();
+            }
+            _BeatmapRepository.Clear();
+            CleanUpCounter = 0;
+        }
+
+        public void SetRequirements(bool chroma, bool MappingExtensions, bool NoodleExtensions)
+        {
+            AllowChroma = chroma;
+            AllowMappingExtensions = MappingExtensions;
+            AllowNoodleExtensions = NoodleExtensions;
+        }
+
     }
 }

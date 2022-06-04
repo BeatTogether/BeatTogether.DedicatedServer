@@ -329,7 +329,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (SelectedBeatmap != beatmap && !FetchingBeatmap)
             {
                 FetchingBeatmap = true;
-                if (beatmap == null || !await _beatmapRepository.CheckBeatmap(beatmap, true, true, false))//TODO Checks here if we can play the beatmap, todo is here to remind where it is, so noodle can be re-enabled at some point 
+                if (beatmap == null || !await _beatmapRepository.CheckBeatmap(beatmap))
                 {
                     SelectedBeatmap = null;
                     FetchingBeatmap = false;
