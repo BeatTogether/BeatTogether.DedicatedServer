@@ -81,7 +81,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     CleanUpCounter++;
                     beatmapData.Activity++;
-                    if (CleanUpCounter > 500)
+                    if (CleanUpCounter > 300)
                     {
                         beatmapData.Activity++;
                         CleanCachedBeatmapsByActivity();
