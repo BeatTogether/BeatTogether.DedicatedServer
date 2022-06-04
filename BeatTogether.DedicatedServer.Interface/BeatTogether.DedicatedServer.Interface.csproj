@@ -6,7 +6,7 @@
     <PackageIcon>icon.png</PackageIcon>
     <Authors>pythonology,cubic</Authors>
     <Company>pythonology,cubic</Company>
-    <RepositoryUrl>https://github.com/pythonology/BeatTogether.DedicatedServer</RepositoryUrl>
+    <RepositoryUrl>https://github.com/beattogether/BeatTogether.DedicatedServer</RepositoryUrl>
     <Version>1.3.7</Version>
     <Nullable>enable</Nullable>
   </PropertyGroup>
