@@ -18,6 +18,8 @@ namespace BeatTogether.DedicatedServer.Interface
         Task<SetInstanceBeatmapResponse> SetInstanceBeatmap(SetInstanceBeatmapRequest request);
         Task<SetAllowedRequirementsResponse> SetAllowedRequirements(SetAllowedRequirementsRequest request);
         Task<GetAllowedRequirementsResponse> GetAllowedRequirements(GetAllowedRequirementsRequest request);
+        Task<ClearCachedBeatmapsResponse> ClearCachedBeatmaps(ClearCachedBeatmapsRequest request);
+
 
         public class DedicatedServerServiceContract : BaseServiceContract
         {
