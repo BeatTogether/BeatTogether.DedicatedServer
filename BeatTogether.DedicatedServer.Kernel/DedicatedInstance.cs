@@ -35,7 +35,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         // Milliseconds between sync time updates
         public const int SyncTimeDelay = 5000;
 
-        public string UserId => "ziuMSceapEuNN7wRGQXrZg";
+        public string UserId { get; private set; } = "ziuMSceapEuNN7wRGQXrZg";
         public string UserName { get; private set; } = "";
         public InstanceConfiguration Configuration { get; private set; }
         public bool IsRunning => IsStarted;
@@ -297,7 +297,6 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public override void OnConnect(EndPoint endPoint)
         {
-            Console.WriteLine("Player connecting")
             _logger.Debug($"Endpoint connected (RemoteEndPoint='{endPoint}').");
 
             if (!_playerRegistry.TryGetPlayer(endPoint, out var player))

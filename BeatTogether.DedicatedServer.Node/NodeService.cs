@@ -79,6 +79,7 @@ namespace BeatTogether.DedicatedServer.Node
             if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
             {
                 await instance.Stop();
+                _autobus.Publish(new MatchmakingServerStoppedEvent(request.Secret));
                 return new StopMatchmakingServerResponse(true);
             }
             return new StopMatchmakingServerResponse(false);

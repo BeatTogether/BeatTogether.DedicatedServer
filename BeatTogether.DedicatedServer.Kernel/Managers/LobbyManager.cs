@@ -322,15 +322,23 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
         }
 
+        public bool FetchingBeatmap = false;
 
         public async void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
-            if (SelectedBeatmap != beatmap)
+            if (SelectedBeatmap != beatmap && !FetchingBeatmap)
             {
-                if (beatmap == null || !await _beatmapRepository.CheckBeatmap(beatmap, true, true, false))//Checks here if we can play the beatmap
+                FetchingBeatmap = true;
+                if (beatmap == null || !await _beatmapRepository.CheckBeatmap(beatmap, true, true, false))//TODO Checks here if we can play the beatmap, todo is here to remind where it is, so noodle can be re-enabled at some point 
+                {
                     SelectedBeatmap = null;
+                    FetchingBeatmap = false;
+                }
                 else
+                {
                     SelectedBeatmap = beatmap;
+                    FetchingBeatmap = false;
+                }
             }
             if (SelectedModifiers != modifiers)
             {
@@ -417,7 +425,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     break;
                 default:
                     _logger.Information("Canceling countdown when there is no countdown to cancel");
-                    Console.WriteLine("Canceling countdown when there is no countdown to cancel");
                     break;
             }
             SetCountdown(CountdownState.NotCountingDown);

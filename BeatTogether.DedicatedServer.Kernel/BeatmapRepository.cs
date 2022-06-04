@@ -14,7 +14,6 @@ namespace BeatTogether.DedicatedServer.Kernel
      * Checks beatsaver to find out if a map contains requirements and if the requirement is allowed or not
      */
 
-
     public class BeatmapDifficultyStats
     {
         public bool Chroma { get; }
@@ -30,15 +29,24 @@ namespace BeatTogether.DedicatedServer.Kernel
     }
     public class BeatmapData
     {
+        public bool Exists { get; }
         public int BeatmapLength { get; }
-        public ConcurrentDictionary<BeatmapIdentifier, BeatmapDifficultyStats> Difficulties;
+        public ConcurrentDictionary<string, BeatmapDifficultyStats> Difficulties;
         public int Activity { get; set; }
 
-        public BeatmapData(int beatmapLength, ConcurrentDictionary<BeatmapIdentifier, BeatmapDifficultyStats> difficulties)
+        public BeatmapData(int beatmapLength, ConcurrentDictionary<string, BeatmapDifficultyStats> difficulties)
         {
             BeatmapLength = beatmapLength;
             Difficulties = difficulties;
             Activity = 0;
+            Exists = true;
+        }
+        public BeatmapData()
+        {
+            Exists = false;
+            BeatmapLength=0;
+            Activity = 0;
+            Difficulties = new ConcurrentDictionary<string, BeatmapDifficultyStats>();
         }
     }
 
@@ -52,25 +60,35 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             if (!beatmap.LevelId.StartsWith("custom_level_"))
                 return true;//Returns true for base game levels
-            if(_BeatmapRepository.TryGetValue(beatmap.LevelId, out var beatmapData))
-                return CheckDifficulties(beatmap, beatmapData, AllowChroma, AllowMappingExtensions, AllowNoodleExtensions);
-            if(await FetchBeatmap(beatmap)) //Fetches beatmap
+            if (_BeatmapRepository.TryGetValue(beatmap.LevelId, out var beatmapData))
+                if (beatmapData.Exists)
+                {
+                    return CheckDifficulties(beatmap, beatmapData, AllowChroma, AllowMappingExtensions, AllowNoodleExtensions);
+                }
+                else
+                    return false;
+            if (await FetchBeatmap(beatmap)) //Fetches beatmap
                 return await CheckBeatmap(beatmap, AllowChroma, AllowMappingExtensions, AllowNoodleExtensions);
             return false; //Not found beatmap or not met requirements
         }
 
         private bool CheckDifficulties(BeatmapIdentifier beatmap, BeatmapData beatmapData, bool AllowChroma, bool AllowMappingExtensions, bool AllowNoodleExtensions)
         {
-            CleanUpCounter++;
-            beatmapData.Activity++;
-            if (CleanUpCounter > 400)
+            if (beatmapData.Difficulties.TryGetValue((beatmap.Difficulty + beatmap.Characteristic), out var beatmapDifficulty))
             {
-                beatmapData.Activity++;
-                CleanCachedBeatmapsByActivity();
+                bool passed = !((beatmapDifficulty.Chroma && !AllowChroma) || (beatmapDifficulty.MappingExtensions && !AllowMappingExtensions) || (beatmapDifficulty.NoodleExtensions && !AllowNoodleExtensions));
+                if (passed)
+                {
+                    CleanUpCounter++;
+                    beatmapData.Activity++;
+                    if (CleanUpCounter > 500)
+                    {
+                        beatmapData.Activity++;
+                        CleanCachedBeatmapsByActivity();
+                    }
+                }
+                return passed;
             }
-            Console.WriteLine("Beatmap activity is: " + beatmapData.Activity + " CleanUpCounter is: " + CleanUpCounter);
-            if (beatmapData.Difficulties.TryGetValue(beatmap, out var beatmapDifficulty))
-                return !((beatmapDifficulty.Chroma && !AllowChroma) || (beatmapDifficulty.MappingExtensions && !AllowMappingExtensions) || (beatmapDifficulty.NoodleExtensions && !AllowNoodleExtensions));
             return false;
         }
 
@@ -83,27 +101,28 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public async Task<bool> FetchBeatmap(BeatmapIdentifier beatmap) //Fetches beatmap from beatsaver and stores it how we need it
         {
-            Beatmap? FetchBeatmap = await beatSaverAPI.Beatmap(beatmap!.LevelId[13..]);
+            Beatmap? FetchBeatmap = await beatSaverAPI.BeatmapByHash(beatmap!.LevelId[13..]);
             if (FetchBeatmap != null)
             {
-                ConcurrentDictionary<BeatmapIdentifier, BeatmapDifficultyStats> difficulties = new();
+                ConcurrentDictionary<string, BeatmapDifficultyStats> difficulties = new();
                 for (int i = 0; i < FetchBeatmap.LatestVersion.Difficulties.Count; i++)
                 {
-                    BeatmapIdentifier identifier = new();
-                    identifier.Difficulty = (Messaging.Models.BeatmapDifficulty)FetchBeatmap.LatestVersion.Difficulties[i].Difficulty;
-                    identifier.Characteristic = FetchBeatmap.LatestVersion.Difficulties[i].Characteristic.ToString();
-                    identifier.LevelId = beatmap.LevelId;
-                    BeatmapDifficultyStats difficultyStats = new BeatmapDifficultyStats(FetchBeatmap.LatestVersion.Difficulties[i].Chroma,
+                    BeatmapDifficultyStats difficultyStats = new BeatmapDifficultyStats(
+                        FetchBeatmap.LatestVersion.Difficulties[i].Chroma,
                         FetchBeatmap.LatestVersion.Difficulties[i].MappingExtensions,
                         FetchBeatmap.LatestVersion.Difficulties[i].NoodleExtensions
                         );
-                    difficulties.TryAdd(identifier, difficultyStats);
+                    difficulties.TryAdd((FetchBeatmap.LatestVersion.Difficulties[i].Difficulty.ToString() + FetchBeatmap.LatestVersion.Difficulties[i].Characteristic.ToString()), difficultyStats);
 
                 }
                 BeatmapData data = new BeatmapData(FetchBeatmap.Metadata.Duration, difficulties);
                 return _BeatmapRepository.TryAdd(beatmap.LevelId, data);
             }
-            return false;
+            else
+            {
+                _BeatmapRepository.TryAdd(beatmap.LevelId, new BeatmapData());
+                return false;
+            }
         }
 
         public void CleanCachedBeatmapsByActivity() //Halves the activity on all the beatmaps and if it hits 0 then it removes the beatmap
