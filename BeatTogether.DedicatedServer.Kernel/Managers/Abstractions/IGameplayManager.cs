@@ -11,7 +11,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
         string SessionGameId { get; }
         GameplayManagerState State { get; }
 		BeatmapIdentifier? CurrentBeatmap { get; }
-		GameplayModifiers? CurrentModifiers { get; }
+		GameplayModifiers CurrentModifiers { get; }
 
 		void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet);
         void HandleGameSongLoaded(IPlayer player);

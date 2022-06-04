@@ -46,6 +46,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private bool _lastAllOwnMap;          
         private string _lastManagerId = null!;
         private CancellationTokenSource _stopCts = new();
+        private const int ActiveLoopTime = 100;
+        private const int NoPlayersLoopTIme = 1000;
+        private int LoopTime = 100;
 
         private readonly InstanceConfiguration _configuration;
         private readonly IDedicatedInstance _instance;
@@ -53,13 +56,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IGameplayManager _gameplayManager;
         private readonly ILogger _logger = Log.ForContext<LobbyManager>();
+        private readonly IBeatmapRepository _beatmapRepository;
 
         public LobbyManager(
             InstanceConfiguration configuration,
             IDedicatedInstance instance,
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
-            IGameplayManager gameplayManager
+            IGameplayManager gameplayManager,
+            IBeatmapRepository beatmapRepository
             )
         {
             _configuration = configuration;
@@ -67,6 +72,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
             _gameplayManager = gameplayManager;
+            _beatmapRepository = beatmapRepository;
 
             _instance.StopEvent += Stop;
             Task.Run(() => UpdateLoop(_stopCts.Token));
@@ -84,7 +90,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             try
             {
-                await Task.Delay(100, cancellationToken);
+                await Task.Delay(LoopTime, cancellationToken);
                 Update();
                 UpdateLoop(cancellationToken);
             }
@@ -96,6 +102,25 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void Update()
         {
+            if(_playerRegistry.Players.Count == 0)
+            {
+                LoopTime = NoPlayersLoopTIme;
+                if (_instance.DestroyInstanceTimeout == -1 || _instance.NoPlayersTime == -1)
+                    return;
+                if(_instance.NoPlayersTime + _instance.DestroyInstanceTimeout < _instance.RunTime)
+                {
+                    _logger.Warning("Server has Timed out, stopping");
+                    _ = _instance.Stop(CancellationToken.None);
+                }
+                return;
+            }
+            else
+            {
+                LoopTime = ActiveLoopTime;
+            }
+
+
+
             if (_instance.State != MultiplayerGameState.Lobby)
             {
                 //Sends players stuck in the lobby to spectate the ongoing game, prevents a rare quest issue with loss of tracking causing the game to pause on map start
@@ -297,12 +322,23 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
         }
 
+        public bool FetchingBeatmap = false;
 
-        public void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
+        public async void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
-            if (SelectedBeatmap != beatmap)
+            if (SelectedBeatmap != beatmap && !FetchingBeatmap)
             {
-                SelectedBeatmap = beatmap;
+                FetchingBeatmap = true;
+                if (beatmap == null || !await _beatmapRepository.CheckBeatmap(beatmap, true, true, false))//TODO Checks here if we can play the beatmap, todo is here to remind where it is, so noodle can be re-enabled at some point 
+                {
+                    SelectedBeatmap = null;
+                    FetchingBeatmap = false;
+                }
+                else
+                {
+                    SelectedBeatmap = beatmap;
+                    FetchingBeatmap = false;
+                }
             }
             if (SelectedModifiers != modifiers)
             {
@@ -311,7 +347,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         }
 
         // Sets countdown and beatmap how the client would expect it to
-        // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled
+        // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled, whereas SetCountdown will now
         public void SetCountdown(CountdownState countdownState, float countdown = 0)
         {
             CountDownState = countdownState;
@@ -389,7 +425,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     break;
                 default:
                     _logger.Information("Canceling countdown when there is no countdown to cancel");
-                    Console.WriteLine("Canceling countdown when there is no countdown to cancel");
                     break;
             }
             SetCountdown(CountdownState.NotCountingDown);
@@ -414,11 +449,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         return null;
                     return voteDictionary.OrderByDescending(n => n.Value).First().Key;
                 case SongSelectionMode.RandomPlayerPicks:
-                    if (SelectedBeatmap != _lastBeatmap)
-                        return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier; //TODO, make a random player the manager for that beatmap round for randomplayer chooses setting
+                    if (SelectedBeatmap != _lastBeatmap || SelectedBeatmap == null)
+                        return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier; //TODO, Fix this to work correctly i guess
                     return SelectedBeatmap;
                 case SongSelectionMode.ServerPicks:
-                    return null; //Fancy code here to gather a bsr request or something similar, then play the beatmap. As long as a beatmap is set the server will count down
+                    return SelectedBeatmap;
             };
             return null;
         }
@@ -441,7 +476,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         return new GameplayModifiers();
                     return voteDictionary.OrderByDescending(n => n.Value).First().Key;
                 case SongSelectionMode.ServerPicks:
-                    return new GameplayModifiers(); //code to get modifiers from external source
+                    return SelectedModifiers;
             };
             return new GameplayModifiers();
 		}

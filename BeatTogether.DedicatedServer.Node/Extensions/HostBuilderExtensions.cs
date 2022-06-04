@@ -1,5 +1,7 @@
 ﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface;
+using BeatTogether.DedicatedServer.Kernel;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Extensions;
@@ -41,6 +43,7 @@ namespace BeatTogether.DedicatedServer.Node.Extensions
                         .AddSingleton<IPortAllocator, PortAllocator>()
                         .AddSingleton<IInstanceRegistry, InstanceRegistry>()
                         .AddSingleton<IInstanceFactory, InstanceFactory>()
+                        .AddSingleton<IBeatmapRepository, BeatmapRepository>()
                         .AddServiceKernel<IMatchmakingService, NodeService>()
                         .AddHostedService<MasterServerEventHandler>()
                 );

@@ -26,7 +26,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public string SessionGameId { get; private set; } = null!;
         public GameplayManagerState State { get; private set; } = GameplayManagerState.None;
         public BeatmapIdentifier? CurrentBeatmap { get; private set; }
-        public GameplayModifiers? CurrentModifiers { get; private set; }
+        public GameplayModifiers CurrentModifiers { get; private set; } = new();
 
         private const float SongStartDelay = 0.5f;
         private const float ResultsScreenTime = 20f; //changing this to 20 sec as on quest i think it is that
@@ -40,6 +40,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private readonly IDedicatedInstance _instance;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
+        private readonly IBeatmapRepository _beatmapRepository;
 
         private readonly ConcurrentDictionary<string, PlayerSpecificSettings> _playerSpecificSettings = new();
         private readonly ConcurrentDictionary<string, LevelCompletionResults> _levelCompletionResults = new();
@@ -51,11 +52,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public GameplayManager(
             IDedicatedInstance instance,
             IPlayerRegistry playerRegistry,
-            IPacketDispatcher packetDispatcher)
+            IPacketDispatcher packetDispatcher,
+            IBeatmapRepository beatmapRepository)
         {
             _instance = instance;
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
+            _beatmapRepository = beatmapRepository;
 
             _instance.PlayerDisconnectedEvent += HandlePlayerLeaveGameplay;
         }
@@ -93,7 +96,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 linkedLevelFinishedCts.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
-
+            
             // Create scene ready tasks
             var sceneReadyCts = new CancellationTokenSource();
             var linkedSceneReadyCts = CancellationTokenSource.CreateLinkedTokenSource(sceneReadyCts.Token, _requestReturnToMenuCts.Token);
@@ -136,7 +139,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // If no players are actually playing, or not all players are not in the lobby(if at least one player is then true)
             if (loadingPlayers.All(player => !player.InGameplay) || !loadingPlayers.All(player => !player.InLobby))
                 _requestReturnToMenuCts.Cancel(); //this will cancel the gameplay if someone is in the lobby
-            
+
+
             // Start song and wait for finish
             State = GameplayManagerState.Gameplay;
             _songStartTime = _instance.RunTime + SongStartDelay;
@@ -145,7 +149,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
 
-            await Task.WhenAll(levelFinishedTasks); //will only freeze lobby if a player does not tell the server they finished the map, and if they stay in the game
+            if (_beatmapRepository.GetBeatmapLength(beatmap) != -1) 
+                levelFinishedCts.CancelAfter((_beatmapRepository.GetBeatmapLength(beatmap) + 8) * 1000); //Adds 8 sec to the beatmap time incase of slow players
+            await Task.WhenAll(levelFinishedTasks);
             State = GameplayManagerState.Results;
 
             // Wait at results screen if anyone cleared
@@ -153,13 +159,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 await Task.Delay((int)(ResultsScreenTime * 1000));
 
             // End gameplay and reset
-            ResetValues(null, null);
+            ResetValues(null, new());
             State = GameplayManagerState.None;
             _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered); //quest ignores this, has already returned to the lobby
             _instance.SetState(MultiplayerGameState.Lobby);
         }
 
-        private void ResetValues(BeatmapIdentifier? map, GameplayModifiers? modifiers)
+        private void ResetValues(BeatmapIdentifier? map, GameplayModifiers modifiers)
         {
             CurrentBeatmap = map;
             CurrentModifiers = modifiers;
@@ -227,7 +233,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 HandlePlayerLeaveGameplay(p);
             }
-            ResetValues(null, null);
+            ResetValues(null, new());
             _requestReturnToMenuCts?.Cancel();
         }
 
