@@ -68,13 +68,18 @@ namespace BeatTogether.DedicatedServer.Node
             await matchmakingServer.Start();
             //_autobus.Publish(new MatchmakingServerStartedEvent(request.Secret, request.ManagerId, request.Configuration));//Tells the master server to add a server, NOT USED
             matchmakingServer.StopEvent += () => _autobus.Publish(new MatchmakingServerStoppedEvent(request.Secret));//Tells the master server when the newly added server has stopped
-
+            matchmakingServer.PlayerDisconnectedEvent +=  HandlePlayerDisconnectEvent;
             return new CreateMatchmakingServerResponse(
                 CreateMatchmakingServerError.None,
                 $"{_configuration.HostName}:{matchmakingServer.Port}",
                 _packetEncryptionLayer.Random,
                 _packetEncryptionLayer.KeyPair.PublicKey
             );
+        }
+
+        private void HandlePlayerDisconnectEvent(IPlayer player)
+        {
+            _autobus.Publish<PlayerLeaveServerEvent>(new PlayerLeaveServerEvent(player.Secret, player.Endpoint));
         }
 
         public async Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request)
