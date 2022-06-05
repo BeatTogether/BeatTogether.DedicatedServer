@@ -8,6 +8,7 @@ namespace BeatTogether.DedicatedServer.Node.Abstractions
         public bool AddInstance(IDedicatedInstance instance);
         public bool RemoveInstance(IDedicatedInstance instance);
         public IDedicatedInstance GetInstance(string secret);
+        bool DoesInstanceExist(string secret);
         public bool TryGetInstance(string secret, [MaybeNullWhen(false)] out IDedicatedInstance instance);
     }
 }

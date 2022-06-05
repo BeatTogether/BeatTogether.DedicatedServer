@@ -466,5 +466,11 @@ namespace BeatTogether.DedicatedServer.Node
             return Task.FromResult(new ClearCachedBeatmapsResponse(true));
         }
 
+        public Task<DoesServerExistResponse> DoesServerExist(DoesServerExistRequest request)
+        {
+            return Task.FromResult(new DoesServerExistResponse(_instanceRegistry.DoesInstanceExist(request.Secret)));
+        }
+
+
     }
 }
