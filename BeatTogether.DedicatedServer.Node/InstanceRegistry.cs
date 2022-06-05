@@ -22,7 +22,7 @@ namespace BeatTogether.DedicatedServer.Node
         public bool TryGetInstance(string secret, [MaybeNullWhen(false)] out IDedicatedInstance instance) =>
             _instances.TryGetValue(secret, out instance);
         
-
+        public bool DoesInstanceExist(string secret) => _instances.ContainsKey(secret);
 
         public string[] ListPublicInstanceSecrets()
         {
