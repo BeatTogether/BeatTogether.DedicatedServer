@@ -105,22 +105,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if(_playerRegistry.Players.Count == 0)
             {
                 LoopTime = NoPlayersLoopTIme;
-                if (_instance.DestroyInstanceTimeout == -1 || _instance.NoPlayersTime == -1)
-                    return;
-                if(_instance.NoPlayersTime + _instance.DestroyInstanceTimeout < _instance.RunTime)
-                {
-                    _logger.Warning("Server has Timed out, stopping");
-                    _ = _instance.Stop(CancellationToken.None);
-                }
                 return;
             }
             else
             {
                 LoopTime = ActiveLoopTime;
             }
-
-
-
             if (_instance.State != MultiplayerGameState.Lobby)
             {
                 //Sends players stuck in the lobby to spectate the ongoing game, prevents a rare quest issue with loss of tracking causing the game to pause on map start

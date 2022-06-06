@@ -61,7 +61,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private long _startTime;
         private int _connectionIdCount = 0;
         private int _lastSortIndex = -1;
-        private CancellationTokenSource? _waitForPlayerCts;
+        private CancellationTokenSource? _waitForPlayerCts = null;
         private CancellationTokenSource? _stopServerCts;
         private IPacketDispatcher _packetDispatcher = null!;
 
@@ -111,7 +111,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return Task.CompletedTask;
 
             _packetDispatcher = _serviceProvider.GetRequiredService<IPacketDispatcher>();
-
             _startTime = DateTime.UtcNow.Ticks;
 
             _logger.Information(
@@ -126,25 +125,24 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"SongSelectionMode={Configuration.SongSelectionMode}, " +
                 $"GameplayServerControlSettings={Configuration.GameplayServerControlSettings})."
             );
-
-            _waitForPlayerCts = new CancellationTokenSource();
             _stopServerCts = new CancellationTokenSource();
             SendSyncTime(_stopServerCts.Token);
-            _ = Task.Delay((WaitForPlayerTimeLimit + (int)(DestroyInstanceTimeout*1000)), _waitForPlayerCts.Token).ContinueWith(t =>
+            if (DestroyInstanceTimeout != -1)
             {
-                if (!t.IsCanceled)
+                _waitForPlayerCts = new CancellationTokenSource();
+                _ = Task.Delay((WaitForPlayerTimeLimit + (int)(DestroyInstanceTimeout * 1000)), _waitForPlayerCts.Token).ContinueWith(t =>
                 {
-                    if(DestroyInstanceTimeout != -1)
+                    if (!t.IsCanceled)
                     {
                         _logger.Warning("Timed out waiting for player to join, Server will close now");
                         _ = Stop(CancellationToken.None);
                     }
-                }
-                else
-                {
-                    _waitForPlayerCts = null;
-                }
-            });
+                    else
+                    {
+                        _waitForPlayerCts = null;
+                    }
+                });
+            }
 
             StartEvent?.Invoke();
 
@@ -176,6 +174,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             base.Stop();
             return Task.CompletedTask;
         }
+
 
         public int GetNextSortIndex()
         {
@@ -213,6 +212,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             OnDisconnect(player.Endpoint, DisconnectReason.ConnectionRejected);
         }
+
         public void DisconnectPlayer(string UserId)
         {
             if(_playerRegistry.TryGetPlayer(UserId, out var player))
@@ -302,7 +302,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public override void OnConnect(EndPoint endPoint)
         {
-            _logger.Debug($"Endpoint connected (RemoteEndPoint='{endPoint}').");
+            _logger.Information($"Endpoint connected (RemoteEndPoint='{endPoint}'), connecting player");
 
             if (!_playerRegistry.TryGetPlayer(endPoint, out var player))
             {
@@ -448,8 +448,25 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
 
             if (_playerRegistry.Players.Count == 0)
+            {
                 NoPlayersTime = RunTime;
-                //_ = Stop(CancellationToken.None);
+                if (DestroyInstanceTimeout != -1)
+                {
+                    _waitForPlayerCts = new CancellationTokenSource();
+                    _ = Task.Delay((int)(DestroyInstanceTimeout * 1000), _waitForPlayerCts.Token).ContinueWith(t =>
+                    {
+                        if (!t.IsCanceled)
+                        {
+                            _logger.Warning("Timed out waiting for player to join, Server will close now");
+                            _ = Stop(CancellationToken.None);
+                        }
+                        else
+                        {
+                            _waitForPlayerCts = null;
+                        }
+                    });
+                }
+            }
             else
             {
                 // Set new manager if manager left
