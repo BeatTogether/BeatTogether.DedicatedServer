@@ -9,6 +9,8 @@ namespace BeatTogether.DedicatedServer.Interface
     public interface IMatchmakingService
     {
         Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request);
+        //TODO convert all of these into event handlers
+        /*
         Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request);
         Task<SimplePlayersListResponce>? GetSimplePlayerList(GetPlayersSimpleRequest request);
         Task<AdvancedPlayersListResponce>? GetAdvancedPlayerList(GetPlayersAdvancedRequest request);
@@ -20,7 +22,7 @@ namespace BeatTogether.DedicatedServer.Interface
         Task<GetAllowedRequirementsResponse> GetAllowedRequirements(GetAllowedRequirementsRequest request);
         Task<ClearCachedBeatmapsResponse> ClearCachedBeatmaps(ClearCachedBeatmapsRequest request);
         Task<DoesServerExistResponse> DoesServerExist(DoesServerExistRequest request);
-
+        */
 
         public class DedicatedServerServiceContract : BaseServiceContract
         {
@@ -29,6 +31,8 @@ namespace BeatTogether.DedicatedServer.Interface
                     .UseName("DedicatedServer")
                     .AddInterface<IMatchmakingService>()
                     .AddEvent<PlayerLeaveServerEvent>()
+                    .AddEvent<NodeStartedEvent>()
+                    .AddEvent<NodeOnlineEvent>()
                     .AddEvent<MatchmakingServerStoppedEvent>();
         }
     }

@@ -13,6 +13,7 @@ using Serilog;
 using System;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
+using System.Net;
 
 namespace BeatTogether.DedicatedServer.Node
 {
@@ -79,7 +80,7 @@ namespace BeatTogether.DedicatedServer.Node
 
         private void HandlePlayerDisconnectEvent(IPlayer player)
         {
-            _autobus.Publish<PlayerLeaveServerEvent>(new PlayerLeaveServerEvent(player.Secret, player.Endpoint));
+            _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, ((IPEndPoint)player.Endpoint).ToString()));
         }
 
         public async Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request)
