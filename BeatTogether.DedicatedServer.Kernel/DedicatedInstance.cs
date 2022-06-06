@@ -355,8 +355,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             foreach (IPlayer p in _playerRegistry.Players.Where(p => p.ConnectionId != player.ConnectionId))
             {
-                try
-                {
+
                     // Send all player connection data packets to new player
                     _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
                     {
@@ -374,6 +373,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                             SortIndex = p.SortIndex
                         }, DeliveryMethod.ReliableOrdered);
 
+                try
+                {
                     // Send all player identity packets to new player
                     if (p.Avatar != null)
                         _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
@@ -386,7 +387,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error("Player: " + p.UserId + " Has caused an error when sending a packet to a new player, Something was null", ex);
+                    _logger.Error("Player: " + p.UserId + " Has caused an error when sending an avatar packet to another player", ex);
                 }
             }
 
