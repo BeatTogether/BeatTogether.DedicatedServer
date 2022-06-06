@@ -213,6 +213,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             OnDisconnect(player.Endpoint, DisconnectReason.ConnectionRejected);
         }
+        public void DisconnectPlayer(string UserId)
+        {
+            if(_playerRegistry.TryGetPlayer(UserId, out var player))
+                OnDisconnect(player.Endpoint, DisconnectReason.ConnectionRejected);
+        }
 
         #endregion
 

@@ -27,6 +27,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         void SetupPermanentManager(string ManagerUsername);
         void SetupInstance(float Timeout, string ServerName);
         void DisconnectPlayer(IPlayer player);
+        void DisconnectPlayer(string UserId);
 
         IPlayerRegistry GetPlayerRegistry();
         IServiceProvider GetServiceProvider();
