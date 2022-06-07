@@ -57,6 +57,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool AllowNoodleExtensions { get; private set; }
 
         private int CleanUpCounter = 0;
+        private readonly int MaxBeatmapCache = 700;
         private BeatSaver beatSaverAPI = new("BeatTogetherDedicatedInstance", new Version("1.0.0"));
         private ConcurrentDictionary<string, BeatmapData> _BeatmapRepository = new();
 
@@ -92,7 +93,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     CleanUpCounter++;
                     beatmapData.Activity++;
-                    if (CleanUpCounter > 300)
+                    if (CleanUpCounter > 300 || _BeatmapRepository.Count >= MaxBeatmapCache)
                     {
                         beatmapData.Activity++;
                         CleanCachedBeatmapsByActivity();
