@@ -13,6 +13,7 @@ using Serilog;
 using System;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
+using System.Net;
 
 namespace BeatTogether.DedicatedServer.Node
 {
@@ -68,13 +69,18 @@ namespace BeatTogether.DedicatedServer.Node
             await matchmakingServer.Start();
             //_autobus.Publish(new MatchmakingServerStartedEvent(request.Secret, request.ManagerId, request.Configuration));//Tells the master server to add a server, NOT USED
             matchmakingServer.StopEvent += () => _autobus.Publish(new MatchmakingServerStoppedEvent(request.Secret));//Tells the master server when the newly added server has stopped
-
+            matchmakingServer.PlayerDisconnectedEvent +=  HandlePlayerDisconnectEvent;
             return new CreateMatchmakingServerResponse(
                 CreateMatchmakingServerError.None,
                 $"{_configuration.HostName}:{matchmakingServer.Port}",
                 _packetEncryptionLayer.Random,
                 _packetEncryptionLayer.KeyPair.PublicKey
             );
+        }
+
+        private void HandlePlayerDisconnectEvent(IPlayer player)
+        {
+            _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, ((IPEndPoint)player.Endpoint).ToString()));
         }
 
         public async Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request)
@@ -465,6 +471,12 @@ namespace BeatTogether.DedicatedServer.Node
             _beatmapRepository.ClearCachedBeatmaps();
             return Task.FromResult(new ClearCachedBeatmapsResponse(true));
         }
+
+        public Task<DoesServerExistResponse> DoesServerExist(DoesServerExistRequest request)
+        {
+            return Task.FromResult(new DoesServerExistResponse(_instanceRegistry.DoesInstanceExist(request.Secret)));
+        }
+
 
     }
 }
