@@ -80,7 +80,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     return false;
             if (await FetchBeatmap(beatmap)) //Fetches beatmap
                 return await CheckBeatmap(beatmap);
-            return false; //Not found beatmap or not met requirements
+            return true; //Not found beatmap on beatsaver or in repository, so must be local
         }
 
         private bool CheckDifficulties(BeatmapIdentifier beatmap, BeatmapData beatmapData, bool AllowChroma, bool AllowMappingExtensions, bool AllowNoodleExtensions)
