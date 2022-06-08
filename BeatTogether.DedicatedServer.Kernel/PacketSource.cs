@@ -143,9 +143,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                 writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
                 writer.WriteBytes(reader.RemainingData);
 
-                _logger.Verbose(
-                    $"Routing packet from {routingHeader.SenderId} -> all players " +
-                    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
+                //_logger.Verbose(
+                //    $"Routing packet from {routingHeader.SenderId} -> all players " +
+                //    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 foreach (var player in _playerRegistry.Players)
                     if (player != sender)
