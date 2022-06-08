@@ -40,7 +40,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private readonly IDedicatedInstance _instance;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
-        private readonly IBeatmapRepository _beatmapRepository;
 
         private readonly ConcurrentDictionary<string, PlayerSpecificSettings> _playerSpecificSettings = new();
         private readonly ConcurrentDictionary<string, LevelCompletionResults> _levelCompletionResults = new();
@@ -52,13 +51,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public GameplayManager(
             IDedicatedInstance instance,
             IPlayerRegistry playerRegistry,
-            IPacketDispatcher packetDispatcher,
-            IBeatmapRepository beatmapRepository)
+            IPacketDispatcher packetDispatcher)
         {
             _instance = instance;
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
-            _beatmapRepository = beatmapRepository;
 
             _instance.PlayerDisconnectedEvent += HandlePlayerLeaveGameplay;
         }
@@ -149,8 +146,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
 
-            if (_beatmapRepository.GetBeatmapLength(beatmap) != -1) 
-                levelFinishedCts.CancelAfter((_beatmapRepository.GetBeatmapLength(beatmap) + 8) * 1000); //Adds 8 sec to the beatmap time incase of slow players
             await Task.WhenAll(levelFinishedTasks);
             State = GameplayManagerState.Results;
 
