@@ -106,7 +106,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 var packetHandler = _serviceProvider.GetService(packetHandlerType);
                 if (packetHandler is null)
                 {
-                    _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
+                    //_logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
 
                     // skip any unprocessed bytes
                     var processedBytes = reader.Offset - prevPosition;
