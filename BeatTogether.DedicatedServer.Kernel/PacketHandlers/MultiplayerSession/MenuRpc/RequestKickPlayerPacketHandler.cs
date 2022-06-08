@@ -24,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 
         public override Task Handle(IPlayer sender, RequestKickPlayerPacket packet)
         {
-            _logger.Debug(
+            _logger.Information(
                 $"Handling packet of type '{nameof(RequestKickPlayerPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, KickedPlayerId={packet.KickedPlayerId})."
             );
