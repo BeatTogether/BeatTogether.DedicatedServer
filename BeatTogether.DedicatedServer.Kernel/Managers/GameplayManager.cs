@@ -5,7 +5,6 @@ using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.LiteNetLib.Enums;
-using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -42,7 +41,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IBeatmapRepository _beatmapRepository;
-        private readonly ILogger _logger;
 
         private readonly ConcurrentDictionary<string, PlayerSpecificSettings> _playerSpecificSettings = new();
         private readonly ConcurrentDictionary<string, LevelCompletionResults> _levelCompletionResults = new();
@@ -55,14 +53,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             IDedicatedInstance instance,
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
-            IBeatmapRepository beatmapRepository,
-            ILogger logger)
+            IBeatmapRepository beatmapRepository)
         {
             _instance = instance;
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
             _beatmapRepository = beatmapRepository;
-            _logger = logger;
 
             _instance.PlayerDisconnectedEvent += HandlePlayerLeaveGameplay;
         }
@@ -114,10 +110,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
             sceneReadyCts.CancelAfter((int)(SceneLoadTimeLimit * 1000));
             await Task.WhenAll(sceneReadyTasks);
-            if (sceneReadyCts.IsCancellationRequested)
-            {
-                _logger.Error("Scene load time was reached. FLOATY BUG WHOOOp. Players have not recieved, or possibly not sent and weird things are now going to happen");
-            }
 
             // Set scene sync finished
             State = GameplayManagerState.SongLoad;
@@ -143,10 +135,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
             songReadyCts.CancelAfter((int)(SongLoadTimeLimit * 1000));
             await Task.WhenAll(songReadyTasks);
-            if (songReadyCts.IsCancellationRequested)
-            {
-                _logger.Error("Scene load time was reached. FLOATY BUG WHOOOp. Players have not recieved, or possibly not sent the packets and have been disconnecte");
-            }
 
             // If no players are actually playing, or not all players are not in the lobby(if at least one player is then true)
             if (loadingPlayers.All(player => !player.InGameplay) || !loadingPlayers.All(player => !player.InLobby))
