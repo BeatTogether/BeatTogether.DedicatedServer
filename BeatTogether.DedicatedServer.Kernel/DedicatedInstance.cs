@@ -376,7 +376,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error("Player: " + p.UserId + " Has caused an error when sending an avatar packet to another player", ex);
+                    _logger.Error("Player: " + p.UserId + " Endpoint: " + p.Endpoint + "Has caused an error when sending an avatar packet to another player", ex.StackTrace);
                 }
             }
 

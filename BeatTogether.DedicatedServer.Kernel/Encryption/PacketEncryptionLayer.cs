@@ -74,7 +74,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 new HMACSHA256(sendMacSourceArray)
             );
             _potentialEncryptionParameters[endPoint.Address] = encryptionParameters;
-            _encryptionParameters.TryRemove(endPoint, out _); //Why we removing this here?
+            _encryptionParameters.TryRemove(endPoint, out _); //Why we removing this here, if the first thing that happens is the server sending an outbound packet then it would have failed before?
         }
 
         public void RemoveEncryptedEndPoint(IPEndPoint endPoint)
