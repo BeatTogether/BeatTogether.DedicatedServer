@@ -81,8 +81,8 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandleDisconnectPlayer(DisconnectPlayerFromMatchmakingServerEvent disconnectEvent)
         {
-            if(_instanceRegistry.TryGetInstance(disconnectEvent.Secret, out var instance))
-                instance.DisconnectPlayer(disconnectEvent.UserId);
+            //if(_instanceRegistry.TryGetInstance(disconnectEvent.Secret, out var instance))
+                //instance.DisconnectPlayer(disconnectEvent.UserId);
             return Task.CompletedTask;
         }
         #endregion
