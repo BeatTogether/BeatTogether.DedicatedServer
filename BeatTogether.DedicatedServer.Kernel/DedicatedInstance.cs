@@ -208,17 +208,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
         }
 
-        public void DisconnectPlayer(IPlayer player)
-        {
-            OnDisconnect(player.Endpoint, DisconnectReason.ConnectionRejected);
-        }
-
-        public void DisconnectPlayer(string UserId)
-        {
-            if(_playerRegistry.TryGetPlayer(UserId, out var player))
-                OnDisconnect(player.Endpoint, DisconnectReason.ConnectionRejected);
-        }
-
         #endregion
 
         #region LiteNetServer

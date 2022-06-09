@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
@@ -57,9 +58,14 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (!_playerRegistry.TryGetPlayer(remoteEndPoint, out var sender))
             {
                 _logger.Warning(
-                    "Failed to retrieve sender " +
+                    "Failed to retrieve sender, sending them a disconnect packet " +
                     $"(RemoteEndPoint='{remoteEndPoint}')."
                 );
+                _packetDispatcher.SendToEndpoint(remoteEndPoint, //TODO this is only to disconnect users if they are somehow stuck. probably wont send if the player is not found anyway
+                    new PlayerDisconnectedPacket
+                    {
+                        DisconnectedReason = Messaging.Enums.DisconnectedReason.Timeout
+                    }, DeliveryMethod.ReliableOrdered);
                 return;
             }
 
