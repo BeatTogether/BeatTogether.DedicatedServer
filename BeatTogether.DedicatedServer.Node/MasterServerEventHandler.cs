@@ -42,7 +42,7 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Subscribe<CheckNodesEvent>(HandleCheckNode);
             _autobus.Subscribe<DisconnectPlayerFromMatchmakingServerEvent>(HandleDisconnectPlayer);
             _autobus.Publish(new NodeStartedEvent(_configuration.HostName));
-
+            _logger.Information("Dedicated starting: " + _configuration.HostName);
             return Task.CompletedTask;
         }
 
