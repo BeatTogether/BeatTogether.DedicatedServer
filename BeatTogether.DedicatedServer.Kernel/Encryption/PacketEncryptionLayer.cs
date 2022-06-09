@@ -133,7 +133,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             {
                 if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint)endPoint).Address, out var encryptionParametersold))
                 {
-                    _logger.Warning($"Running cubics fix, this should not run but if it is i fixed something (RemoteEndPoint='{endPoint}').");
+                    _logger.Warning($"Re-assigning encryption parameters to old parameters (RemoteEndPoint='{endPoint}').");
                     _encryptionParameters.GetOrAdd(endPoint, encryptionParametersold);
                     _encryptionParameters[endPoint] = encryptionParametersold;
                 }

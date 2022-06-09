@@ -58,14 +58,9 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (!_playerRegistry.TryGetPlayer(remoteEndPoint, out var sender))
             {
                 _logger.Warning(
-                    "Failed to retrieve sender, sending them a disconnect packet " +
+                    "Failed to retrieve sender, They are not in this instance" +
                     $"(RemoteEndPoint='{remoteEndPoint}')."
                 );
-                _packetDispatcher.SendToEndpoint(remoteEndPoint, //TODO this is only to disconnect users if they are somehow stuck. probably wont send if the player is not found anyway
-                    new PlayerDisconnectedPacket
-                    {
-                        DisconnectedReason = Messaging.Enums.DisconnectedReason.Timeout
-                    }, DeliveryMethod.ReliableOrdered);
                 return;
             }
 
