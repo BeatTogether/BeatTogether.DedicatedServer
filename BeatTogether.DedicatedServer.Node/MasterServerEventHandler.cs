@@ -60,17 +60,22 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandlePlayerConnectedToMatchmaking(PlayerConnectedToMatchmakingServerEvent @event)
         {
-            var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
-            var random = @event.Random;
-            var publicKey = @event.PublicKey;
-            _logger.Verbose(
-                "Adding encrypted end point " +
-                $"(RemoteEndPoint='{remoteEndPoint}', " +
-                $"Random='{BitConverter.ToString(random)}', " +
-                $"PublicKey='{BitConverter.ToString(publicKey)}')."
-            );
-            _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random, publicKey);
+            if(@event.NodeEndpoint == _configuration.HostName)
+            {
+                var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
+                var random = @event.Random;
+                var publicKey = @event.PublicKey;
+                _logger.Verbose(
+                    "Adding encrypted end point " +
+                    $"(RemoteEndPoint='{remoteEndPoint}', " +
+                    $"Random='{BitConverter.ToString(random)}', " +
+                    $"PublicKey='{BitConverter.ToString(publicKey)}')."
+                );
+                _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random, publicKey);
+                _autobus.Publish(new NodeReceivedPlayerEncryptionEvent(_configuration.HostName, @event.RemoteEndPoint));
+            }
             return Task.CompletedTask;
+
         }
 
         private Task HandleCheckNode(CheckNodesEvent checkNodesEvent)
