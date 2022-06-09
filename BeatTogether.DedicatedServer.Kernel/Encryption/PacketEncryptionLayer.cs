@@ -131,8 +131,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
         {
             if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
             {
-                _logger.Warning(
-                    "Failed to retrieve encryption parameters " +
+                _logger.Verbose(
+                    "Failed to retrieve encryption parameters, defaulting to no encryption " +
                     $"(RemoteEndPoint='{endPoint}')."
                 );
                 return;
