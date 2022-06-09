@@ -65,7 +65,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             AllowChroma = true;
             AllowMappingExtensions = true;
-            AllowNoodleExtensions = false;
+            AllowNoodleExtensions = true;
         }
 
         public async Task<bool> CheckBeatmap(BeatmapIdentifier beatmap)

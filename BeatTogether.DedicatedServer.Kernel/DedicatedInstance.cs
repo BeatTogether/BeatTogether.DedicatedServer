@@ -208,17 +208,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
         }
 
-        public void DisconnectPlayer(IPlayer player)
-        {
-            OnDisconnect(player.Endpoint, DisconnectReason.ConnectionRejected);
-        }
-
-        public void DisconnectPlayer(string UserId)
-        {
-            if(_playerRegistry.TryGetPlayer(UserId, out var player))
-                OnDisconnect(player.Endpoint, DisconnectReason.ConnectionRejected);
-        }
-
         #endregion
 
         #region LiteNetServer
@@ -387,7 +376,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error("Player: " + p.UserId + " Has caused an error when sending an avatar packet to another player", ex);
+                    _logger.Error("Player: " + p.UserId + " Endpoint: " + p.Endpoint + "Has caused an error when sending an avatar packet to another player", ex.StackTrace);
                 }
             }
 
@@ -421,13 +410,13 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public override void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
         {
-            if (reason == DisconnectReason.Reconnect || reason == DisconnectReason.PeerToPeerConnection)
-                return;
-
-            _logger.Debug(
+            _logger.Information(
                 "Endpoint disconnected " +
                 $"(RemoteEndPoint='{endPoint}', DisconnectReason={reason})."
             );
+
+            if (reason == DisconnectReason.Reconnect || reason == DisconnectReason.PeerToPeerConnection)
+                return;
 
             // Disconnect player
             if (_playerRegistry.TryGetPlayer(endPoint, out var player))
@@ -457,7 +446,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     {
                         if (!t.IsCanceled)
                         {
-                            _logger.Warning("Timed out waiting for player to join, Server will close now");
+                            _logger.Information("No players joined within the closing timeout, stopping lobby now");
                             _ = Stop(CancellationToken.None);
                         }
                         else

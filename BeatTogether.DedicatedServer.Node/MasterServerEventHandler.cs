@@ -42,7 +42,7 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Subscribe<CheckNodesEvent>(HandleCheckNode);
             _autobus.Subscribe<DisconnectPlayerFromMatchmakingServerEvent>(HandleDisconnectPlayer);
             _autobus.Publish(new NodeStartedEvent(_configuration.HostName));
-
+            _logger.Information("Dedicated starting: " + _configuration.HostName);
             return Task.CompletedTask;
         }
 
@@ -60,17 +60,22 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandlePlayerConnectedToMatchmaking(PlayerConnectedToMatchmakingServerEvent @event)
         {
-            var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
-            var random = @event.Random;
-            var publicKey = @event.PublicKey;
-            _logger.Verbose(
-                "Adding encrypted end point " +
-                $"(RemoteEndPoint='{remoteEndPoint}', " +
-                $"Random='{BitConverter.ToString(random)}', " +
-                $"PublicKey='{BitConverter.ToString(publicKey)}')."
-            );
-            _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random, publicKey);
+            if(@event.NodeEndpoint == _configuration.HostName)
+            {
+                var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
+                var random = @event.Random;
+                var publicKey = @event.PublicKey;
+                _logger.Verbose(
+                    "Adding encrypted end point " +
+                    $"(RemoteEndPoint='{remoteEndPoint}', " +
+                    $"Random='{BitConverter.ToString(random)}', " +
+                    $"PublicKey='{BitConverter.ToString(publicKey)}')."
+                );
+                _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random, publicKey);
+                _autobus.Publish(new NodeReceivedPlayerEncryptionEvent(_configuration.HostName, @event.RemoteEndPoint));
+            }
             return Task.CompletedTask;
+
         }
 
         private Task HandleCheckNode(CheckNodesEvent checkNodesEvent)
@@ -81,8 +86,8 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandleDisconnectPlayer(DisconnectPlayerFromMatchmakingServerEvent disconnectEvent)
         {
-            if(_instanceRegistry.TryGetInstance(disconnectEvent.Secret, out var instance))
-                instance.DisconnectPlayer(disconnectEvent.UserId);
+            //if(_instanceRegistry.TryGetInstance(disconnectEvent.Secret, out var instance))
+                //instance.DisconnectPlayer(disconnectEvent.UserId);
             return Task.CompletedTask;
         }
         #endregion

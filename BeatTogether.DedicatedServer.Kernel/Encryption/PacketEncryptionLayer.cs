@@ -74,7 +74,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 new HMACSHA256(sendMacSourceArray)
             );
             _potentialEncryptionParameters[endPoint.Address] = encryptionParameters;
-            _encryptionParameters.TryRemove(endPoint, out _);
+            _encryptionParameters.TryRemove(endPoint, out _); //Why we removing this here, if the first thing that happens is the server sending an outbound packet then it would have failed before?
         }
 
         public void RemoveEncryptedEndPoint(IPEndPoint endPoint)
@@ -129,14 +129,25 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
         public void ProcessOutBoundPacket(EndPoint endPoint, ref Span<byte> data)
         {
-            if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
+            if (!_encryptionParameters.TryGetValue(endPoint, out _))
             {
-                _logger.Verbose(
-                    "Failed to retrieve encryption parameters, defaulting to no encryption " +
-                    $"(RemoteEndPoint='{endPoint}')."
-                );
-                return;
+                if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint)endPoint).Address, out var encryptionParametersold))
+                {
+                    _logger.Warning($"Running cubics fix, this should not run but if it is i fixed something (RemoteEndPoint='{endPoint}').");
+                    _encryptionParameters.GetOrAdd(endPoint, encryptionParametersold);
+                    _encryptionParameters[endPoint] = encryptionParametersold;
+                }
+                else
+                {
+                    _logger.Warning(
+                        "Failed to retrieve encryption parameters " +
+                        $"(RemoteEndPoint='{endPoint}')."
+                    );
+                    return;
+                }
             }
+            //TODO make this more efficient, quick fix to make it possibly work happened here
+            var encryptionParameters = _encryptionParameters[endPoint];
 
             var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
             bufferWriter.WriteBool(true);  // isEncrypted

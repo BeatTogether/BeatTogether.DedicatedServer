@@ -250,7 +250,7 @@ namespace BeatTogether.DedicatedServer.Node
         {
             if (_instanceRegistry.TryGetInstance(request.Secret, out var instance))
             {
-                instance.DisconnectPlayer(instance.GetPlayerRegistry().GetPlayer(request.UserId));                
+                //instance.DisconnectPlayer(instance.GetPlayerRegistry().GetPlayer(request.UserId));                
                 return Task.FromResult(new KickPlayerResponse(true));
             }
             return Task.FromResult(new KickPlayerResponse(false));
