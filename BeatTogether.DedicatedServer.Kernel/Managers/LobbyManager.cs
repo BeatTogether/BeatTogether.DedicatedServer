@@ -86,19 +86,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private void Stop()
             => _stopCts.Cancel();
 
-        private async Task UpdateLoop(CancellationToken cancellationToken)
+        private async void UpdateLoop(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                try
-                {
-                    Update();
-                    await Task.Delay(100, cancellationToken);
-                }
-                catch
-                {
+                await Task.Delay(LoopTime, cancellationToken);
+                Update();
+                UpdateLoop(cancellationToken);
+            }
+            catch
+            {
 
-                }
             }
         }
 
@@ -264,7 +262,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
                         //starts beatmap
-                        Task.Run(() => _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None));
+                        _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
                         //stops countdown
                         SetCountdown(CountdownState.NotCountingDown);
                         return;
