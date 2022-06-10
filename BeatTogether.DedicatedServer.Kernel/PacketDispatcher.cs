@@ -9,6 +9,7 @@ using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 using Serilog;
 using System;
+using System.Net;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -63,6 +64,20 @@ namespace BeatTogether.DedicatedServer.Kernel
             foreach (IPlayer player in _playerRegistry.Players)
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
                     Send(player.Endpoint, writer.Data, deliveryMethod);
+        }
+
+        public void SendToEndpoint(EndPoint endpoint, INetSerializable packet, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending packet of type '{packet.GetType().Name}' " +
+                $"(To endpoint ={endpoint})"
+            );
+
+            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
+            WriteOne(ref writer, packet);
+
+            Send(endpoint, writer.Data, deliveryMethod);
         }
 
         public void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)

@@ -28,7 +28,10 @@ namespace BeatTogether.DedicatedServer.Node
         public IDedicatedInstance? CreateInstance(
             string secret,
             string managerId,
-            GameplayServerConfiguration config)
+            GameplayServerConfiguration config,
+            bool permanentManager = false,//If a user links there account to discord and uses a bot to make a lobby, then can enter there userId
+            float instanceTimeout = 0f,
+            string ServerName = "")
         {
             var port = _portAllocator.AcquirePort();
             if (!port.HasValue)
@@ -51,7 +54,9 @@ namespace BeatTogether.DedicatedServer.Node
             if (!_instanceRegistry.AddInstance(instance))
                 return null;
             instance.StopEvent += () => _instanceRegistry.RemoveInstance(instance);
-
+            if(permanentManager)
+                instance.SetupPermanentManager(managerId);
+            instance.SetupInstance(instanceTimeout, ServerName);
             return instance;
         }
     }

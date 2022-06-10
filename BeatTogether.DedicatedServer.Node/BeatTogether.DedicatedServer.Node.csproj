@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -6,14 +6,14 @@
     <PackageIcon>icon.png</PackageIcon>
     <Authors>pythonology</Authors>
     <Company>pythonology</Company>
-    <RepositoryUrl>https://github.com/pythonology/BeatTogether.DedicatedServer</RepositoryUrl>
+    <RepositoryUrl>https://github.com/beattogether/BeatTogether.DedicatedServer</RepositoryUrl>
     <Version>1.0.0</Version>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-	<PackageReference Include="BeatTogether.Extensions.Autobus.RabbitMQ" Version="1.0.2" />
-	<PackageReference Include="BeatTogether.MasterServer.Interface" Version="1.0.4" />	
+	<PackageReference Include="BeatTogether.Extensions.Autobus.RabbitMQ" Version="1.0.3" />
+	<PackageReference Include="BeatTogether.MasterServer.Interface" Version="1.1.16" />	
   </ItemGroup>
 	
   <ItemGroup>

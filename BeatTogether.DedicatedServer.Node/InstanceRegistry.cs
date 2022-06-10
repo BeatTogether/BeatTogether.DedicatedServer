@@ -1,6 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace BeatTogether.DedicatedServer.Node
@@ -20,5 +21,27 @@ namespace BeatTogether.DedicatedServer.Node
 
         public bool TryGetInstance(string secret, [MaybeNullWhen(false)] out IDedicatedInstance instance) =>
             _instances.TryGetValue(secret, out instance);
+        
+        public bool DoesInstanceExist(string secret) => _instances.ContainsKey(secret);
+
+        public string[] ListPublicInstanceSecrets()
+        {
+            List<string> instances = new();
+            foreach (var item in _instances)
+                if (item.Value.Configuration.DiscoveryPolicy == Kernel.Enums.DiscoveryPolicy.Public)
+                    instances.Add(item.Key);
+            return instances.ToArray();
+        }
+
+        public int GetServerCount() { return _instances.Count; }
+
+        public int GetPublicServerCount()
+        {
+            int count = 0;
+            foreach (var item in _instances)
+                if (item.Value.Configuration.DiscoveryPolicy == Kernel.Enums.DiscoveryPolicy.Public)
+                    count++;
+            return count;
+        }
     }
 }

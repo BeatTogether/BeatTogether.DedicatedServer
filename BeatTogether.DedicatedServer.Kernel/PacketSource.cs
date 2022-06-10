@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
@@ -57,7 +58,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (!_playerRegistry.TryGetPlayer(remoteEndPoint, out var sender))
             {
                 _logger.Warning(
-                    "Failed to retrieve sender " +
+                    "Failed to retrieve sender, They are not in this instance" +
                     $"(RemoteEndPoint='{remoteEndPoint}')."
                 );
                 return;
