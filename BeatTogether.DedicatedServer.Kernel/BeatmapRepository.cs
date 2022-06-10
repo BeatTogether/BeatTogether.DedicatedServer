@@ -5,6 +5,7 @@ using BeatTogether.DedicatedServer.Messaging.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel
@@ -31,12 +32,11 @@ namespace BeatTogether.DedicatedServer.Kernel
     {
         public bool Exists { get; }
         public int BeatmapLength { get; }
-        public ConcurrentDictionary<string, BeatmapDifficultyStats> Difficulties;
+        public readonly ConcurrentDictionary<string, BeatmapDifficultyStats> Difficulties;
         public int Activity { get; set; }
 
-        public BeatmapData(int beatmapLength, ConcurrentDictionary<string, BeatmapDifficultyStats> difficulties)
+        public BeatmapData(ConcurrentDictionary<string, BeatmapDifficultyStats> difficulties)
         {
-            BeatmapLength = beatmapLength;
             Difficulties = difficulties;
             Activity = 0;
             Exists = true;
@@ -44,7 +44,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public BeatmapData()
         {
             Exists = false;
-            BeatmapLength=0;
             Activity = 0;
             Difficulties = new ConcurrentDictionary<string, BeatmapDifficultyStats>();
         }
@@ -58,8 +57,8 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private int CleanUpCounter = 0;
         private readonly int MaxBeatmapCache = 700;
-        private BeatSaver beatSaverAPI = new("BeatTogetherDedicatedInstance", new Version("1.0.0"));
-        private ConcurrentDictionary<string, BeatmapData> _BeatmapRepository = new();
+        private readonly BeatSaver beatSaverAPI = new("BeatTogetherDedicatedInstance", new Version("1.0.0"));
+        private readonly ConcurrentDictionary<string, BeatmapData> _BeatmapRepository = new();
 
         public BeatmapRepository()
         {
@@ -104,13 +103,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             return false;
         }
 
-        public int GetBeatmapLength(BeatmapIdentifier beatmap)
-        {
-            if (_BeatmapRepository.TryGetValue(beatmap.LevelId, out var beatmapData))
-                return beatmapData.BeatmapLength;
-            return -1;
-        }
-
         public async Task<bool> FetchBeatmap(BeatmapIdentifier beatmap) //Fetches beatmap from beatsaver and stores it how we need it
         {
             Beatmap? FetchBeatmap = await beatSaverAPI.BeatmapByHash(beatmap!.LevelId[13..]);
@@ -119,7 +111,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 ConcurrentDictionary<string, BeatmapDifficultyStats> difficulties = new();
                 for (int i = 0; i < FetchBeatmap.LatestVersion.Difficulties.Count; i++)
                 {
-                    BeatmapDifficultyStats difficultyStats = new BeatmapDifficultyStats(
+                    BeatmapDifficultyStats difficultyStats = new (
                         FetchBeatmap.LatestVersion.Difficulties[i].Chroma,
                         FetchBeatmap.LatestVersion.Difficulties[i].MappingExtensions,
                         FetchBeatmap.LatestVersion.Difficulties[i].NoodleExtensions
@@ -127,7 +119,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     difficulties.TryAdd((FetchBeatmap.LatestVersion.Difficulties[i].Difficulty.ToString() + FetchBeatmap.LatestVersion.Difficulties[i].Characteristic.ToString()), difficultyStats);
 
                 }
-                BeatmapData data = new BeatmapData(FetchBeatmap.Metadata.Duration, difficulties);
+                BeatmapData data = new (difficulties);
                 return _BeatmapRepository.TryAdd(beatmap.LevelId, data);
             }
             else

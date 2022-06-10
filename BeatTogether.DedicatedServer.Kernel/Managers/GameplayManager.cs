@@ -65,7 +65,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _instance.PlayerDisconnectedEvent -= HandlePlayerLeaveGameplay;
         }
 
-        public async void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
+        public async Task StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
         {
             if (State != GameplayManagerState.None)
             {
@@ -151,7 +151,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Wait at results screen if anyone cleared
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared))
-                await Task.Delay((int)(ResultsScreenTime * 1000));
+                await Task.Delay((int)(ResultsScreenTime * 1000), cancellationToken);
 
             // End gameplay and reset
             ResetValues(null, new());

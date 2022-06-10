@@ -18,12 +18,6 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-/*Dedicated instance
- * Handles whether a player should be allowed to connect
- * Handles when a player connects
- * Handles when a player disconnects
- * sets new lobby managers
- */
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -126,11 +120,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"GameplayServerControlSettings={Configuration.GameplayServerControlSettings})."
             );
             _stopServerCts = new CancellationTokenSource();
-            SendSyncTime(_stopServerCts.Token);
+
+            Task.Run(() => SendSyncTime(_stopServerCts.Token), cancellationToken);
+
             if (DestroyInstanceTimeout != -1)
             {
                 _waitForPlayerCts = new CancellationTokenSource();
-                _ = Task.Delay((WaitForPlayerTimeLimit + (int)(DestroyInstanceTimeout * 1000)), _waitForPlayerCts.Token).ContinueWith(t =>
+                Task.Delay((WaitForPlayerTimeLimit + (int)(DestroyInstanceTimeout * 1000)), _waitForPlayerCts.Token).ContinueWith(t =>
                 {
                     if (!t.IsCanceled)
                     {
@@ -141,7 +137,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     {
                         _waitForPlayerCts = null;
                     }
-                });
+                }, cancellationToken);
             }
 
             StartEvent?.Invoke();
@@ -362,29 +358,21 @@ namespace BeatTogether.DedicatedServer.Kernel
                             SortIndex = p.SortIndex
                         }, DeliveryMethod.ReliableOrdered);
 
-                try
-                {
                     // Send all player identity packets to new player
-                    if (p.Avatar != null)
-                        _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
+                    _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
                         {
                             PlayerState = p.State,
                             PlayerAvatar = p.Avatar,
                             Random = new ByteArray { Data = p.Random },
                             PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
                         }, DeliveryMethod.ReliableOrdered);
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error("Player: " + p.UserId + " Endpoint: " + p.Endpoint + "Has caused an error when sending an avatar packet to another player", ex.StackTrace);
-                }
             }
 
             // Disable start button if they are manager without selected song
             _packetDispatcher.SendToPlayer(player, new SetIsStartButtonEnabledPacket
-            {
-                Reason = player.UserId == Configuration.ManagerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
-            }, DeliveryMethod.ReliableOrdered);
+                {
+                    Reason = player.UserId == Configuration.ManagerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
+                }, DeliveryMethod.ReliableOrdered);
 
             // Update permissions
             if ((SetManagerFromUserId == player.UserId || _playerRegistry.Players.Count == 1) && Configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
@@ -416,7 +404,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             if (reason == DisconnectReason.Reconnect || reason == DisconnectReason.PeerToPeerConnection)
+            {
+                _logger.Information(
+                    "Endpoint reconnecting or is peer to peer."
+                );
                 return;
+            }
 
             // Disconnect player
             if (_playerRegistry.TryGetPlayer(endPoint, out var player))
@@ -495,22 +488,24 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         #region Private Methods
 
-        private async void SendSyncTime(CancellationToken cancellationToken)
+        private async Task SendSyncTime(CancellationToken cancellationToken)
         {
-            foreach (IPlayer player in _playerRegistry.Players)
-                _packetDispatcher.SendToPlayer(player, new SyncTimePacket
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                foreach (IPlayer player in _playerRegistry.Players)
+                    _packetDispatcher.SendToPlayer(player, new SyncTimePacket
+                    {
+                        SyncTime = player.SyncTime
+                    }, DeliveryMethod.ReliableOrdered);
+                try
                 {
-                    SyncTime = player.SyncTime
-                }, DeliveryMethod.ReliableOrdered);
-            try
-            {
-                await Task.Delay(SyncTimeDelay, cancellationToken);
+                    await Task.Delay(SyncTimeDelay, cancellationToken);
+                }
+                catch (TaskCanceledException)
+                {
+                    return;
+                }
             }
-            catch (TaskCanceledException)
-            {
-                return;
-            }
-            SendSyncTime(cancellationToken);
         }
 
         #endregion

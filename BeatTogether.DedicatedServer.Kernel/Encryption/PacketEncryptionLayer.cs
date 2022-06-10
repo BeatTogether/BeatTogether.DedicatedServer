@@ -26,8 +26,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
         private readonly ConcurrentDictionary<IPAddress, EncryptionParameters> _potentialEncryptionParameters = new();
         private readonly ConcurrentDictionary<EndPoint, EncryptionParameters> _encryptionParameters = new();
 
-        private static byte[] _masterSecretSeed = Encoding.UTF8.GetBytes("master secret");
-        private static byte[] _keyExpansionSeed = Encoding.UTF8.GetBytes("key expansion");
+        private static readonly byte[]  _masterSecretSeed = Encoding.UTF8.GetBytes("master secret");
+        private static readonly byte[] _keyExpansionSeed = Encoding.UTF8.GetBytes("key expansion");
 
         public PacketEncryptionLayer(
             IEncryptedPacketReader encryptedPacketReader,
@@ -133,7 +133,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             {
                 if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint)endPoint).Address, out var encryptionParametersold))
                 {
-                    _logger.Warning($"Running cubics fix, this should not run but if it is i fixed something (RemoteEndPoint='{endPoint}').");
+                    _logger.Warning($"Re-assigning encryption parameters as old parameters (RemoteEndPoint='{endPoint}').");
                     _encryptionParameters.GetOrAdd(endPoint, encryptionParametersold);
                     _encryptionParameters[endPoint] = encryptionParametersold;
                 }
@@ -146,13 +146,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                     return;
                 }
             }
-            //TODO make this more efficient, quick fix to make it possibly work happened here
+
+
+
+            //TODO make the above more efficient
             var encryptionParameters = _encryptionParameters[endPoint];
 
             var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
             bufferWriter.WriteBool(true);  // isEncrypted
             _encryptedPacketWriter.WriteTo(
-                ref bufferWriter, data.Slice(0, data.Length),
+                ref bufferWriter, data[..],//.Slice(0, data.Length),
                 encryptionParameters.GetNextSequenceId(),
                 encryptionParameters.SendKey, encryptionParameters.SendMac);
             data = bufferWriter.Data.ToArray();
@@ -162,7 +165,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
         #region Private Methods
 
-        private byte[] MakeSeed(byte[] baseSeed, byte[] serverSeed, byte[] clientSeed)
+        private static byte[] MakeSeed(byte[] baseSeed, byte[] serverSeed, byte[] clientSeed)
         {
             var seed = new byte[baseSeed.Length + serverSeed.Length + clientSeed.Length];
             Array.Copy(baseSeed, 0, seed, 0, baseSeed.Length);
@@ -171,7 +174,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             return seed;
         }
 
-        private byte[] PRF(byte[] key, byte[] seed, int length)
+        private static byte[] PRF(byte[] key, byte[] seed, int length)
         {
             var i = 0;
             var array = new byte[length + seed.Length];
@@ -185,7 +188,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             return array2;
         }
 
-        private void PRFHash(byte[] key, byte[] seed, ref int length)
+        private static void PRFHash(byte[] key, byte[] seed, ref int length)
         {
             using var hmacsha256 = new HMACSHA256(key);
             var array = hmacsha256.ComputeHash(seed, 0, length);
