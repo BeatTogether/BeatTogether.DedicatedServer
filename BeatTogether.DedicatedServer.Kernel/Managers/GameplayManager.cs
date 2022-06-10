@@ -65,7 +65,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _instance.PlayerDisconnectedEvent -= HandlePlayerLeaveGameplay;
         }
 
-        public async void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
+        public async Task StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
         {
             if (State != GameplayManagerState.None)
             {
