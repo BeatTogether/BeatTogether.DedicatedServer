@@ -45,7 +45,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private bool _lastSpectatorState;
         private bool _lastAllOwnMap;          
         private string _lastManagerId = null!;
-        private CancellationTokenSource _stopCts = new();
+        private readonly CancellationTokenSource _stopCts = new();
         private const int ActiveLoopTime = 100;
         private const int NoPlayersLoopTIme = 1000;
         private int LoopTime = 100;
@@ -86,17 +86,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private void Stop()
             => _stopCts.Cancel();
 
-        private async void UpdateLoop(CancellationToken cancellationToken)
+        private async Task UpdateLoop(CancellationToken cancellationToken)
         {
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(LoopTime, cancellationToken);
-                Update();
-                UpdateLoop(cancellationToken);
-            }
-            catch
-            {
+                try
+                {
+                    Update();
+                    await Task.Delay(100, cancellationToken);
+                }
+                catch
+                {
 
+                }
             }
         }
 
@@ -262,7 +264,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
                         //starts beatmap
-                        _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
+                        Task.Run(() => _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None));
                         //stops countdown
                         SetCountdown(CountdownState.NotCountingDown);
                         return;

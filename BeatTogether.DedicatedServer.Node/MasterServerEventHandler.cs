@@ -1,7 +1,6 @@
 ﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface.Events;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
-using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
 using BeatTogether.MasterServer.Interface.Events;
 using Microsoft.Extensions.Hosting;
@@ -15,23 +14,21 @@ namespace BeatTogether.DedicatedServer.Node
 {
     public sealed class MasterServerEventHandler : IHostedService
     {
-        //TODO add in event handling here
         private readonly IAutobus _autobus;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly ILogger _logger = Log.ForContext<MasterServerEventHandler>();
         private readonly NodeConfiguration _configuration;
-        private readonly IInstanceRegistry _instanceRegistry;
+        //private readonly IInstanceRegistry _instanceRegistry;
 
         public MasterServerEventHandler(
             IAutobus autobus,
             PacketEncryptionLayer packetEncryptionLayer,
-            NodeConfiguration nodeConfiguration,
-            IInstanceRegistry instanceRegistry)
+            NodeConfiguration nodeConfiguration)
         {
             _autobus = autobus;
             _packetEncryptionLayer = packetEncryptionLayer;
             _configuration = nodeConfiguration;
-            _instanceRegistry = instanceRegistry;
+            //_instanceRegistry = instanceRegistry;
         }
 
         #region Public Methods
@@ -42,7 +39,7 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Subscribe<CheckNodesEvent>(HandleCheckNode);
             _autobus.Subscribe<DisconnectPlayerFromMatchmakingServerEvent>(HandleDisconnectPlayer);
             _autobus.Publish(new NodeStartedEvent(_configuration.HostName));
-            _logger.Information("Dedicated starting: " + _configuration.HostName);
+            _logger.Information("Dedicated node starting: " + _configuration.HostName);
             return Task.CompletedTask;
         }
 
@@ -75,7 +72,6 @@ namespace BeatTogether.DedicatedServer.Node
                 _autobus.Publish(new NodeReceivedPlayerEncryptionEvent(_configuration.HostName, @event.RemoteEndPoint));
             }
             return Task.CompletedTask;
-
         }
 
         private Task HandleCheckNode(CheckNodesEvent checkNodesEvent)

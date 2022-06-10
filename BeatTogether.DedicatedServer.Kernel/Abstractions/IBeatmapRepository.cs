@@ -9,7 +9,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool AllowMappingExtensions { get; }
         bool AllowNoodleExtensions { get; }
         Task<bool> CheckBeatmap(BeatmapIdentifier beatmap);
-        int GetBeatmapLength(BeatmapIdentifier beatmap);
         Task<bool> FetchBeatmap(BeatmapIdentifier beatmap);
         void CleanCachedBeatmapsByActivity();
         void ClearCachedBeatmaps();
