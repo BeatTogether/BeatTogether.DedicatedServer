@@ -360,19 +360,19 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                     // Send all player identity packets to new player
                     _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
-                    {
-                        PlayerState = p.State,
-                        PlayerAvatar = p.Avatar,
-                        Random = new ByteArray { Data = p.Random },
-                        PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
-                    }, DeliveryMethod.ReliableOrdered);
+                        {
+                            PlayerState = p.State,
+                            PlayerAvatar = p.Avatar,
+                            Random = new ByteArray { Data = p.Random },
+                            PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
+                        }, DeliveryMethod.ReliableOrdered);
             }
 
             // Disable start button if they are manager without selected song
             _packetDispatcher.SendToPlayer(player, new SetIsStartButtonEnabledPacket
-            {
-                Reason = player.UserId == Configuration.ManagerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
-            }, DeliveryMethod.ReliableOrdered);
+                {
+                    Reason = player.UserId == Configuration.ManagerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
+                }, DeliveryMethod.ReliableOrdered);
 
             // Update permissions
             if ((SetManagerFromUserId == player.UserId || _playerRegistry.Players.Count == 1) && Configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
@@ -404,7 +404,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             if (reason == DisconnectReason.Reconnect || reason == DisconnectReason.PeerToPeerConnection)
+            {
+                _logger.Information(
+                    "Endpoint reconnecting or is peer to peer."
+                );
                 return;
+            }
 
             // Disconnect player
             if (_playerRegistry.TryGetPlayer(endPoint, out var player))
