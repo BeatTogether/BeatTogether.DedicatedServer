@@ -151,7 +151,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Wait at results screen if anyone cleared
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared))
-                await Task.Delay((int)(ResultsScreenTime * 1000));
+                await Task.Delay((int)(ResultsScreenTime * 1000), cancellationToken);
 
             // End gameplay and reset
             ResetValues(null, new());

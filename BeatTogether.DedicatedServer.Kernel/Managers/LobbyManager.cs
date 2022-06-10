@@ -45,7 +45,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private bool _lastSpectatorState;
         private bool _lastAllOwnMap;          
         private string _lastManagerId = null!;
-        private CancellationTokenSource _stopCts = new();
+        private readonly CancellationTokenSource _stopCts = new();
         private const int ActiveLoopTime = 100;
         private const int NoPlayersLoopTIme = 1000;
         private int LoopTime = 100;

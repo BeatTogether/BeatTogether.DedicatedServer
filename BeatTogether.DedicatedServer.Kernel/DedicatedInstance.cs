@@ -141,7 +141,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     {
                         _waitForPlayerCts = null;
                     }
-                });
+                }, cancellationToken);
             }
 
             StartEvent?.Invoke();
