@@ -18,12 +18,6 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-/*Dedicated instance
- * Handles whether a player should be allowed to connect
- * Handles when a player connects
- * Handles when a player disconnects
- * sets new lobby managers
- */
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -127,13 +121,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
             _stopServerCts = new CancellationTokenSource();
 
-            Task.Run(() => SendSyncTime(_stopServerCts.Token));
+            Task.Run(() => SendSyncTime(_stopServerCts.Token), cancellationToken);
 
             if (DestroyInstanceTimeout != -1)
-
             {
                 _waitForPlayerCts = new CancellationTokenSource();
-                _ = Task.Delay((WaitForPlayerTimeLimit + (int)(DestroyInstanceTimeout * 1000)), _waitForPlayerCts.Token).ContinueWith(t =>
+                Task.Delay((WaitForPlayerTimeLimit + (int)(DestroyInstanceTimeout * 1000)), _waitForPlayerCts.Token).ContinueWith(t =>
                 {
                     if (!t.IsCanceled)
                     {
@@ -365,22 +358,14 @@ namespace BeatTogether.DedicatedServer.Kernel
                             SortIndex = p.SortIndex
                         }, DeliveryMethod.ReliableOrdered);
 
-                try
-                {
                     // Send all player identity packets to new player
-                    if (p.Avatar != null)
-                        _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
-                        {
-                            PlayerState = p.State,
-                            PlayerAvatar = p.Avatar,
-                            Random = new ByteArray { Data = p.Random },
-                            PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
-                        }, DeliveryMethod.ReliableOrdered);
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error("Player: " + p.UserId + " Endpoint: " + p.Endpoint + "Has caused an error when sending an avatar packet to another player", ex.StackTrace);
-                }
+                    _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
+                    {
+                        PlayerState = p.State,
+                        PlayerAvatar = p.Avatar,
+                        Random = new ByteArray { Data = p.Random },
+                        PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
+                    }, DeliveryMethod.ReliableOrdered);
             }
 
             // Disable start button if they are manager without selected song

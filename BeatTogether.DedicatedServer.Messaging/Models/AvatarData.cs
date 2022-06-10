@@ -47,6 +47,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 
         public void WriteTo(ref SpanBufferWriter writer)
         {
+            NullCheck();
             writer.WriteString(HeadTopId);
             writer.WriteColor(HeadTopPrimaryColor);
             writer.WriteColor(HandsColor);
@@ -64,6 +65,25 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteString(GlassesId);
             writer.WriteString(FacialHairId);
             writer.WriteString(HandsId);
+        }
+
+        private void NullCheck()
+        {
+
+            if (HeadTopId == null || HeadTopId == string.Empty)
+                HeadTopId = "BedHead";
+            if (HandsId == null || HeadTopId == string.Empty)
+                HandsId = "BareHands";
+            if (SkinColorId == null || HeadTopId == string.Empty)
+                SkinColorId = "Default";
+            if (ClothesId == null || HeadTopId == string.Empty)
+                ClothesId = "Hoodie";
+            if(FacialHairId == null || HeadTopId == string.Empty)
+                FacialHairId = "None";
+            if (GlassesId == null || HeadTopId == string.Empty)
+                GlassesId = "Default"; 
+            if (EyesId == null || HeadTopId == string.Empty)
+                EyesId = "Eyes1";
         }
     }
 }
