@@ -388,7 +388,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 player.WasActiveAtCountdownStart = CountingDown;
         }
 
-        private void SendNotCountingPlayersCountdown()
+        private void SendNotCountingPlayersCountdown() //This might work, not 100% sure it fixes the not seeing countdown issue
         {
             foreach (var player in _playerRegistry.Players)
             {
@@ -414,7 +414,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                     break;
                 default:
-                    _logger.Information("Canceling countdown when there is no countdown to cancel");
+                    _logger.Warning("Canceling countdown when there is no countdown to cancel");
                     break;
             }
             SetCountdown(CountdownState.NotCountingDown);
@@ -440,7 +440,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     return voteDictionary.OrderByDescending(n => n.Value).First().Key;
                 case SongSelectionMode.RandomPlayerPicks:
                     if (SelectedBeatmap != _lastBeatmap || SelectedBeatmap == null)
-                        return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier; //TODO, Fix this to work correctly i guess
+                        return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier; //TODO, Fix this to work correctly at some point
                     return SelectedBeatmap;
                 case SongSelectionMode.ServerPicks:
                     return SelectedBeatmap;
