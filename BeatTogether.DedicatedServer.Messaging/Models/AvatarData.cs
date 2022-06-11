@@ -47,43 +47,80 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 
         public void WriteTo(ref SpanBufferWriter writer)
         {
-            NullCheck();
-            writer.WriteString(HeadTopId);
+            switch (HeadTopId)
+            {
+                case null:
+                    writer.WriteString("BedHead");
+                    break;
+                default:
+                    writer.WriteString(HeadTopId);
+                    break;
+            }
             writer.WriteColor(HeadTopPrimaryColor);
             writer.WriteColor(HandsColor);
-            writer.WriteString(ClothesId);
+            switch (ClothesId)
+            {
+                case null:
+                    writer.WriteString("Hoodie");
+                    break;
+                default:
+                    writer.WriteString(ClothesId);
+                    break;
+            }
             writer.WriteColor(ClothesPrimaryColor);
             writer.WriteColor(ClothesSecondaryColor);
             writer.WriteColor(ClothesDetailColor);
             writer.WriteColor(new Color());
             writer.WriteColor(new Color());
-            writer.WriteString(EyesId);
-            writer.WriteString(MouthId);
+            switch (EyesId)
+            {
+                case null:
+                    writer.WriteString("Eyes1");
+                    break;
+                default:
+                    writer.WriteString(EyesId);
+                    break;
+            }
+            switch (MouthId)
+            {
+                case null:
+                    writer.WriteString("Mouth8");
+                    break;
+                default:
+                    writer.WriteString(MouthId);
+                    break;
+            }
             writer.WriteColor(GlassesColor);
             writer.WriteColor(FacialHairColor);
             writer.WriteColor(HeadTopSecondaryColor);
-            writer.WriteString(GlassesId);
-            writer.WriteString(FacialHairId);
-            writer.WriteString(HandsId);
-        }
-
-        private void NullCheck()
-        {
-
-            if (HeadTopId == null || HeadTopId == string.Empty)
-                HeadTopId = "BedHead";
-            if (HandsId == null || HeadTopId == string.Empty)
-                HandsId = "BareHands";
-            if (SkinColorId == null || HeadTopId == string.Empty)
-                SkinColorId = "Default";
-            if (ClothesId == null || HeadTopId == string.Empty)
-                ClothesId = "Hoodie";
-            if(FacialHairId == null || HeadTopId == string.Empty)
-                FacialHairId = "None";
-            if (GlassesId == null || HeadTopId == string.Empty)
-                GlassesId = "Default"; 
-            if (EyesId == null || HeadTopId == string.Empty)
-                EyesId = "Eyes1";
+            switch (GlassesId)
+            {
+                case null:
+                    writer.WriteString("Default");
+                    SkinColorId = "Default";
+                    break;
+                default:
+                    writer.WriteString(GlassesId);
+                    break;
+            }
+            switch (FacialHairId)
+            {
+                case null:
+                    writer.WriteString("None");
+                    break;
+                default:
+                    writer.WriteString(FacialHairId);
+                    break;
+            }
+            switch (HandsId)
+            {
+                case null:
+                    writer.WriteString("BareHands");
+                    break;
+                default:
+                    writer.WriteString(HandsId);
+                    break;
+            }
         }
     }
 }

@@ -488,24 +488,22 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         #region Private Methods
 
-        private async Task SendSyncTime(CancellationToken cancellationToken)
+        private async void SendSyncTime(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            foreach (IPlayer player in _playerRegistry.Players)
+                _packetDispatcher.SendToPlayer(player, new SyncTimePacket
+                {
+                    SyncTime = player.SyncTime
+                }, DeliveryMethod.ReliableOrdered);
+            try
             {
-                foreach (IPlayer player in _playerRegistry.Players)
-                    _packetDispatcher.SendToPlayer(player, new SyncTimePacket
-                    {
-                        SyncTime = player.SyncTime
-                    }, DeliveryMethod.ReliableOrdered);
-                try
-                {
-                    await Task.Delay(SyncTimeDelay, cancellationToken);
-                }
-                catch (TaskCanceledException)
-                {
-                    return;
-                }
+                await Task.Delay(SyncTimeDelay, cancellationToken);
             }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+            SendSyncTime(cancellationToken);
         }
 
         #endregion
