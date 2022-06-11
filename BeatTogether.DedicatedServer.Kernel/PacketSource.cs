@@ -127,7 +127,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     continue;
                 }
 
-                ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
+                Task.Run(() => ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet));
             }
         }
 
