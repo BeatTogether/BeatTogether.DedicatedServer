@@ -46,81 +46,40 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         }
 
         public void WriteTo(ref SpanBufferWriter writer)
-        {                
-            switch (HeadTopId)
-            {
-                case null:
-                    writer.WriteString("BedHead");
-                    break;
-                default:
-                    writer.WriteString(HeadTopId);
-                    break;
-            }
+        {
+            if (SkinColorId == null || SkinColorId == string.Empty)
+                SkinColorId = "Default";
+            if (HeadTopId == null || HeadTopId == string.Empty)
+                HeadTopId = "BedHead";
+            writer.WriteString(HeadTopId);
             writer.WriteColor(HeadTopPrimaryColor);
             writer.WriteColor(HandsColor);
-            switch (ClothesId)
-            {
-                case null:
-                    writer.WriteString("Hoodie");
-                    break;
-                default:
-                    writer.WriteString(ClothesId);
-                    break;
-            }
+            if (ClothesId == null || ClothesId == string.Empty)
+                ClothesId = "Hoodie";
+            writer.WriteString(ClothesId);
             writer.WriteColor(ClothesPrimaryColor);
             writer.WriteColor(ClothesSecondaryColor);
             writer.WriteColor(ClothesDetailColor);
             writer.WriteColor(new Color());
             writer.WriteColor(new Color());
-            switch (EyesId)
-            {
-                case null:
-                    writer.WriteString("Eyes1");
-                    break;
-                default:
-                    writer.WriteString(EyesId);
-                    break;
-            }
-            switch (MouthId)
-            {
-                case null:
-                    writer.WriteString("Mouth8");
-                    break;
-                default:
-                    writer.WriteString(MouthId);
-                    break;
-            }
+            if (EyesId == null || EyesId == string.Empty)
+                EyesId = "Eyes1";
+            writer.WriteString(EyesId);
+            if (MouthId == null || MouthId == string.Empty)
+                MouthId = "Mouth8";
+            writer.WriteString(MouthId);
             writer.WriteColor(GlassesColor);
             writer.WriteColor(FacialHairColor);
             writer.WriteColor(HeadTopSecondaryColor);
-            switch (GlassesId)
-            {
-                case null:
-                    writer.WriteString("Default");
-                    SkinColorId = "Default";
-                    break;
-                default:
-                    writer.WriteString(GlassesId);
-                    break;
-            }
-            switch (FacialHairId)
-            {
-                case null:
-                    writer.WriteString("None");
-                    break;
-                default:
-                    writer.WriteString(FacialHairId);
-                    break;
-            }
-            switch (HandsId)
-            {
-                case null:
-                    writer.WriteString("BareHands");
-                    break;
-                default:
-                    writer.WriteString(HandsId);
-                    break;
-            }
+            if (GlassesId == null || GlassesId == string.Empty)
+                GlassesId = "Default";
+            writer.WriteString(GlassesId);
+            if (FacialHairId == null || FacialHairId == string.Empty)
+                FacialHairId = "None";
+            writer.WriteString(FacialHairId);
+            if (HandsId == null || HandsId == string.Empty)
+                HandsId = "BareHands";
+            writer.WriteString(HandsId);
         }
     }
 }
