@@ -414,7 +414,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                     break;
                 default:
-                    _logger.Information("Canceling countdown when there is no countdown to cancel");
+                    _logger.Warning("Canceling countdown when there is no countdown to cancel");
                     break;
             }
             SetCountdown(CountdownState.NotCountingDown);
