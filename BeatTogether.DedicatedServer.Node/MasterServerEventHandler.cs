@@ -77,7 +77,7 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandleCheckNode(CheckNodesEvent checkNodesEvent)
         {
-            _logger.Information($"Current threads {Process.GetCurrentProcess().Threads.Count}");
+            _logger.Verbose($"Current threads {Process.GetCurrentProcess().Threads.Count}");
             _autobus.Publish(new NodeOnlineEvent(_configuration.HostName));
             return Task.CompletedTask;
         }
