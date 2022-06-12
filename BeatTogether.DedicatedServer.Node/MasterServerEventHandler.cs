@@ -6,6 +6,7 @@ using BeatTogether.MasterServer.Interface.Events;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -76,6 +77,7 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandleCheckNode(CheckNodesEvent checkNodesEvent)
         {
+            _logger.Information($"Current threads {Process.GetCurrentProcess().Threads.Count}");
             _autobus.Publish(new NodeOnlineEvent(_configuration.HostName));
             return Task.CompletedTask;
         }
