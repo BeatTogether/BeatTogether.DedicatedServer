@@ -191,7 +191,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
                         //starts beatmap
-                        Task.Run((async () => await _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None));
+                        Task.Run(async () => await _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None));
                         //stops countdown
                         SetCountdown(CountdownState.NotCountingDown);
                         return;
