@@ -2,30 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
-/*Lobby manager code
- * Contains the logic code for
- * - different game modes
- * - setting the beatmap
- * - setting the modifiers
- * - managing the countdown
- * - checking player entitlements
- * - when to start gameplay
- */
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
-    public sealed class LobbyManager : ILobbyManager, IDisposable
+    public sealed class LobbyManager : ILobbyManager//, IDisposable
     {
         private const float CountdownTimeSomeReady = 30.0f;
         private const float CountdownTimeManagerReady = 15.0f;
@@ -45,10 +34,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private bool _lastSpectatorState;
         private bool _lastAllOwnMap;          
         private string _lastManagerId = null!;
-        private readonly CancellationTokenSource _stopCts = new();
-        private const int ActiveLoopTime = 100;
-        private const int NoPlayersLoopTIme = 1000;
-        private int LoopTime = 100;
 
         private readonly InstanceConfiguration _configuration;
         private readonly IDedicatedInstance _instance;
@@ -73,77 +58,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _packetDispatcher = packetDispatcher;
             _gameplayManager = gameplayManager;
             _beatmapRepository = beatmapRepository;
-
-            _instance.StopEvent += Stop;
-            Task.Run(() => UpdateLoop(_stopCts.Token));
         }
-
+        /*
         public void Dispose()
         {
-            _instance.StopEvent -= Stop;
         }
+        */
 
-        private void Stop()
-            => _stopCts.Cancel();
-
-        private async void UpdateLoop(CancellationToken cancellationToken)
+        public void RunUpdate()
         {
-            try
-            {
-                await Task.Delay(LoopTime, cancellationToken);
-                Update();
-                UpdateLoop(cancellationToken);
-            }
-            catch
-            {
-
-            }
+            _instance.RunUpdate = true;
         }
 
         public void Update()
         {
-            if(_playerRegistry.Players.Count == 0)
-            {
-                LoopTime = NoPlayersLoopTIme;
-                return;
-            }
-            else
-            {
-                LoopTime = ActiveLoopTime;
-            }
-            if (_instance.State != MultiplayerGameState.Lobby)
-            {
-                //Sends players stuck in the lobby to spectate the ongoing game, prevents a rare quest issue with loss of tracking causing the game to pause on map start
-                if (_gameplayManager.State == GameplayManagerState.Gameplay && _playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null)
-                {
-                    foreach (var p in _playerRegistry.Players.FindAll(p => p.InLobby))
-                    {
-                        _packetDispatcher.SendToPlayer(p, new SetPlayersMissingEntitlementsToLevelPacket
-                        {
-                            PlayersWithoutEntitlements = _playerRegistry.Players
-                                .Where(p => p.GetEntitlement(_gameplayManager.CurrentBeatmap!.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.NotDownloaded)
-                                .Select(p => p.UserId).ToList()
-                        }, DeliveryMethod.ReliableOrdered);
-                        _packetDispatcher.SendToPlayer(p, new StartLevelPacket
-                        {
-                            Beatmap = _gameplayManager.CurrentBeatmap!,
-                            Modifiers = _gameplayManager.CurrentModifiers!,
-                            StartTime = _instance.RunTime
-                        }, DeliveryMethod.ReliableOrdered);
-                        _gameplayManager.HandleLevelFinished(p, new LevelFinishedPacket
-                        {
-                            Results = new MultiplayerLevelCompletionResults
-                            {
-                                PlayerLevelEndState = MultiplayerPlayerLevelEndState.NotStarted,
-                                LevelCompletionResults = new LevelCompletionResults(),
-                                PlayerLevelEndReason = MultiplayerPlayerLevelEndReason.StartupFailed
-                            }
-                        });
-                    }
-                }
-                return;
-            }
-
             if (!_playerRegistry.TryGetPlayer(_configuration.ManagerId, out var manager) && _configuration.SongSelectionMode == SongSelectionMode.ManagerPicks)
                 return;
             

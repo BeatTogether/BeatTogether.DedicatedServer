@@ -25,6 +25,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"(SenderId={sender.ConnectionId})."
             );
             sender.Modifiers = new GameplayModifiers();
+            _lobbyManager.RunUpdate();
             return Task.CompletedTask;
         }
     }
