@@ -41,6 +41,7 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Subscribe<DisconnectPlayerFromMatchmakingServerEvent>(HandleDisconnectPlayer);
             _autobus.Publish(new NodeStartedEvent(_configuration.HostName));
             _logger.Information("Dedicated node starting: " + _configuration.HostName);
+            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
             return Task.CompletedTask;
         }
 
