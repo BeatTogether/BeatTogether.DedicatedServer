@@ -30,6 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 			if (sender.CanRecommendModifiers)
 			{
 				sender.Modifiers = packet.Modifiers;
+				_lobbyManager.RunUpdate();
 			}
 
 			return Task.CompletedTask;

@@ -28,7 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
 
             sender.SetEntitlement(packet.LevelId, packet.Entitlement);
-
+            _lobbyManager.RunUpdate();
             return Task.CompletedTask;
         }
     }
