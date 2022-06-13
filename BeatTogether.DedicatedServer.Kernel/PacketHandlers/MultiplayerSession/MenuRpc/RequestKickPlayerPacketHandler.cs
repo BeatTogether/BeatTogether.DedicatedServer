@@ -35,7 +35,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                     {
                         DisconnectedReason = DisconnectedReason.Kicked
                     }, DeliveryMethod.ReliableOrdered);
-
             return Task.CompletedTask;
         }
     }

@@ -34,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             {
                 Reason = CannotStartGameReason.NoSongSelected
             }, DeliveryMethod.ReliableOrdered);
-
+            _lobbyManager.RunUpdate();
             return Task.CompletedTask;
         }
     }
