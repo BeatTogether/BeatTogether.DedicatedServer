@@ -9,7 +9,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
     public sealed class RequestReturnToMenuPacketHandler : BasePacketHandler<RequestReturnToMenuPacket>
     {
         private IGameplayManager _gameplayManager;
-        private ILogger _logger = Log.ForContext<SetGameplaySceneReadyPacketHandler>();
+        private ILogger _logger = Log.ForContext<RequestReturnToMenuPacketHandler>();
 
         public RequestReturnToMenuPacketHandler(
             IGameplayManager gameplayManager)

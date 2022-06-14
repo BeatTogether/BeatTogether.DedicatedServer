@@ -44,6 +44,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 }, DeliveryMethod.ReliableOrdered);
 
             sender.InLobby = packet.IsInLobby;
+            _instance.RunUpdate = true;
             return Task.CompletedTask;
         }
     }
