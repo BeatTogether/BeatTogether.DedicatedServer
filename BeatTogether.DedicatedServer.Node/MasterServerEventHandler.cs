@@ -6,7 +6,6 @@ using BeatTogether.MasterServer.Interface.Events;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
-using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,7 +40,6 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Subscribe<DisconnectPlayerFromMatchmakingServerEvent>(HandleDisconnectPlayer);
             _autobus.Publish(new NodeStartedEvent(_configuration.HostName));
             _logger.Information("Dedicated node starting: " + _configuration.HostName);
-            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
             return Task.CompletedTask;
         }
 
@@ -78,7 +76,6 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandleCheckNode(CheckNodesEvent checkNodesEvent)
         {
-            _logger.Verbose($"Current threads {Process.GetCurrentProcess().Threads.Count}");
             _autobus.Publish(new NodeOnlineEvent(_configuration.HostName));
             return Task.CompletedTask;
         }

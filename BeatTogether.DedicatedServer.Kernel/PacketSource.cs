@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
@@ -125,7 +127,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     continue;
                 }
 
-                /*Task.Run(async () => await */((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);//);
+                Task.Run(async () => await ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet));
             }
         }
 

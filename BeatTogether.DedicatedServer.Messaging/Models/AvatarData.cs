@@ -7,22 +7,22 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 {
     public sealed class AvatarData : INetSerializable
     {
-        public string HeadTopId { get; set; } = "BedHead";
+        public string HeadTopId { get; set; } = null!;
         public Color HeadTopPrimaryColor { get; set; }
         public Color HeadTopSecondaryColor { get; set; }
-        public string GlassesId { get; set; } = "Default";
+        public string GlassesId { get; set; } = null!;
         public Color GlassesColor { get; set; }
-        public string FacialHairId { get; set; } = "None";
+        public string FacialHairId { get; set; } = null!;
         public Color FacialHairColor { get; set; }
-        public string HandsId { get; set; } = "BareHands";
+        public string HandsId { get; set; } = null!;
         public Color HandsColor { get; set; }
-        public string ClothesId { get; set; } = "Hoodie";
+        public string ClothesId { get; set; } = null!;
         public Color ClothesPrimaryColor { get; set; }
         public Color ClothesSecondaryColor { get; set; }
         public Color ClothesDetailColor { get; set; }
-        public string SkinColorId { get; set; } = "Default";
-        public string EyesId { get; set; } = "Eyes1";
-        public string MouthId { get; set; } = "Mouth8";
+        public string SkinColorId { get; set; } = null!;
+        public string EyesId { get; set; } = null!;
+        public string MouthId { get; set; } = null!;
 
         public void ReadFrom(ref SpanBufferReader reader)
         {
@@ -47,24 +47,80 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 
         public void WriteTo(ref SpanBufferWriter writer)
         {
-
-            writer.WriteString(HeadTopId);
+            switch (HeadTopId)
+            {
+                case null:
+                    writer.WriteString("BedHead");
+                    break;
+                default:
+                    writer.WriteString(HeadTopId);
+                    break;
+            }
             writer.WriteColor(HeadTopPrimaryColor);
             writer.WriteColor(HandsColor);
-            writer.WriteString(ClothesId);
+            switch (ClothesId)
+            {
+                case null:
+                    writer.WriteString("Hoodie");
+                    break;
+                default:
+                    writer.WriteString(ClothesId);
+                    break;
+            }
             writer.WriteColor(ClothesPrimaryColor);
             writer.WriteColor(ClothesSecondaryColor);
             writer.WriteColor(ClothesDetailColor);
             writer.WriteColor(new Color());
             writer.WriteColor(new Color());
-            writer.WriteString(EyesId);
-            writer.WriteString(MouthId);
+            switch (EyesId)
+            {
+                case null:
+                    writer.WriteString("Eyes1");
+                    break;
+                default:
+                    writer.WriteString(EyesId);
+                    break;
+            }
+            switch (MouthId)
+            {
+                case null:
+                    writer.WriteString("Mouth8");
+                    break;
+                default:
+                    writer.WriteString(MouthId);
+                    break;
+            }
             writer.WriteColor(GlassesColor);
             writer.WriteColor(FacialHairColor);
             writer.WriteColor(HeadTopSecondaryColor);
-            writer.WriteString(GlassesId);
-            writer.WriteString(FacialHairId);
-            writer.WriteString(HandsId);
+            switch (GlassesId)
+            {
+                case null:
+                    writer.WriteString("Default");
+                    SkinColorId = "Default";
+                    break;
+                default:
+                    writer.WriteString(GlassesId);
+                    break;
+            }
+            switch (FacialHairId)
+            {
+                case null:
+                    writer.WriteString("None");
+                    break;
+                default:
+                    writer.WriteString(FacialHairId);
+                    break;
+            }
+            switch (HandsId)
+            {
+                case null:
+                    writer.WriteString("BareHands");
+                    break;
+                default:
+                    writer.WriteString(HandsId);
+                    break;
+            }
         }
     }
 }

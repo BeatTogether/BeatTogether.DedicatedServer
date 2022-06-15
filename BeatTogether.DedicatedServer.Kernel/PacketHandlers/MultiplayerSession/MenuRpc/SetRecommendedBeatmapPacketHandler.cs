@@ -36,7 +36,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 				{
 					LevelId = packet.BeatmapIdentifier.LevelId
 				}, DeliveryMethod.ReliableOrdered);
-				_lobbyManager.RunUpdate();
 			}
 
 			return Task.CompletedTask;

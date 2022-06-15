@@ -34,13 +34,13 @@ namespace BeatTogether.DedicatedServer.Kernel
         public InstanceConfiguration Configuration { get; private set; }
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
-        //public int Port => Endpoint.Port;
+        public int Port => Endpoint.Port;
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
 
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
         public float DestroyInstanceTimeout { get; private set; } = 0f; //set to -1 for no timeout(Permanent server, close using api), 0 would be for lobbies made the usaual way, or a number for a timeout
         public string SetManagerFromUserId { get; private set; } = ""; //If a user creates a server using the api and enteres there userId (eg uses discord bot with linked account))
-        public bool RunUpdate { get; set; } = false;
+
         public event Action StartEvent = null!;
         public event Action StopEvent = null!;
         public event Action<IPlayer> PlayerConnectedEvent = null!;
@@ -278,7 +278,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             if (_waitForPlayerCts != null)
                 _waitForPlayerCts.Cancel();
-            RunUpdate = true;
+
             return true;
         }
 
@@ -394,7 +394,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
             }, DeliveryMethod.ReliableOrdered);
             PlayerConnectedEvent?.Invoke(player);
-            RunUpdate = true;
         }
 
         public override void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
@@ -483,7 +482,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }, DeliveryMethod.ReliableOrdered);
                 }
             }
-            RunUpdate = true;
         }
 
         #endregion
