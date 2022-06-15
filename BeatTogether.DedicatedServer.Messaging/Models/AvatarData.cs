@@ -7,22 +7,22 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 {
     public sealed class AvatarData : INetSerializable
     {
-        public string HeadTopId { get; set; } = null!;
+        public string HeadTopId { get; set; } = "BedHead";
         public Color HeadTopPrimaryColor { get; set; }
         public Color HeadTopSecondaryColor { get; set; }
-        public string GlassesId { get; set; } = null!;
+        public string GlassesId { get; set; } = "Default";
         public Color GlassesColor { get; set; }
-        public string FacialHairId { get; set; } = null!;
+        public string FacialHairId { get; set; } = "None";
         public Color FacialHairColor { get; set; }
-        public string HandsId { get; set; } = null!;
+        public string HandsId { get; set; } = "BareHands";
         public Color HandsColor { get; set; }
-        public string ClothesId { get; set; } = null!;
+        public string ClothesId { get; set; } = "Hoodie";
         public Color ClothesPrimaryColor { get; set; }
         public Color ClothesSecondaryColor { get; set; }
         public Color ClothesDetailColor { get; set; }
-        public string SkinColorId { get; set; } = null!;
-        public string EyesId { get; set; } = null!;
-        public string MouthId { get; set; } = null!;
+        public string SkinColorId { get; set; } = "Default";
+        public string EyesId { get; set; } = "Eyes1";
+        public string MouthId { get; set; } = "Mouth8";
 
         public void ReadFrom(ref SpanBufferReader reader)
         {
