@@ -65,7 +65,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _instance.PlayerDisconnectedEvent -= HandlePlayerLeaveGameplay;
         }
 
-        public async Task StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
+        public async void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
         {
             if (State != GameplayManagerState.None)
             {
@@ -104,7 +104,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             });
 
             // Wait for scene ready
-            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered); //TODO server will start to pause here if too many players
+            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
             sceneReadyCts.CancelAfter((int)(SceneLoadTimeLimit * 1000));
             await Task.WhenAll(sceneReadyTasks);
 
@@ -158,7 +158,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             State = GameplayManagerState.None;
             _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered); //quest ignores this, has already returned to the lobby
             _instance.SetState(MultiplayerGameState.Lobby);
-            return;
         }
 
         private void ResetValues(BeatmapIdentifier? map, GameplayModifiers modifiers)
