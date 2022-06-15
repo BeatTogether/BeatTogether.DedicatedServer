@@ -23,7 +23,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         float NoPlayersTime { get; }
         float DestroyInstanceTimeout { get; }
         string SetManagerFromUserId { get; }
-        bool RunUpdate { get; set; }
 
         void SetupPermanentManager(string ManagerUsername);
         void SetupInstance(float Timeout, string ServerName);

@@ -18,6 +18,5 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
         void Update();
         void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers);
         void SetCountdown(CountdownState countdownState, float countdown = 0);
-        void RunUpdate();
     }
 }
