@@ -176,18 +176,23 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             if (_releasedSortIndices.TryDequeue(out var sortIndex))
                 return sortIndex;
-            return Interlocked.Increment(ref _lastSortIndex);
+            var SortIndex = Interlocked.Increment(ref _lastSortIndex);
+            if (SortIndex == 127)
+                SortIndex = Interlocked.Increment(ref _lastSortIndex);
+            return SortIndex;
         }
 
         public void ReleaseSortIndex(int sortIndex) =>
             _releasedSortIndices.Enqueue(sortIndex);
 
-        public byte GetNextConnectionId()
+        public byte GetNextConnectionId() //ID 0 is server, ID 127 means send to all players
         {
             if (_releasedConnectionIds.TryDequeue(out var connectionId))
-                return (byte)(connectionId % 127);
+                return (byte)(connectionId % 256);
             var connectionIdCount = Interlocked.Increment(ref _connectionIdCount);
-            if (connectionIdCount >= 127)
+            if (connectionIdCount == 127)
+                connectionIdCount = Interlocked.Increment(ref _connectionIdCount);
+            if (connectionIdCount > byte.MaxValue)
                 return 0;
             return (byte)connectionIdCount;
         }
@@ -251,8 +256,9 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (_playerRegistry.Players.Count >= Configuration.MaxPlayerCount)
                 return false;
 
-            var connectionId = GetNextConnectionId();
-            var sortIndex = GetNextSortIndex();
+            int sortIndex = GetNextSortIndex();
+            byte connectionId = GetNextConnectionId();
+            
             var player = new Player(
                 endPoint,
                 this,
@@ -329,43 +335,44 @@ namespace BeatTogether.DedicatedServer.Kernel
                 UserName = UserName,
                 IsConnectionOwner = true
             }, DeliveryMethod.ReliableOrdered);
-
+            /*
+            //Not needed
             // Send host player sort order to new player
             _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
             {
                 UserId = Configuration.Secret,
                 SortIndex = 0
             }, DeliveryMethod.ReliableOrdered);
-
+            */
 
             foreach (IPlayer p in _playerRegistry.Players.Where(p => p.ConnectionId != player.ConnectionId))
             {
 
-                    // Send all player connection data packets to new player
-                    _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
+                // Send all player connection data packets to new player
+                _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
+                {
+                    RemoteConnectionId = p.ConnectionId,
+                    UserId = p.UserId,
+                    UserName = p.UserName,
+                    IsConnectionOwner = false
+                }, DeliveryMethod.ReliableOrdered);
+
+                // Send all player sort index packets to new player
+                //if (p.SortIndex != -1) there are no players with -1 at all
+                _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
+                {
+                    UserId = p.UserId,
+                    SortIndex = p.SortIndex
+                }, DeliveryMethod.ReliableOrdered);
+
+                // Send all player identity packets to new player
+                _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
                     {
-                        RemoteConnectionId = p.ConnectionId,
-                        UserId = p.UserId,
-                        UserName = p.UserName,
-                        IsConnectionOwner = false
+                        PlayerState = p.State,
+                        PlayerAvatar = p.Avatar,
+                        Random = new ByteArray { Data = p.Random },
+                        PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
                     }, DeliveryMethod.ReliableOrdered);
-
-                    // Send all player sort index packets to new player
-                    if (p.SortIndex != -1)
-                        _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
-                        {
-                            UserId = p.UserId,
-                            SortIndex = p.SortIndex
-                        }, DeliveryMethod.ReliableOrdered);
-
-                    // Send all player identity packets to new player
-                    _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
-                        {
-                            PlayerState = p.State,
-                            PlayerAvatar = p.Avatar,
-                            Random = new ByteArray { Data = p.Random },
-                            PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
-                        }, DeliveryMethod.ReliableOrdered);
             }
 
             // Disable start button if they are manager without selected song
