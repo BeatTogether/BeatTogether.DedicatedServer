@@ -6,7 +6,9 @@ using BeatTogether.MasterServer.Interface.Events;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
+using System.Diagnostics;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,6 +42,11 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Subscribe<DisconnectPlayerFromMatchmakingServerEvent>(HandleDisconnectPlayer);
             _autobus.Publish(new NodeStartedEvent(_configuration.HostName));
             _logger.Information("Dedicated node starting: " + _configuration.HostName);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                //Will set the programs priority to high if ran on windows, this is to avoid windows freezing or pausing the cmd window
+                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
+            }
             return Task.CompletedTask;
         }
 
