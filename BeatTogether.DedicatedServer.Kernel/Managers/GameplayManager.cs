@@ -107,6 +107,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
             sceneReadyCts.CancelAfter((int)(SceneLoadTimeLimit * 1000));
             await Task.WhenAll(sceneReadyTasks);
+            if (sceneReadyCts.IsCancellationRequested) //If it took over waiting for scene ready to load
+                _requestReturnToMenuCts.Cancel();
 
             // Set scene sync finished
             State = GameplayManagerState.SongLoad;
@@ -129,9 +131,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             });
 
             // Wait for song ready
-            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
-            songReadyCts.CancelAfter((int)(SongLoadTimeLimit * 1000));
-            await Task.WhenAll(songReadyTasks);
+            //_packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
+            //songReadyCts.CancelAfter((int)(SongLoadTimeLimit * 1000));
+            //await Task.WhenAll(songReadyTasks);
+            //if(songReadyCts.IsCancellationRequested) //If it took over Song load time limit to load
+            //    _requestReturnToMenuCts.Cancel();
 
             // If no players are actually playing, or not all players are not in the lobby(if at least one player is then true)
             if (loadingPlayers.All(player => !player.InGameplay) || !loadingPlayers.All(player => !player.InLobby))
@@ -156,7 +160,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // End gameplay and reset
             ResetValues(null, new());
             State = GameplayManagerState.None;
-            _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered); //quest ignores this, has already returned to the lobby
+            _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered); //i believe the clients ignore this
             _instance.SetState(MultiplayerGameState.Lobby);
         }
 
