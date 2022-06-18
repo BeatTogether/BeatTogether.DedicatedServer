@@ -45,9 +45,9 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
             WriteOne(ref writer, packet);
-
+            _logger.Verbose("Packet: " + packet.GetType().Name + " Was entered into the spanbuffer correctly, now sending once to each player");
             foreach (var player in _playerRegistry.Players)
-                Send(player.Endpoint, writer.Data, deliveryMethod);
+                    Send(player.Endpoint, writer.Data, deliveryMethod);
         }
 
         public void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
