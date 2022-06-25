@@ -54,7 +54,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool InMenu => State.Contains("in_menu");
         public bool IsModded => State.Contains("modded");
 
-        public BeatmapDifficulty? PreferredDifficulty = null; //TODO add in code to allow players to send a packet to change this value
+        public BeatmapDifficulty? PreferredDifficulty { get; set; } = null; //TODO add in code to allow players to send a packet to change this value
 
         private const float _syncTimeOffset = 0.06f;
         private ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();

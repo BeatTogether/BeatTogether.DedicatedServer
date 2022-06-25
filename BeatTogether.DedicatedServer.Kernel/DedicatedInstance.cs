@@ -68,7 +68,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                   registry,
                   serviceProvider,
                   configuration.MaxPlayerCount, //Currently setting the async receive/send to the amount of players. Should probably set it lower
-                  true, //If the server receives in async or not. Currently may not work with receiving packets
+                  false, //If the server receives in async or not. Currently may not work with receiving packets
                   packetLayer)
         {
             Configuration = configuration;

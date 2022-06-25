@@ -161,7 +161,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             AllowNoodleExtensions = NoodleExtensions;
         }
 
-        bool IsPrefferedDifficultyValid(BeatmapIdentifier beatmap, Messaging.Models.BeatmapDifficulty? difficulty)
+        public bool IsPrefferedDifficultyValid(BeatmapIdentifier beatmap, Messaging.Models.BeatmapDifficulty? difficulty)
         {
             if(difficulty != null)
             {
