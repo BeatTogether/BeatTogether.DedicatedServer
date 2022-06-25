@@ -340,22 +340,56 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (countdown == 0)
                         countdown = 5f;
                     CountdownEndTime = _instance.RunTime + countdown;
-                    _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
-                    {
-                        Beatmap = SelectedBeatmap!,
-                        Modifiers = SelectedModifiers,
-                        StartTime = CountdownEndTime
-                    }, DeliveryMethod.ReliableOrdered);
+                    StartBeatmapPacket();
                     break;
                 case CountdownState.WaitingForEntitlement:
+                    StartBeatmapPacket();
+                    CountdownEndTime = -1;
+                    break;
+            }
+        }
+
+        private void StartBeatmapPacket() //Checks the lobby settings and sends the player the correct beatmap
+        {
+            switch (_configuration.BeatmapDiffering)
+            {
+                case BeatmapDiffering.Same:
                     _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
                     {
                         Beatmap = SelectedBeatmap!,
                         Modifiers = SelectedModifiers,
                         StartTime = CountdownEndTime
                     }, DeliveryMethod.ReliableOrdered);
-                    CountdownEndTime = -1;
-                    break;
+                    return;
+                case BeatmapDiffering.DifferentDifficulties:
+                    foreach (var player in _playerRegistry.Players)
+                    {
+                        BeatmapIdentifier bm = SelectedBeatmap!;
+                        if (_beatmapRepository.IsPrefferedDifficultyValid(bm,player.PreferredDifficulty))
+                            bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
+                        _packetDispatcher.SendToPlayer(player, new StartLevelPacket
+                        {
+                            Beatmap = bm!,
+                            Modifiers = SelectedModifiers,
+                            StartTime = CountdownEndTime
+                        }, DeliveryMethod.ReliableOrdered);
+                    }
+                    return;
+                case BeatmapDiffering.DifferentBeatmaps:
+                    foreach (var player in _playerRegistry.Players)
+                    {
+                        BeatmapIdentifier bm = SelectedBeatmap!;
+                        if(player.BeatmapIdentifier != null)
+                            bm = player.BeatmapIdentifier;
+
+                        _packetDispatcher.SendToPlayer(player, new StartLevelPacket
+                        {
+                            Beatmap = bm!,
+                            Modifiers = SelectedModifiers,
+                            StartTime = CountdownEndTime
+                        }, DeliveryMethod.ReliableOrdered);
+                    }
+                    return;
             }
         }
 

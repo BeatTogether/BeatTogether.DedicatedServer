@@ -13,5 +13,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         void CleanCachedBeatmapsByActivity();
         void ClearCachedBeatmaps();
         void SetRequirements(bool chroma, bool MappingExtensions, bool NoodleExtensions);
+        bool IsPrefferedDifficultyValid(BeatmapIdentifier beatmap, BeatmapDifficulty? difficulty);
     }
 }

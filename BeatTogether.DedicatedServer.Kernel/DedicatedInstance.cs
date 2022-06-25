@@ -481,7 +481,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
             }
         }
-
         #endregion
 
         #region Private Methods

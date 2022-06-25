@@ -112,31 +112,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // Set scene sync finished
             State = GameplayManagerState.SongLoad;
 
-            //if (_playerSpecificSettings.Values.ToArray().Length < 9)
-            //{
-                _packetDispatcher.SendToNearbyPlayers(new SetGameplaySceneSyncFinishedPacket
-                {
-                    SessionGameId = SessionGameId,
-                    PlayersAtStart = new PlayerSpecificSettingsAtStart
-                    {
-                        ActivePlayerSpecificSettingsAtStart = _playerSpecificSettings.Values.ToArray() //TODO this packet is the one causing the 9 players bad things
-                    }
-                }, DeliveryMethod.ReliableOrdered);
-            //}
-
-            /*
-            for (int i = 0; i < _playerSpecificSettings.Values.ToArray().Length; i++)
+            _packetDispatcher.SendToNearbyPlayers(new SetGameplaySceneSyncFinishedPacket
             {
-                _packetDispatcher.SendToPlayer(_playerRegistry.GetPlayer(_playerSpecificSettings.Values.ToArray()[i].UserId), new SetGameplaySceneSyncFinishedPacket
+                SessionGameId = SessionGameId,
+                PlayersAtStart = new PlayerSpecificSettingsAtStart
                 {
-                    SessionGameId = SessionGameId,
-                    PlayersAtStart = new PlayerSpecificSettingsAtStart
-                    {
-                        ActivePlayerSpecificSettingsAtStart = _playerSpecificSettings.Values.ToArray()[i..(i+1)]
-                    }
-                }, DeliveryMethod.ReliableOrdered);
-            }
-            */
+                    ActivePlayerSpecificSettingsAtStart = _playerSpecificSettings.Values.ToArray() //TODO this packet is the one causing the 9 players bad things
+                }
+            }, DeliveryMethod.ReliableOrdered);
 
             // Create song ready tasks
             
@@ -172,7 +155,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             await Task.WhenAll(levelFinishedTasks);
             State = GameplayManagerState.Results;
 
-            // Wait at results screen if anyone cleared or skip if the countdown is set to 0 or something
+            // Wait at results screen if anyone cleared or skip if the countdown is set to 0.
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared) && _instance.Configuration.CountdownConfig.ResultsScreenTime > 0)
                 await Task.Delay((int)(_instance.Configuration.CountdownConfig.ResultsScreenTime * 1000), cancellationToken);
 
