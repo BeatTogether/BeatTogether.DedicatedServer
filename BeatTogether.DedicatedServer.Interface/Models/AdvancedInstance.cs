@@ -56,17 +56,17 @@ namespace BeatTogether.DedicatedServer.Interface.Models
 
     public record AdvancedInstance(
         GameplayServerConfiguration GameplayServerConfiguration,
-        int PlayerCount, //If == o, inactive lobby
+        int PlayerCount,
         bool IsRunning,
         float RunTime,
         int Port,
-        string UserId,
-        string UserName,//This is the servers name
+        string ServerId,
+        string ServerName,
         MultiplayerGameState MultiplayerGameState,
 		GameplayManagerState GameplayManagerState,
-        float NoPlayersTime,    //When RunTime-NoPlayersTime >= DestroyInstanceTimeout, it is stopped
+        float NoPlayersTime,    //Time since last player was in the lobby
         float DestroyInstanceTimeout, //-1 is no timeout
-        string SetManagerFromUserId, //If not blank then there is a permenant manager
+        string SetManagerFromUserId, //If not blank then there is a permenant manager that will be set when they join automaticly
         float CountdownEndTime,     //CountdownEndTime-RunTime = countdown
 		CountdownState CountdownState,
 		GameplayModifiers SelectedGameplayModifiers,

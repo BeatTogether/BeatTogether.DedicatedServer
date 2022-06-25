@@ -29,7 +29,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public GameplayModifiers CurrentModifiers { get; private set; } = new();
 
         private const float SongStartDelay = 0.5f;
-        private const float ResultsScreenTime = 20f; //changing this to 20 sec as on quest i think it is that
         private const float SceneLoadTimeLimit = 10.0f;
         private const float SongLoadTimeLimit = 10.0f;
 
@@ -173,14 +172,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             await Task.WhenAll(levelFinishedTasks);
             State = GameplayManagerState.Results;
 
-            // Wait at results screen if anyone cleared
-            if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared))
-                await Task.Delay((int)(ResultsScreenTime * 1000), cancellationToken);
+            // Wait at results screen if anyone cleared or skip if the countdown is set to 0 or something
+            if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared) && _instance.Configuration.CountdownConfig.ResultsScreenTime > 0)
+                await Task.Delay((int)(_instance.Configuration.CountdownConfig.ResultsScreenTime * 1000), cancellationToken);
 
             // End gameplay and reset
-            ResetValues(null, new());
+            SignalRequestReturnToMenu();
             State = GameplayManagerState.None;
-            _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered); //i believe the clients ignore this
+            _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
             _instance.SetState(MultiplayerGameState.Lobby);
         }
 
