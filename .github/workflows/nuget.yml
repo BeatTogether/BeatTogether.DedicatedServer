@@ -25,6 +25,7 @@ jobs:
           dotnet pack -c Release --output nupkgs BeatTogether.DedicatedServer.Interface/BeatTogether.DedicatedServer.Interface.csproj
       - name: Publish
         run: |
+          dotnet nuget verify -signatures
           dotnet nuget push "nupkgs/BeatTogether.DedicatedServer.*.nupkg" -k ${{secrets.GITHUB_TOKEN}} --skip-duplicate
 
   nuget-2:
@@ -43,6 +44,7 @@ jobs:
           NUGET_AUTH_TOKEN: ${{secrets.NUGET_API_KEY}}
       - name: Pack
         run: |
+          dotnet nuget verify -signatures 
           dotnet pack -c Release --output nupkgs BeatTogether.DedicatedServer.Interface/BeatTogether.DedicatedServer.Interface.csproj
       - name: Publish
         run: |
