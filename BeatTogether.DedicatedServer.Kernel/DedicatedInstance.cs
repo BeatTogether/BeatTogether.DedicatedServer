@@ -71,6 +71,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                   liteNetConfiguration,
                   registry,
                   serviceProvider,
+                  4,
+                  true,
                   packetLayer)
         {
             Configuration = configuration;
