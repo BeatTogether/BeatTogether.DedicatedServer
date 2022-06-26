@@ -72,7 +72,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                   registry,
                   serviceProvider,
                   4,
-                  true,
+                  false,
                   packetLayer)
         {
             Configuration = configuration;
