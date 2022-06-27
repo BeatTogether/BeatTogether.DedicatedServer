@@ -16,16 +16,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool IsRunning { get; }
         float RunTime { get; }
         int Port { get; }
-		string UserId { get; }
-		string UserName { get; }
         MultiplayerGameState State { get; }
 
         float NoPlayersTime { get; }
-        float DestroyInstanceTimeout { get; }
-        string SetManagerFromUserId { get; }
-
-        void SetupPermanentManager(string ManagerUsername);
-        void SetupInstance(float Timeout, string ServerName);
 
         IPlayerRegistry GetPlayerRegistry();
         IServiceProvider GetServiceProvider();

@@ -29,8 +29,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         // Milliseconds between sync time updates
         public const int SyncTimeDelay = 5000;
 
-        public string UserId { get; private set; } = "ziuMSceapEuNN7wRGQXrZg";
-        public string UserName { get; private set; } = "";
         public InstanceConfiguration Configuration { get; private set; }
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
@@ -38,8 +36,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
 
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
-        public float DestroyInstanceTimeout { get; private set; } = 0f; //set to -1 for no timeout(Permanent server, close using api), 0 would be for lobbies made the usaual way, or a number for a timeout
-        public string SetManagerFromUserId { get; private set; } = ""; //If a user creates a server using the api and enteres there userId (eg uses discord bot with linked account))
 
         public event Action StartEvent = null!;
         public event Action StopEvent = null!;
@@ -71,6 +67,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                   liteNetConfiguration,
                   registry,
                   serviceProvider,
+                  configuration.MaxPlayerCount, //Currently setting the async receive/send to the amount of players. Should probably set it lower
+                  false, //If the server receives in async or not. Currently may not work with receiving packets
                   packetLayer)
         {
             Configuration = configuration;
@@ -81,15 +79,6 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         #region Public Methods
 
-        public void SetupPermanentManager(string ManagerUserId)
-        {
-            SetManagerFromUserId = ManagerUserId;
-        }
-        public void SetupInstance(float Timeout, string ServerName)
-        {
-            DestroyInstanceTimeout = Timeout;
-            UserName = ServerName;
-        }
         public IPlayerRegistry GetPlayerRegistry()
         {
             return _playerRegistry;
@@ -123,10 +112,10 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             Task.Run(() => SendSyncTime(_stopServerCts.Token), cancellationToken);
 
-            if (DestroyInstanceTimeout != -1)
+            if (Configuration.DestroyInstanceTimeout != -1)
             {
                 _waitForPlayerCts = new CancellationTokenSource();
-                Task.Delay((WaitForPlayerTimeLimit + (int)(DestroyInstanceTimeout * 1000)), _waitForPlayerCts.Token).ContinueWith(t =>
+                Task.Delay((WaitForPlayerTimeLimit + (int)(Configuration.DestroyInstanceTimeout * 1000)), _waitForPlayerCts.Token).ContinueWith(t =>
                 {
                     if (!t.IsCanceled)
                     {
@@ -226,6 +215,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     "Failed to deserialize connection request data " +
                     $"(RemoteEndPoint='{endPoint}')."
                 );
+                Console.WriteLine("Failed 1");
                 return false;
             }
 
@@ -250,6 +240,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"UserName='{connectionRequestData.UserName}', " +
                     $"IsConnectionOwner={connectionRequestData.IsConnectionOwner})."
                 );
+                Console.WriteLine("Failed 2");
                 return false;
             }
 
@@ -284,7 +275,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             if (_waitForPlayerCts != null)
                 _waitForPlayerCts.Cancel();
-
+            Console.WriteLine("PLAYER ADDED");
             return true;
         }
 
@@ -331,8 +322,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
             {
                 RemoteConnectionId = 0,
-                UserId = UserId,
-                UserName = UserName,
+                UserId = Configuration.ServerId,
+                UserName = Configuration.ServerName,
                 IsConnectionOwner = true
             }, DeliveryMethod.ReliableOrdered);
             /*
@@ -382,7 +373,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }, DeliveryMethod.ReliableOrdered);
 
             // Update permissions
-            if ((SetManagerFromUserId == player.UserId || _playerRegistry.Players.Count == 1) && Configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
+            if ((Configuration.SetManagerFromUserId == player.UserId || _playerRegistry.Players.Count == 1) && Configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
                 Configuration.ManagerId = player.UserId;
 
             _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
@@ -439,10 +430,10 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (_playerRegistry.Players.Count == 0)
             {
                 NoPlayersTime = RunTime;
-                if (DestroyInstanceTimeout != -1)
+                if (Configuration.DestroyInstanceTimeout != -1)
                 {
                     _waitForPlayerCts = new CancellationTokenSource();
-                    _ = Task.Delay((int)(DestroyInstanceTimeout * 1000), _waitForPlayerCts.Token).ContinueWith(t =>
+                    _ = Task.Delay((int)(Configuration.DestroyInstanceTimeout * 1000), _waitForPlayerCts.Token).ContinueWith(t =>
                     {
                         if (!t.IsCanceled)
                         {
@@ -490,7 +481,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
             }
         }
-
         #endregion
 
         #region Private Methods
