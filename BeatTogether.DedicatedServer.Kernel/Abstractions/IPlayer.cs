@@ -47,6 +47,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool IsModded { get; }
         bool InLobby { get; set; }
 
+        BeatmapDifficulty? PreferredDifficulty { get; set; }
+
         EntitlementStatus GetEntitlement(string levelId);
         void SetEntitlement(string levelId, EntitlementStatus entitlement);
     }
