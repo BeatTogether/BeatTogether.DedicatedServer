@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
@@ -70,8 +70,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             var encryptionParameters = new EncryptionParameters(
                 receiveKey,
                 sendKey,
-                new HMACSHA256(receiveMacSourceArray),
-                new HMACSHA256(sendMacSourceArray)
+                receiveMacSourceArray,
+                sendMacSourceArray
             );
             _potentialEncryptionParameters[endPoint.Address] = encryptionParameters;
             _encryptionParameters.TryRemove(endPoint, out _); //Why we removing this here, if the first thing that happens is the server sending an outbound packet then it would have failed before?
@@ -108,7 +108,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 return;
             }
 
-            if (_potentialEncryptionParameters.TryGetValue(address, out encryptionParameters)) {
+            if (_potentialEncryptionParameters.TryGetValue(address, out encryptionParameters))
+            {
                 if (TryDecrypt(ref bufferReader, encryptionParameters, out decryptedData))
                 {
                     _encryptionParameters[endPoint] = encryptionParameters;
@@ -154,10 +155,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
             var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
             bufferWriter.WriteBool(true);  // isEncrypted
-            _encryptedPacketWriter.WriteTo(
-                ref bufferWriter, data[..],//.Slice(0, data.Length),
-                encryptionParameters.GetNextSequenceId(),
-                encryptionParameters.SendKey, encryptionParameters.SendMac);
+            using (var hmac = new HMACSHA256(encryptionParameters.SendMac))
+            {
+                _encryptedPacketWriter.WriteTo(
+                    ref bufferWriter, data[..],//.Slice(0, data.Length),
+                    encryptionParameters.GetNextSequenceId(),
+                    encryptionParameters.SendKey, hmac);
+            }
             data = bufferWriter.Data.ToArray();
         }
 
@@ -204,9 +208,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
         {
             try
             {
-                data = _encryptedPacketReader
-                    .ReadFrom(ref bufferReader, encryptionParameters.ReceiveKey, encryptionParameters.ReceiveMac)
-                    .ToArray();
+                using (var hmac = new HMACSHA256(encryptionParameters.ReceiveMac))
+                {
+                    data = _encryptedPacketReader
+                        .ReadFrom(ref bufferReader, encryptionParameters.ReceiveKey, hmac)
+                        .ToArray();
+                }
                 return true;
             }
             catch (Exception e)

@@ -1,4 +1,4 @@
-﻿using Autobus;
+using Autobus;
 using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Kernel;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
@@ -28,13 +28,6 @@ namespace BeatTogether.DedicatedServer.Node.Extensions
                         .AddCoreSecurity()
                         .AddConfiguration<NodeConfiguration>("Node")
                         .AddTransient<RNGCryptoServiceProvider>()
-                        .AddTransient(serviceProvider =>
-                            new AesCryptoServiceProvider()
-                            {
-                                Mode = CipherMode.CBC,
-                                Padding = PaddingMode.None
-                            }
-                        )
                         .AddSingleton<IEncryptedPacketReader, EncryptedPacketReader>()
                         .AddSingleton<IEncryptedPacketWriter, EncryptedPacketWriter>()
                         .AddSingleton<PacketEncryptionLayer>()

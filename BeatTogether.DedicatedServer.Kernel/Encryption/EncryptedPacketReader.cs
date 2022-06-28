@@ -9,17 +9,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 {
     public sealed class EncryptedPacketReader : IEncryptedPacketReader
     {
-        private readonly RNGCryptoServiceProvider _rngCryptoServiceProvider;
-        private readonly AesCryptoServiceProvider _aesCryptoServiceProvider;
         private readonly ILogger _logger = Log.ForContext<EncryptedPacketReader>();
-
-        public EncryptedPacketReader(
-            RNGCryptoServiceProvider rngCryptoServiceProvider,
-            AesCryptoServiceProvider aesCryptoServiceProvider)
-        {
-            _rngCryptoServiceProvider = rngCryptoServiceProvider;
-            _aesCryptoServiceProvider = aesCryptoServiceProvider;
-        }
 
         /// <inheritdoc cref="IEncryptedMessageReader.ReadFrom"/>
         public ReadOnlyMemory<byte> ReadFrom(ref SpanBufferReader bufferReader, byte[] key, HMAC hmac)
@@ -27,20 +17,24 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             var sequenceId = bufferReader.ReadUInt32();
             var iv = bufferReader.ReadBytes(16).ToArray();
             var decryptedBuffer = bufferReader.RemainingData.ToArray();
-            using (var cryptoTransform = _aesCryptoServiceProvider.CreateDecryptor(key, iv))
+            using (var aes = Aes.Create())
             {
-                var bytesWritten = 0;
-                var offset = 0;
-                for (var i = decryptedBuffer.Length; i >= cryptoTransform.InputBlockSize; i -= bytesWritten)
+                aes.Padding = PaddingMode.None;
+                using (var cryptoTransform = aes.CreateDecryptor(key, iv))
                 {
-                    var inputCount = cryptoTransform.CanTransformMultipleBlocks
-                        ? (i / cryptoTransform.InputBlockSize * cryptoTransform.InputBlockSize)
-                        : cryptoTransform.InputBlockSize;
-                    bytesWritten = cryptoTransform.TransformBlock(
-                        decryptedBuffer, offset, inputCount,
-                        decryptedBuffer, offset
-                    );
-                    offset += bytesWritten;
+                    var bytesWritten = 0;
+                    var offset = 0;
+                    for (var i = decryptedBuffer.Length; i >= cryptoTransform.InputBlockSize; i -= bytesWritten)
+                    {
+                        var inputCount = cryptoTransform.CanTransformMultipleBlocks
+                            ? (i / cryptoTransform.InputBlockSize * cryptoTransform.InputBlockSize)
+                            : cryptoTransform.InputBlockSize;
+                        bytesWritten = cryptoTransform.TransformBlock(
+                            decryptedBuffer, offset, inputCount,
+                            decryptedBuffer, offset
+                        );
+                        offset += bytesWritten;
+                    }
                 }
             }
 
