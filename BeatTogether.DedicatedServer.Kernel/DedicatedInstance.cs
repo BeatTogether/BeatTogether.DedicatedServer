@@ -273,7 +273,6 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             if (_waitForPlayerCts != null)
                 _waitForPlayerCts.Cancel();
-            Console.WriteLine("PLAYER ADDED");
             return true;
         }
 
