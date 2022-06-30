@@ -28,13 +28,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(ClearRecommendedBeatmapPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-
-            sender.BeatmapIdentifier = null;
-            _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
+            lock (sender.BeatmapLock)
             {
-                Reason = CannotStartGameReason.NoSongSelected
-            }, DeliveryMethod.ReliableOrdered);
-
+                sender.BeatmapIdentifier = null;
+                _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
+                {
+                    Reason = CannotStartGameReason.NoSongSelected
+                }, DeliveryMethod.ReliableOrdered);
+            }
             return Task.CompletedTask;
         }
     }

@@ -17,20 +17,27 @@ namespace BeatTogether.DedicatedServer.Kernel
         public string Secret { get; }
         public string UserId { get; }
         public string UserName { get; }
+        public object LatencyLock { get; set; } = new();
         public RollingAverage Latency { get; } = new(30);
         public float SyncTime =>
             Math.Min(Instance.RunTime - Latency.CurrentAverage - _syncTimeOffset,
                      Instance.RunTime);
+        public object SortLock { get; set; } = new();
         public int SortIndex { get; set; }
         public byte[] Random { get; set; }
         public byte[] PublicEncryptionKey { get; set; }
-
+        public object PlayerIdentityLock { get; set; } = new();
         public AvatarData Avatar { get; set; } = new();
+        public object ReadyLock { get; set; } = new();
         public bool IsReady { get; set; }
+        public object InLobbyLock { get; set; } = new();
         public bool InLobby { get; set; }
-        public BeatmapIdentifier? BeatmapIdentifier { get; set; }
-        public GameplayModifiers Modifiers { get; set; } = new();
 
+        public object BeatmapLock { get; set; } = new();
+        public BeatmapIdentifier? BeatmapIdentifier { get; set; }
+        public object ModifiersLock { get; set; } = new();
+        public GameplayModifiers Modifiers { get; set; } = new();
+        public object StateLock { get; set; } = new();
         public PlayerStateHash State { get; set; } = new();
 
         public bool WasActiveAtCountdownStart { get; set; } = false;
@@ -70,6 +77,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             UserName = userName;
         }
 
+        public object EntitlementLock { get; set; } = new();
         public EntitlementStatus GetEntitlement(string levelId)
             => _entitlements.TryGetValue(levelId, out var value) ? value : EntitlementStatus.Unknown;
 

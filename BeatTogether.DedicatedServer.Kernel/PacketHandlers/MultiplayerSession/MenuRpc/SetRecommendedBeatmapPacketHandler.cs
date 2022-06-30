@@ -28,16 +28,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 				$"(SenderId={sender.ConnectionId}, LevelId={packet.BeatmapIdentifier.LevelId}, Difficulty={packet.BeatmapIdentifier.Difficulty})."
 			);
 
-			if (sender.CanRecommendBeatmaps)
-			{
-				sender.BeatmapIdentifier = packet.BeatmapIdentifier;
-
-				_packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
+            lock (sender.BeatmapLock)
+            {
+				if (sender.CanRecommendBeatmaps)
 				{
-					LevelId = packet.BeatmapIdentifier.LevelId
-				}, DeliveryMethod.ReliableOrdered);
-			}
+					sender.BeatmapIdentifier = packet.BeatmapIdentifier;
 
+					_packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
+					{
+						LevelId = packet.BeatmapIdentifier.LevelId
+					}, DeliveryMethod.ReliableOrdered);
+				}
+			}
 			return Task.CompletedTask;
 		}
 	}

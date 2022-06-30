@@ -24,12 +24,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 $"(SenderId={sender.ConnectionId}, SyncTime={packet.Latency})."
             );
 
-            sender.Latency.Update(packet.Latency);
-            _packetDispatcher.SendFromPlayer(sender, new PlayerLatencyPacket
+            lock (sender.LatencyLock)
             {
-                Latency = sender.Latency.CurrentAverage
-            }, DeliveryMethod.ReliableOrdered);
-
+                sender.Latency.Update(packet.Latency);
+                _packetDispatcher.SendFromPlayer(sender, new PlayerLatencyPacket
+                {
+                    Latency = sender.Latency.CurrentAverage
+                }, DeliveryMethod.ReliableOrdered);
+            }
             return Task.CompletedTask;
         }
     }

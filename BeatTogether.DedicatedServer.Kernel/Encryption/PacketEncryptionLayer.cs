@@ -130,13 +130,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
         public void ProcessOutBoundPacket(EndPoint endPoint, ref Span<byte> data)
         {
-            if (!_encryptionParameters.TryGetValue(endPoint, out _))
+            if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
             {
                 if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint)endPoint).Address, out var encryptionParametersold))
                 {
                     _logger.Warning($"Re-assigning encryption parameters as old parameters (RemoteEndPoint='{endPoint}').");
-                    _encryptionParameters.GetOrAdd(endPoint, encryptionParametersold);
-                    _encryptionParameters[endPoint] = encryptionParametersold;
+                    encryptionParameters = _encryptionParameters.GetOrAdd(endPoint, encryptionParametersold);
                 }
                 else
                 {
@@ -148,17 +147,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 }
             }
 
-
-
-            //TODO make the above more efficient
-            var encryptionParameters = _encryptionParameters[endPoint];
-
             var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
             bufferWriter.WriteBool(true);  // isEncrypted
             using (var hmac = new HMACSHA256(encryptionParameters.SendMac))
             {
                 _encryptedPacketWriter.WriteTo(
-                    ref bufferWriter, data[..],//.Slice(0, data.Length),
+                    ref bufferWriter, data,//.Slice(0, data.Length),
                     encryptionParameters.GetNextSequenceId(),
                     encryptionParameters.SendKey, hmac);
             }

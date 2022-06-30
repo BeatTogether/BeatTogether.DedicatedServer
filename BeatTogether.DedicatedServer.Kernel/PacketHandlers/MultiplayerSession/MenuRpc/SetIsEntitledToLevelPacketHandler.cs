@@ -26,9 +26,10 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(SetIsEntitledToLevelPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, LevelId={packet.LevelId}, Entitlement={packet.Entitlement})."
             );
-
-            sender.SetEntitlement(packet.LevelId, packet.Entitlement);
-
+            lock (sender.EntitlementLock)
+            {
+                sender.SetEntitlement(packet.LevelId, packet.Entitlement);
+            }
             return Task.CompletedTask;
         }
     }

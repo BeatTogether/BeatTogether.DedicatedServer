@@ -63,7 +63,7 @@ namespace BeatTogether.DedicatedServer.Node
                 request.Timeout,
                 request.ServerName
             );
-            if (matchmakingServer is null) // TODO: can also be no available slots
+            if (matchmakingServer is null)
                 return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
 
             await matchmakingServer.Start();
