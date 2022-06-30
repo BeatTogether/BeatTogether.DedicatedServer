@@ -10,7 +10,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         event Action StartEvent;
         event Action StopEvent;
         event Action<IPlayer> PlayerConnectedEvent;
-        event Action<IPlayer> PlayerDisconnectedEvent;
+        event Action<IPlayer, int> PlayerDisconnectedEvent;
 
         InstanceConfiguration Configuration { get; }
         bool IsRunning { get; }

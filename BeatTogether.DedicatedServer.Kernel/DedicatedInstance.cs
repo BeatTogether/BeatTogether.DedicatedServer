@@ -40,7 +40,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public event Action StartEvent = null!;
         public event Action StopEvent = null!;
         public event Action<IPlayer> PlayerConnectedEvent = null!;
-        public event Action<IPlayer> PlayerDisconnectedEvent = null!;
+        public event Action<IPlayer, int> PlayerDisconnectedEvent = null!;
 
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
@@ -430,7 +430,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     ReleaseSortIndex(player.SortIndex);
                     ReleaseConnectionId(player.ConnectionId);
 
-                    PlayerDisconnectedEvent?.Invoke(player);
+                    PlayerDisconnectedEvent?.Invoke(player, _playerRegistry.Players.Count);
                 }
 
                 if (_playerRegistry.Players.Count == 0)

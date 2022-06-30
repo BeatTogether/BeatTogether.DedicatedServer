@@ -200,7 +200,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_instance.State != MultiplayerGameState.Game)
             {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-                HandlePlayerLeaveGameplay(player);
+                HandlePlayerLeaveGameplay(player,0);
             }
             PlayerSceneReady(player);
         }
@@ -217,7 +217,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_instance.State != MultiplayerGameState.Game)
             {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-                HandlePlayerLeaveGameplay(player);
+                HandlePlayerLeaveGameplay(player,0);
             }
             PlayerSongReady(player);
         }
@@ -241,7 +241,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     ResetValues(null, new());
                     foreach (var p in _playerRegistry.Players)
                     {
-                        HandlePlayerLeaveGameplay(p);
+                        HandlePlayerLeaveGameplay(p, 0);
                     }
                     _requestReturnToMenuCts?.Cancel();
                 }
@@ -249,7 +249,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         }
 
         //will set players tasks as done if they leave gameplay due to disconnect or returning to the menu
-        private void HandlePlayerLeaveGameplay(IPlayer player)
+        private void HandlePlayerLeaveGameplay(IPlayer player, int count)
         {
             PlayerFinishLevel(player);
             PlayerSceneReady(player);
