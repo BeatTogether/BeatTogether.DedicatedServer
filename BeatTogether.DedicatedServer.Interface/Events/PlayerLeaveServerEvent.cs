@@ -2,5 +2,5 @@
 
 namespace BeatTogether.DedicatedServer.Interface.Events
 {
-    public sealed record PlayerLeaveServerEvent(string Secret, string endPoint);
+    public sealed record PlayerLeaveServerEvent(string Secret, string endPoint, int NewPlayerCount);
 }
