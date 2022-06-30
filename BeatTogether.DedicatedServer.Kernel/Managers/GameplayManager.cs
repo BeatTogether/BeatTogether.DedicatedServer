@@ -117,7 +117,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 SessionGameId = SessionGameId,
                 PlayersAtStart = new PlayerSpecificSettingsAtStart
                 {
-                    ActivePlayerSpecificSettingsAtStart = _playerSpecificSettings.Values.ToArray() //TODO this packet is the one causing the 9 players bad things
+                    ActivePlayerSpecificSettingsAtStart = _playerSpecificSettings.Values.ToArray()
                 }
             }, DeliveryMethod.ReliableOrdered);
 
@@ -231,14 +231,21 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             PlayerFinishLevel(player);
         }
 
+        object RequestReturnLock = new();
         public void SignalRequestReturnToMenu()
         {
-            ResetValues(null, new());
-            foreach (var p in _playerRegistry.Players)
+            lock (RequestReturnLock)
             {
-                HandlePlayerLeaveGameplay(p);
+                if (_requestReturnToMenuCts != null && !_requestReturnToMenuCts.IsCancellationRequested)
+                    {
+                    ResetValues(null, new());
+                    foreach (var p in _playerRegistry.Players)
+                    {
+                        HandlePlayerLeaveGameplay(p);
+                    }
+                    _requestReturnToMenuCts?.Cancel();
+                }
             }
-            _requestReturnToMenuCts?.Cancel();
         }
 
         //will set players tasks as done if they leave gameplay due to disconnect or returning to the menu

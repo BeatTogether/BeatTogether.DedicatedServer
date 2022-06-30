@@ -451,7 +451,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     return voteDictionary.OrderByDescending(n => n.Value).First().Key;
                 case SongSelectionMode.RandomPlayerPicks:
                     if (SelectedBeatmap != _lastBeatmap || SelectedBeatmap == null)
-                        return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier; //TODO, Fix this to work correctly i guess
+                        return _playerRegistry.Players[new Random().Next(_playerRegistry.Players.Count)].BeatmapIdentifier; //TODO, Fix this to work correctly at some point
                     return SelectedBeatmap;
                 case SongSelectionMode.ServerPicks:
                     return SelectedBeatmap;

@@ -9,7 +9,7 @@ namespace BeatTogether.DedicatedServer.Interface
     public interface IMatchmakingService
     {
         Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request);
-        //TODO convert all of these into event handlers
+        //TODO convert all of these into event handlers for api use
         /*
         Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request);
         Task<SimplePlayersListResponce>? GetSimplePlayerList(GetPlayersSimpleRequest request);

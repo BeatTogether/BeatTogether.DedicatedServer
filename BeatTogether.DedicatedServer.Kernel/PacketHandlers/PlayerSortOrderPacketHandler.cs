@@ -23,12 +23,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 $"(SenderId={sender.ConnectionId})."
             );
 
-            if (sender.UserId == packet.UserId && sender.SortIndex != packet.SortIndex)
-			{
-                sender.SortIndex = packet.SortIndex;
-                _packetDispatcher.SendExcludingPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
+            lock (sender.SortLock)
+            {
+                if (sender.UserId == packet.UserId && sender.SortIndex != packet.SortIndex)
+                {
+                    sender.SortIndex = packet.SortIndex;
+                    _packetDispatcher.SendExcludingPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
+                }
             }
-
             return Task.CompletedTask;
         }
     }

@@ -24,11 +24,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 $"Handling packet of type '{nameof(PlayerIdentityPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            sender.Avatar = packet.PlayerAvatar;
-            sender.State = packet.PlayerState;
-            sender.Random = packet.Random.Data ?? Array.Empty<byte>();
-            sender.PublicEncryptionKey = packet.PublicEncryptionKey.Data ?? Array.Empty<byte>();
-            _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
+            lock (sender.PlayerIdentityLock)
+            {
+                sender.Avatar = packet.PlayerAvatar;
+                sender.State = packet.PlayerState;
+                sender.Random = packet.Random.Data ?? Array.Empty<byte>();
+                sender.PublicEncryptionKey = packet.PublicEncryptionKey.Data ?? Array.Empty<byte>();
+                _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
+            }
             return Task.CompletedTask;
         }
     }

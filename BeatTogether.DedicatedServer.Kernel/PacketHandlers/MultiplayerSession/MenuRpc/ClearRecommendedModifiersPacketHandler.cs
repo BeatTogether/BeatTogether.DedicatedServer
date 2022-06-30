@@ -24,7 +24,10 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(ClearRecommendedModifiersPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            sender.Modifiers = new GameplayModifiers();
+            lock (sender.ModifiersLock)
+            {
+                sender.Modifiers = new GameplayModifiers();
+            }
             return Task.CompletedTask;
         }
     }
