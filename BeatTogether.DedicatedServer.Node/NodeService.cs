@@ -78,9 +78,9 @@ namespace BeatTogether.DedicatedServer.Node
             );
         }
 
-        private void HandlePlayerDisconnectEvent(IPlayer player)
+        private void HandlePlayerDisconnectEvent(IPlayer player, int count)
         {
-            _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, ((IPEndPoint)player.Endpoint).ToString()));
+            _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, ((IPEndPoint)player.Endpoint).ToString(), count));
         }
 
         public async Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request)
