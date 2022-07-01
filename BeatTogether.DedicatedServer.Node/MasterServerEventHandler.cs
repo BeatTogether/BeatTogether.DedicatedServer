@@ -6,7 +6,6 @@ using BeatTogether.MasterServer.Interface.Events;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
-using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;

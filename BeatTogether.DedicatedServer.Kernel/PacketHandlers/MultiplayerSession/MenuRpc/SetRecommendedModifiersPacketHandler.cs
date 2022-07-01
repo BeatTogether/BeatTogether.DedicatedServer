@@ -26,7 +26,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 				$"Handling packet of type '{nameof(SetRecommendedModifiersPacket)}' " +
 				$"(SenderId={sender.ConnectionId})."
 			);
-            lock (sender.ModifiersLock)
+      lock (sender.ModifiersLock)
             {
 				if (sender.CanRecommendModifiers)
 				{
