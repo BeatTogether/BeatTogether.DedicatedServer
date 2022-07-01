@@ -23,9 +23,10 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(SetIsReadyPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, IsReady={packet.IsReady})."
             );
-
-            sender.IsReady = packet.IsReady;
-
+            lock (sender.ReadyLock)
+            {
+                sender.IsReady = packet.IsReady;
+            }
             return Task.CompletedTask;
         }
     }

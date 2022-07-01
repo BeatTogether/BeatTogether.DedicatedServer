@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography;
-using System.Threading;
+﻿using System.Threading;
 
 namespace BeatTogether.DedicatedServer.Kernel.Encryption
 {
@@ -7,12 +6,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
     {
         public byte[] ReceiveKey { get; }
         public byte[] SendKey { get; }
-        public HMAC ReceiveMac { get; }
-        public HMAC SendMac { get; }
+        public byte[] ReceiveMac { get; }
+        public byte[] SendMac { get; }
 
         private uint _lastSequenceId = 0U;
 
-        public EncryptionParameters(byte[] receiveKey, byte[] sendKey, HMAC receiveMac, HMAC sendMac)
+        public EncryptionParameters(byte[] receiveKey, byte[] sendKey, byte[] receiveMac, byte[] sendMac)
         {
             ReceiveKey = receiveKey;
             SendKey = sendKey;

@@ -42,20 +42,21 @@ namespace BeatTogether.DedicatedServer.Node
             instanceConfig.Port = (int)port!;
             instanceConfig.Secret = secret;
             instanceConfig.ManagerId = managerId;
-            instanceConfig.MaxPlayerCount = Math.Min(config.MaxPlayerCount,126); //max size of 126, id 127 routes packets to all
+            instanceConfig.MaxPlayerCount = Math.Min(config.MaxPlayerCount,254); //max size of 254, id 127 routes packets to all
             instanceConfig.DiscoveryPolicy = (DiscoveryPolicy)config.DiscoveryPolicy;
             instanceConfig.InvitePolicy = (InvitePolicy)config.InvitePolicy;
             instanceConfig.GameplayServerMode = (GameplayServerMode)config.GameplayServerMode;
             instanceConfig.SongSelectionMode = (SongSelectionMode)config.SongSelectionMode;
             instanceConfig.GameplayServerControlSettings = (GameplayServerControlSettings)config.GameplayServerControlSettings;
+            instanceConfig.DestroyInstanceTimeout = instanceTimeout;
+            instanceConfig.ServerName = ServerName;
+            if (permanentManager)
+                instanceConfig.SetManagerFromUserId = managerId;
 
             var instance = scope.ServiceProvider.GetRequiredService<IDedicatedInstance>();
             if (!_instanceRegistry.AddInstance(instance))
                 return null;
             instance.StopEvent += () => _instanceRegistry.RemoveInstance(instance);
-            if(permanentManager)
-                instance.SetupPermanentManager(managerId);
-            instance.SetupInstance(instanceTimeout, ServerName);
             return instance;
         }
     }

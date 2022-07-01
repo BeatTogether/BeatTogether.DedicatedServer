@@ -63,7 +63,7 @@ namespace BeatTogether.DedicatedServer.Node
                 request.Timeout,
                 request.ServerName
             );
-            if (matchmakingServer is null) // TODO: can also be no available slots
+            if (matchmakingServer is null)
                 return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
 
             await matchmakingServer.Start();
@@ -78,9 +78,9 @@ namespace BeatTogether.DedicatedServer.Node
             );
         }
 
-        private void HandlePlayerDisconnectEvent(IPlayer player)
+        private void HandlePlayerDisconnectEvent(IPlayer player, int count)
         {
-            _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, ((IPEndPoint)player.Endpoint).ToString()));
+            _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, ((IPEndPoint)player.Endpoint).ToString(), count));
         }
 
         public async Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request)
@@ -278,13 +278,13 @@ namespace BeatTogether.DedicatedServer.Node
                     instance.IsRunning,
                     instance.RunTime,
                     instance.Port,
-                    instance.UserId,
-                    instance.UserName,
+                    instance.Configuration.ServerId,
+                    instance.Configuration.ServerName,
                     (MultiplayerGameState)instance.State,
                     (GameplayManagerState)GameplayManager.State,
                     instance.NoPlayersTime,
-                    instance.DestroyInstanceTimeout,
-                    instance.SetManagerFromUserId,
+                    instance.Configuration.DestroyInstanceTimeout,
+                    instance.Configuration.SetManagerFromUserId,
                     lobby.CountdownEndTime,
                     (CountdownState)lobby.CountDownState,
                     GetInstanceModifiers(instance, lobby, GameplayManager),

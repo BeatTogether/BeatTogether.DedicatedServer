@@ -64,7 +64,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             AllowChroma = true;
             AllowMappingExtensions = true;
-            AllowNoodleExtensions = false;
+            AllowNoodleExtensions = true;
         }
 
         public async Task<bool> CheckBeatmap(BeatmapIdentifier beatmap)
@@ -161,5 +161,19 @@ namespace BeatTogether.DedicatedServer.Kernel
             AllowNoodleExtensions = NoodleExtensions;
         }
 
+        public bool IsPrefferedDifficultyValid(BeatmapIdentifier beatmap, Messaging.Models.BeatmapDifficulty? difficulty)
+        {
+            if(difficulty != null)
+            {
+                if (_BeatmapRepository.TryGetValue(beatmap.LevelId, out var beatmapData))
+                {
+                    if (beatmapData!.Difficulties.ContainsKey(difficulty.ToString()!))
+                        return true;
+                    return false;
+                }
+                return true;//Non-beatsaver maps cannot be checked, return true by default, add in client side checks
+            }
+            return false;
+        }
     }
 }

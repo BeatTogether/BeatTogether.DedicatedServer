@@ -34,16 +34,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(SetIsInLobbyPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, InLobby={packet.IsInLobby})."
             );
-            //if (_instance.State == MultiplayerGameState.Game && packet.IsInLobby == true && _playerRegistry.Players.TrueForAll(p => p.InLobby))
-            //    _gameplayManager.SignalRequestReturnToMenu();
+            lock (sender.InLobbyLock)
+            {
+                if (_instance.State == MultiplayerGameState.Game && packet.IsInLobby == true && _playerRegistry.Players.TrueForAll(p => p.InLobby))
+                    _gameplayManager.SignalRequestReturnToMenu();
 
-            if (packet.IsInLobby && !sender.InLobby)
-                _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
-                {
-                    Reason = CannotStartGameReason.NoSongSelected
-                }, DeliveryMethod.ReliableOrdered);
-
-            sender.InLobby = packet.IsInLobby;
+                if (packet.IsInLobby && !sender.InLobby)
+                    _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
+                    {
+                        Reason = CannotStartGameReason.NoSongSelected
+                    }, DeliveryMethod.ReliableOrdered);
+                sender.InLobby = packet.IsInLobby;
+            }
             return Task.CompletedTask;
         }
     }
