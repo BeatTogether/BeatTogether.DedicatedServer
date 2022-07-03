@@ -138,11 +138,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (songReadyCts.IsCancellationRequested) //If it took over Song load time limit to load
                 _requestReturnToMenuCts.Cancel();
 
-            // If no players are actually playing, or not all players are not in the lobby(if at least one player is then true)
-            if (PlayersAtStart.All(player => !player.InGameplay) || PlayersAtStart.Any(player => player.InLobby))
-                _requestReturnToMenuCts.Cancel(); //this will cancel the gameplay if someone is in the lobby
-
-
             // Start song and wait for finish
             State = GameplayManagerState.Gameplay;
             _songStartTime = _instance.RunTime + SongStartDelay;
