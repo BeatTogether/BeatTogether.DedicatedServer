@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
@@ -69,7 +67,9 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             while (reader.RemainingSize > 0)
             {
-                var length = reader.ReadVarUInt();
+                uint length;
+                try { length = reader.ReadVarUInt(); }
+                catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
                 if (reader.RemainingSize < length)
                 {
                     _logger.Warning($"Packet fragmented (RemainingSize={reader.RemainingSize}, Expected={length}).");
@@ -81,7 +81,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                 var packetRegistry = _packetRegistry;
                 while (true)
                 {
-                    var packetId = reader.ReadByte();
+                    byte packetId;
+                    try { packetId = reader.ReadByte(); }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
                     if (packetRegistry.TryCreatePacket(packetId, out packet))
                         break;
                     if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
@@ -96,7 +98,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     // skip any unprocessed bytes
                     var processedBytes = reader.Offset - prevPosition;
-                    reader.SkipBytes((int)length - processedBytes);
+                    try { reader.SkipBytes((int)length - processedBytes); }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
                     continue;
                 }
 
@@ -110,13 +113,19 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                     // skip any unprocessed bytes
                     var processedBytes = reader.Offset - prevPosition;
-                    reader.SkipBytes((int)length - processedBytes);
+                    try { reader.SkipBytes((int)length - processedBytes); }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
                     continue;
                 }
 
                 try
                 {
                     packet.ReadFrom(ref reader);
+                }
+                catch (EndOfBufferException)
+                {
+                    _logger.Warning("Packet was an incorrect length");
+                    return;
                 }
                 catch
                 {
