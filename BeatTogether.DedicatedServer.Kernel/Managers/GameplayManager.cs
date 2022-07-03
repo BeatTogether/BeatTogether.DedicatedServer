@@ -93,7 +93,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 linkedLevelFinishedCts.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
-            
+
             // Create scene ready tasks
             var sceneReadyCts = new CancellationTokenSource();
             var linkedSceneReadyCts = CancellationTokenSource.CreateLinkedTokenSource(sceneReadyCts.Token, _requestReturnToMenuCts.Token);
@@ -137,6 +137,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             await Task.WhenAll(songReadyTasks);
             if (songReadyCts.IsCancellationRequested) //If it took over Song load time limit to load
                 _requestReturnToMenuCts.Cancel();
+
+            //If a player fails to load or is stuck in the lobby then no more gameplay softlocks
+            foreach (var player in PlayersAtStart)
+            {
+                if (!player.InGameplay || player.InLobby)
+                    HandlePlayerLeaveGameplay(player, 0);
+            }
 
             // Start song and wait for finish
             State = GameplayManagerState.Gameplay;
