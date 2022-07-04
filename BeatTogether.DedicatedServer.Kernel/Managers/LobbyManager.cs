@@ -409,7 +409,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             foreach (var player in _playerRegistry.Players)
             {
-                if (!player.WasActiveAtCountdownStart)
+                if (!player.WasActiveAtCountdownStart && player.IsActive)
                 {
                     _packetDispatcher.SendToPlayer(player, new SetCountdownEndTimePacket
                     {
@@ -428,6 +428,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
                     break;
                 case CountdownState.StartBeatmapCountdown or CountdownState.WaitingForEntitlement:
+                    foreach (var player in _playerRegistry.Players)
+                    {
+                        player.IsReady = false;
+                    }
                     _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                     break;
                 default:

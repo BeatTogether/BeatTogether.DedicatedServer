@@ -33,7 +33,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private const float SongLoadTimeLimit = 10.0f;
 
         private float _songStartTime;
-        IPlayer[]? PlayersAtStart = null;
+        //IPlayer[]? PlayersAtStart = null;
+        List<string> PlayersAtStart = new();
 
         private CancellationTokenSource? _requestReturnToMenuCts;
 
@@ -82,20 +83,28 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             //Reset
             ResetValues();
-
+            
             SessionGameId = Guid.NewGuid().ToString();
             _requestReturnToMenuCts = new CancellationTokenSource();
 
             State = GameplayManagerState.SceneLoad;
 
-            PlayersAtStart = _playerRegistry.Players.ToArray(); // Should only wait for players that were already connected
+            //PlayersAtStart = _playerRegistry.Players.Where(p => !p.IsSpectating).ToArray(); 
+
+            foreach (var player in _playerRegistry.Players)//Array of players that are playing at the start
+            {
+                if (!player.IsSpectating)
+                {
+                    PlayersAtStart.Add(player.UserId);
+                }
+            }
 
             // Create level finished tasks (players may send these at any time during gameplay)
             var levelFinishedCts = new CancellationTokenSource();
             var linkedLevelFinishedCts = CancellationTokenSource.CreateLinkedTokenSource(levelFinishedCts.Token, _requestReturnToMenuCts.Token);
             IEnumerable<Task> levelFinishedTasks = PlayersAtStart.Select(p =>
             {
-                var task = _levelFinishedTcs.GetOrAdd(p.UserId, _ => new());
+                var task = _levelFinishedTcs.GetOrAdd(p, _ => new());
                 linkedLevelFinishedCts.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
@@ -103,8 +112,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // Create scene ready tasks
             var sceneReadyCts = new CancellationTokenSource();
             var linkedSceneReadyCts = CancellationTokenSource.CreateLinkedTokenSource(sceneReadyCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task> sceneReadyTasks = PlayersAtStart.Select(p => {
-                var task = _sceneReadyTcs.GetOrAdd(p.UserId, _ => new());
+            IEnumerable<Task> sceneReadyTasks =  PlayersAtStart.Select(p => {
+                var task = _sceneReadyTcs.GetOrAdd(p, _ => new());
                 linkedSceneReadyCts.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
@@ -132,7 +141,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             var songReadyCts = new CancellationTokenSource();
             var linkedSongReadyCts = CancellationTokenSource.CreateLinkedTokenSource(songReadyCts.Token, _requestReturnToMenuCts.Token);
             IEnumerable<Task> songReadyTasks = PlayersAtStart.Select(p => {
-                var task = _songReadyTcs.GetOrAdd(p.UserId, _ => new());
+                var task = _songReadyTcs.GetOrAdd(p, _ => new());
                 linkedSongReadyCts.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
@@ -145,10 +154,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 _requestReturnToMenuCts.Cancel();
 
             //If a player fails to load or is stuck in the lobby then no more gameplay softlocks
-            foreach (var player in PlayersAtStart)
+            foreach (var UserId in PlayersAtStart)
             {
-                if (!player.InGameplay || player.InLobby)
-                    HandlePlayerLeaveGameplay(player, 0);
+                var p = _playerRegistry.GetPlayer(UserId);
+                if (!p.InGameplay || p.InLobby)
+                    HandlePlayerLeaveGameplay(p);
             }
 
             // Start song and wait for finish
@@ -179,7 +189,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _songStartTime = 0;
             _playerSpecificSettings.Clear();
             _levelCompletionResults.Clear();
-            PlayersAtStart = null;
+            PlayersAtStart.Clear();
         }
 
 
@@ -187,7 +197,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_sceneReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
                 return;
-            if(PlayersAtStart!= null && PlayersAtStart.Contains(player)) //TODO test with and without the contains bit
+            if(PlayersAtStart!= null && PlayersAtStart.Contains(player.UserId)) //TODO test with and without the contains bit
                 _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
             if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayerDidConnectLatePacket
@@ -203,7 +213,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_instance.State != MultiplayerGameState.Game)
             {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-                HandlePlayerLeaveGameplay(player,0);
+                HandlePlayerLeaveGameplay(player);
             }
             PlayerSceneReady(player);
         }
@@ -221,7 +231,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_instance.State != MultiplayerGameState.Game)
             {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-                HandlePlayerLeaveGameplay(player,0);
+                HandlePlayerLeaveGameplay(player);
             }
             PlayerSongReady(player);
         }
@@ -230,7 +240,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
                 return;
-            if(PlayersAtStart != null &&  PlayersAtStart.Contains(player))
+            if(PlayersAtStart != null &&  PlayersAtStart.Contains(player.UserId))
                 _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
             PlayerFinishLevel(player);
         }
@@ -247,7 +257,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
                     foreach (var p in _playerRegistry.Players)
                     {
-                        HandlePlayerLeaveGameplay(p, 0);
+                        HandlePlayerLeaveGameplay(p);
                     }
                     State = GameplayManagerState.None;
                     _instance.SetState(MultiplayerGameState.Lobby);
@@ -262,12 +272,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             PlayerFinishLevel(player);
             PlayerSceneReady(player);
             PlayerSongReady(player);
+            PlayersAtStart.Remove(player.UserId); //Put this in an if statement to run the stuff above it
         }
 
         private void PlayerFinishLevel(IPlayer player)
         {
             if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)
-                tcs.SetResult();
+            tcs.SetResult();
         }
         private void PlayerSceneReady(IPlayer player)
         {
