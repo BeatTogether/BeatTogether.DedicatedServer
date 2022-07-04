@@ -67,7 +67,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             AllowNoodleExtensions = true;
         }
 
-        public async Task<bool> CheckBeatmap(BeatmapIdentifier beatmap)
+        public async Task<bool> CheckBeatmap(BeatmapIdentifier beatmap, bool AllowNonBeatSaver)
         {
             if (!beatmap.LevelId.StartsWith("custom_level_"))
                 return true;//Returns true for base game levels
@@ -79,8 +79,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 else
                     return false;
             if (await FetchBeatmap(beatmap)) //Fetches beatmap
-                return await CheckBeatmap(beatmap);
-            return true; //Not found beatmap on beatsaver or in repository, so must be local
+                return await CheckBeatmap(beatmap, AllowNonBeatSaver);
+            return AllowNonBeatSaver; //Not found beatmap on beatsaver or in repository, so must be local, return bool
         }
 
         private bool CheckDifficulties(BeatmapIdentifier beatmap, BeatmapData beatmapData, bool AllowChroma, bool AllowMappingExtensions, bool AllowNoodleExtensions)

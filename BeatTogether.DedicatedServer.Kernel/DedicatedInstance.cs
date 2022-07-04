@@ -179,7 +179,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             var connectionIdCount = Interlocked.Increment(ref _connectionIdCount);
             if (connectionIdCount == 127)
                 connectionIdCount = Interlocked.Increment(ref _connectionIdCount);
-            if (connectionIdCount > byte.MaxValue)
+            if (connectionIdCount > (byte.MaxValue - 4))
                 return 0;
             return (byte)connectionIdCount;
         }

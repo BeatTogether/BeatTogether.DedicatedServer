@@ -232,14 +232,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // sends entitlements to players
+                        /*
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
                                 .Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.NotOwned)
                                 .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
+                        */
                         //starts beatmap
-                        Task.Run(()=> _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None));
+                        _gameplayManager.SetBeatmap(SelectedBeatmap!, SelectedModifiers);
+                        Task.Run(()=> _gameplayManager.StartSong(CancellationToken.None));
                         //stops countdown
                         SetCountdown(CountdownState.NotCountingDown);
                         return;
@@ -250,7 +253,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     SendNotCountingPlayersCountdown();
                 }
                 // If manager/all players are no longer ready or not all players own beatmap
-                if (NotStartable || !allPlayersOwnBeatmap)
+                if (NotStartable || !allPlayersOwnBeatmap || AllPlayersSpectating)
                     CancelCountdown();
                 else if (AllPlayersReady && (CountdownEndTime - _instance.RunTime) > _configuration.CountdownConfig.CountdownTimeEveryoneReady)
                     SetCountdown(CountdownState.StartBeatmapCountdown);
@@ -269,14 +272,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // sends entitlements to players
+                        /*
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
                                 .Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.NotOwned)
                                 .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
+                        */
                         //starts beatmap
-                        _gameplayManager.StartSong(SelectedBeatmap!, SelectedModifiers, CancellationToken.None);
+                        _gameplayManager.SetBeatmap(SelectedBeatmap!, SelectedModifiers);
+                        Task.Run(() => _gameplayManager.StartSong(CancellationToken.None));
                         //stops countdown
                         SetCountdown(CountdownState.NotCountingDown);
                         return;
@@ -296,7 +302,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (SelectedBeatmap != beatmap && !FetchingBeatmap)
             {
                 FetchingBeatmap = true;
-                if (beatmap == null || !await _beatmapRepository.CheckBeatmap(beatmap))
+                if (beatmap == null || !await _beatmapRepository.CheckBeatmap(beatmap, _configuration.AllowLocalBeatmaps))
                 {
                     SelectedBeatmap = null;
                     FetchingBeatmap = false;
@@ -403,7 +409,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             foreach (var player in _playerRegistry.Players)
             {
-                if (!player.WasActiveAtCountdownStart)
+                if (!player.WasActiveAtCountdownStart && player.IsActive)
                 {
                     _packetDispatcher.SendToPlayer(player, new SetCountdownEndTimePacket
                     {
@@ -422,6 +428,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
                     break;
                 case CountdownState.StartBeatmapCountdown or CountdownState.WaitingForEntitlement:
+                    foreach (var player in _playerRegistry.Players)
+                    {
+                        player.IsReady = false;
+                    }
                     _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                     break;
                 default:
