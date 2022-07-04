@@ -33,7 +33,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 				if (sender.CanRecommendBeatmaps)
 				{
 					sender.BeatmapIdentifier = packet.BeatmapIdentifier;
-
 					_packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
 					{
 						LevelId = packet.BeatmapIdentifier.LevelId
