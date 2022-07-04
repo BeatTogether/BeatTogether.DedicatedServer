@@ -37,12 +37,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             if (_instance.State == MultiplayerGameState.Game)
             {
                 if (_gameplayManager.CurrentBeatmap != null && _gameplayManager.CurrentModifiers != null)
+                {
+                    _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
+                    {
+                        LevelId = _gameplayManager.CurrentBeatmap.LevelId
+                    }, DeliveryMethod.ReliableOrdered);
                     _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
                     {
                         Beatmap = _gameplayManager.CurrentBeatmap,
                         Modifiers = _gameplayManager.CurrentModifiers,
                         StartTime = _instance.RunTime
                     }, DeliveryMethod.ReliableOrdered);
+                }
             }
             else
 			{

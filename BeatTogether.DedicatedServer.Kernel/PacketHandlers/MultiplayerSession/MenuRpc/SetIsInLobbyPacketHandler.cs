@@ -36,16 +36,19 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
             lock (sender.InLobbyLock)
             {
-                if (_instance.State == MultiplayerGameState.Game && packet.IsInLobby == true && _playerRegistry.Players.TrueForAll(p => p.InLobby))
-                    _gameplayManager.SignalRequestReturnToMenu();
-
                 if (packet.IsInLobby && !sender.InLobby)
+                {
+                    if(_instance.State == MultiplayerGameState.Game)
+                        _gameplayManager.HandlePlayerLeaveGameplay(sender);
                     _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
                     {
                         Reason = CannotStartGameReason.NoSongSelected
                     }, DeliveryMethod.ReliableOrdered);
-
+                }
                 sender.InLobby = packet.IsInLobby;
+
+                if (_instance.State == MultiplayerGameState.Game && packet.IsInLobby == true && _playerRegistry.Players.TrueForAll(p => p.InLobby))
+                    _gameplayManager.SignalRequestReturnToMenu();
             }
             return Task.CompletedTask;
         }

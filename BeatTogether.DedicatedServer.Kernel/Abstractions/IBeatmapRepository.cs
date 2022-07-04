@@ -8,7 +8,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool AllowChroma { get; }
         bool AllowMappingExtensions { get; }
         bool AllowNoodleExtensions { get; }
-        Task<bool> CheckBeatmap(BeatmapIdentifier beatmap);
+        Task<bool> CheckBeatmap(BeatmapIdentifier beatmap, bool AllowNonBeatSaver);
         Task<bool> FetchBeatmap(BeatmapIdentifier beatmap);
         void CleanCachedBeatmapsByActivity();
         void ClearCachedBeatmaps();

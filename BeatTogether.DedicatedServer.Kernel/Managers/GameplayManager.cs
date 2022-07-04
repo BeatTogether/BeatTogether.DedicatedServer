@@ -65,7 +65,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _instance.PlayerDisconnectedEvent -= HandlePlayerLeaveGameplay;
         }
 
-        public async void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken)
+        public void SetBeatmap(BeatmapIdentifier beatmap, GameplayModifiers modifiers)
+        {
+            CurrentBeatmap = beatmap;
+            CurrentModifiers = modifiers;
+        }
+
+        public async void StartSong(CancellationToken cancellationToken)
         {
             if (State != GameplayManagerState.None)
             {
@@ -75,7 +81,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _instance.SetState(MultiplayerGameState.Game);
 
             //Reset
-            ResetValues(beatmap, modifiers);
+            ResetValues();
 
             SessionGameId = Guid.NewGuid().ToString();
             _requestReturnToMenuCts = new CancellationTokenSource();
@@ -146,8 +152,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
 
             // Start song and wait for finish
-            State = GameplayManagerState.Gameplay;
             _songStartTime = _instance.RunTime + SongStartDelay;
+            State = GameplayManagerState.Gameplay;
 
             _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
@@ -163,15 +169,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // End gameplay and reset
             SignalRequestReturnToMenu();
-            State = GameplayManagerState.None;
-            _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-            _instance.SetState(MultiplayerGameState.Lobby);
         }
 
-        private void ResetValues(BeatmapIdentifier? map, GameplayModifiers modifiers)
+        private void ResetValues()
         {
-            CurrentBeatmap = map;
-            CurrentModifiers = modifiers;
             _levelFinishedTcs.Clear();
             _sceneReadyTcs.Clear();
             _songReadyTcs.Clear();
@@ -186,7 +187,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_sceneReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
                 return;
-            if(PlayersAtStart!= null && PlayersAtStart.Contains(player))
+            if(PlayersAtStart!= null && PlayersAtStart.Contains(player)) //TODO test with and without the contains bit
                 _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
             if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayerDidConnectLatePacket
@@ -211,11 +212,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_songReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
                 return;
-            if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SongLoad)
-                _packetDispatcher.SendToPlayer(player, new SetSongStartTimePacket
-                {
-                    StartTime = _songStartTime
-                }, DeliveryMethod.ReliableOrdered);
+            if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SongLoad && State != GameplayManagerState.SceneLoad)
+                if(_songStartTime != 0)
+                    _packetDispatcher.SendToPlayer(player, new SetSongStartTimePacket
+                    {
+                        StartTime = _songStartTime
+                    }, DeliveryMethod.ReliableOrdered);
             if (_instance.State != MultiplayerGameState.Game)
             {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
@@ -240,18 +242,22 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 if (_requestReturnToMenuCts != null && !_requestReturnToMenuCts.IsCancellationRequested)
                     {
-                    ResetValues(null, new());
+                    SetBeatmap(null!, new());
+                    ResetValues();
+                    _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
                     foreach (var p in _playerRegistry.Players)
                     {
                         HandlePlayerLeaveGameplay(p, 0);
                     }
+                    State = GameplayManagerState.None;
+                    _instance.SetState(MultiplayerGameState.Lobby);
                     _requestReturnToMenuCts?.Cancel();
                 }
             }
         }
 
         //will set players tasks as done if they leave gameplay due to disconnect or returning to the menu
-        private void HandlePlayerLeaveGameplay(IPlayer player, int count)
+        public void HandlePlayerLeaveGameplay(IPlayer player, int Unused = 0)
         {
             PlayerFinishLevel(player);
             PlayerSceneReady(player);
