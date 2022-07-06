@@ -51,35 +51,24 @@ namespace BeatTogether.DedicatedServer.Kernel
 
     public class BeatmapRepository : IBeatmapRepository
     {
-        public bool AllowChroma { get; private set; }
-        public bool AllowMappingExtensions { get; private set; }
-        public bool AllowNoodleExtensions { get; private set; }
-
         private int CleanUpCounter = 0;
         private readonly int MaxBeatmapCache = 700;
         private readonly BeatSaver beatSaverAPI = new("BeatTogetherDedicatedInstance", new Version("1.0.0"));
         private readonly ConcurrentDictionary<string, BeatmapData> _BeatmapRepository = new();
 
-        public BeatmapRepository()
-        {
-            AllowChroma = true;
-            AllowMappingExtensions = true;
-            AllowNoodleExtensions = true;
-        }
-
-        public async Task<bool> CheckBeatmap(BeatmapIdentifier beatmap, bool AllowNonBeatSaver)
+        public async Task<bool> CheckBeatmap(BeatmapIdentifier beatmap, bool AllowNonBeatSaver, bool AllowChroma, bool AllowNE, bool AllowME)
         {
             if (!beatmap.LevelId.StartsWith("custom_level_"))
                 return true;//Returns true for base game levels
             if (_BeatmapRepository.TryGetValue(beatmap.LevelId, out var beatmapData))
                 if (beatmapData.Exists)
                 {
-                    return CheckDifficulties(beatmap, beatmapData, AllowChroma, AllowMappingExtensions, AllowNoodleExtensions);
+                    return CheckDifficulties(beatmap, beatmapData, AllowChroma, AllowNE, AllowME);
                 }
                 else
                     return false;
             if (await FetchBeatmap(beatmap)) //Fetches beatmap
-                return await CheckBeatmap(beatmap, AllowNonBeatSaver);
+                return await CheckBeatmap(beatmap, AllowNonBeatSaver, AllowChroma, AllowME, AllowNE);
             return AllowNonBeatSaver; //Not found beatmap on beatsaver or in repository, so must be local, return bool
         }
 
@@ -152,13 +141,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             _BeatmapRepository.Clear();
             CleanUpCounter = 0;
-        }
-
-        public void SetRequirements(bool chroma, bool MappingExtensions, bool NoodleExtensions)
-        {
-            AllowChroma = chroma;
-            AllowMappingExtensions = MappingExtensions;
-            AllowNoodleExtensions = NoodleExtensions;
         }
 
         public bool IsPrefferedDifficultyValid(BeatmapIdentifier beatmap, Messaging.Models.BeatmapDifficulty? difficulty)

@@ -42,16 +42,16 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public bool WasActiveAtCountdownStart { get; set; } = false;
 
-        public bool IsManager => UserId == Instance.Configuration.ManagerId;
+        public bool IsManager => UserId == Instance._configuration.ManagerId;
         public bool CanRecommendBeatmaps => true;
         public bool CanRecommendModifiers =>
-            Instance.Configuration.GameplayServerControlSettings is Enums.GameplayServerControlSettings.AllowModifierSelection or Enums.GameplayServerControlSettings.All;
-        public bool CanKickVote => UserId == Instance.Configuration.ManagerId;
+            Instance._configuration.GameplayServerControlSettings is Enums.GameplayServerControlSettings.AllowModifierSelection or Enums.GameplayServerControlSettings.All;
+        public bool CanKickVote => UserId == Instance._configuration.ManagerId;
         public bool CanInvite =>
-            Instance.Configuration.DiscoveryPolicy is Enums.DiscoveryPolicy.WithCode or Enums.DiscoveryPolicy.Public;
+            Instance._configuration.DiscoveryPolicy is Enums.DiscoveryPolicy.WithCode or Enums.DiscoveryPolicy.Public;
 
         public bool IsPlayer => State.Contains("player");
-        public bool IsSpectating => State.Contains("spectating");
+        public bool IsSpectating => ConnectionId == 255 || State.Contains("spectating");
         public bool WantsToPlayNextLevel => State.Contains("wants_to_play_next_level");
         public bool IsBackgrounded => State.Contains("backgrounded");
         public bool InGameplay => State.Contains("in_gameplay");

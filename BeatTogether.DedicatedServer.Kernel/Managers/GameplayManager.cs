@@ -4,6 +4,7 @@ using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using System;
 using System.Collections.Concurrent;
@@ -32,8 +33,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private const float SceneLoadTimeLimit = 10.0f;
         private const float SongLoadTimeLimit = 10.0f;
 
-        private float _songStartTime;
-        //IPlayer[]? PlayersAtStart = null;
+        public float _songStartTime { get; private set; }
         List<string> PlayersAtStart = new();
 
         private CancellationTokenSource? _requestReturnToMenuCts;
@@ -74,7 +74,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public async void StartSong(CancellationToken cancellationToken)
         {
-            if (State != GameplayManagerState.None)
+            if (State != GameplayManagerState.None || CurrentBeatmap == null)
             {
                 _requestReturnToMenuCts!.Cancel();
                 return;
@@ -83,13 +83,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             //Reset
             ResetValues();
-            
             SessionGameId = Guid.NewGuid().ToString();
             _requestReturnToMenuCts = new CancellationTokenSource();
 
             State = GameplayManagerState.SceneLoad;
-
-            //PlayersAtStart = _playerRegistry.Players.Where(p => !p.IsSpectating).ToArray(); 
 
             foreach (var player in _playerRegistry.Players)//Array of players that are playing at the start
             {
@@ -174,8 +171,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             State = GameplayManagerState.Results;
 
             // Wait at results screen if anyone cleared or skip if the countdown is set to 0.
-            if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared) && _instance.Configuration.CountdownConfig.ResultsScreenTime > 0)
-                await Task.Delay((int)(_instance.Configuration.CountdownConfig.ResultsScreenTime * 1000), cancellationToken);
+            if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared) && _instance._configuration.CountdownConfig.ResultsScreenTime > 0)
+                await Task.Delay((int)(_instance._configuration.CountdownConfig.ResultsScreenTime * 1000), cancellationToken);
 
             // End gameplay and reset
             SignalRequestReturnToMenu();
@@ -183,6 +180,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private void ResetValues()
         {
+            State = GameplayManagerState.None;
             _levelFinishedTcs.Clear();
             _sceneReadyTcs.Clear();
             _songReadyTcs.Clear();
@@ -269,10 +267,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         //will set players tasks as done if they leave gameplay due to disconnect or returning to the menu
         public void HandlePlayerLeaveGameplay(IPlayer player, int Unused = 0)
         {
-            PlayerFinishLevel(player);
-            PlayerSceneReady(player);
-            PlayerSongReady(player);
-            PlayersAtStart.Remove(player.UserId); //Put this in an if statement to run the stuff above it
+            if (PlayersAtStart.Remove(player.UserId))
+            {
+                PlayerFinishLevel(player);
+                PlayerSceneReady(player);
+                PlayerSongReady(player);
+            }
         }
 
         private void PlayerFinishLevel(IPlayer player)

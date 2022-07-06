@@ -4,6 +4,7 @@ using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
+using System;
 using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -39,7 +40,16 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 if (packet.IsInLobby && !sender.InLobby)
                 {
                     if(_instance.State == MultiplayerGameState.Game)
+                    {
                         _gameplayManager.HandlePlayerLeaveGameplay(sender);
+                        _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
+                        {
+                            Beatmap = _gameplayManager.CurrentBeatmap!,
+                            Modifiers = _gameplayManager.CurrentModifiers,
+                            StartTime = _instance.RunTime
+                        }, DeliveryMethod.ReliableOrdered);
+                        return Task.CompletedTask;
+                    }
                     _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
                     {
                         Reason = CannotStartGameReason.NoSongSelected

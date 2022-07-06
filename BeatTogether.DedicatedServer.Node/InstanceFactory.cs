@@ -30,7 +30,17 @@ namespace BeatTogether.DedicatedServer.Node
             GameplayServerConfiguration config,
             bool permanentManager = false,//If a user links there account to discord and uses a bot to make a lobby, then can enter there userId
             float instanceTimeout = 0f,
-            string ServerName = "")
+            string ServerName = "",
+            float resultScreenTime = 20.0f,
+            float BeatmapStartTime = 5.0f,
+            float PlayersReadyCountdownTime = 0f,
+            bool AllowPerPlayerModifiers = false,
+            bool AllowPerPlayerDifficulties = false,
+            bool AllowPerPlayerBeatmaps = false, //This option allows the above by default
+            bool AllowChroma = true,
+            bool AllowME = true,
+            bool AllowNE = false
+            )
         {
             var port = _portAllocator.AcquirePort();
             if (!port.HasValue)
@@ -50,9 +60,22 @@ namespace BeatTogether.DedicatedServer.Node
             instanceConfig.GameplayServerControlSettings = (GameplayServerControlSettings)config.GameplayServerControlSettings;
             instanceConfig.DestroyInstanceTimeout = instanceTimeout;
             instanceConfig.ServerName = ServerName;
+            instanceConfig.CountdownConfig.BeatMapStartCountdownTime = Math.Max(BeatmapStartTime,0f);
+            instanceConfig.CountdownConfig.ResultsScreenTime = Math.Max(resultScreenTime,0f);
+            instanceConfig.AllowLocalBeatmaps = instanceConfig.DiscoveryPolicy != DiscoveryPolicy.Public;
+            instanceConfig.AllowPerPlayerModifiers = AllowPerPlayerModifiers;
+            instanceConfig.AllowChroma = AllowChroma;
+            instanceConfig.AllowMappingExtensions = AllowME;
+            instanceConfig.AllowNoodleExtensions = AllowNE;
+            if (AllowPerPlayerDifficulties)
+                instanceConfig.BeatmapDiffering = BeatmapDiffering.DifferentDifficulties;
+            if (AllowPerPlayerBeatmaps)
+                instanceConfig.BeatmapDiffering = BeatmapDiffering.DifferentBeatmaps;
             if (permanentManager)
-                instanceConfig.SetManagerFromUserId = managerId;
-
+                instanceConfig.SetConstantManagerFromUserId = managerId;
+            instanceConfig.CountdownConfig.CountdownTimePlayersReady = Math.Max(PlayersReadyCountdownTime,0f);
+            if (instanceConfig.CountdownConfig.CountdownTimePlayersReady == 0f)
+                instanceConfig.CountdownConfig.CountdownTimePlayersReady = instanceConfig.GameplayServerMode == GameplayServerMode.Managed ? 15.0f : 30.0f;
             var instance = scope.ServiceProvider.GetRequiredService<IDedicatedInstance>();
             if (!_instanceRegistry.AddInstance(instance))
                 return null;
