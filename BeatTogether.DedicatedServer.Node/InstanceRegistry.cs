@@ -11,10 +11,10 @@ namespace BeatTogether.DedicatedServer.Node
         private readonly ConcurrentDictionary<string, IDedicatedInstance> _instances = new();
 
         public bool AddInstance(IDedicatedInstance instance) =>
-            _instances.TryAdd(instance.Configuration.Secret, instance);
+            _instances.TryAdd(instance._configuration.Secret, instance);
 
         public bool RemoveInstance(IDedicatedInstance instance) =>
-            _instances.TryRemove(instance.Configuration.Secret, out _);
+            _instances.TryRemove(instance._configuration.Secret, out _);
 
         public IDedicatedInstance GetInstance(string secret) =>
             _instances[secret];
@@ -28,7 +28,7 @@ namespace BeatTogether.DedicatedServer.Node
         {
             List<string> instances = new();
             foreach (var item in _instances)
-                if (item.Value.Configuration.DiscoveryPolicy == Kernel.Enums.DiscoveryPolicy.Public)
+                if (item.Value._configuration.DiscoveryPolicy == Kernel.Enums.DiscoveryPolicy.Public)
                     instances.Add(item.Key);
             return instances.ToArray();
         }
@@ -39,7 +39,7 @@ namespace BeatTogether.DedicatedServer.Node
         {
             int count = 0;
             foreach (var item in _instances)
-                if (item.Value.Configuration.DiscoveryPolicy == Kernel.Enums.DiscoveryPolicy.Public)
+                if (item.Value._configuration.DiscoveryPolicy == Kernel.Enums.DiscoveryPolicy.Public)
                     count++;
             return count;
         }

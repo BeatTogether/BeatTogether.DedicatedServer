@@ -36,12 +36,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
             if (_instance.State == MultiplayerGameState.Game)
             {
-                if (_gameplayManager.CurrentBeatmap != null && _gameplayManager.CurrentModifiers != null)
+                if (_gameplayManager.CurrentBeatmap != null)
                 {
-                    _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
-                    {
-                        LevelId = _gameplayManager.CurrentBeatmap.LevelId
-                    }, DeliveryMethod.ReliableOrdered);
                     _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
                     {
                         Beatmap = _gameplayManager.CurrentBeatmap,
@@ -59,8 +55,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                         LevelId = _lobbyManager.SelectedBeatmap.LevelId
                     }, DeliveryMethod.ReliableOrdered);
                 }
-                else
-                    _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+                //else
+                //    _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
 			}
 
             return Task.CompletedTask;

@@ -2,5 +2,5 @@
 
 namespace BeatTogether.DedicatedServer.Interface.Events
 {
-    public sealed record NodeStartedEvent(string endPoint);
+    public sealed record NodeStartedEvent(string endPoint, string NodeVersion);
 }

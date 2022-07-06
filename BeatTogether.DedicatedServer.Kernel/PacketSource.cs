@@ -55,7 +55,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (!_playerRegistry.TryGetPlayer(remoteEndPoint, out var sender))
             {
                 _logger.Warning(
-                    "Failed to retrieve sender, They are not in this instance" +
+                    "Sender is not in this instance" +
                     $"(RemoteEndPoint='{remoteEndPoint}')."
                 );
                 return;
@@ -135,7 +135,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                     continue;
                 }
 
-                //Task.Run(async () => await (
                 ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
             }
         }

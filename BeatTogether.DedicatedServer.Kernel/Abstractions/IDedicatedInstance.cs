@@ -12,7 +12,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         event Action<IPlayer> PlayerConnectedEvent;
         event Action<IPlayer, int> PlayerDisconnectedEvent;
 
-        InstanceConfiguration Configuration { get; }
+        InstanceConfiguration _configuration { get; }
         bool IsRunning { get; }
         float RunTime { get; }
         int Port { get; }
@@ -26,6 +26,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         Task Start(CancellationToken cancellationToken = default);
         Task Stop(CancellationToken cancellationToken = default);
 
+
+        void DisconnectPlayer(string UserId);
         int GetNextSortIndex();
         void ReleaseSortIndex(int sortIndex);
         byte GetNextConnectionId();
