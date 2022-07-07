@@ -495,7 +495,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 			{
                 case SongSelectionMode.ManagerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).Modifiers;
                 case SongSelectionMode.Vote or SongSelectionMode.RandomPlayerPicks:
-                    GameplayModifiers gameplayModifiers = new GameplayModifiers();
+                    GameplayModifiers gameplayModifiers = new();
                     Dictionary<GameplayModifiers, int> voteDictionary = new();
                     foreach (IPlayer player in _playerRegistry.Players.Where(p => p.Modifiers != null))
                     {
