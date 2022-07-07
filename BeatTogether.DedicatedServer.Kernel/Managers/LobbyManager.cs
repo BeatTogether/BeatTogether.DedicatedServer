@@ -9,8 +9,6 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using BeatTogether.DedicatedServer.Messaging.Packets;
-using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
@@ -29,7 +27,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
     public sealed class LobbyManager : ILobbyManager, IDisposable
     {
 
-        public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel || p.IsBackgrounded); //if all players are ready OR spectating
+        public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel); //if all players are ready OR spectating
         public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady);                           //if *any* are ready
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel); //players not ready or spectating 
         public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel);         //if all spectating
@@ -99,30 +97,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public void Update()
         {
             if (_instance.State != MultiplayerGameState.Lobby)
-            {
-                /*
-                //Sends players stuck in the lobby to spectate the ongoing game, prevents a rare quest issue with loss of tracking causing the game to pause on map start
-                if (_gameplayManager.State == GameplayManagerState.Gameplay && _playerRegistry.Players.Any(p => p.InLobby) && _instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null)
-                {
-                    foreach (var p in _playerRegistry.Players.FindAll(p => p.InLobby))
-                    {
-                        _packetDispatcher.SendToPlayer(p, new SetPlayersMissingEntitlementsToLevelPacket
-                        {
-                            PlayersWithoutEntitlements = _playerRegistry.Players
-                                .Where(p => p.GetEntitlement(_gameplayManager.CurrentBeatmap!.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.NotDownloaded)
-                                .Select(p => p.UserId).ToList()
-                        }, DeliveryMethod.ReliableOrdered);
-                        _packetDispatcher.SendToPlayer(p, new StartLevelPacket
-                        {
-                            Beatmap = _gameplayManager.CurrentBeatmap!,
-                            Modifiers = _gameplayManager.CurrentModifiers!,
-                            StartTime = _instance.RunTime
-                        }, DeliveryMethod.ReliableOrdered);
-                    }
-                }
-                */
                 return;
-            }
 
             if (!_playerRegistry.TryGetPlayer(_configuration.ManagerId, out var manager) && _configuration.SongSelectionMode == SongSelectionMode.ManagerPicks)
                 return;
@@ -273,14 +248,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
                     {
                         // sends entitlements to players
-                        /*
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
                                 .Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.NotOwned)
                                 .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
-                        */
                         //starts beatmap
                         _gameplayManager.SetBeatmap(SelectedBeatmap!, SelectedModifiers);
                         Task.Run(() => _gameplayManager.StartSong(CancellationToken.None));
@@ -356,7 +329,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
         }
 
-        private void StartBeatmapPacket() //Checks the lobby settings and sends the player the correct beatmap
+        //Checks the lobby settings and sends the player the correct beatmap
+        private void StartBeatmapPacket() 
         {
             if (!_configuration.AllowPerPlayerModifiers) {
                 switch (_configuration.BeatmapDiffering)
