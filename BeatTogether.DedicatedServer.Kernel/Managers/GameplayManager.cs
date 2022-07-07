@@ -90,7 +90,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             foreach (var player in _playerRegistry.Players)//Array of players that are playing at the start
             {
-                if (!player.IsSpectating || !player.IsBackgrounded)
+                if (!player.IsSpectating)
                 {
                     PlayersAtStart.Add(player.UserId);
                 }
