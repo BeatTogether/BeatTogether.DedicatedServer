@@ -90,7 +90,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             foreach (var player in _playerRegistry.Players)//Array of players that are playing at the start
             {
-                if (!player.IsSpectating)
+                if (!player.IsSpectating || !player.IsBackgrounded)
                 {
                     PlayersAtStart.Add(player.UserId);
                 }
@@ -195,7 +195,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_sceneReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
                 return;
-            if(PlayersAtStart!= null && PlayersAtStart.Contains(player.UserId)) //TODO test with and without the contains bit
+            if(PlayersAtStart!= null && PlayersAtStart.Contains(player.UserId))
                 _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
             if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayerDidConnectLatePacket
