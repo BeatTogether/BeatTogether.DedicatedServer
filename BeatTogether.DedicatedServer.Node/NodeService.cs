@@ -6,13 +6,10 @@ using BeatTogether.DedicatedServer.Interface.Responses;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
-using BeatTogether.DedicatedServer.Interface.Models;
-using BeatTogether.DedicatedServer.Interface.Enums;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using Serilog;
 using System;
 using System.Threading.Tasks;
-using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using System.Net;
 
 namespace BeatTogether.DedicatedServer.Node
@@ -24,20 +21,17 @@ namespace BeatTogether.DedicatedServer.Node
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IAutobus _autobus;
         private readonly ILogger _logger = Log.ForContext<NodeService>();
-        private readonly IBeatmapRepository _beatmapRepository;
 
         public NodeService(
             NodeConfiguration configuration,
             IInstanceFactory instanceFactory,
             PacketEncryptionLayer packetEncryptionLayer,
-            IAutobus autobus,
-            IBeatmapRepository beatmapRepository)
+            IAutobus autobus)
         {
             _configuration = configuration;
             _instanceFactory = instanceFactory;
             _packetEncryptionLayer = packetEncryptionLayer;
             _autobus = autobus;
-            _beatmapRepository = beatmapRepository;
         }
 
         public async Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request)
