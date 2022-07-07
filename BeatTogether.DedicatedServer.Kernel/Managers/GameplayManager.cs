@@ -4,7 +4,6 @@ using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
-using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using System;
 using System.Collections.Concurrent;
@@ -95,7 +94,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     PlayersAtStart.Add(player.UserId);
                 }
             }
-            Console.WriteLine("players playing count: " + PlayersAtStart.Count);
 
             // Create level finished tasks (players may send these at any time during gameplay)
             var levelFinishedCts = new CancellationTokenSource();
@@ -251,17 +249,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 SetBeatmap(null!, new());
                 ResetValues();
-                _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
                 foreach (var p in _playerRegistry.Players)
                 {
                     HandlePlayerLeaveGameplay(p);
                 }
-                State = GameplayManagerState.None;
                 _instance.SetState(MultiplayerGameState.Lobby);
-                if (_requestReturnToMenuCts != null && !_requestReturnToMenuCts.IsCancellationRequested)
-                {
-                    _requestReturnToMenuCts?.Cancel();
-                }
+                _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
             }
         }
 
