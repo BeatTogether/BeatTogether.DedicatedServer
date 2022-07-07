@@ -174,7 +174,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 await Task.Delay((int)(_instance._configuration.CountdownConfig.ResultsScreenTime * 1000), cancellationToken);
 
             // End gameplay and reset
-            SignalRequestReturnToMenu();
+            SetBeatmap(null!, new());
+            ResetValues();
+            foreach (var p in _playerRegistry.Players)
+                HandlePlayerLeaveGameplay(p);
+            _instance.SetState(MultiplayerGameState.Lobby);
+            _packetDispatcher.SendToNearbyPlayers( new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
         }
 
         private void ResetValues()
@@ -196,7 +201,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 return;
             if(PlayersAtStart!= null && PlayersAtStart.Contains(player.UserId))
                 _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
-            if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
+            if (_instance.State != MultiplayerGameState.Game)
+            {
+                _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
+                HandlePlayerLeaveGameplay(player);
+                return;
+            }
+            if (State != GameplayManagerState.SceneLoad)
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayerDidConnectLatePacket
                 {
                     UserId = player.UserId,
@@ -207,11 +218,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     SessionGameId = SessionGameId
                 }, DeliveryMethod.ReliableOrdered);
 
-            if (_instance.State != MultiplayerGameState.Game)
-            {
-                _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-                HandlePlayerLeaveGameplay(player);
-            }
+
             PlayerSceneReady(player);
         }
 
@@ -219,17 +226,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_songReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
                 return;
-            if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SongLoad && State != GameplayManagerState.SceneLoad)
+            if (_instance.State != MultiplayerGameState.Game)
+            {
+                _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
+                HandlePlayerLeaveGameplay(player);
+                return;
+            }
+            if (State != GameplayManagerState.SongLoad && State != GameplayManagerState.SceneLoad)
                 if(_songStartTime != 0)
                     _packetDispatcher.SendToPlayer(player, new SetSongStartTimePacket
                     {
                         StartTime = _songStartTime
                     }, DeliveryMethod.ReliableOrdered);
-            if (_instance.State != MultiplayerGameState.Game)
-            {
-                _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-                HandlePlayerLeaveGameplay(player);
-            }
+
             PlayerSongReady(player);
         }
 
@@ -247,14 +256,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             lock (RequestReturnLock)
             {
-                SetBeatmap(null!, new());
-                ResetValues();
                 foreach (var p in _playerRegistry.Players)
                 {
                     HandlePlayerLeaveGameplay(p);
                 }
-                _instance.SetState(MultiplayerGameState.Lobby);
-                _packetDispatcher.SendToNearbyPlayers(new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
+                if (_requestReturnToMenuCts != null && !_requestReturnToMenuCts.IsCancellationRequested)
+                    _requestReturnToMenuCts.Cancel();
             }
         }
 
