@@ -17,6 +17,6 @@ namespace BeatTogether.DedicatedServer.Interface.Requests
             bool AllowPerPlayerBeatmaps = false, //This option allows the above by default
             bool AllowChroma = true,
             bool AllowME = true,
-            bool AllowNE = false
+            bool AllowNE = true
             );
 }
