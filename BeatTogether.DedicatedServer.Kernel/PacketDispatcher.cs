@@ -18,12 +18,12 @@ namespace BeatTogether.DedicatedServer.Kernel
         public const byte LocalConnectionId = 0;
         public const byte AllConnectionIds = 127;
 
-        private readonly IPacketRegistry _packetRegistry;
+        private readonly IPacketRegistry<byte> _packetRegistry;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly ILogger _logger = Log.ForContext<PacketDispatcher>();
 
         public PacketDispatcher(
-            IPacketRegistry packetRegistry,
+            IPacketRegistry<byte> packetRegistry,
             IPlayerRegistry playerRegistry,
             LiteNetConfiguration configuration,
             LiteNetServer server)

@@ -20,14 +20,14 @@ namespace BeatTogether.DedicatedServer.Kernel
         public const byte AllConnectionIds = 127;
 
         private readonly IServiceProvider _serviceProvider;
-        private readonly IPacketRegistry _packetRegistry;
+        private readonly IPacketRegistry<byte> _packetRegistry;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly PacketDispatcher _packetDispatcher;
         private readonly ILogger _logger = Log.ForContext<PacketSource>();
 
         public PacketSource(
             IServiceProvider serviceProvider,
-            IPacketRegistry packetRegistry,
+            IPacketRegistry<byte> packetRegistry,
             IPlayerRegistry playerRegistry,
             PacketDispatcher packetDispatcher,
             LiteNetConfiguration configuration,
@@ -79,7 +79,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 var prevPosition = reader.Offset;
                 INetSerializable? packet;
-                var packetRegistry = _packetRegistry;
+                IPacketRegistry<object> packetRegistry = (IPacketRegistry<object>)_packetRegistry;
                 while (true)
                 {
                     byte packetId;

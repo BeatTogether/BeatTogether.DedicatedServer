@@ -8,6 +8,6 @@ namespace BeatTogether.Extensions
     {
         public static IServiceCollection AddDedicatedServerMessaging(this IServiceCollection services) =>
             services
-                .AddSingleton<IPacketRegistry, PacketRegistry>();
+                .AddSingleton<IPacketRegistry<byte>, PacketRegistry>();
     }
 }
