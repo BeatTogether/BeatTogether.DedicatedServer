@@ -44,9 +44,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private readonly ConcurrentDictionary<string, PlayerSpecificSettings> _playerSpecificSettings = new();
         private readonly ConcurrentDictionary<string, LevelCompletionResults> _levelCompletionResults = new();
 
-        private readonly ConcurrentDictionary<string, TaskCompletionSource<bool>> _levelFinishedTcs = new();
-        private readonly ConcurrentDictionary<string, TaskCompletionSource<bool>> _sceneReadyTcs = new();
-        private readonly ConcurrentDictionary<string, TaskCompletionSource<bool>> _songReadyTcs = new();
+        private readonly ConcurrentDictionary<string, TaskCompletionSource> _levelFinishedTcs = new();
+        private readonly ConcurrentDictionary<string, TaskCompletionSource> _sceneReadyTcs = new();
+        private readonly ConcurrentDictionary<string, TaskCompletionSource> _songReadyTcs = new();
 
         public GameplayManager(
             IDedicatedInstance instance,
@@ -98,19 +98,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // Create level finished tasks (players may send these at any time during gameplay)
             var levelFinishedCts = new CancellationTokenSource();
             var linkedLevelFinishedCts = CancellationTokenSource.CreateLinkedTokenSource(levelFinishedCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task<bool>> levelFinishedTasks = PlayersAtStart.Select(p =>
+            IEnumerable<Task> levelFinishedTasks = PlayersAtStart.Select(p =>
             {
                 var task =  _levelFinishedTcs.GetOrAdd(p, _ => new());
-                linkedLevelFinishedCts.Token.Register(() => task.TrySetResult(false));
+                linkedLevelFinishedCts.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
 
             // Create scene ready tasks
             var sceneReadyCts = new CancellationTokenSource();
             var linkedSceneReadyCts = CancellationTokenSource.CreateLinkedTokenSource(sceneReadyCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task<bool>> sceneReadyTasks =  PlayersAtStart.Select(p => {
+            IEnumerable<Task> sceneReadyTasks =  PlayersAtStart.Select(p => {
                 var task = _sceneReadyTcs.GetOrAdd(p, _ => new());
-                linkedSceneReadyCts.Token.Register(() => task.TrySetResult(false));
+                linkedSceneReadyCts.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
 
@@ -119,15 +119,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             sceneReadyCts.CancelAfter((int)((SceneLoadTimeLimit + (PlayersAtStart.Count * 0.2f)) * 1000));
             await Task.WhenAll(sceneReadyTasks);
             if (sceneReadyCts.IsCancellationRequested)
-            {
-                foreach(var p in _sceneReadyTcs)
-                {
-                    if (!p.Value.Task.Result)
-                    {
-                        LeaveGameplay(p.Key);
-                    }
-                }
-            }
+                _requestReturnToMenuCts.Cancel();
 
             // Set scene sync finished
             State = GameplayManagerState.SongLoad;
@@ -145,9 +137,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             
             var songReadyCts = new CancellationTokenSource();
             var linkedSongReadyCts = CancellationTokenSource.CreateLinkedTokenSource(songReadyCts.Token, _requestReturnToMenuCts.Token);
-            IEnumerable<Task<bool>> songReadyTasks = PlayersAtStart.Select(p => {
+            IEnumerable<Task> songReadyTasks = PlayersAtStart.Select(p => {
                 var task = _songReadyTcs.GetOrAdd(p, _ => new());
-                linkedSongReadyCts.Token.Register(() => task.TrySetResult(false));
+                linkedSongReadyCts.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
 
@@ -156,15 +148,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             songReadyCts.CancelAfter((int)((SongLoadTimeLimit + (PlayersAtStart.Count*0.2f)) * 1000));
             await Task.WhenAll(songReadyTasks);
             if (songReadyCts.IsCancellationRequested)
-            {
-                foreach (var p in _songReadyTcs)
-                {
-                    if (!p.Value.Task.Result)
-                    {
-                        LeaveGameplay(p.Key);
-                    }
-                }
-            }
+                _requestReturnToMenuCts.Cancel();
 
             float StartDelay = 0;
             foreach (var UserId in PlayersAtStart)
@@ -194,8 +178,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // End gameplay and reset
             SetBeatmap(null!, new());
             ResetValues();
-            foreach (var p in _playerRegistry.Players)
-                HandlePlayerLeaveGameplay(p);
             _instance.SetState(MultiplayerGameState.Lobby);
             _packetDispatcher.SendToNearbyPlayers( new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
         }
@@ -291,28 +273,25 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private void LeaveGameplay(string UserId)
         {
-            if (PlayersAtStart.Remove(UserId))
-            {
-                PlayerFinishLevel(UserId);
-                PlayerSceneReady(UserId);
-                PlayerSongReady(UserId);
-            }
+            PlayerFinishLevel(UserId);
+            PlayerSceneReady(UserId);
+            PlayerSongReady(UserId);
         }
 
         private void PlayerFinishLevel(string UserId)
         {
             if (_levelFinishedTcs.TryGetValue(UserId, out var tcs) && !tcs.Task.IsCompleted)
-            tcs.SetResult(true);
+            tcs.SetResult();
         }
         private void PlayerSceneReady(string UserId)
         {
             if (_sceneReadyTcs.TryGetValue(UserId, out var tcs) && !tcs.Task.IsCompleted)
-                tcs.SetResult(true);
+                tcs.SetResult();
         }
         private void PlayerSongReady(string UserId)
         {
             if (_songReadyTcs.TryGetValue(UserId, out var tcs) && !tcs.Task.IsCompleted)
-                tcs.SetResult(true);
+                tcs.SetResult();
         }
     }
 }
