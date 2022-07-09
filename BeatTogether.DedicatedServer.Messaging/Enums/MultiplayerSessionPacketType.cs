@@ -7,6 +7,7 @@
         NodePoseSyncState = 2,
         ScoreSyncState = 3,
         NodePoseSyncStateDelta = 4,
-        ScoreSyncStateDelta = 5
+        ScoreSyncStateDelta = 5,
+        MultiplayerCore = 100
     }
 }
