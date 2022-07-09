@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
+using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
@@ -79,18 +81,31 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 var prevPosition = reader.Offset;
                 INetSerializable? packet;
-                var packetRegistry = _packetRegistry;
+                IPacketRegistry packetRegistry = _packetRegistry;
                 while (true)
                 {
-                    byte packetId;
-                    try { packetId = reader.ReadByte(); }
-                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
-                    if (packetRegistry.TryCreatePacket(packetId, out packet))
-                        break;
-                    if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
+                    if (!(packetRegistry is MultiplayerCorePacketRegistry MPCoreRegistry))
                     {
-                        packetRegistry = subPacketRegistry;
-                        continue;
+                        byte packetId;
+                        try
+                        { packetId = reader.ReadByte(); }
+                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                        if (packetRegistry.TryCreatePacket(packetId, out packet))
+                            break;
+                        if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
+                        {
+                            packetRegistry = subPacketRegistry;
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        string MPCpacketId;
+                        try
+                        { MPCpacketId = reader.ReadString(); }
+                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                        if (MPCoreRegistry.TryCreatePacket(MPCpacketId, out packet))
+                            break;
                     }
                     break;
                 }

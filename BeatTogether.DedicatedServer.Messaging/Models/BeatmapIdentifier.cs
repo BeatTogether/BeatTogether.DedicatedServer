@@ -10,6 +10,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public string Characteristic { get; set; } = null!;
         public BeatmapDifficulty Difficulty { get; set; }
 
+        public bool Chroma { get; set; } = false;
+        public bool NoodleExtensions { get; set; } = false;
+        public bool MappingExtensions { get; set; } = false;
+
         public void ReadFrom(ref SpanBufferReader reader)
         {
             LevelId = reader.ReadString();
