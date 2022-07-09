@@ -256,10 +256,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             lock (RequestReturnLock)
             {
-                foreach (var p in _playerRegistry.Players)
-                {
-                    HandlePlayerLeaveGameplay(p);
-                }
                 if (_requestReturnToMenuCts != null && !_requestReturnToMenuCts.IsCancellationRequested)
                     _requestReturnToMenuCts.Cancel();
             }
