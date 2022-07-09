@@ -269,22 +269,18 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
         }
 
-        public bool FetchingBeatmap = false;
-
-        public async void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
+        public void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
-            if (SelectedBeatmap != beatmap && !FetchingBeatmap)
+            if (SelectedBeatmap != beatmap)
             {
-                FetchingBeatmap = true;
-                if (beatmap == null || !await _beatmapRepository.CheckBeatmap(beatmap, _configuration.AllowLocalBeatmaps, _configuration.AllowChroma, _configuration.AllowMappingExtensions, _configuration.AllowNoodleExtensions))
+
+                if (beatmap == null || ((beatmap.Chroma && !_configuration.AllowChroma) || (beatmap.MappingExtensions && !_configuration.AllowMappingExtensions) || (beatmap.NoodleExtensions && !_configuration.AllowNoodleExtensions)))
                 {
                     SelectedBeatmap = null;
-                    FetchingBeatmap = false;
                 }
                 else
                 {
                     SelectedBeatmap = beatmap;
-                    FetchingBeatmap = false;
                 }
             }
             if (SelectedModifiers != modifiers)

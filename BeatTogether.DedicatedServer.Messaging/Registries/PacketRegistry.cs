@@ -16,7 +16,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries
             AddPacket<PlayerSortOrderPacket>(PacketType.PlayerSortOrderUpdate);
             AddPacket<KickPlayerPacket>(PacketType.KickPlayer);
             AddPacket<PlayerStatePacket>(PacketType.PlayerStateUpdate);
-            AddSubPacketRegistry<MultiplayerSessionPacketRegistry, byte>(PacketType.MultiplayerSession);
+            AddSubPacketRegistry<MultiplayerSessionPacketRegistry>(PacketType.MultiplayerSession);
             AddPacket<PingPacket>(PacketType.Ping);
             AddPacket<PongPacket>(PacketType.Pong);
         }

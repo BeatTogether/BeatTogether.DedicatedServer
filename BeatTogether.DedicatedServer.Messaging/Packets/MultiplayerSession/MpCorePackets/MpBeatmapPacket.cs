@@ -1,12 +1,12 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
-using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets
 {
     public sealed class MpBeatmapPacket : INetSerializable
     {
-    /*
         public string levelHash = null!;
         public string songName = null!;
         public string songSubName = null!;
@@ -16,60 +16,42 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCo
         public float songDuration;
 
         public string characteristic = null!;
-        public BeatmapDifficulty difficulty;
+        public uint difficulty;
 
-        public MpBeatmapPacket() { }
+        public Dictionary<uint, string[]> requirements = new();
 
-        public MpBeatmapPacket(PreviewDifficultyBeatmap beatmap)
-        {
-            levelHash = Utilities.HashForLevelID(beatmap.beatmapLevel.levelID);
-            songName = beatmap.beatmapLevel.songName;
-            songSubName = beatmap.beatmapLevel.songSubName;
-            songAuthorName = beatmap.beatmapLevel.songAuthorName;
-            levelAuthorName = beatmap.beatmapLevel.levelAuthorName;
-            beatsPerMinute = beatmap.beatmapLevel.beatsPerMinute;
-            songDuration = beatmap.beatmapLevel.songDuration;
-
-            characteristic = beatmap.beatmapCharacteristic.serializedName;
-            difficulty = beatmap.beatmapDifficulty;
-        }
-
-        public override void Serialize(NetDataWriter writer)
-        {
-            writer.Put(levelHash);
-            writer.Put(songName);
-            writer.Put(songSubName);
-            writer.Put(songAuthorName);
-            writer.Put(levelAuthorName);
-            writer.Put(beatsPerMinute);
-            writer.Put(songDuration);
-
-            writer.Put(characteristic);
-            writer.Put((uint)difficulty);
-        }
-
-        public override void Read(NetDataReader reader)
-        {
-            levelHash = reader.GetString();
-            songName = reader.GetString();
-            songSubName = reader.GetString();
-            songAuthorName = reader.GetString();
-            levelAuthorName = reader.GetString();
-            beatsPerMinute = reader.GetFloat();
-            songDuration = reader.GetFloat();
-
-            characteristic = reader.GetString();
-            difficulty = (BeatmapDifficulty)reader.GetUInt();
-        }
-    */
         public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            
+            throw new System.NotImplementedException();
         }
+
 
         public void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            Debug.WriteLine("Reading from beatmap packet server side, things are working correctly");
+            levelHash = bufferReader.ReadString();
+            songName = bufferReader.ReadString();
+            songSubName = bufferReader.ReadString();
+            songAuthorName = bufferReader.ReadString();
+            levelAuthorName = bufferReader.ReadString();
+            beatsPerMinute = bufferReader.ReadFloat32();
+            songDuration = bufferReader.ReadFloat32();
+
+            characteristic = bufferReader.ReadString();
+            difficulty = bufferReader.ReadUInt32();
+
+            var difficultyCount = bufferReader.ReadByte();
+            for (int i = 0; i < difficultyCount; i++)
+            {
+                byte difficulty = bufferReader.ReadByte();
+                var requirementCount = bufferReader.ReadByte();
+                string[] reqsForDifficulty = new string[requirementCount];
+                for (int j = 0; j < requirementCount; j++)
+                    reqsForDifficulty[j] = bufferReader.ReadString();
+                requirements[(uint)difficulty] = reqsForDifficulty;
+            }
+
+            bufferReader.SkipBytes(bufferReader.RemainingSize);
         }
+
     }
 }
