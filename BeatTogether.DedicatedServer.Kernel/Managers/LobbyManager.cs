@@ -50,15 +50,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IGameplayManager _gameplayManager;
         private readonly ILogger _logger = Log.ForContext<LobbyManager>();
-        private readonly IBeatmapRepository _beatmapRepository;
 
         public LobbyManager(
             InstanceConfiguration configuration,
             IDedicatedInstance instance,
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
-            IGameplayManager gameplayManager,
-            IBeatmapRepository beatmapRepository
+            IGameplayManager gameplayManager
             )
         {
             _configuration = configuration;
@@ -66,7 +64,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
             _gameplayManager = gameplayManager;
-            _beatmapRepository = beatmapRepository;
 
             _instance.StopEvent += Stop;
             Task.Run(() => UpdateLoop(_stopCts.Token));
@@ -343,8 +340,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         foreach (var player in _playerRegistry.Players)
                         {
                             BeatmapIdentifier bm = SelectedBeatmap!;
-                            if (_beatmapRepository.IsPrefferedDifficultyValid(bm, player.PreferredDifficulty))
-                                bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
+                            //TODO check difficulty is valid
+                            bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
                             _packetDispatcher.SendToPlayer(player, new StartLevelPacket
                             {
                                 Beatmap = bm!,
@@ -386,8 +383,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         foreach (var player in _playerRegistry.Players)
                         {
                             BeatmapIdentifier bm = SelectedBeatmap!;
-                            if (_beatmapRepository.IsPrefferedDifficultyValid(bm, player.PreferredDifficulty))
-                                bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
+                            //TODO check diff is valid
+                            bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
                             _packetDispatcher.SendToPlayer(player, new StartLevelPacket
                             {
                                 Beatmap = bm!,
