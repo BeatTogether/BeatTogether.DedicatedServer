@@ -340,8 +340,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         foreach (var player in _playerRegistry.Players)
                         {
                             BeatmapIdentifier bm = SelectedBeatmap!;
-                            //TODO check difficulty is valid
-                            bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
+                            if (player.PreferredDifficulty != null && SelectedBeatmap!.Difficulties.Contains((uint)player.PreferredDifficulty))
+                                bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
                             _packetDispatcher.SendToPlayer(player, new StartLevelPacket
                             {
                                 Beatmap = bm!,
@@ -383,8 +383,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         foreach (var player in _playerRegistry.Players)
                         {
                             BeatmapIdentifier bm = SelectedBeatmap!;
-                            //TODO check diff is valid
-                            bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
+                            if(player.PreferredDifficulty != null && SelectedBeatmap!.Difficulties.Contains((uint)player.PreferredDifficulty))
+                                bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
                             _packetDispatcher.SendToPlayer(player, new StartLevelPacket
                             {
                                 Beatmap = bm!,

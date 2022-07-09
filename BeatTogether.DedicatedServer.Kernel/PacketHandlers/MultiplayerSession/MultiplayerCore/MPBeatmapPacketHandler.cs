@@ -34,6 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                     sender.BeatmapIdentifier.Chroma = packet.requirements[packet.difficulty].Contains("Chroma");
                     sender.BeatmapIdentifier.NoodleExtensions = packet.requirements[packet.difficulty].Contains("Noodle Extensions");
                     sender.BeatmapIdentifier.MappingExtensions = packet.requirements[packet.difficulty].Contains("Mapping Extensions");
+                    sender.BeatmapIdentifier.Difficulties = packet.requirements.Keys.ToList();
                 }
             }
             return Task.CompletedTask;
