@@ -41,6 +41,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public event Action StopEvent = null!;
         public event Action<IPlayer> PlayerConnectedEvent = null!;
         public event Action<IPlayer, int> PlayerDisconnectedEvent = null!;
+        public event Action<string, int> PlayerCountChangeEvent = null!;
 
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
@@ -274,7 +275,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                     SortIndex = sortIndex
                 };
 
-                _playerRegistry.AddPlayer(player);
+                if (!_playerRegistry.AddPlayer(player))
+                {
+                    ReleaseSortIndex(player.SortIndex);
+                    ReleaseConnectionId(player.ConnectionId);
+                    PlayerCountChangeEvent?.Invoke(_configuration.Secret, _playerRegistry.Players.Count);
+                    return false;
+                }
                 _logger.Information(
                     "Player joined dedicated server " +
                     $"(RemoteEndPoint='{player.Endpoint}', " +

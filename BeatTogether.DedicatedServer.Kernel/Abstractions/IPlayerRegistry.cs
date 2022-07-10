@@ -9,7 +9,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
     {
         List<IPlayer> Players { get; }
 
-        void AddPlayer(IPlayer player);
+        bool AddPlayer(IPlayer player);
         void RemovePlayer(IPlayer player);
 
         IPlayer GetPlayer(EndPoint remoteEndPoint);

@@ -11,6 +11,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         event Action StopEvent;
         event Action<IPlayer> PlayerConnectedEvent;
         event Action<IPlayer, int> PlayerDisconnectedEvent;
+        event Action<string, int> PlayerCountChangeEvent;
 
         InstanceConfiguration _configuration { get; }
         bool IsRunning { get; }
