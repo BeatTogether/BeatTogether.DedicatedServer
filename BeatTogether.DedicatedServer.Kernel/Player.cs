@@ -34,13 +34,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool InLobby { get; set; }
 
         public object BeatmapLock { get; set; } = new();
-        public BeatmapIdentifier? BeatmapIdentifier { get; set; }
+        public BeatmapIdentifier BeatmapIdentifier { get; set; }
         public object ModifiersLock { get; set; } = new();
         public GameplayModifiers Modifiers { get; set; } = new();
         public object StateLock { get; set; } = new();
         public PlayerStateHash State { get; set; } = new();
-
-        public bool WasActiveAtCountdownStart { get; set; } = false;
 
         public bool IsManager => UserId == Instance._configuration.ManagerId;
         public bool CanRecommendBeatmaps => true;
@@ -61,7 +59,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool InMenu => State.Contains("in_menu");
         public bool IsModded => State.Contains("modded");
 
-        public BeatmapDifficulty? PreferredDifficulty { get; set; } = null; //TODO add in code to allow players to send a packet to change this value
+        public object PreferDiffLock { get; set; } = new();
+        public BeatmapDifficulty? PreferredDifficulty { get; set; } = null;
 
         private const float _syncTimeOffset = 0.06f;
         private ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();

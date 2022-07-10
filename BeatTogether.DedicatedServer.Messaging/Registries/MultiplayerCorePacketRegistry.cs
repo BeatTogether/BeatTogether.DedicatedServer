@@ -15,6 +15,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries
         {
             AddPacket<MpBeatmapPacket>();
             AddPacket<MCSetNewManagerPacket>();
+            AddPacket<MCPreferredDiff>();
         }
 
         public bool TryCreatePacket(string packetId, [MaybeNullWhen(false)] out INetSerializable packet)

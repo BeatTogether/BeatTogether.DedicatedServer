@@ -15,7 +15,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         public InstanceConfiguration _configuration;
         public readonly IPacketDispatcher _packetDispatcher;
         public readonly IPlayerRegistry _playerRegistry;
-        private readonly ILogger _logger = Log.ForContext<ClearRecommendedBeatmapPacketHandler>();
+        private readonly ILogger _logger = Log.ForContext<MCSetNewManagerPacketHandler>();
 
         public MCSetNewManagerPacketHandler(
             IPlayerRegistry playerRegistry,
@@ -31,7 +31,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         public override Task Handle(IPlayer sender, MCSetNewManagerPacket packet)
         {
             _logger.Debug(
-                $"Handling packet of type '{nameof(MpBeatmapPacket)}' " +
+                $"Handling packet of type '{nameof(MCSetNewManagerPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
             lock (handleLock)

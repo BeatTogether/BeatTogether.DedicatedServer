@@ -10,15 +10,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
     class MpBeatmapPacketHandler : BasePacketHandler<MpBeatmapPacket>
     {
         private readonly ILobbyManager _lobbyManager;
-        private readonly IPlayerRegistry _playerRegistry;
-        private readonly ILogger _logger = Log.ForContext<ClearRecommendedBeatmapPacketHandler>();
+        private readonly ILogger _logger = Log.ForContext<MpBeatmapPacketHandler>();
 
         public MpBeatmapPacketHandler(
-            ILobbyManager lobbyManager,
-            IPlayerRegistry playerRegistry)
+            ILobbyManager lobbyManager)
         {
             _lobbyManager = lobbyManager;
-            _playerRegistry = playerRegistry;
         }
 
         public override Task Handle(IPlayer sender, MpBeatmapPacket packet)
@@ -29,13 +26,10 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
             lock (sender.BeatmapLock)
             {
-                if(sender.BeatmapIdentifier != null && sender.BeatmapIdentifier.LevelId == packet.levelHash)
-                {
-                    sender.BeatmapIdentifier.Chroma = packet.requirements[packet.difficulty].Contains("Chroma");
-                    sender.BeatmapIdentifier.NoodleExtensions = packet.requirements[packet.difficulty].Contains("Noodle Extensions");
-                    sender.BeatmapIdentifier.MappingExtensions = packet.requirements[packet.difficulty].Contains("Mapping Extensions");
-                    sender.BeatmapIdentifier.Difficulties = packet.requirements.Keys.ToList();
-                }
+                sender.BeatmapIdentifier.Chroma = packet.requirements[packet.difficulty].Contains("Chroma");
+                sender.BeatmapIdentifier.NoodleExtensions = packet.requirements[packet.difficulty].Contains("Noodle Extensions");
+                sender.BeatmapIdentifier.MappingExtensions = packet.requirements[packet.difficulty].Contains("Mapping Extensions");
+                sender.BeatmapIdentifier.Difficulties = packet.requirements.Keys.ToList();
             }
             return Task.CompletedTask;
         }
