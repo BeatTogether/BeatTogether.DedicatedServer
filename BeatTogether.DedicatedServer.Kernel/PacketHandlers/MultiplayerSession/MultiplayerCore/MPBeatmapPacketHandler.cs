@@ -2,6 +2,7 @@
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 using Serilog;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -20,17 +21,15 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 
         public override Task Handle(IPlayer sender, MpBeatmapPacket packet)
         {
+
             _logger.Debug(
                 $"Handling packet of type '{nameof(MpBeatmapPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            lock (sender.BeatmapLock)
-            {
-                sender.BeatmapIdentifier.Chroma = packet.requirements[packet.difficulty].Contains("Chroma");
-                sender.BeatmapIdentifier.NoodleExtensions = packet.requirements[packet.difficulty].Contains("Noodle Extensions");
-                sender.BeatmapIdentifier.MappingExtensions = packet.requirements[packet.difficulty].Contains("Mapping Extensions");
-                sender.BeatmapIdentifier.Difficulties = packet.requirements.Keys.ToList();
-            }
+            sender.MapHash = "custom_level_" + packet.levelHash;
+            sender.Chroma = packet.requirements[packet.difficulty].Contains("Chroma");
+            sender.NoodleExtensions = packet.requirements[packet.difficulty].Contains("Noodle Extensions");
+            sender.MappingExtensions = packet.requirements[packet.difficulty].Contains("Mapping Extensions");
             return Task.CompletedTask;
         }
     }

@@ -32,9 +32,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             {
 				if (sender.CanRecommendBeatmaps)
 				{
-					sender.BeatmapIdentifier.Characteristic = packet.BeatmapIdentifier.Characteristic;
-					sender.BeatmapIdentifier.LevelId = packet.BeatmapIdentifier.LevelId;
-					sender.BeatmapIdentifier.Difficulty = packet.BeatmapIdentifier.Difficulty;
+					sender.BeatmapIdentifier = packet.BeatmapIdentifier;
+					if (sender.BeatmapIdentifier.LevelId != sender.MapHash)
+						sender.ResetRecommendedMapRequirements();
 					_packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
 					{
 						LevelId = packet.BeatmapIdentifier.LevelId

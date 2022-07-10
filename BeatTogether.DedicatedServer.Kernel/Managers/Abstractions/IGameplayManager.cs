@@ -11,7 +11,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
     {
         string SessionGameId { get; }
         GameplayManagerState State { get; }
-		BeatmapIdentifier CurrentBeatmap { get; }
+		BeatmapIdentifier? CurrentBeatmap { get; }
 		GameplayModifiers CurrentModifiers { get; }
         public float _songStartTime { get; }
 
@@ -19,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
         void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet);
         void HandleGameSongLoaded(IPlayer player);
         void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet);
-        void SetBeatmap(BeatmapIdentifier beatmap, GameplayModifiers modifiers);
+        void SetBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers);
         void StartSong(CancellationToken cancellationToken);
 
         void SignalRequestReturnToMenu();

@@ -105,7 +105,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                         { MPCpacketId = reader.ReadString(); }
                         catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
                         if (MPCoreRegistry.TryCreatePacket(MPCpacketId, out packet))
+                        {
                             break;
+                        }
                     }
                     break;
                 }
@@ -137,11 +139,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 try
                 {
                     packet.ReadFrom(ref reader);
-                }
-                catch (EndOfBufferException)
-                {
-                    _logger.Warning("Packet was an incorrect length");
-                    return;
                 }
                 catch
                 {

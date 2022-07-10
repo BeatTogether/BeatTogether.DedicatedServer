@@ -36,7 +36,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
             if (_instance.State == MultiplayerGameState.Game)
             {
-                if (!_gameplayManager.CurrentBeatmap.IsNull)
+                if (_gameplayManager.CurrentBeatmap != null)
                 {
                     _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
                     {
@@ -48,7 +48,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             }
             else
 			{
-                if (!_lobbyManager.SelectedBeatmap.IsNull)
+                if (_lobbyManager.SelectedBeatmap != null)
                 {
                     _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
                     {
