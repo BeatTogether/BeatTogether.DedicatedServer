@@ -243,8 +243,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
                 return;
-            PlayerFinishLevel(player.UserId);
             _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
+            PlayerFinishLevel(player.UserId);
         }
 
         object RequestReturnLock = new();
