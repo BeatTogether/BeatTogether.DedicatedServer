@@ -121,9 +121,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (sceneReadyCts.IsCancellationRequested)
                 _requestReturnToMenuCts.Cancel();
 
-            // Set scene sync finished
-            State = GameplayManagerState.SongLoad;
-
             _packetDispatcher.SendToNearbyPlayers(new SetGameplaySceneSyncFinishedPacket
             {
                 SessionGameId = SessionGameId,
@@ -133,8 +130,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }
             }, DeliveryMethod.ReliableOrdered);
 
+            // Set scene sync finished
+            State = GameplayManagerState.SongLoad;
+
             // Create song ready tasks
-            
             var songReadyCts = new CancellationTokenSource();
             var linkedSongReadyCts = CancellationTokenSource.CreateLinkedTokenSource(songReadyCts.Token, _requestReturnToMenuCts.Token);
             IEnumerable<Task> songReadyTasks = PlayersAtStart.Select(p => {
@@ -203,13 +202,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 PlayerSceneReady(player.UserId);
             }
 
-            if (_instance.State != MultiplayerGameState.Game)
+            if (_instance.State != MultiplayerGameState.Game || State == GameplayManagerState.Results || State == GameplayManagerState.None)
             {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
                 HandlePlayerLeaveGameplay(player);
                 return;
             }
-            if (State != GameplayManagerState.SceneLoad)
+
+            if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SceneLoad)
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayerDidConnectLatePacket
                 {
                     UserId = player.UserId,
@@ -219,19 +219,21 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     },
                     SessionGameId = SessionGameId
                 }, DeliveryMethod.ReliableOrdered);
+
+
         }
 
         public void HandleGameSongLoaded(IPlayer player)
         {
             if (_songReadyTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)
                 PlayerSongReady(player.UserId);
-            if (_instance.State != MultiplayerGameState.Game)
+            if (_instance.State != MultiplayerGameState.Game || State == GameplayManagerState.Results || State == GameplayManagerState.None)
             {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
                 HandlePlayerLeaveGameplay(player);
                 return;
             }
-            if (State != GameplayManagerState.SongLoad && State != GameplayManagerState.SceneLoad)
+            if (_instance.State == MultiplayerGameState.Game && State != GameplayManagerState.SongLoad && State != GameplayManagerState.SceneLoad)
                 if(_songStartTime != 0)
                     _packetDispatcher.SendToPlayer(player, new SetSongStartTimePacket
                     {
@@ -273,7 +275,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private void PlayerFinishLevel(string UserId)
         {
             if (_levelFinishedTcs.TryGetValue(UserId, out var tcs) && !tcs.Task.IsCompleted)
-            tcs.SetResult();
+                tcs.SetResult();
         }
         private void PlayerSceneReady(string UserId)
         {
