@@ -271,7 +271,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 else
                 {
                     SelectedBeatmap = null;
-                    SelectedModifiers = new();
                 }
             }
             if (SelectedModifiers != modifiers)
