@@ -267,7 +267,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (SelectedBeatmap != beatmap)
             {
                 bool passed = !((beatmap.Chroma && !_configuration.AllowChroma) || (beatmap.MappingExtensions && !_configuration.AllowMappingExtensions) || (beatmap.NoodleExtensions && !_configuration.AllowNoodleExtensions));
-                if (beatmap.IsNull || !passed)
+                if (beatmap.IsNull)
                     SelectedBeatmap.Clear();
                 else
                     SelectedBeatmap = beatmap;
