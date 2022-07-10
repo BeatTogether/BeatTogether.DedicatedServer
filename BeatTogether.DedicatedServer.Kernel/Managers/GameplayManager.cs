@@ -197,10 +197,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet)
         {
-            if (_sceneReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
-                return;
-            if(PlayersAtStart!= null && PlayersAtStart.Contains(player.UserId))
+            if (_sceneReadyTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)
+            {
                 _playerSpecificSettings[player.UserId] = packet.PlayerSpecificSettings;
+                PlayerSceneReady(player.UserId);
+            }
+
             if (_instance.State != MultiplayerGameState.Game)
             {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
@@ -217,15 +219,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     },
                     SessionGameId = SessionGameId
                 }, DeliveryMethod.ReliableOrdered);
-
-
-            PlayerSceneReady(player.UserId);
         }
 
         public void HandleGameSongLoaded(IPlayer player)
         {
-            if (_songReadyTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
-                return;
+            if (_songReadyTcs.TryGetValue(player.UserId, out var tcs) && !tcs.Task.IsCompleted)
+                PlayerSongReady(player.UserId);
             if (_instance.State != MultiplayerGameState.Game)
             {
                 _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
@@ -238,17 +237,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         StartTime = _songStartTime
                     }, DeliveryMethod.ReliableOrdered);
-
-            PlayerSongReady(player.UserId);
         }
 
         public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet)
         {
             if (_levelFinishedTcs.TryGetValue(player.UserId, out var tcs) && tcs.Task.IsCompleted)
                 return;
-            if(PlayersAtStart != null &&  PlayersAtStart.Contains(player.UserId))
-                _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
             PlayerFinishLevel(player.UserId);
+            _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
         }
 
         object RequestReturnLock = new();
