@@ -16,11 +16,15 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly ConcurrentDictionary<byte, IPlayer> _playersByConnectionId = new();
         private readonly ConcurrentDictionary<string, IPlayer> _playersByUserId = new();
 
-        public void AddPlayer(IPlayer player)
+        public bool AddPlayer(IPlayer player)
         {
-            _playersByRemoteEndPoint.TryAdd(player.Endpoint, player);
-            _playersByUserId[player.UserId] = player;
-            _playersByConnectionId[player.ConnectionId] = player;
+            if(_playersByUserId.TryAdd(player.UserId, player))
+            {
+                _playersByRemoteEndPoint.TryAdd(player.Endpoint, player);
+                _playersByConnectionId.TryAdd(player.ConnectionId, player);
+                return true;
+            }
+            return false;
         }
 
         public void RemovePlayer(IPlayer player)
