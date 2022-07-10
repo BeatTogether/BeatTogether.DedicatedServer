@@ -34,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool InLobby { get; set; }
 
         public object BeatmapLock { get; set; } = new();
-        public BeatmapIdentifier BeatmapIdentifier { get; set; }
+        public BeatmapIdentifier BeatmapIdentifier { get; set; } = new();
         public object ModifiersLock { get; set; } = new();
         public GameplayModifiers Modifiers { get; set; } = new();
         public object StateLock { get; set; } = new();

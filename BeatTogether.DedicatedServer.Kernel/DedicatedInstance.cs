@@ -479,7 +479,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         var manager = _playerRegistry.GetPlayer(_configuration.ManagerId);
 
                         // Disable start button if they are manager without selected song
-                        if (manager.BeatmapIdentifier == null)
+                        if (manager.BeatmapIdentifier.IsNull)
                             _packetDispatcher.SendToPlayer(manager, new SetIsStartButtonEnabledPacket
                             {
                                 Reason = CannotStartGameReason.NoSongSelected

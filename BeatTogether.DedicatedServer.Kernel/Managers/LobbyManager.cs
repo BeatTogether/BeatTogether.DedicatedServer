@@ -431,10 +431,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     Dictionary<BeatmapIdentifier, int> voteDictionary = new();
                     foreach (IPlayer player in _playerRegistry.Players.Where(p => !p.BeatmapIdentifier.IsNull && p.IsReady))
                     {
-                        if (voteDictionary.ContainsKey(player.BeatmapIdentifier!))
-                            voteDictionary[player.BeatmapIdentifier!]++;
+                        if (voteDictionary.ContainsKey(player.BeatmapIdentifier))
+                            voteDictionary[player.BeatmapIdentifier]++;
                         else
-                            voteDictionary.Add(player.BeatmapIdentifier!, 1);
+                            voteDictionary.Add(player.BeatmapIdentifier, 1);
                     }
                     if (!voteDictionary.Any())
                         return new();
