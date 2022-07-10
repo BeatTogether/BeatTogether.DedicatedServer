@@ -39,7 +39,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             {
                 if (packet.IsInLobby && !sender.InLobby)
                 {
-                    if(_instance.State == MultiplayerGameState.Game && !(_gameplayManager.State == Enums.GameplayManagerState.None || _gameplayManager.State == Enums.GameplayManagerState.Results) && _gameplayManager.CurrentBeatmap != null)
+                    if(_instance.State == MultiplayerGameState.Game && !(_gameplayManager.State == Enums.GameplayManagerState.None || _gameplayManager.State == Enums.GameplayManagerState.Results) && !_gameplayManager.CurrentBeatmap.IsNull)
                     {
                         _gameplayManager.HandlePlayerLeaveGameplay(sender);
                         _packetDispatcher.SendToPlayer(sender, new StartLevelPacket

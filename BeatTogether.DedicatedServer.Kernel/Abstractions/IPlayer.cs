@@ -28,13 +28,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool IsReady { get; set; }
 
         object BeatmapLock { get; set; }
-        BeatmapIdentifier? BeatmapIdentifier { get; set; }
+        BeatmapIdentifier BeatmapIdentifier { get; set; }
         object ModifiersLock { get; set; }
         GameplayModifiers Modifiers { get; set; }
         object StateLock { get; set; }
         PlayerStateHash State { get; set; }
-
-        bool WasActiveAtCountdownStart { get; set; }
 
         public bool IsManager { get; }
         public bool CanRecommendBeatmaps { get; }
@@ -55,6 +53,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         object InLobbyLock { get; set; }
         bool InLobby { get; set; }
 
+        object PreferDiffLock { get; set; }
         BeatmapDifficulty? PreferredDifficulty { get; set; }
 
         object EntitlementLock { get; set; }

@@ -25,7 +25,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
     {
         public string SessionGameId { get; private set; } = null!;
         public GameplayManagerState State { get; private set; } = GameplayManagerState.None;
-        public BeatmapIdentifier? CurrentBeatmap { get; private set; }
+        public BeatmapIdentifier CurrentBeatmap { get; private set; } = new();
         public GameplayModifiers CurrentModifiers { get; private set; } = new();
 
         private const float SongStartDelay = 0.5f;
@@ -73,7 +73,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public async void StartSong(CancellationToken cancellationToken)
         {
-            if (State != GameplayManagerState.None || CurrentBeatmap == null)
+            if (State != GameplayManagerState.None || CurrentBeatmap.IsNull)
             {
                 _requestReturnToMenuCts!.Cancel();
                 return;
@@ -176,7 +176,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 await Task.Delay((int)(_instance._configuration.CountdownConfig.ResultsScreenTime * 1000), cancellationToken);
 
             // End gameplay and reset
-            SetBeatmap(null!, new());
+            SetBeatmap(new(), new());
             ResetValues();
             _instance.SetState(MultiplayerGameState.Lobby);
             _packetDispatcher.SendToNearbyPlayers( new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
