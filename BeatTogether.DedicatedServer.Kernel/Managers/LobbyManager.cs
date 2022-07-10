@@ -266,7 +266,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (SelectedBeatmap != beatmap)
             {
-                if (beatmap.IsNull || ((beatmap.Chroma && !_configuration.AllowChroma) || (beatmap.MappingExtensions && !_configuration.AllowMappingExtensions) || (beatmap.NoodleExtensions && !_configuration.AllowNoodleExtensions)))
+                bool passed = !((beatmap.Chroma && !_configuration.AllowChroma) || (beatmap.MappingExtensions && !_configuration.AllowMappingExtensions) || (beatmap.NoodleExtensions && !_configuration.AllowNoodleExtensions));
+                if (beatmap.IsNull || !passed)
                     SelectedBeatmap.Clear();
                 else
                     SelectedBeatmap = beatmap;
@@ -428,7 +429,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 case SongSelectionMode.ManagerPicks: return _playerRegistry.GetPlayer(_configuration.ManagerId).BeatmapIdentifier;
                 case SongSelectionMode.Vote:
                     Dictionary<BeatmapIdentifier, int> voteDictionary = new();
-                    foreach (IPlayer player in _playerRegistry.Players.Where(p => p.BeatmapIdentifier != null && p.IsReady))
+                    foreach (IPlayer player in _playerRegistry.Players.Where(p => !p.BeatmapIdentifier.IsNull && p.IsReady))
                     {
                         if (voteDictionary.ContainsKey(player.BeatmapIdentifier!))
                             voteDictionary[player.BeatmapIdentifier!]++;
