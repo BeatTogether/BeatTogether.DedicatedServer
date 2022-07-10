@@ -47,10 +47,23 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCo
                 string[] reqsForDifficulty = new string[requirementCount];
                 for (int j = 0; j < requirementCount; j++)
                     reqsForDifficulty[j] = bufferReader.ReadString();
-                requirements[(uint)difficulty] = reqsForDifficulty;
+                requirements[difficulty] = reqsForDifficulty;
             }
 
-            bufferReader.SkipBytes(bufferReader.RemainingSize);
+            byte count = bufferReader.ReadByte();
+            for (int i = 0; i < count; i++)
+            {
+                bufferReader.ReadString();
+                bufferReader.ReadString();
+                bufferReader.ReadString();
+            }
+
+            byte count2 = bufferReader.ReadByte();
+            for (int i = 0; i < count2; i++)
+            {
+                bufferReader.ReadByte();
+                bufferReader.ReadColor();
+            }
         }
 
     }

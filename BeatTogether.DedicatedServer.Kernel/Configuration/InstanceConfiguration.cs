@@ -21,9 +21,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
         public GameplayServerMode GameplayServerMode { get; set; }
         public SongSelectionMode SongSelectionMode { get; set; }
         public GameplayServerControlSettings GameplayServerControlSettings { get; set; }
-        public bool AllowChroma { get; set; } = true;
-        public bool AllowMappingExtensions { get; set; } = true;
-        public bool AllowNoodleExtensions { get; set; } = false;
+        public bool AllowChroma { get; set; }
+        public bool AllowMappingExtensions { get; set; }
+        public bool AllowNoodleExtensions { get; set; }
     }
 
     public sealed class CountdownConfig

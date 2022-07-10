@@ -28,7 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool IsReady { get; set; }
 
         object BeatmapLock { get; set; }
-        BeatmapIdentifier BeatmapIdentifier { get; set; }
+        BeatmapIdentifier? BeatmapIdentifier { get; set; }
         object ModifiersLock { get; set; }
         GameplayModifiers Modifiers { get; set; }
         object StateLock { get; set; }
@@ -59,5 +59,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         object EntitlementLock { get; set; }
         EntitlementStatus GetEntitlement(string levelId);
         void SetEntitlement(string levelId, EntitlementStatus entitlement);
+
+        public string MapHash { get; set; }
+        public bool Chroma { get; set; }
+        public bool NoodleExtensions { get; set; }
+        public bool MappingExtensions { get; set; }
+        void ResetRecommendedMapRequirements();
     }
 }

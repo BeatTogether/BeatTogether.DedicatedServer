@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
 {
@@ -10,13 +11,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
         bool NoPlayersReady { get; }
 		bool AllPlayersSpectating { get; }
 
-        BeatmapIdentifier SelectedBeatmap { get; }
+        BeatmapIdentifier? SelectedBeatmap { get; }
         GameplayModifiers SelectedModifiers { get; }
         CountdownState CountDownState { get; }
         float CountdownEndTime { get; }
 
         void Update();
-        void UpdateBeatmap(BeatmapIdentifier beatmap, GameplayModifiers modifiers);
+        void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers);
         void SetCountdown(CountdownState countdownState, float countdown = 0);
     }
 }
