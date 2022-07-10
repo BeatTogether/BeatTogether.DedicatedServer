@@ -18,6 +18,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public bool MappingExtensions { get; set; } = false;
         public List<uint> Difficulties { get; set; } = new List<uint>();
 
+        public BeatmapIdentifier()
+        {
+            Clear();
+        }
+        
         public void Clear()
         {
             IsNull = true;
