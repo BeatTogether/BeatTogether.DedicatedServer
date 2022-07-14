@@ -277,6 +277,23 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 SelectedModifiers = modifiers;
         }
 
+        private List<BeatmapDifficulty> GetSelectedBeatmapDifficulties()
+        {
+            if (!SelectedBeatmap!.LevelId.StartsWith("custom_level_"))
+            {
+                return new();
+            }
+            foreach (var player in _playerRegistry.Players)
+            {
+                if(SelectedBeatmap!.LevelId == player.MapHash)
+                {
+                    return player.Difficulties;
+                }
+            }
+            return new();
+        }
+
+
         // Sets countdown and beatmap how the client would expect it to
         // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled, whereas SetCountdown will now
         public void SetCountdown(CountdownState countdownState, float countdown = 0)
@@ -326,10 +343,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         }, DeliveryMethod.ReliableOrdered);
                         return;
                     case BeatmapDiffering.DifferentDifficulties:
+                        List<BeatmapDifficulty> diff = GetSelectedBeatmapDifficulties();
                         foreach (var player in _playerRegistry.Players)
                         {
                             BeatmapIdentifier bm = SelectedBeatmap!;
-                            bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
+                            if(player.PreferredDifficulty != null && diff.Contains((BeatmapDifficulty)player.PreferredDifficulty))
+                                bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
                             _packetDispatcher.SendToPlayer(player, new StartLevelPacket
                             {
                                 Beatmap = bm!,
@@ -368,10 +387,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         }
                         return;
                     case BeatmapDiffering.DifferentDifficulties:
+                        List<BeatmapDifficulty> diff = GetSelectedBeatmapDifficulties();
                         foreach (var player in _playerRegistry.Players)
                         {
                             BeatmapIdentifier bm = SelectedBeatmap!;
-                            bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
+                            if (player.PreferredDifficulty != null && diff.Contains((BeatmapDifficulty)player.PreferredDifficulty))
+                                bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
                             _packetDispatcher.SendToPlayer(player, new StartLevelPacket
                             {
                                 Beatmap = bm!,

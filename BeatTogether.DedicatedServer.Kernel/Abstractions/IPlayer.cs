@@ -1,6 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using System.Collections.Generic;
 using System.Net;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
@@ -64,6 +65,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         public bool Chroma { get; set; }
         public bool NoodleExtensions { get; set; }
         public bool MappingExtensions { get; set; }
+        public List<BeatmapDifficulty> Difficulties { get; set; }
         void ResetRecommendedMapRequirements();
     }
 }

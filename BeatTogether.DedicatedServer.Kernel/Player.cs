@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Types;
@@ -89,6 +90,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool Chroma { get; set; } = false;
         public bool NoodleExtensions { get; set; } = false;
         public bool MappingExtensions { get; set; } = false;
+        public List<BeatmapDifficulty> Difficulties { get; set; } = new();
 
         public void ResetRecommendedMapRequirements()
         {
@@ -96,6 +98,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             Chroma  = false;
             NoodleExtensions  = false;
             MappingExtensions = false;
+            Difficulties.Clear();
         }
     }
 }

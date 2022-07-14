@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 using Serilog;
 using System;
@@ -27,9 +28,13 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"(SenderId={sender.ConnectionId})."
             );
             sender.MapHash = "custom_level_" + packet.levelHash;
-            sender.Chroma = packet.requirements[packet.difficulty].Contains("Chroma");
-            sender.NoodleExtensions = packet.requirements[packet.difficulty].Contains("Noodle Extensions");
-            sender.MappingExtensions = packet.requirements[packet.difficulty].Contains("Mapping Extensions");
+            if(packet.requirements.TryGetValue(packet.difficulty, out string[]? Requirements))
+            {
+                sender.Chroma = Requirements.Contains("Chroma");
+                sender.NoodleExtensions = Requirements.Contains("Noodle Extensions");
+                sender.MappingExtensions = Requirements.Contains("Mapping Extensions");
+            }
+            sender.Difficulties = packet.requirements.Keys.Select(b => (BeatmapDifficulty)b).ToList();
             return Task.CompletedTask;
         }
     }
