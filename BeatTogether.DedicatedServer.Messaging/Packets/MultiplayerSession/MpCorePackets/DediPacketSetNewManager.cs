@@ -4,7 +4,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets
 {
-    public sealed class MCSetNewManagerPacket : INetSerializable
+    public sealed class DediPacketSetNewManagerPacket : INetSerializable
     {
         public string NewManagerID { get; set; } = null!;
 

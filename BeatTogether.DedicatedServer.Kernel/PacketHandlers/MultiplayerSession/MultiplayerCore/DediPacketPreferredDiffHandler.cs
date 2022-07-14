@@ -6,21 +6,21 @@ using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
-    class MCPreferredDiffHandler : BasePacketHandler<MCPreferredDiff>
+    class DediPacketPreferredDiffHandler : BasePacketHandler<DediPacketPreferredDiff>
     {
         private readonly ILobbyManager _lobbyManager;
-        private readonly ILogger _logger = Log.ForContext<MCPreferredDiff>();
+        private readonly ILogger _logger = Log.ForContext<DediPacketPreferredDiff>();
 
-        public MCPreferredDiffHandler(
+        public DediPacketPreferredDiffHandler(
             ILobbyManager lobbyManager)
         {
             _lobbyManager = lobbyManager;
         }
 
-        public override Task Handle(IPlayer sender, MCPreferredDiff packet)
+        public override Task Handle(IPlayer sender, DediPacketPreferredDiff packet)
         {
             _logger.Debug(
-                $"Handling packet of type '{nameof(MCPreferredDiff)}' " +
+                $"Handling packet of type '{nameof(DediPacketPreferredDiff)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
             lock (sender.PreferDiffLock)

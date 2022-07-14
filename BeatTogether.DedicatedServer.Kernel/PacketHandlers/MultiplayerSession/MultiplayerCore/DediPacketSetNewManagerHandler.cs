@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
-    class MCSetNewManagerPacketHandler : BasePacketHandler<MCSetNewManagerPacket>
+    class DediPacketSetNewManagerPacketHandler : BasePacketHandler<DediPacketSetNewManagerPacket>
     {
         public InstanceConfiguration _configuration;
         public readonly IPacketDispatcher _packetDispatcher;
         public readonly IPlayerRegistry _playerRegistry;
-        private readonly ILogger _logger = Log.ForContext<MCSetNewManagerPacketHandler>();
+        private readonly ILogger _logger = Log.ForContext<DediPacketSetNewManagerPacketHandler>();
 
-        public MCSetNewManagerPacketHandler(
+        public DediPacketSetNewManagerPacketHandler(
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
             InstanceConfiguration configuration)
@@ -28,10 +28,10 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         }
 
         object handleLock = new();
-        public override Task Handle(IPlayer sender, MCSetNewManagerPacket packet)
+        public override Task Handle(IPlayer sender, DediPacketSetNewManagerPacket packet)
         {
             _logger.Debug(
-                $"Handling packet of type '{nameof(MCSetNewManagerPacket)}' " +
+                $"Handling packet of type '{nameof(DediPacketSetNewManagerPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
             lock (handleLock)

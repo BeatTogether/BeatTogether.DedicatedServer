@@ -243,23 +243,27 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             if (string.IsNullOrEmpty(connectionRequestData.UserId) ||
-                string.IsNullOrEmpty(connectionRequestData.UserName) ||
-                string.IsNullOrEmpty(connectionRequestData.Secret))
+                string.IsNullOrEmpty(connectionRequestData.UserName))
+                //string.IsNullOrEmpty(connectionRequestData.Secret))
             {
                 _logger.Warning(
                     "Received a connection request with invalid data " +
                     $"(RemoteEndPoint='{endPoint}', " +
-                    $"Secret='{connectionRequestData.Secret}', " +
+                    //$"Secret='{connectionRequestData.Secret}', " +
                     $"UserId='{connectionRequestData.UserId}', " +
                     $"UserName='{connectionRequestData.UserName}', " +
                     $"IsConnectionOwner={connectionRequestData.IsConnectionOwner})."
                 );
+                PlayerCountChangeEvent?.Invoke(_configuration.Secret, _playerRegistry.Players.Count);
                 return false;
             }
             lock (AcceptConnectionLock)
             {
                 if (_playerRegistry.Players.Count >= _configuration.MaxPlayerCount)
+                {
+                    PlayerCountChangeEvent?.Invoke(_configuration.Secret, _playerRegistry.Players.Count);
                     return false;
+                }
                 int sortIndex = GetNextSortIndex();
                 byte connectionId = GetNextConnectionId();
 
@@ -267,7 +271,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     endPoint,
                     this,
                     connectionId,
-                    connectionRequestData.Secret,
+                    _configuration.Secret,
+                    //connectionRequestData.Secret,
                     connectionRequestData.UserId,
                     connectionRequestData.UserName
                 )

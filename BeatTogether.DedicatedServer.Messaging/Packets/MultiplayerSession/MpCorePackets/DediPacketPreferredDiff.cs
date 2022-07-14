@@ -3,7 +3,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets
 {
-    public sealed class MCPreferredDiff : INetSerializable
+    public sealed class DediPacketPreferredDiff : INetSerializable
     {
         public uint PreferredDifficulty { get; set; }
 
