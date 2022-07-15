@@ -35,27 +35,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetStartedLevelPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            if (_instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null && _gameplayManager.State == GameplayManagerState.Results && _gameplayManager.State == GameplayManagerState.None)
+            if (_lobbyManager.SelectedBeatmap != null && _instance.State != MultiplayerGameState.Game)
             {
-                _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
+                _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
                 {
-                    Beatmap = _gameplayManager.CurrentBeatmap,
-                    Modifiers = _gameplayManager.CurrentModifiers,
-                    StartTime = _instance.RunTime
+                    LevelId = _lobbyManager.SelectedBeatmap.LevelId
                 }, DeliveryMethod.ReliableOrdered);
             }
-            else
-			{
-                if (_lobbyManager.SelectedBeatmap != null)
-                {
-                    _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
-                    {
-                        LevelId = _lobbyManager.SelectedBeatmap.LevelId
-                    }, DeliveryMethod.ReliableOrdered);
-                }
-                else
-                    _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
-			}
+            _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
 
             return Task.CompletedTask;
         }
