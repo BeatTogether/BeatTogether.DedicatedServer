@@ -47,8 +47,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                         StartTime = _instance.RunTime
                     }, DeliveryMethod.ReliableOrdered);
                 }
-                else
-                    _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
             }
             return Task.CompletedTask;
         }
