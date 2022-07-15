@@ -38,20 +38,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             lock (sender.InLobbyLock)
             {
                 if (packet.IsInLobby && !sender.InLobby)
-                {//TODO here stuff cubic working on it
-                    /*
-                    if(_instance.State == MultiplayerGameState.Game && !(_gameplayManager.State == Enums.GameplayManagerState.None || _gameplayManager.State == Enums.GameplayManagerState.Results) && !_gameplayManager.CurrentBeatmap.IsNull)
-                    {
-                        _gameplayManager.HandlePlayerLeaveGameplay(sender);
-                        _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
-                        {
-                            Beatmap = _gameplayManager.CurrentBeatmap!,
-                            Modifiers = _gameplayManager.CurrentModifiers,
-                            StartTime = _instance.RunTime
-                        }, DeliveryMethod.ReliableOrdered);
-                        return Task.CompletedTask;
-                    }
-                    */
+                {
                     _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
                     {
                         Reason = CannotStartGameReason.NoSongSelected

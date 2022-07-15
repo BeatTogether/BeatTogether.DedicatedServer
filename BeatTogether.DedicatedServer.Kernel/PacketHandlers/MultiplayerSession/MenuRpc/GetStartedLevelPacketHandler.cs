@@ -35,7 +35,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetStartedLevelPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            if (_instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null && _gameplayManager.State == GameplayManagerState.Results && _gameplayManager.State == GameplayManagerState.None)
+            if (_instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null && _gameplayManager.State != GameplayManagerState.Results && _gameplayManager.State != GameplayManagerState.None)
             {
                 _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
                 {
@@ -45,7 +45,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 }, DeliveryMethod.ReliableOrdered);
             }
             else
-			{
+            {
                 if (_lobbyManager.SelectedBeatmap != null)
                 {
                     _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
@@ -55,8 +55,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 }
                 else
                     _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
-			}
-
+            }
             return Task.CompletedTask;
         }
     }
