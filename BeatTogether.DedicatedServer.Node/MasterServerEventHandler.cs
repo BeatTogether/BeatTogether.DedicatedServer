@@ -1,6 +1,7 @@
 ﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface.Events;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
+using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
 using BeatTogether.MasterServer.Interface.Events;
 using Microsoft.Extensions.Hosting;
@@ -19,17 +20,18 @@ namespace BeatTogether.DedicatedServer.Node
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly ILogger _logger = Log.ForContext<MasterServerEventHandler>();
         private readonly NodeConfiguration _configuration;
-        //private readonly IInstanceRegistry _instanceRegistry;
+        private readonly IInstanceRegistry _instanceRegistry;
 
         public MasterServerEventHandler(
             IAutobus autobus,
             PacketEncryptionLayer packetEncryptionLayer,
-            NodeConfiguration nodeConfiguration)
+            NodeConfiguration nodeConfiguration,
+            IInstanceRegistry instanceRegistry)
         {
             _autobus = autobus;
             _packetEncryptionLayer = packetEncryptionLayer;
             _configuration = nodeConfiguration;
-            //_instanceRegistry = instanceRegistry;
+            _instanceRegistry = instanceRegistry;
         }
 
         #region Public Methods
@@ -39,8 +41,9 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Subscribe<PlayerConnectedToMatchmakingServerEvent>(HandlePlayerConnectedToMatchmaking);
             _autobus.Subscribe<CheckNodesEvent>(HandleCheckNode);
             _autobus.Subscribe<DisconnectPlayerFromMatchmakingServerEvent>(HandleDisconnectPlayer);
-            _autobus.Publish(new NodeStartedEvent(_configuration.HostName));
-            _logger.Information("Dedicated node starting: " + _configuration.HostName);
+            _autobus.Subscribe<CloseServerInstanceEvent>(HandleCloseServer);
+            _autobus.Publish(new NodeStartedEvent(_configuration.HostName, _configuration.NodeVersion));
+            _logger.Information("Dedicated node version: " + _configuration.NodeVersion + " starting: " + _configuration.HostName);
             return Task.CompletedTask;
         }
 
@@ -49,6 +52,7 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Unsubscribe<PlayerConnectedToMatchmakingServerEvent>(HandlePlayerConnectedToMatchmaking);
             _autobus.Unsubscribe<CheckNodesEvent>(HandleCheckNode);
             _autobus.Unsubscribe<DisconnectPlayerFromMatchmakingServerEvent>(HandleDisconnectPlayer);
+            _autobus.Unsubscribe<CloseServerInstanceEvent>(HandleCloseServer);
             return Task.CompletedTask;
         }
 
@@ -83,8 +87,16 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandleDisconnectPlayer(DisconnectPlayerFromMatchmakingServerEvent disconnectEvent)
         {
-            //if(_instanceRegistry.TryGetInstance(disconnectEvent.Secret, out var instance))
-                //instance.DisconnectPlayer(disconnectEvent.UserId);
+            if(_instanceRegistry.TryGetInstance(disconnectEvent.Secret, out var instance))
+                instance.DisconnectPlayer(disconnectEvent.UserId);
+            return Task.CompletedTask;
+        }
+        private Task HandleCloseServer(CloseServerInstanceEvent closeEvent)
+        {
+            if (_instanceRegistry.TryGetInstance(closeEvent.Secret, out var instance))
+            {
+                instance.Stop();
+            }
             return Task.CompletedTask;
         }
         #endregion

@@ -1,6 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using System.Collections.Generic;
 using System.Net;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
@@ -34,8 +35,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         object StateLock { get; set; }
         PlayerStateHash State { get; set; }
 
-        bool WasActiveAtCountdownStart { get; set; }
-
         public bool IsManager { get; }
         public bool CanRecommendBeatmaps { get; }
         public bool CanRecommendModifiers { get; }
@@ -55,10 +54,18 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         object InLobbyLock { get; set; }
         bool InLobby { get; set; }
 
+        object PreferDiffLock { get; set; }
         BeatmapDifficulty? PreferredDifficulty { get; set; }
 
         object EntitlementLock { get; set; }
         EntitlementStatus GetEntitlement(string levelId);
         void SetEntitlement(string levelId, EntitlementStatus entitlement);
+
+        public string MapHash { get; set; }
+        public bool Chroma { get; set; }
+        public bool NoodleExtensions { get; set; }
+        public bool MappingExtensions { get; set; }
+        public List<BeatmapDifficulty> Difficulties { get; set; }
+        void ResetRecommendedMapRequirements();
     }
 }

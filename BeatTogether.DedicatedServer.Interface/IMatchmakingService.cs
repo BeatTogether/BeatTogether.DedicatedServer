@@ -9,20 +9,6 @@ namespace BeatTogether.DedicatedServer.Interface
     public interface IMatchmakingService
     {
         Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request);
-        //TODO convert all of these into event handlers for api use
-        /*
-        Task<StopMatchmakingServerResponse> StopMatchmakingServer(StopMatchmakingServerRequest request);
-        Task<SimplePlayersListResponce>? GetSimplePlayerList(GetPlayersSimpleRequest request);
-        Task<AdvancedPlayersListResponce>? GetAdvancedPlayerList(GetPlayersAdvancedRequest request);
-        Task<AdvancedPlayerResponce> GetAdvancedPlayer(GetPlayerAdvancedRequest request);
-        Task<KickPlayerResponse> KickPlayer(KickPlayerRequest request);
-        Task<AdvancedInstanceResponce> GetAdvancedInstance(GetAdvancedInstanceRequest request);
-        Task<SetInstanceBeatmapResponse> SetInstanceBeatmap(SetInstanceBeatmapRequest request);
-        Task<SetAllowedRequirementsResponse> SetAllowedRequirements(SetAllowedRequirementsRequest request);
-        Task<GetAllowedRequirementsResponse> GetAllowedRequirements(GetAllowedRequirementsRequest request);
-        Task<ClearCachedBeatmapsResponse> ClearCachedBeatmaps(ClearCachedBeatmapsRequest request);
-        Task<DoesServerExistResponse> DoesServerExist(DoesServerExistRequest request);
-        */
 
         public class DedicatedServerServiceContract : BaseServiceContract
         {
@@ -34,7 +20,8 @@ namespace BeatTogether.DedicatedServer.Interface
                     .AddEvent<NodeStartedEvent>()
                     .AddEvent<NodeOnlineEvent>()
                     .AddEvent<NodeReceivedPlayerEncryptionEvent>()
-                    .AddEvent<MatchmakingServerStoppedEvent>();
+                    .AddEvent<MatchmakingServerStoppedEvent>()
+                    .AddEvent<UpdateInstanceConfigEvent>();
         }
     }
 }

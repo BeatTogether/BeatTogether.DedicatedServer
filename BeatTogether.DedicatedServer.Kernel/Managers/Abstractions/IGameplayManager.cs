@@ -13,11 +13,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
         GameplayManagerState State { get; }
 		BeatmapIdentifier? CurrentBeatmap { get; }
 		GameplayModifiers CurrentModifiers { get; }
+        public float _songStartTime { get; }
 
-		void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet);
+        void HandlePlayerLeaveGameplay(IPlayer player, int Unused = 0);
+        void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet);
         void HandleGameSongLoaded(IPlayer player);
         void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet);
-		void StartSong(BeatmapIdentifier beatmap, GameplayModifiers modifiers, CancellationToken cancellationToken);
+        void SetBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers);
+        void StartSong(CancellationToken cancellationToken);
 
         void SignalRequestReturnToMenu();
     }

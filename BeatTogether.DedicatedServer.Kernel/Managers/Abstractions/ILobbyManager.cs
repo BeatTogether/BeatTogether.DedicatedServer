@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
 {
