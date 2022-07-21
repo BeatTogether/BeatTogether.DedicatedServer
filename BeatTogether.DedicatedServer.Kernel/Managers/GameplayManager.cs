@@ -152,7 +152,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             float StartDelay = 0;
             foreach (var UserId in PlayersAtStart)
             {
-                var p = _playerRegistry.GetPlayer(UserId);
+                if (!_playerRegistry.TryGetPlayer(UserId, out var p))
+                    return;
                 if (!p.InGameplay || p.InLobby)
                     HandlePlayerLeaveGameplay(p);
                 StartDelay = Math.Max(StartDelay,p.Latency.CurrentAverage);
