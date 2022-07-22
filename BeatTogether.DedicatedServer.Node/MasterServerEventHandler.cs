@@ -81,7 +81,7 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandleCheckNode(CheckNodesEvent checkNodesEvent)
         {
-            _autobus.Publish(new NodeOnlineEvent(_configuration.HostName));
+            _autobus.Publish(new NodeOnlineEvent(_configuration.HostName, _configuration.NodeVersion));
             return Task.CompletedTask;
         }
 

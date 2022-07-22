@@ -152,10 +152,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             float StartDelay = 0;
             foreach (var UserId in PlayersAtStart)
             {
-                var p = _playerRegistry.GetPlayer(UserId);
-                if (!p.InGameplay || p.InLobby)
-                    HandlePlayerLeaveGameplay(p);
-                StartDelay = Math.Max(StartDelay,p.Latency.CurrentAverage);
+                if (_playerRegistry.TryGetPlayer(UserId, out var p))
+                {
+                    if (!p.InGameplay || p.InLobby)
+                        HandlePlayerLeaveGameplay(p);
+                    StartDelay = Math.Max(StartDelay, p.Latency.CurrentAverage);
+                }
+
             }
 
             // Start song and wait for finish
