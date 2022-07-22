@@ -155,7 +155,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
             _packetDispatcher.SendToNearbyPlayers(new KickPlayerPacket
             {
-                DisconnectedReason = DisconnectedReason.Kicked
+                DisconnectedReason = DisconnectedReason.ServerTerminated
             }, DeliveryMethod.ReliableOrdered);
 
             _stopServerCts!.Cancel();
