@@ -24,6 +24,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
         public bool AllowChroma { get; set; }
         public bool AllowMappingExtensions { get; set; }
         public bool AllowNoodleExtensions { get; set; }
+        public float KickPlayersWithoutEntitlementTimeout { get; set; } = 30f;
     }
 
     public sealed class CountdownConfig
