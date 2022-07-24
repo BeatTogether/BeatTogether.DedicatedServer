@@ -9,6 +9,7 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
@@ -219,6 +220,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         //stops countdown
                         SetCountdown(CountdownState.NotCountingDown);
                         return;
+                    }
+                    if(CountdownEndTime + _configuration.KickPlayersWithoutEntitlementTimeout <= _instance.RunTime)
+                    {
+                        List<IPlayer> MissingEntitlement = _playerRegistry.Players.Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is not EntitlementStatus.Ok).ToList();
+                        foreach (IPlayer p in MissingEntitlement)
+                        {
+                            _packetDispatcher.SendToPlayer(p, new KickPlayerPacket()
+                            {
+                                DisconnectedReason = DisconnectedReason.ClientConnectionClosed
+                            }, DeliveryMethod.ReliableOrdered);
+                        }
                     }
                 }
                 // If manager/all players are no longer ready or not all players own beatmap
