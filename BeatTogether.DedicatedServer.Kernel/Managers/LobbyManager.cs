@@ -335,7 +335,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     break;
                 case CountdownState.WaitingForEntitlement:
                     StartBeatmapPacket();
-                    CountdownEndTime = -1;
                     break;
             }
         }
