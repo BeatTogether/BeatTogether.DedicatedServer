@@ -10,12 +10,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
     public sealed class PlayerIdentityPacketHandler : BasePacketHandler<PlayerIdentityPacket>
     {
         private readonly IPacketDispatcher _packetDispatcher;
+        private readonly IDedicatedInstance _instance;
         private readonly ILogger _logger = Log.ForContext<PlayerIdentityPacketHandler>();
 
         public PlayerIdentityPacketHandler(
-            IPacketDispatcher packetDispatcher)
+            IPacketDispatcher packetDispatcher, IDedicatedInstance instance)
         {
             _packetDispatcher = packetDispatcher;
+            _instance = instance;
         }
 
         public override Task Handle(IPlayer sender, PlayerIdentityPacket packet)
@@ -30,6 +32,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 sender.State = packet.PlayerState;
                 sender.Random = packet.Random.Data ?? Array.Empty<byte>();
                 sender.PublicEncryptionKey = packet.PublicEncryptionKey.Data ?? Array.Empty<byte>();
+                _instance.PlayerUpdated(sender);
                 _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
             }
             return Task.CompletedTask;

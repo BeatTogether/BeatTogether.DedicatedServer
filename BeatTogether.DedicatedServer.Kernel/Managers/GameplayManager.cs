@@ -82,6 +82,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             //Reset
             ResetValues();
+            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
             SessionGameId = Guid.NewGuid().ToString();
             _requestReturnToMenuCts = new CancellationTokenSource();
 
@@ -132,7 +133,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Set scene sync finished
             State = GameplayManagerState.SongLoad;
-
+            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
             // Create song ready tasks
             var songReadyCts = new CancellationTokenSource();
             var linkedSongReadyCts = CancellationTokenSource.CreateLinkedTokenSource(songReadyCts.Token, _requestReturnToMenuCts.Token);
@@ -164,15 +165,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // Start song and wait for finish
             _songStartTime = _instance.RunTime + SongStartDelay + (StartDelay * 2f);
             State = GameplayManagerState.Gameplay;
-
+            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
             _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
+            _instance.BeatmapChanged(CurrentBeatmap, CurrentModifiers, true, DateTime.Now.AddSeconds(_songStartTime - _instance.RunTime));
 
             await Task.WhenAll(levelFinishedTasks);
             State = GameplayManagerState.Results;
-
+            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
             // Wait at results screen if anyone cleared or skip if the countdown is set to 0.
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared) && _instance._configuration.CountdownConfig.ResultsScreenTime > 0)
                 await Task.Delay((int)(_instance._configuration.CountdownConfig.ResultsScreenTime * 1000), cancellationToken);
@@ -182,6 +184,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             ResetValues();
             _instance.SetState(MultiplayerGameState.Lobby);
             _packetDispatcher.SendToNearbyPlayers( new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
+            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
         }
 
         private void ResetValues()
