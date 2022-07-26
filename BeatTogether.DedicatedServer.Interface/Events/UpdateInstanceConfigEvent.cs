@@ -1,5 +1,4 @@
-﻿
-using BeatTogether.DedicatedServer.Interface.Models;
+﻿using BeatTogether.DedicatedServer.Interface.Models;
 
 namespace BeatTogether.DedicatedServer.Interface.Events
 {

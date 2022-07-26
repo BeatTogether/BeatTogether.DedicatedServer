@@ -94,7 +94,31 @@ namespace BeatTogether.DedicatedServer.Node
         }
         private void HandleBeatmapChangedEvent(string secret, BeatmapIdentifier? beatmap, GameplayModifiers modifiers, bool IsGameplay, DateTime StartTime)
         {
-            _autobus.Publish(new SelectedBeatmapEvent(secret, beatmap is not null ? beatmap.LevelId : string.Empty, beatmap is not null ? beatmap.Characteristic : string.Empty, beatmap is not null ? (uint)beatmap.Difficulty : uint.MinValue, IsGameplay, (Interface.Models.GameplayModifiers)modifiers, StartTime));
+            _autobus.Publish(new SelectedBeatmapEvent(secret, beatmap is not null ? beatmap.LevelId : string.Empty, beatmap is not null ? beatmap.Characteristic : string.Empty, beatmap is not null ? (uint)beatmap.Difficulty : uint.MinValue, IsGameplay, GameplayCast(modifiers), StartTime));
+        }
+        public Interface.Models.GameplayModifiers GameplayCast(GameplayModifiers v)
+        {
+            return new Interface.Models.GameplayModifiers((Interface.Models.EnergyType)v.Energy, v.NoFailOn0Energy, v.DemoNoFail, v.InstaFail, v.FailOnSaberClash, (Interface.Models.EnabledObstacleType)v.EnabledObstacle, v.DemoNoObstacles, v.FastNotes, v.StrictAngles, v.DisappearingArrows, v.GhostNotes, v.NoBombs, (Interface.Models.SongSpeed)v.Speed, v.NoArrows, v.ProMode, v.ZenMode, v.SmallCubes);
+        }
+        public Interface.Models.AvatarData AvatarCast(AvatarData v)
+        {
+            return new(
+                v.HeadTopId,
+                v.HeadTopPrimaryColor,
+                v.HeadTopSecondaryColor,
+                v.GlassesId,
+                v.GlassesColor,
+                v.FacialHairId,
+                v.FacialHairColor,
+                v.HandsId,
+                v.HandsColor,
+                v.ClothesId,
+                v.ClothesPrimaryColor,
+                v.ClothesSecondaryColor,
+                v.ClothesDetailColor,
+                v.SkinColorId,
+                v.EyesId,
+                v.MouthId);
         }
         private void HandleConfigChangeEvent(IDedicatedInstance inst)
         {
@@ -134,7 +158,7 @@ namespace BeatTogether.DedicatedServer.Node
         }
         private void HandleUpdatePlayerEvent(IPlayer player)
         {
-            _autobus.Publish(new PlayerJoinEvent(player.Secret, player.Endpoint.ToString()!, player.UserId, player.UserName, player.ConnectionId, player.SortIndex, (Interface.Models.AvatarData)player.Avatar));
+            _autobus.Publish(new PlayerJoinEvent(player.Secret, player.Endpoint.ToString()!, player.UserId, player.UserName, player.ConnectionId, player.SortIndex, AvatarCast(player.Avatar)));
         }
         private void HandlePlayerDisconnectEvent(IPlayer player, int count)
         {

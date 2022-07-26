@@ -21,27 +21,5 @@ namespace BeatTogether.DedicatedServer.Interface.Models
         string SkinColorId,
         string EyesId,
         string MouthId
-        )
-    {
-        public static explicit operator AvatarData(Messaging.Models.AvatarData v)
-        {
-            return new(
-                v.HeadTopId,
-                v.HeadTopPrimaryColor,
-                v.HeadTopSecondaryColor,
-                v.GlassesId,
-                v.GlassesColor,
-                v.FacialHairId,
-                v.FacialHairColor,
-                v.HandsId,
-                v.HandsColor,
-                v.ClothesId,
-                v.ClothesPrimaryColor,
-                v.ClothesSecondaryColor,
-                v.ClothesDetailColor,
-                v.SkinColorId,
-                v.EyesId,
-                v.MouthId);
-        }
-    }
+        );
 }

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -7,7 +7,7 @@
     <Authors>BeatTogether Team</Authors>
     <Company>BeatTogether</Company>
     <RepositoryUrl>https://github.com/beattogether/BeatTogether.DedicatedServer</RepositoryUrl>
-    <Version>1.5.2</Version>
+    <Version>1.5.4</Version>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -17,10 +17,6 @@
 
   <ItemGroup>
     <PackageReference Include="Autobus.Abstractions" Version="0.1.5" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\BeatTogether.DedicatedServer.Messaging\BeatTogether.DedicatedServer.Messaging.csproj" />
   </ItemGroup>
 
 </Project>
