@@ -36,10 +36,9 @@ namespace BeatTogether.DedicatedServer.Node
             float PlayersReadyCountdownTime = 0f,
             bool AllowPerPlayerModifiers = false,
             bool AllowPerPlayerDifficulties = false,
-            bool AllowPerPlayerBeatmaps = false, //This option allows the above by default
             bool AllowChroma = true,
             bool AllowME = true,
-            bool AllowNE = false
+            bool AllowNE = true
             )
         {
             var port = _portAllocator.AcquirePort();
@@ -62,15 +61,11 @@ namespace BeatTogether.DedicatedServer.Node
             instanceConfig.ServerName = ServerName;
             instanceConfig.CountdownConfig.BeatMapStartCountdownTime = Math.Max(BeatmapStartTime,0f);
             instanceConfig.CountdownConfig.ResultsScreenTime = Math.Max(resultScreenTime,0f);
-            instanceConfig.AllowLocalBeatmaps = instanceConfig.DiscoveryPolicy != DiscoveryPolicy.Public;
-            instanceConfig.AllowPerPlayerModifiers = AllowPerPlayerModifiers;
             instanceConfig.AllowChroma = AllowChroma;
             instanceConfig.AllowMappingExtensions = AllowME;
             instanceConfig.AllowNoodleExtensions = AllowNE;
-            if (AllowPerPlayerDifficulties)
-                instanceConfig.BeatmapDiffering = BeatmapDiffering.DifferentDifficulties;
-            if (AllowPerPlayerBeatmaps)
-                instanceConfig.BeatmapDiffering = BeatmapDiffering.DifferentBeatmaps;
+            instanceConfig.AllowPerPlayerDifficulties = AllowPerPlayerDifficulties;
+            instanceConfig.AllowPerPlayerModifiers = AllowPerPlayerModifiers;
             if (permanentManager)
                 instanceConfig.SetConstantManagerFromUserId = managerId;
             instanceConfig.CountdownConfig.CountdownTimePlayersReady = Math.Max(PlayersReadyCountdownTime,0f);
@@ -79,7 +74,7 @@ namespace BeatTogether.DedicatedServer.Node
             var instance = scope.ServiceProvider.GetRequiredService<IDedicatedInstance>();
             if (!_instanceRegistry.AddInstance(instance))
                 return null;
-            instance.StopEvent += () => _instanceRegistry.RemoveInstance(instance);
+            instance.StopEvent += (IDedicatedInstance Instance) => _instanceRegistry.RemoveInstance(Instance);
             return instance;
         }
     }

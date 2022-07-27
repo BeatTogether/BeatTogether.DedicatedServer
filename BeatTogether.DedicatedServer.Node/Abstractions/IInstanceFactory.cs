@@ -17,7 +17,6 @@ namespace BeatTogether.DedicatedServer.Node.Abstractions
             float PlayersReadyCountdownTime = 0f,
             bool AllowPerPlayerModifiers = false,
             bool AllowPerPlayerDifficulties = false,
-            bool AllowPerPlayerBeatmaps = false, //This option allows the above by default
             bool AllowChroma = true,
             bool AllowME = true,
             bool AllowNE = false
