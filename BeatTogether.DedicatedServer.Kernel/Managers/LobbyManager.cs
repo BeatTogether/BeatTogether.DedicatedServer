@@ -117,7 +117,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         _packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
-                                .Where(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned)
+                                .Where(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown)
                                 .Select(p => p.UserId).ToList()
                         }, DeliveryMethod.ReliableOrdered);
 
@@ -127,7 +127,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             Reason = CannotStartGameReason.DoNotOwnSong
                         }, DeliveryMethod.ReliableOrdered);
 
-                        // Try to get entitlement again
+                        // get entitlement from players
                         _packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
                         {
                             LevelId = SelectedBeatmap.LevelId
@@ -143,16 +143,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         }, DeliveryMethod.ReliableOrdered);
 
                         // Allow start map if at least one player is not spectating
-                        if (!AllPlayersSpectating)
-                            _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
-                            {
-                                Reason = CannotStartGameReason.None
-                            }, DeliveryMethod.ReliableOrdered);
-                        else// Cannot start map because all players are spectating
-                            _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
-                            {
-                                Reason = CannotStartGameReason.AllPlayersSpectating
-                            }, DeliveryMethod.ReliableOrdered);
+                        _packetDispatcher.SendToNearbyPlayers(new SetIsStartButtonEnabledPacket
+                        {
+                            Reason = AllPlayersSpectating ? CannotStartGameReason.AllPlayersSpectating : CannotStartGameReason.None
+                        }, DeliveryMethod.ReliableOrdered);
+
                     }
                 }
                 _AllOwnMap = allPlayersOwnBeatmap;

@@ -1,6 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
+using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System.Threading.Tasks;
 
@@ -29,6 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             lock (sender.EntitlementLock)
             {
                 sender.SetEntitlement(packet.LevelId, packet.Entitlement);
+                _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
             }
             return Task.CompletedTask;
         }
