@@ -73,6 +73,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public async void StartSong(CancellationToken cancellationToken)
         {
+            _requestReturnToMenuCts = new CancellationTokenSource();
             if (State != GameplayManagerState.None || CurrentBeatmap == null)
             {
                 _requestReturnToMenuCts!.Cancel();
@@ -85,83 +86,53 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
             SessionGameId = Guid.NewGuid().ToString();
 
+            State = GameplayManagerState.SceneLoad;
+
             CancellationTokenSource levelFinishedCts;
             CancellationTokenSource linkedLevelFinishedCts;
-            //IEnumerable<Task> levelFinishedTasks;
             CancellationTokenSource sceneReadyCts;
             CancellationTokenSource linkedSceneReadyCts;
-            //IEnumerable<Task> sceneReadyTasks;
             CancellationTokenSource songReadyCts;
             CancellationTokenSource linkedSongReadyCts;
-            //IEnumerable<Task> songReadyTasks;
 
-            lock (RequestReturnLock)
+            foreach (var player in _playerRegistry.Players)//Array of players that are playing at the start
             {
-                _requestReturnToMenuCts = new CancellationTokenSource();
-                State = GameplayManagerState.SceneLoad;
-
-                foreach (var player in _playerRegistry.Players)//Array of players that are playing at the start
-                {
-                    if (!player.IsSpectating)
-                    {
-                        PlayersAtStart.Add(player.UserId);
-                    }
-                }
-
-                // Create level finished tasks (players may send these at any time during gameplay)
-                levelFinishedCts = new();
-                linkedLevelFinishedCts = CancellationTokenSource.CreateLinkedTokenSource(levelFinishedCts.Token, _requestReturnToMenuCts.Token);
-                /*
-                levelFinishedTasks = PlayersAtStart.Select(p =>
-                {
-                    var task = _levelFinishedTcs.GetOrAdd(p, _ => new());
-                    linkedLevelFinishedCts.Token.Register(() => LeaveGameplay(p));
-                    return task.Task;
-                });
-                */
-                PlayersAtStart.ForEach(p =>
-                {
-                    var task = _levelFinishedTcs.GetOrAdd(p, _ => new());
-                    linkedLevelFinishedCts.Token.Register(() => LeaveGameplay(p));
-                });
-                // Create scene ready tasks
-                sceneReadyCts = new();
-                linkedSceneReadyCts = CancellationTokenSource.CreateLinkedTokenSource(sceneReadyCts.Token, _requestReturnToMenuCts.Token);
-                /*
-                sceneReadyTasks = PlayersAtStart.Select(p =>
-                {
-                    var task = _sceneReadyTcs.GetOrAdd(p, _ => new());
-                    linkedSceneReadyCts.Token.Register(() => LeaveGameplay(p));
-                    return task.Task;
-                });
-                */
-                PlayersAtStart.ForEach(p =>
-                {
-                    var task = _sceneReadyTcs.GetOrAdd(p, _ => new());
-                    linkedSceneReadyCts.Token.Register(() => LeaveGameplay(p));
-                });
-
-                // Create song ready tasks
-                songReadyCts = new();
-                linkedSongReadyCts = CancellationTokenSource.CreateLinkedTokenSource(songReadyCts.Token, _requestReturnToMenuCts.Token);
-                /*
-                songReadyTasks = PlayersAtStart.Select(p =>
-                {
-                    var task = _songReadyTcs.GetOrAdd(p, _ => new());
-                    linkedSongReadyCts.Token.Register(() => LeaveGameplay(p));
-                    return task.Task;
-                });
-                */
-                PlayersAtStart.ForEach(p =>
-                {
-                    var task = _songReadyTcs.GetOrAdd(p, _ => new());
-                    linkedSongReadyCts.Token.Register(() => LeaveGameplay(p));
-                });
+                if (!player.IsSpectating)
+                    PlayersAtStart.Add(player.UserId);
             }
+
+            // Create level finished tasks (players may send these at any time during gameplay)
+            levelFinishedCts = new();
+            linkedLevelFinishedCts = CancellationTokenSource.CreateLinkedTokenSource(levelFinishedCts.Token, _requestReturnToMenuCts.Token);
+            PlayersAtStart.ForEach(p =>
+            {
+                var task = _levelFinishedTcs.GetOrAdd(p, _ => new());
+                linkedLevelFinishedCts.Token.Register(() => { if (!task.Task.IsCompleted) PlayerFinishLevel(p); });
+            });
+
+            // Create scene ready tasks
+            sceneReadyCts = new();
+            linkedSceneReadyCts = CancellationTokenSource.CreateLinkedTokenSource(sceneReadyCts.Token, _requestReturnToMenuCts.Token);
+            PlayersAtStart.ForEach(p =>
+            {
+                var task = _sceneReadyTcs.GetOrAdd(p, _ => new());
+                linkedSceneReadyCts.Token.Register(() => { if (!task.Task.IsCompleted) LeaveGameplay(p); });
+            });
+
+            // Create song ready tasks
+            songReadyCts = new();
+            linkedSongReadyCts = CancellationTokenSource.CreateLinkedTokenSource(songReadyCts.Token, _requestReturnToMenuCts.Token);
+            PlayersAtStart.ForEach(p =>
+            {
+                var task = _songReadyTcs.GetOrAdd(p, _ => new());
+                linkedSongReadyCts.Token.Register(() => { if (!task.Task.IsCompleted) LeaveGameplay(p); });
+            });
+
             // Wait for scene ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
             sceneReadyCts.CancelAfter((int)((SceneLoadTimeLimit + (PlayersAtStart.Count * 0.2f)) * 1000));
-            await Task.WhenAll(/*sceneReadyTasks*/_sceneReadyTcs.Values.Select(p => p.Task));
+            await Task.WhenAll(_sceneReadyTcs.Values.Select(p => p.Task));
+
             //if (sceneReadyCts.IsCancellationRequested)
             //    SignalRequestReturnToMenu();
 
@@ -178,11 +149,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             State = GameplayManagerState.SongLoad;
             _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
 
-
             //Wait for players to have the song ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
             songReadyCts.CancelAfter((int)((SongLoadTimeLimit + (PlayersAtStart.Count*0.2f)) * 1000));
-            await Task.WhenAll(/*songReadyTasks*/ _songReadyTcs.Values.Select(p => p.Task));
+            await Task.WhenAll(_songReadyTcs.Values.Select(p => p.Task));
+
             //if (songReadyCts.IsCancellationRequested)
             //    SignalRequestReturnToMenu();
 
@@ -199,17 +170,18 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
 
             // Start song and wait for finish
-            _songStartTime = _instance.RunTime + SongStartDelay + (StartDelay * 2f);
             State = GameplayManagerState.Gameplay;
             _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
+            _songStartTime = _instance.RunTime + SongStartDelay + (StartDelay * 2f);
+
             _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
+
             _instance.BeatmapChanged(CurrentBeatmap, CurrentModifiers, true, DateTime.Now.AddSeconds(_songStartTime - _instance.RunTime));
-            //_levelFinishedTcs.Values.Select(p => p.Task);
-            //levelFinishedTasks
             await Task.WhenAll(_levelFinishedTcs.Values.Select(p => p.Task));
+
             State = GameplayManagerState.Results;
             _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
             // Wait at results screen if anyone cleared or skip if the countdown is set to 0.
