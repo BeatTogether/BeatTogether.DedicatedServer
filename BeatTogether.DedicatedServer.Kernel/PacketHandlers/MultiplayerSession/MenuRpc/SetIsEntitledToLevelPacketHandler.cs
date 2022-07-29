@@ -30,7 +30,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             lock (sender.EntitlementLock)
             {
                 sender.SetEntitlement(packet.LevelId, packet.Entitlement);
-                _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
             }
             return Task.CompletedTask;
         }
