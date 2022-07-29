@@ -247,7 +247,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 // If manager/all players are no longer ready or not all players own beatmap
                 if (NotStartable || !_AllOwnMap || AllPlayersSpectating)
                     CancelCountdown();
-                else if (CountDownState == CountdownState.CountingDown && (AllPlayersReady || (CountdownEndTime - _instance.RunTime) > _configuration.CountdownConfig.BeatMapStartCountdownTime))
+                else if (CountDownState == CountdownState.CountingDown && (AllPlayersReady || (CountdownEndTime - _instance.RunTime) < _configuration.CountdownConfig.BeatMapStartCountdownTime))
                     SetCountdown(CountdownState.StartBeatmapCountdown);
             }
         }
