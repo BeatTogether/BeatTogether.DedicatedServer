@@ -1,8 +1,10 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -11,17 +13,20 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 	{
 		private readonly IPacketDispatcher _packetDispatcher;
 		private readonly ILobbyManager _lobbyManager;
+		private readonly IPlayerRegistry _playerRegistry;
 		private readonly ILogger _logger = Log.ForContext<SetRecommendedBeatmapPacket>();
 
 		public SetRecommendedBeatmapPacketHandler(
-			IPacketDispatcher packetDispatcher,
-			ILobbyManager lobbyManager)
-		{
-			_packetDispatcher = packetDispatcher;
-			_lobbyManager = lobbyManager;
-		}
+            IPacketDispatcher packetDispatcher,
+            ILobbyManager lobbyManager,
+            IPlayerRegistry playerRegistry)
+        {
+            _packetDispatcher = packetDispatcher;
+            _lobbyManager = lobbyManager;
+            _playerRegistry = playerRegistry;
+        }
 
-		public override Task Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)
+        public override Task Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)
 		{
 			_logger.Debug(
 				$"Handling packet of type '{nameof(SetRecommendedBeatmapPacket)}' " +
@@ -35,6 +40,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 					sender.BeatmapIdentifier = packet.BeatmapIdentifier;
 					if (sender.BeatmapIdentifier.LevelId != sender.MapHash)
 						sender.ResetRecommendedMapRequirements();
+					_packetDispatcher.SendToNearbyPlayers(new SetPlayersMissingEntitlementsToLevelPacket
+					{
+						PlayersWithoutEntitlements = _playerRegistry.Players
+						.Where(p => p.GetEntitlement(sender.BeatmapIdentifier!.LevelId) is EntitlementStatus.NotOwned)
+						.Select(p => p.UserId).ToList()
+					}, DeliveryMethod.ReliableOrdered);
 					_packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
 					{
 						LevelId = packet.BeatmapIdentifier.LevelId
