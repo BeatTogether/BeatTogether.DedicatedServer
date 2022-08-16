@@ -60,7 +60,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         object EntitlementLock { get; set; }
         EntitlementStatus GetEntitlement(string levelId);
         void SetEntitlement(string levelId, EntitlementStatus entitlement);
-
+        bool UpdateEntitlement { get; set; }
         public string MapHash { get; set; }
         public bool Chroma { get; set; }
         public bool NoodleExtensions { get; set; }
