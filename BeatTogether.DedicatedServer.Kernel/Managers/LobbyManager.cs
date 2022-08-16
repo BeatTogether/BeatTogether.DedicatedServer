@@ -102,13 +102,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             
             UpdateBeatmap(GetSelectedBeatmap(), GetSelectedModifiers());
 
-            if (_lastManagerId != _configuration.ManagerId && _playerRegistry.TryGetPlayer(_lastManagerId, out var OldManager))
-            {
+            if (_lastManagerId != null && _lastManagerId != _configuration.ManagerId && _playerRegistry.TryGetPlayer(_lastManagerId, out var OldManager))
                 _packetDispatcher.SendToPlayer(OldManager, new SetIsStartButtonEnabledPacket
                 {
                     Reason = CannotStartGameReason.None
                 }, DeliveryMethod.ReliableOrdered);
-            }
 
             foreach (IPlayer player in _playerRegistry.Players)
             {
@@ -180,9 +178,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         break;
                 }
             }
-            if(_lastBeatmap != SelectedBeatmap)
+            else
             {
-                if(_configuration.SongSelectionMode == SongSelectionMode.ManagerPicks)
+                if(_configuration.SongSelectionMode == SongSelectionMode.ManagerPicks && _lastBeatmap != SelectedBeatmap)
                     _packetDispatcher.SendToPlayer(manager!, new SetIsStartButtonEnabledPacket
                     {
                         Reason = CannotStartGameReason.NoSongSelected
@@ -251,14 +249,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
             if (SelectedBeatmap != beatmap)
-            {
-                if (beatmap != null)
-                    SelectedBeatmap = beatmap;
-                else
-                {
-                    SelectedBeatmap = null;
-                }
-            }
+                SelectedBeatmap = beatmap;
             if (SelectedModifiers != modifiers)
                 SelectedModifiers = modifiers;
         }
@@ -433,7 +424,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         Characteristic = "Standard",
                         Difficulty = BeatmapDifficulty.ExpertPlus,
-                        LevelId = "_custom103d39b43966277c5e4167ab086f404e0943891f"
+                        LevelId = "custom_level_103d39b43966277c5e4167ab086f404e0943891f"
                     };
                 case SongSelectionMode.ServerPicks:
                     return SelectedBeatmap!;
