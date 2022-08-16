@@ -84,7 +84,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void SetEntitlement(string levelId, EntitlementStatus entitlement)
             => _entitlements[levelId] = entitlement;
 
-
+        public bool UpdateEntitlement { get; set; } = false;
 
         public string MapHash { get; set; } = string.Empty;
         public bool Chroma { get; set; } = false;
