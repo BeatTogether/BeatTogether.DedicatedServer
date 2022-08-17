@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
@@ -18,10 +19,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         event Action<string, Enums.CountdownState, MultiplayerGameState, Enums.GameplayManagerState> StateChangedEvent;
         event Action<IDedicatedInstance> UpdateInstanceEvent;
         event Action<string, BeatmapIdentifier?, GameplayModifiers, bool, DateTime> UpdateBeatmapEvent;
+        event Action<string, BeatmapIdentifier, List<(string, BeatmapDifficulty, LevelCompletionResults)>> LevelFinishedEvent; 
 
         void PlayerUpdated(IPlayer player);
         void InstanceStateChanged(CountdownState countdown, GameplayManagerState gameplay);
         void BeatmapChanged(BeatmapIdentifier? map, GameplayModifiers modifiers, bool IsGameplay, DateTime CountdownEnd);
+        void LevelFinished(BeatmapIdentifier beatmap, List<(string, BeatmapDifficulty, LevelCompletionResults)> Results);
         void InstanceChanged();
         InstanceConfiguration _configuration { get; }
         bool IsRunning { get; }

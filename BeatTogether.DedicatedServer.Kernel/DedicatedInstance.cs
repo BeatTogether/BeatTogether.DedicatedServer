@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -45,6 +46,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public event Action<string, Enums.CountdownState, MultiplayerGameState, Enums.GameplayManagerState> StateChangedEvent = null!;
         public event Action<IDedicatedInstance> UpdateInstanceEvent = null!;
         public event Action<string, BeatmapIdentifier?, GameplayModifiers, bool, DateTime> UpdateBeatmapEvent = null!;
+        public event Action<string, BeatmapIdentifier, List<(string, BeatmapDifficulty, LevelCompletionResults)>> LevelFinishedEvent = null!;
+
 
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
@@ -95,6 +98,10 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void InstanceChanged()
         {
             UpdateInstanceEvent?.Invoke(this);
+        }
+        public void LevelFinished(BeatmapIdentifier beatmap, List<(string, BeatmapDifficulty, LevelCompletionResults)> Results)
+        {
+            LevelFinishedEvent?.Invoke(_configuration.Secret, beatmap, Results);
         }
         public IPlayerRegistry GetPlayerRegistry()
         {

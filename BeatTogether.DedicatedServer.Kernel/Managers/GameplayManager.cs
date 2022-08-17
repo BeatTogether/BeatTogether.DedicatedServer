@@ -184,6 +184,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             State = GameplayManagerState.Results;
             _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
+            List<(string, BeatmapDifficulty, LevelCompletionResults)> PlayerResults = new();
+            foreach (string p in PlayersAtStart)
+            {
+                IPlayer player = _playerRegistry.GetPlayer(p);
+                BeatmapDifficulty diff = CurrentBeatmap.Difficulty;
+                if (_instance._configuration.AllowPerPlayerDifficulties && player.PreferredDifficulty != null)
+                    diff = (BeatmapDifficulty)player.PreferredDifficulty;
+                PlayerResults.Add((player.UserId, diff, _levelCompletionResults[p]));
+            }
+            _instance.LevelFinished(CurrentBeatmap, PlayerResults);
             // Wait at results screen if anyone cleared or skip if the countdown is set to 0.
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared) && _instance._configuration.CountdownConfig.ResultsScreenTime > 0)
                 await Task.Delay((int)(_instance._configuration.CountdownConfig.ResultsScreenTime * 1000), cancellationToken);
