@@ -14,6 +14,7 @@ using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Node
 {
@@ -76,6 +77,7 @@ namespace BeatTogether.DedicatedServer.Node
             matchmakingServer.StateChangedEvent += HandleStateChangedEvent;
             matchmakingServer.UpdateBeatmapEvent += HandleBeatmapChangedEvent;
             matchmakingServer.UpdateInstanceEvent += HandleConfigChangeEvent;
+            matchmakingServer.LevelFinishedEvent += HandleLevelFinishedEvent;
 
             await matchmakingServer.Start();
             return new CreateMatchmakingServerResponse(
@@ -88,6 +90,16 @@ namespace BeatTogether.DedicatedServer.Node
 
 
         #region EventHandlers
+        private void HandleLevelFinishedEvent(string secret, BeatmapIdentifier beatmap, List<(string, BeatmapDifficulty, LevelCompletionResults)> Results)
+        {
+            Interface.Models.BeatmapIdentifier beatmapIdentifier = new(beatmap.LevelId, beatmap.Characteristic, (Interface.Models.BeatmapDifficulty)beatmap.Difficulty);
+            List<(string, Interface.Models.BeatmapDifficulty, Interface.Models.LevelCompletionResults)> FinalResults = new();
+            foreach (var item in Results)
+            {
+                FinalResults.Add((item.Item1, (Interface.Models.BeatmapDifficulty)item.Item2, LevelCompletionCast(item.Item3)));
+            }
+            _autobus.Publish(new LevelCompletionResultsEvent(secret, beatmapIdentifier, FinalResults));
+        }
         private void HandleStateChangedEvent(string secret, CountdownState countdownState, MultiplayerGameState gameState, GameplayManagerState GameplayState)
         {
             _autobus.Publish(new UpdateStatusEvent(secret, (Interface.Enums.CountdownState)countdownState, (Interface.Enums.MultiplayerGameState)gameState, (Interface.Enums.GameplayState)GameplayState));
@@ -99,6 +111,10 @@ namespace BeatTogether.DedicatedServer.Node
         public Interface.Models.GameplayModifiers GameplayCast(GameplayModifiers v)
         {
             return new Interface.Models.GameplayModifiers((Interface.Models.EnergyType)v.Energy, v.NoFailOn0Energy, v.DemoNoFail, v.InstaFail, v.FailOnSaberClash, (Interface.Models.EnabledObstacleType)v.EnabledObstacle, v.DemoNoObstacles, v.FastNotes, v.StrictAngles, v.DisappearingArrows, v.GhostNotes, v.NoBombs, (Interface.Models.SongSpeed)v.Speed, v.NoArrows, v.ProMode, v.ZenMode, v.SmallCubes);
+        }
+        public Interface.Models.LevelCompletionResults LevelCompletionCast(LevelCompletionResults y)
+        {
+            return new(GameplayCast(y.GameplayModifiers), y.ModifiedScore, y.MultipliedScore, (Interface.Models.Rank)y.Rank, y.FullCombo, y.LeftSaberMovementDistance, y.RightSaberMovementDistance, y.LeftHandMovementDistance, y.RightHandMovementDistance, (Interface.Models.LevelEndStateType)y.LevelEndStateType, (Interface.Models.LevelEndAction)y.LevelEndAction, y.Energy, y.GoodCutsCount, y.BadCutsCount, y.MissedCount, y.NotGoodCount, y.OkCount, y.MaxCutScore, y.TotalCutScore, y.GoodCutsCountForNotesWithFullScoreScoringType, y.AverageCenterDistanceCutScoreForNotesWithFullScoreScoringType, y.AverageCutScoreForNotesWithFullScoreScoringType, y.MaxCombo, y.EndSongTime);
         }
         public Interface.Models.AvatarData AvatarCast(AvatarData v)
         {

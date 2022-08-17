@@ -1,5 +1,4 @@
-﻿using System;
-
+﻿
 namespace BeatTogether.DedicatedServer.Interface.Models
 {
     public record GameplayModifiers(
