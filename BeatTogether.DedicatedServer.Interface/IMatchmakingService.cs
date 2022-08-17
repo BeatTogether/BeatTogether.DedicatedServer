@@ -25,7 +25,8 @@ namespace BeatTogether.DedicatedServer.Interface
                     .AddEvent<PlayerJoinEvent>()
                     .AddEvent<SelectedBeatmapEvent>()
                     .AddEvent<UpdateServerEvent>()
-                    .AddEvent<UpdateStatusEvent>();                
+                    .AddEvent<LevelCompletionResultsEvent>()
+                    .AddEvent<UpdateStatusEvent>();
         }
     }
 }
