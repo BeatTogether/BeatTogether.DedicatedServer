@@ -375,19 +375,23 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         public void CancelCountdown()
         {
-            SetCountdown(CountdownState.NotCountingDown);
             switch (CountDownState)
             {
                 case CountdownState.CountingDown or CountdownState.NotCountingDown:
                     _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
                     break;
                 case CountdownState.StartBeatmapCountdown or CountdownState.WaitingForEntitlement:
+                    foreach (IPlayer player in _playerRegistry.Players) //This stays because players dont send they are un-ready after the level is canceled causing bad client behaviour
+                    {
+                        player.IsReady = false;
+                    }
                     _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                     break;
                 default:
                     _logger.Warning("Canceling countdown when there is no countdown to cancel");
                     break;
             }
+            SetCountdown(CountdownState.NotCountingDown);
         }
 
         public BeatmapIdentifier? GetSelectedBeatmap()
