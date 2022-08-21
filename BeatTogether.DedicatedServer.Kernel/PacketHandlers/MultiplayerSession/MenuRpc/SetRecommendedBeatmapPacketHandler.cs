@@ -11,17 +11,20 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 	{
 		private readonly IPacketDispatcher _packetDispatcher;
 		private readonly ILobbyManager _lobbyManager;
+		private readonly IPlayerRegistry _playerRegistry;
 		private readonly ILogger _logger = Log.ForContext<SetRecommendedBeatmapPacket>();
 
 		public SetRecommendedBeatmapPacketHandler(
-			IPacketDispatcher packetDispatcher,
-			ILobbyManager lobbyManager)
-		{
-			_packetDispatcher = packetDispatcher;
-			_lobbyManager = lobbyManager;
-		}
+            IPacketDispatcher packetDispatcher,
+            ILobbyManager lobbyManager,
+            IPlayerRegistry playerRegistry)
+        {
+            _packetDispatcher = packetDispatcher;
+            _lobbyManager = lobbyManager;
+            _playerRegistry = playerRegistry;
+        }
 
-		public override Task Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)
+        public override Task Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)
 		{
 			_logger.Debug(
 				$"Handling packet of type '{nameof(SetRecommendedBeatmapPacket)}' " +
@@ -39,6 +42,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 					{
 						LevelId = packet.BeatmapIdentifier.LevelId
 					}, DeliveryMethod.ReliableOrdered);
+					sender.UpdateEntitlement = true;
 				}
 			}
 			return Task.CompletedTask;

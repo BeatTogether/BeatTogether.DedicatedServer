@@ -10,14 +10,17 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
     {
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly ILobbyManager _lobbyManager;
+        private readonly IPlayerRegistry _playerRegistry;
         private readonly ILogger _logger = Log.ForContext<SetIsEntitledToLevelPacketHandler>();
 
         public SetIsEntitledToLevelPacketHandler(
             IPacketDispatcher packetDispatcher,
-            ILobbyManager lobbyManager)
+            ILobbyManager lobbyManager,
+            IPlayerRegistry playerRegistry)
         {
             _packetDispatcher = packetDispatcher;
             _lobbyManager = lobbyManager;
+            _playerRegistry = playerRegistry;
         }
 
         public override Task Handle(IPlayer sender, SetIsEntitledToLevelPacket packet)
@@ -29,6 +32,11 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             lock (sender.EntitlementLock)
             {
                 sender.SetEntitlement(packet.LevelId, packet.Entitlement);
+                foreach (IPlayer player in _playerRegistry.Players)
+                {
+                    if(player.BeatmapIdentifier != null && player.BeatmapIdentifier.LevelId == packet.LevelId)
+                        player.UpdateEntitlement = true;
+                }
             }
             return Task.CompletedTask;
         }

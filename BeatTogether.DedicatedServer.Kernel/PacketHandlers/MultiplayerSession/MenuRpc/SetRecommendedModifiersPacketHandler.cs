@@ -2,6 +2,7 @@
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using Serilog;
+using System;
 using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -29,9 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
       lock (sender.ModifiersLock)
             {
 				if (sender.CanRecommendModifiers)
-				{
 					sender.Modifiers = packet.Modifiers;
-				}
 			}
 			return Task.CompletedTask;
 		}

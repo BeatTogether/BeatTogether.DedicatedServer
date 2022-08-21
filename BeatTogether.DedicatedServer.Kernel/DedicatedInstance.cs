@@ -1,5 +1,6 @@
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -32,16 +34,20 @@ namespace BeatTogether.DedicatedServer.Kernel
         public InstanceConfiguration _configuration { get; private set; }
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
-        //public int Port => Endpoint.Port;
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
 
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
 
-        public event Action StartEvent = null!;
-        public event Action StopEvent = null!;
+        public event Action<IDedicatedInstance> StartEvent = null!;
+        public event Action<IDedicatedInstance> StopEvent = null!;
         public event Action<IPlayer> PlayerConnectedEvent = null!;
         public event Action<IPlayer, int> PlayerDisconnectedEvent = null!;
         public event Action<string, int> PlayerCountChangeEvent = null!;
+        public event Action<string, Enums.CountdownState, MultiplayerGameState, Enums.GameplayManagerState> StateChangedEvent = null!;
+        public event Action<IDedicatedInstance> UpdateInstanceEvent = null!;
+        public event Action<string, BeatmapIdentifier?, GameplayModifiers, bool, DateTime> UpdateBeatmapEvent = null!;
+        public event Action<string, BeatmapIdentifier, List<(string, BeatmapDifficulty, LevelCompletionResults)>> LevelFinishedEvent = null!;
+
 
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
@@ -77,7 +83,26 @@ namespace BeatTogether.DedicatedServer.Kernel
         }
 
         #region Public Methods
-
+        public void PlayerUpdated(IPlayer player)
+        {
+            PlayerConnectedEvent?.Invoke(player);
+        }
+        public void InstanceStateChanged(CountdownState countdown, GameplayManagerState gameplay)
+        {
+            StateChangedEvent?.Invoke(_configuration.Secret, countdown, State, gameplay);
+        }
+        public void BeatmapChanged(BeatmapIdentifier? map, GameplayModifiers modifiers, bool IsGameplay, DateTime CountdownEnd)
+        {
+            UpdateBeatmapEvent?.Invoke(_configuration.Secret, map, modifiers, IsGameplay, CountdownEnd);
+        }
+        public void InstanceChanged()
+        {
+            UpdateInstanceEvent?.Invoke(this);
+        }
+        public void LevelFinished(BeatmapIdentifier beatmap, List<(string, BeatmapDifficulty, LevelCompletionResults)> Results)
+        {
+            LevelFinishedEvent?.Invoke(_configuration.Secret, beatmap, Results);
+        }
         public IPlayerRegistry GetPlayerRegistry()
         {
             return _playerRegistry;
@@ -129,7 +154,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }, cancellationToken);
             }
 
-            StartEvent?.Invoke();
+            StartEvent?.Invoke(this);
 
             base.Start();
             return Task.CompletedTask;
@@ -159,7 +184,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
 
             _stopServerCts!.Cancel();
-            StopEvent?.Invoke();
+            StopEvent?.Invoke(this);
 
             base.Stop();
             return Task.CompletedTask;
@@ -272,7 +297,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                     this,
                     connectionId,
                     _configuration.Secret,
-                    //connectionRequestData.Secret,
                     connectionRequestData.UserId,
                     connectionRequestData.UserName
                 )
@@ -391,7 +415,10 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 // Update permissions
                 if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.Players.Count == 1) && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
+                {
                     _configuration.ManagerId = player.UserId;
+                    InstanceChanged();
+                }
 
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
                 {
@@ -513,6 +540,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                                 }).ToList()
                             }
                         }, DeliveryMethod.ReliableOrdered);
+                        InstanceChanged();
                     }
                 }
             }

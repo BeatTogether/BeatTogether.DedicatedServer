@@ -21,7 +21,12 @@ namespace BeatTogether.DedicatedServer.Interface
                     .AddEvent<NodeOnlineEvent>()
                     .AddEvent<NodeReceivedPlayerEncryptionEvent>()
                     .AddEvent<MatchmakingServerStoppedEvent>()
-                    .AddEvent<UpdateInstanceConfigEvent>();
+                    .AddEvent<UpdateInstanceConfigEvent>()
+                    .AddEvent<PlayerJoinEvent>()
+                    .AddEvent<SelectedBeatmapEvent>()
+                    .AddEvent<UpdateServerEvent>()
+                    .AddEvent<LevelCompletionResultsEvent>()
+                    .AddEvent<UpdateStatusEvent>();
         }
     }
 }
