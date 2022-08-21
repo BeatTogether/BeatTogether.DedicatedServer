@@ -130,11 +130,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Wait for scene ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
-            sceneReadyCts.CancelAfter((int)((SceneLoadTimeLimit + (PlayersAtStart.Count * 0.2f)) * 1000));
+            sceneReadyCts.CancelAfter((int)((SceneLoadTimeLimit + (PlayersAtStart.Count * 0.3f)) * 1000));
             await Task.WhenAll(_sceneReadyTcs.Values.Select(p => p.Task));
-
-            //if (sceneReadyCts.IsCancellationRequested)
-            //    SignalRequestReturnToMenu();
 
             _packetDispatcher.SendToNearbyPlayers(new SetGameplaySceneSyncFinishedPacket
             {
@@ -151,11 +148,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             //Wait for players to have the song ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
-            songReadyCts.CancelAfter((int)((SongLoadTimeLimit + (PlayersAtStart.Count*0.2f)) * 1000));
+            songReadyCts.CancelAfter((int)((SongLoadTimeLimit + (PlayersAtStart.Count*0.3f)) * 1000));
             await Task.WhenAll(_songReadyTcs.Values.Select(p => p.Task));
-
-            //if (songReadyCts.IsCancellationRequested)
-            //    SignalRequestReturnToMenu();
 
             float StartDelay = 0;
             foreach (var UserId in PlayersAtStart)
@@ -166,7 +160,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         HandlePlayerLeaveGameplay(p);
                     StartDelay = Math.Max(StartDelay, p.Latency.CurrentAverage);
                 }
-
             }
 
             // Start song and wait for finish
