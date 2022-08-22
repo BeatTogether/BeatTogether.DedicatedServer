@@ -67,7 +67,7 @@ namespace BeatTogether.DedicatedServer.Node
                 request.AllowNE 
                 );
             if (matchmakingServer is null)
-                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.InvalidSecret, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
+                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.NoAvailableSlots, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
 
             matchmakingServer.PlayerConnectedEvent += HandleUpdatePlayerEvent;
             matchmakingServer.PlayerDisconnectedEvent += HandlePlayerDisconnectEvent;

@@ -74,8 +74,14 @@ namespace BeatTogether.DedicatedServer.Node
             var instance = scope.ServiceProvider.GetRequiredService<IDedicatedInstance>();
             if (!_instanceRegistry.AddInstance(instance))
                 return null;
-            instance.StopEvent += (IDedicatedInstance Instance) => _instanceRegistry.RemoveInstance(Instance);
+            instance.StopEvent += HandleStopEvent;
             return instance;
+        }
+
+        private void HandleStopEvent(IDedicatedInstance Instance)
+        {
+            _portAllocator.ReleasePort(Instance.Port);
+            _instanceRegistry.RemoveInstance(Instance);
         }
     }
 }
