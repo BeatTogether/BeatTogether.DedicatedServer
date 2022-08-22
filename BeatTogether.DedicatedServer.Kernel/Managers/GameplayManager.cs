@@ -163,9 +163,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
 
             // Start song and wait for finish
+            _songStartTime = _instance.RunTime + SongStartDelay + (StartDelay * 2f);
+
             State = GameplayManagerState.Gameplay;
             _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
-            _songStartTime = _instance.RunTime + SongStartDelay + (StartDelay * 2f);
 
             _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
