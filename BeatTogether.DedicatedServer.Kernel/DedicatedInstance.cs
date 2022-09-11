@@ -335,7 +335,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             lock (ConnectionLock)
             {
-                _logger.Information($"Endpoint connected (RemoteEndPoint='{endPoint}'), connecting player");
+                _logger.Information($"Endpoint connected (RemoteEndPoint='{endPoint}')");
 
                 if (!_playerRegistry.TryGetPlayer(endPoint, out var player))
                 {

@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BeatSaverSharper" Version="3.4.4" />
     <PackageReference Include="BeatTogether.Core.Security" Version="1.1.0" />
     <PackageReference Include="BeatTogether.Extensions.Serilog" Version="2.0.0" />
     <PackageReference Include="System.Collections" Version="4.3.0" />

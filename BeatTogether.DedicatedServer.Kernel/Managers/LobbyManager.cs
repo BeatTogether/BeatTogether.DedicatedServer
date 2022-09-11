@@ -52,6 +52,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private readonly IGameplayManager _gameplayManager;
         private readonly ILogger _logger = Log.ForContext<LobbyManager>();
 
+        //TODO check if the lobby owner not having a beatmap downloaded still does not let them start the game on pc
+
         public LobbyManager(
             InstanceConfiguration configuration,
             IDedicatedInstance instance,
@@ -254,7 +256,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 SelectedModifiers = modifiers;
         }
 
-        private List<BeatmapDifficulty> GetSelectedBeatmapDifficulties()
+        public List<BeatmapDifficulty> GetSelectedBeatmapDifficulties()
         {
             if (!SelectedBeatmap!.LevelId.StartsWith("custom_level_"))
             {
@@ -386,6 +388,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         player.IsReady = false;
                     }
                     _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+                    _packetDispatcher.SendToNearbyPlayers(new SetIsReadyPacket() { IsReady = false }, DeliveryMethod.ReliableOrdered);
                     break;
                 default:
                     _logger.Warning("Canceling countdown when there is no countdown to cancel");
