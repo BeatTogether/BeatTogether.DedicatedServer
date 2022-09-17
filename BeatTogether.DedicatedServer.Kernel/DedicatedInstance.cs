@@ -489,6 +489,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     PlayerDisconnectedEvent?.Invoke(player, _playerRegistry.Players.Count);
                 }
 
+
                 if (_playerRegistry.Players.Count == 0)
                 {
                     NoPlayersTime = RunTime;
@@ -497,7 +498,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         _waitForPlayerCts = new CancellationTokenSource();
                         _ = Task.Delay((int)(_configuration.DestroyInstanceTimeout * 1000), _waitForPlayerCts.Token).ContinueWith(t =>
                         {
-                            if (!t.IsCanceled)
+                            if (!t.IsCanceled && _playerRegistry.Players.Count == 0)
                             {
                                 _logger.Information("No players joined within the closing timeout, stopping lobby now");
                                 _ = Stop(CancellationToken.None);
