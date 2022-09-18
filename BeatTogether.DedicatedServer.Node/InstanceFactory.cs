@@ -80,8 +80,8 @@ namespace BeatTogether.DedicatedServer.Node
 
         private void HandleStopEvent(IDedicatedInstance Instance)
         {
-            _portAllocator.ReleasePort(Instance.Port);
             _instanceRegistry.RemoveInstance(Instance);
+            _portAllocator.ReleasePort(Instance.Port);
         }
     }
 }
