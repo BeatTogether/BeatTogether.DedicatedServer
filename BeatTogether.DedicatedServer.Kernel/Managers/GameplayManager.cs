@@ -181,16 +181,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             List<(string, BeatmapDifficulty, LevelCompletionResults)> PlayerResults = new();
             foreach (string p in PlayersAtStart)
             {
-                if(_playerRegistry.TryGetPlayer(p, out var player))
+                if(_levelCompletionResults.TryGetValue(p, out var results))
                 {
-                    BeatmapDifficulty diff = CurrentBeatmap.Difficulty;
-                    if (_instance._configuration.AllowPerPlayerDifficulties && player.PreferredDifficulty != null)
-                        diff = (BeatmapDifficulty)player.PreferredDifficulty;
-                    PlayerResults.Add((player.UserId, diff, _levelCompletionResults[p]));
-                }
-                else
-                {
-                    PlayerResults.Add((p, CurrentBeatmap.Difficulty, _levelCompletionResults[p]));
+                    if (_playerRegistry.TryGetPlayer(p, out var player))
+                    {
+                        BeatmapDifficulty diff = CurrentBeatmap.Difficulty;
+                        if (_instance._configuration.AllowPerPlayerDifficulties && player.PreferredDifficulty != null)
+                            diff = (BeatmapDifficulty)player.PreferredDifficulty;
+                        PlayerResults.Add((player.UserId, diff, results));
+                    }
+                    else
+                    {
+                        PlayerResults.Add((p, CurrentBeatmap.Difficulty, results));
+                    }
                 }
             }
             _instance.LevelFinished(CurrentBeatmap, PlayerResults);
