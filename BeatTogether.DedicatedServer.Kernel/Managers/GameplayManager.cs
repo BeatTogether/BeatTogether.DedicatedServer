@@ -181,11 +181,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             List<(string, BeatmapDifficulty, LevelCompletionResults)> PlayerResults = new();
             foreach (string p in PlayersAtStart)
             {
-                IPlayer player = _playerRegistry.GetPlayer(p);
-                BeatmapDifficulty diff = CurrentBeatmap.Difficulty;
-                if (_instance._configuration.AllowPerPlayerDifficulties && player.PreferredDifficulty != null)
-                    diff = (BeatmapDifficulty)player.PreferredDifficulty;
-                PlayerResults.Add((player.UserId, diff, _levelCompletionResults[p]));
+                if(_playerRegistry.TryGetPlayer(p, out var player))
+                {
+                    BeatmapDifficulty diff = CurrentBeatmap.Difficulty;
+                    if (_instance._configuration.AllowPerPlayerDifficulties && player.PreferredDifficulty != null)
+                        diff = (BeatmapDifficulty)player.PreferredDifficulty;
+                    PlayerResults.Add((player.UserId, diff, _levelCompletionResults[p]));
+                }
+                else
+                {
+                    PlayerResults.Add((p, CurrentBeatmap.Difficulty, _levelCompletionResults[p]));
+                }
             }
             _instance.LevelFinished(CurrentBeatmap, PlayerResults);
             // Wait at results screen if anyone cleared or skip if the countdown is set to 0.
