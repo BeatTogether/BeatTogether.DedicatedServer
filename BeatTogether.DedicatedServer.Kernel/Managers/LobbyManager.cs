@@ -12,6 +12,7 @@ using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
+using Org.BouncyCastle.Utilities.Collections;
 using Serilog;
 
 /*Lobby manager code
@@ -44,6 +45,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private string _lastManagerId = null!;
         private readonly CancellationTokenSource _stopCts = new();
         private const int LoopTime = 100;
+        public GameplayModifiers EmptyModifiers { get; } = new();
 
         private readonly InstanceConfiguration _configuration;
         private readonly IDedicatedInstance _instance;
@@ -205,7 +207,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 if (CountdownEndTime != 0 && CountdownEndTime <= _instance.RunTime)
                     CancelCountdown();
                 if ((AllPlayersReady && !AllPlayersSpectating && _AllOwnMap))
-                    SetCountdown(CountdownState.StartBeatmapCountdown);
+                    SetCountdown(CountdownState.StartBeatmapCountdown, _configuration.CountdownConfig.BeatMapStartCountdownTime);
                 else if (isReady && _AllOwnMap)
                     SetCountdown(CountdownState.CountingDown, _configuration.CountdownConfig.CountdownTimePlayersReady);
             }
@@ -235,7 +237,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         {
                             _packetDispatcher.SendToPlayer(p, new KickPlayerPacket()
                             {
-                                DisconnectedReason = DisconnectedReason.ClientConnectionClosed
+                                DisconnectedReason = DisconnectedReason.Kicked,
                             }, DeliveryMethod.ReliableOrdered);
                         }
                     }
@@ -244,16 +246,34 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 if (NotStartable || !_AllOwnMap || AllPlayersSpectating)
                     CancelCountdown();
                 else if (CountDownState == CountdownState.CountingDown && (AllPlayersReady || (CountdownEndTime - _instance.RunTime) < _configuration.CountdownConfig.BeatMapStartCountdownTime))
-                    SetCountdown(CountdownState.StartBeatmapCountdown);
+                    SetCountdown(CountdownState.StartBeatmapCountdown, _configuration.CountdownConfig.BeatMapStartCountdownTime);
             }
         }
 
         public void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
             if (SelectedBeatmap != beatmap)
+            {
                 SelectedBeatmap = beatmap;
+                if (SelectedBeatmap != null)
+                    _packetDispatcher.SendToNearbyPlayers(new SetSelectedBeatmap()
+                    {
+                        Beatmap = SelectedBeatmap
+                    }, DeliveryMethod.ReliableOrdered);
+                else
+                    _packetDispatcher.SendToNearbyPlayers(new ClearSelectedBeatmap(), DeliveryMethod.ReliableOrdered);
+            }
             if (SelectedModifiers != modifiers)
+            {
                 SelectedModifiers = modifiers;
+                if (SelectedModifiers != EmptyModifiers)
+                    _packetDispatcher.SendToNearbyPlayers(new SetSelectedGameplayModifiers()
+                    {
+                        Modifiers = SelectedModifiers
+                    }, DeliveryMethod.ReliableOrdered);
+                else
+                    _packetDispatcher.SendToNearbyPlayers(new ClearSelectedGameplayModifiers(), DeliveryMethod.ReliableOrdered);
+            }
         }
 
         public List<BeatmapDifficulty> GetSelectedBeatmapDifficulties()
@@ -414,7 +434,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                 case SongSelectionMode.Vote:
                     Dictionary<BeatmapIdentifier, int> voteDictionary = new();
-                    foreach (IPlayer player in _playerRegistry.Players.Where(p => p.BeatmapIdentifier != null && (((!(p.Chroma && !_configuration.AllowChroma) || !(p.MappingExtensions && !_configuration.AllowMappingExtensions) || !(p.NoodleExtensions && !_configuration.AllowNoodleExtensions)) && p.MapHash == p.BeatmapIdentifier!.LevelId) || p.MapHash != p.BeatmapIdentifier!.LevelId)))
+                    foreach (IPlayer player in _playerRegistry.Players.Where(p => p.BeatmapIdentifier != null&& (((!(p.Chroma && !_configuration.AllowChroma) || !(p.MappingExtensions && !_configuration.AllowMappingExtensions) || !(p.NoodleExtensions && !_configuration.AllowNoodleExtensions)) && p.MapHash == p.BeatmapIdentifier!.LevelId) || p.MapHash != p.BeatmapIdentifier!.LevelId)))
                     {
                         if (voteDictionary.ContainsKey(player.BeatmapIdentifier!))
                             voteDictionary[player.BeatmapIdentifier!]++;

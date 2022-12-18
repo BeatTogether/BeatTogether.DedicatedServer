@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Messaging.Enums;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;
 using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
@@ -46,6 +49,193 @@ namespace BeatTogether.DedicatedServer.Kernel
             _configuration = instconfiguration;
         }
 
+        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader, DeliveryMethod method)
+        {
+            if (!reader.TryReadRoutingHeader(out var routingHeader))
+            {
+                _logger.Warning(
+                    "Failed to read routing header " +
+                    $"(RemoteEndPoint='{remoteEndPoint}')."
+                );
+                return;
+            }
+
+            if (!_playerRegistry.TryGetPlayer(remoteEndPoint, out var sender))
+            {
+                _logger.Warning(
+                    "Sender is not in this instance" +
+                    $"(RemoteEndPoint='{remoteEndPoint}')."
+                );
+                return;
+            }
+
+            //Do magic to not send certain packets if 
+
+            // Is this packet meant to be routed?
+
+            if (routingHeader.ReceiverId != 0)
+            {
+
+                ReadOnlySpan<byte> PacketContent = reader.RemainingData;
+
+                if (routingHeader.ReceiverId != AllConnectionIds)
+                {
+                    RoutePacket(sender, routingHeader, ref PacketContent, method);
+                }
+
+                SpanBufferReader PacketCopy = new(PacketContent);
+                bool RouteIt = false;
+
+                while (PacketCopy.RemainingSize > 0)
+                {
+                    uint length;
+                    try { length = PacketCopy.ReadVarUInt(); }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); RouteIt = true; goto EndOfPacketCheck; }
+                    if (PacketCopy.RemainingSize < length)
+                    {
+                        _logger.Warning($"Packet fragmented (RemainingSize={PacketCopy.RemainingSize}, Expected={length}).");
+                        continue;
+                    }
+
+
+                    var prevPosition = PacketCopy.Offset;
+                    INetSerializable? packet;
+                    IPacketRegistry packetRegistry = _packetRegistry;
+                    byte packetId = 0;
+                    while (true)
+                    {
+                        if (!(packetRegistry is MultiplayerCorePacketRegistry MPCoreRegistry))
+                        {
+                            try
+                            { packetId = PacketCopy.ReadByte(); }
+                            catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); RouteIt = true; goto EndOfPacketCheck; }
+                            if (packetRegistry.TryCreatePacket(packetId, out packet))
+                                break;
+                            if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
+                            {
+                                packetRegistry = subPacketRegistry;
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            string MPCpacketId;
+                            try
+                            { MPCpacketId = PacketCopy.ReadString(); }
+                            catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); RouteIt = true; goto EndOfPacketCheck; }
+                            if (MPCoreRegistry.TryCreatePacket(MPCpacketId, out packet))
+                                break;
+                        }
+                        break;
+                    }
+
+
+                    if (!((_configuration.DisableNotes || _playerRegistry.Players.Count > 25 || SendOverloaded) && packetRegistry.GetType() == typeof(GameplayRpcPacketRegistry) && (packetId == 12 || packetId == 13 || packetId == 14)))
+                    {
+                        RouteIt = true;
+                    }
+                    if (!((_configuration.DisablePlayerMovement || _playerRegistry.Players.Count > 25 || SendOverloaded) && packetRegistry.GetType() == typeof(MultiplayerSessionPacketRegistry) && (packetId == 2 || packetId == 4)))
+                    {
+                        RouteIt = true;
+                    }
+
+                    // skip any unprocessed bytes
+                    var processedBytes = PacketCopy.Offset - prevPosition;
+                    try { PacketCopy.SkipBytes((int)length - processedBytes); }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); RouteIt = true; goto EndOfPacketCheck; }
+                    continue;
+                }
+
+                EndOfPacketCheck:
+
+                if (RouteIt)
+                    RoutePacket(sender, routingHeader, ref PacketContent, method);
+            }
+
+
+            while (reader.RemainingSize > 0)
+            {
+                uint length;
+                try { length = reader.ReadVarUInt(); }
+                catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                if (reader.RemainingSize < length)
+                {
+                    _logger.Warning($"Packet fragmented (RemainingSize={reader.RemainingSize}, Expected={length}).");
+                    return;
+                }
+
+                var prevPosition = reader.Offset;
+                INetSerializable? packet;
+                IPacketRegistry packetRegistry = _packetRegistry;
+                while (true)
+                {
+                    if (!(packetRegistry is MultiplayerCorePacketRegistry MPCoreRegistry))
+                    {
+                        byte packetId;
+                        try
+                        { packetId = reader.ReadByte(); }
+                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                        if (packetRegistry.TryCreatePacket(packetId, out packet))
+                            break;
+                        if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
+                        {
+                            packetRegistry = subPacketRegistry;
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        string MPCpacketId;
+                        try
+                        { MPCpacketId = reader.ReadString(); }
+                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                        if (MPCoreRegistry.TryCreatePacket(MPCpacketId, out packet))
+                            break;
+                    }
+                    break;
+                }
+
+                if (packet == null)
+                {
+                    // skip any unprocessed bytes
+                    var processedBytes = reader.Offset - prevPosition;
+                    try { reader.SkipBytes((int)length - processedBytes); }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                    continue;
+                }
+
+                var packetType = packet.GetType();
+                var packetHandlerType = typeof(Abstractions.IPacketHandler<>)
+                    .MakeGenericType(packetType);
+                var packetHandler = _serviceProvider.GetService(packetHandlerType);
+                if (packetHandler is null)
+                {
+                    _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
+
+                    // skip any unprocessed bytes
+                    var processedBytes = reader.Offset - prevPosition;
+                    try { reader.SkipBytes((int)length - processedBytes); }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                    continue;
+                }
+
+                try
+                {
+                    packet.ReadFrom(ref reader);
+                }
+                catch
+                {
+                    // skip any unprocessed bytes
+                    var processedBytes = reader.Offset - prevPosition;
+                    reader.SkipBytes((int)length - processedBytes);
+                    continue;
+                }
+
+                ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
+            }
+        }
+
+
         /*
         public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader, DeliveryMethod method)
         {
@@ -67,140 +257,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return;
             }
 
-            byte[] PacketContent = reader.RemainingData.ToArray();
-            ReadOnlySpan<byte> PacketContents= new(PacketContent);
-
-            Queue<(int, int)> SubPacketContents = new();
-            int HeaderLength = reader.Offset;
-            while (reader.RemainingSize > 0)
-            {
-                int length;
-                try { length = (int)reader.ReadVarUInt(); }
-                catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
-                if (reader.RemainingSize < length)
-                {
-                    _logger.Warning($"Packet fragmented (RemainingSize={reader.RemainingSize}, Expected={length}).");
-                    if (routingHeader.ReceiverId != 0)
-                        RoutePacket(sender, routingHeader, ref PacketContents, method);
-                    return;
-                }
-                SubPacketContents.Enqueue((reader.Offset - HeaderLength, length));
-                reader.SkipBytes(length);
-            }
-            SpanBufferWriter ForwardPacket = new(stackalloc byte[412]);
-            Queue<(INetSerializable, int, int, object)> PacketHandlerQueue = new();
-            while (SubPacketContents.TryDequeue(out var subPacket))
-            {
-                ReadOnlySpan<byte> PacketSpan = PacketContents.Slice(subPacket.Item1, subPacket.Item2);
-                SpanBufferReader PacketReader = new(PacketSpan);
-                INetSerializable? packet;
-                IPacketRegistry packetRegistry = _packetRegistry;
-                byte packetId = 0;
-                while (true)
-                {
-                    if (packetRegistry is not MultiplayerCorePacketRegistry MPCoreRegistry)
-                    {
-                        try
-                        { packetId = PacketReader.ReadByte(); }
-                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
-                        if (packetRegistry.TryCreatePacket(packetId, out packet))
-                            break;
-                        if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
-                        {
-                            packetRegistry = subPacketRegistry;
-                            continue;
-                        }
-                    }
-                    else
-                    {
-                        string MPCpacketId;
-                        try
-                        { MPCpacketId = PacketReader.ReadString(); }
-                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
-                        if (MPCoreRegistry.TryCreatePacket(MPCpacketId, out packet))
-                            break;
-                    }
-                    break;
-                }
-
-                if ((_configuration.DisableNotes || _playerRegistry.Players.Count > 10) && packetRegistry.GetType() == typeof(GameplayRpcPacketRegistry) &&(packetId == 12 || packetId == 13 || packetId == 14))
-                {
-                    continue;
-                }
-
-                if (packet == null)
-                {
-                    ForwardPacket.WriteVarUInt((uint)subPacket.Item2);
-                    ForwardPacket.WriteBytes(PacketSpan);
-                    continue;
-                }
-
-                var packetType = packet.GetType();
-                Console.WriteLine("Packet is " + packetType.Name);
-                if ((_configuration.DisablePlayerMovement || _playerRegistry.Players.Count > 50) && (packetType == typeof(NodePoseSyncStatePacket) || packetType == typeof(NodePoseSyncStateDeltaPacket)))
-                {
-                    continue;
-                }
-
-                ForwardPacket.WriteVarUInt((uint)subPacket.Item2);
-                ForwardPacket.WriteBytes(PacketSpan);
-
-                var packetHandlerType = typeof(Abstractions.IPacketHandler<>).MakeGenericType(packetType);
-
-                var packetHandler = _serviceProvider.GetService(packetHandlerType);
-                if (packetHandler is null)
-                {
-                    _logger.Verbose($"No handler exists for packet of type '{packetType}'.");
-                    continue;
-                }
-                PacketHandlerQueue.Enqueue((packet, subPacket.Item1, subPacket.Item2, packetHandler));
-            }
-            //Then route packets
-            if(ForwardPacket.Data.Length > 0)
-            {
-                ReadOnlySpan<Byte> ToRoute = ForwardPacket.Data;
-                if (routingHeader.ReceiverId != 0)
-                    RoutePacket(sender, routingHeader, ref ToRoute, method);
-            }
-
-
-            //Find a way to handle packets here after routing them instead of before routing them
-            while(PacketHandlerQueue.TryDequeue(out var PacketData)){
-                try
-                {
-                    SpanBufferReader e = new(PacketContents.Slice(PacketData.Item2, PacketData.Item3));
-                    PacketData.Item1.ReadFrom(ref e);
-                }
-                catch
-                {
-                    continue;
-                }
-                ((Abstractions.IPacketHandler)PacketData.Item4).Handle(sender, PacketData.Item1);
-            }
-        }
-        
-        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader, DeliveryMethod method)
-        {            
-            if (!reader.TryReadRoutingHeader(out var routingHeader))
-            {
-                _logger.Warning(
-                    "Failed to read routing header " +
-                    $"(RemoteEndPoint='{remoteEndPoint}')."
-                );
-                return;
-            }
-
-            if (!_playerRegistry.TryGetPlayer(remoteEndPoint, out var sender))
-            {
-                _logger.Warning(
-                    "Sender is not in this instance" +
-                    $"(RemoteEndPoint='{remoteEndPoint}')."
-                );
-                return;
-            }
+            //Do magic to not send certain packets if 
 
             // Is this packet meant to be routed?
-            //ReadOnlySpan<byte> sendingg = reader.RemainingData;
             if (routingHeader.ReceiverId != 0)
                 RoutePacket(sender, routingHeader, ref reader, method);
 
@@ -256,18 +315,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
 
                 var packetType = packet.GetType();
-
-                if (packetType == typeof(NodePoseSyncStatePacket) || packetType == typeof(NodePoseSyncStateDeltaPacket) )
-                {
-                    Debug.WriteLine("Movement packet");
-                    
-                    
-                }
-                else
-                {
-                    Console.WriteLine("Packet is " + packetType.Name);
-                }
-
                 var packetHandlerType = typeof(Abstractions.IPacketHandler<>)
                     .MakeGenericType(packetType);
                 var packetHandler = _serviceProvider.GetService(packetHandlerType);
@@ -298,124 +345,18 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
         }
         */
-        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader, DeliveryMethod method)
-        {
-            if (!reader.TryReadRoutingHeader(out var routingHeader))
-            {
-                _logger.Warning(
-                    "Failed to read routing header " +
-                    $"(RemoteEndPoint='{remoteEndPoint}')."
-                );
-                return;
-            }
-
-            if (!_playerRegistry.TryGetPlayer(remoteEndPoint, out var sender))
-            {
-                _logger.Warning(
-                    "Sender is not in this instance" +
-                    $"(RemoteEndPoint='{remoteEndPoint}')."
-                );
-                return;
-            }
-
-            // Is this packet meant to be routed?
-            if (routingHeader.ReceiverId != 0)
-                RoutePacket(sender, routingHeader, ref reader, method);
-
-            while (reader.RemainingSize > 0)
-            {
-                uint length;
-                try { length = reader.ReadVarUInt(); }
-                catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
-                if (reader.RemainingSize < length)
-                {
-                    _logger.Warning($"Packet fragmented (RemainingSize={reader.RemainingSize}, Expected={length}).");
-                    return;
-                }
-
-                var prevPosition = reader.Offset;
-                INetSerializable? packet;
-                IPacketRegistry packetRegistry = _packetRegistry;
-                while (true)
-                {
-                    if (!(packetRegistry is MultiplayerCorePacketRegistry MPCoreRegistry))
-                    {
-                        byte packetId;
-                        try
-                        { packetId = reader.ReadByte(); }
-                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
-                        if (packetRegistry.TryCreatePacket(packetId, out packet))
-                            break;
-                        if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
-                        {
-                            packetRegistry = subPacketRegistry;
-                            continue;
-                        }
-                    }
-                    else
-                    {
-                        string MPCpacketId;
-                        try
-                        { MPCpacketId = reader.ReadString(); }
-                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
-                        if (MPCoreRegistry.TryCreatePacket(MPCpacketId, out packet))
-                            break;
-                    }
-                    break;
-                }
-
-                if (packet == null)
-                {
-                    // skip any unprocessed bytes
-                    var processedBytes = reader.Offset - prevPosition;
-                    try { reader.SkipBytes((int)length - processedBytes); }
-                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
-                    continue;
-                }
-
-                var packetType = packet.GetType();
-                var packetHandlerType = typeof(Abstractions.IPacketHandler<>)
-                    .MakeGenericType(packetType);
-                var packetHandler = _serviceProvider.GetService(packetHandlerType);
-                if (packetHandler is null)
-                {
-                    _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
-
-                    // skip any unprocessed bytes
-                    var processedBytes = reader.Offset - prevPosition;
-                    try { reader.SkipBytes((int)length - processedBytes); }
-                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
-                    continue;
-                }
-
-                try
-                {
-                    packet.ReadFrom(ref reader);
-                }
-                catch
-                {
-                    // skip any unprocessed bytes
-                    var processedBytes = reader.Offset - prevPosition;
-                    reader.SkipBytes((int)length - processedBytes);
-                    continue;
-                }
-
-                ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
-            }
-        }
-
         #region Private Methods
 
         private void RoutePacket(IPlayer sender,
             (byte SenderId, byte ReceiverId) routingHeader,
-            ref SpanBufferReader reader, DeliveryMethod deliveryMethod)
+            ref /*SpanBufferReader*/ReadOnlySpan<byte> reader, DeliveryMethod deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
                 writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
-                writer.WriteBytes(reader.RemainingData);
+                writer.WriteBytes(reader/*.RemainingData*/);
 
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
@@ -428,7 +369,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             else
             {
                 writer.WriteRoutingHeader(routingHeader.SenderId, LocalConnectionId);
-                writer.WriteBytes(reader.RemainingData);
+                writer.WriteBytes(reader/*.RemainingData*/);
 
                 if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
                 {

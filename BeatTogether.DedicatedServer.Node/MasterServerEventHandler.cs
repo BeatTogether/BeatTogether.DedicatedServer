@@ -1,6 +1,7 @@
 ﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface.Events;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
+using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
 using BeatTogether.MasterServer.Interface.Events;

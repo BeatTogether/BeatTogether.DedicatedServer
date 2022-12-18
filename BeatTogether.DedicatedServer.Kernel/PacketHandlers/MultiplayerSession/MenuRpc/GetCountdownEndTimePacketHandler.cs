@@ -27,11 +27,11 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetCountdownEndTimePacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            if(_lobbyManager.CountDownState != Enums.CountdownState.NotCountingDown)
-            _packetDispatcher.SendToPlayer(sender, new SetCountdownEndTimePacket
-            {
-                CountdownTime = _lobbyManager.CountdownEndTime
-            }, DeliveryMethod.ReliableOrdered);
+            if(_lobbyManager.CountDownState == Enums.CountdownState.CountingDown)
+                _packetDispatcher.SendToPlayer(sender, new SetCountdownEndTimePacket
+                {
+                    CountdownTime = _lobbyManager.CountdownEndTime
+                }, DeliveryMethod.ReliableOrdered);
 
             return Task.CompletedTask;
         }
