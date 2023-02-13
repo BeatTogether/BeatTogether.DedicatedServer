@@ -39,6 +39,8 @@
         GetPermissionConfiguration = 34,
         SetPermissionConfiguration = 35,
         GetIsStartButtonEnabled = 36,
-        SetIsStartButtonEnabled = 37
+        SetIsStartButtonEnabled = 37,
+        ClearSelectedBeatmap = 38,
+        ClearSelectedGameplayModifiers = 39
     }
 }

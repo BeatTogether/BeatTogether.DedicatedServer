@@ -37,6 +37,12 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries
             AddPacket<ClearRecommendedModifiersPacket>(MenuRpcPacketType.ClearRecommendedGameplayModifiers);
             AddPacket<SetPlayersMissingEntitlementsToLevelPacket>(MenuRpcPacketType.SetPlayersMissingEntitlementsToLevel);
             AddPacket<RequestKickPlayerPacket>(MenuRpcPacketType.RequestKickPlayer);
+            AddPacket<SetSelectedBeatmap>(MenuRpcPacketType.SetSelectedBeatmap);
+            AddPacket<SetSelectedGameplayModifiers>(MenuRpcPacketType.SetSelectedGameplayModifiers);
+            AddPacket<ClearSelectedBeatmap>(MenuRpcPacketType.ClearSelectedBeatmap);
+            AddPacket<ClearSelectedGameplayModifiers>(MenuRpcPacketType.ClearSelectedGameplayModifiers);
+            AddPacket<GetSelectedBeatmap>(MenuRpcPacketType.GetSelectedBeatmap);
+            AddPacket<GetSelectedGameplayModifiers>(MenuRpcPacketType.GetSelectedGameplayModifiers);
         }
     }
 }
