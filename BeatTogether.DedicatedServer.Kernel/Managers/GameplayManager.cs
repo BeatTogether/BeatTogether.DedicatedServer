@@ -181,6 +181,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             State = GameplayManagerState.Results;
             _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
 
+            /*
             List<(string, BeatmapDifficulty, LevelCompletionResults)> PlayerResults = new();
             foreach (string p in PlayersAtStart)
             {
@@ -200,8 +201,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }
             }
 
-            //_instance.LevelFinished(CurrentBeatmap, PlayerResults);
-
+            _instance.LevelFinished(CurrentBeatmap, PlayerResults);
+            */
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared) && _instance._configuration.CountdownConfig.ResultsScreenTime > 0)
                 await Task.Delay((int)(_instance._configuration.CountdownConfig.ResultsScreenTime * 1000), cancellationToken);
 
