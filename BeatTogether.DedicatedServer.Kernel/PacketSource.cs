@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
-using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;
 using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;

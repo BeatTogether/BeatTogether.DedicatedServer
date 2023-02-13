@@ -19,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Node.Abstractions
             bool AllowPerPlayerDifficulties = false,
             bool AllowChroma = true,
             bool AllowME = true,
-            bool AllowNE = false
+            bool AllowNE = true
             );
     }
 }
