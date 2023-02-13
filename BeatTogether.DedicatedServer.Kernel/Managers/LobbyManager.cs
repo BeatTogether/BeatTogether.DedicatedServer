@@ -12,7 +12,6 @@ using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
-using Org.BouncyCastle.Utilities.Collections;
 using Serilog;
 
 /*Lobby manager code

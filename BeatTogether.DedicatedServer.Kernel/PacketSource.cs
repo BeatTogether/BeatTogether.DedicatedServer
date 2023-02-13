@@ -48,7 +48,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _packetDispatcher = packetDispatcher;
             _configuration = instconfiguration;
         }
-
+        /*
         public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader, DeliveryMethod method)
         {
             if (!reader.TryReadRoutingHeader(out var routingHeader))
@@ -234,9 +234,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                 ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
             }
         }
+        */
 
-
-        /*
+        
         public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader, DeliveryMethod method)
         {
             if (!reader.TryReadRoutingHeader(out var routingHeader))
@@ -344,19 +344,19 @@ namespace BeatTogether.DedicatedServer.Kernel
                 ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
             }
         }
-        */
+        
         #region Private Methods
 
         private void RoutePacket(IPlayer sender,
             (byte SenderId, byte ReceiverId) routingHeader,
-            ref /*SpanBufferReader*/ReadOnlySpan<byte> reader, DeliveryMethod deliveryMethod)
+            ref SpanBufferReader/*ReadOnlySpan<byte>*/ reader, DeliveryMethod deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
                 writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
-                writer.WriteBytes(reader/*.RemainingData*/);
+                writer.WriteBytes(reader.RemainingData);
 
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
@@ -369,7 +369,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             else
             {
                 writer.WriteRoutingHeader(routingHeader.SenderId, LocalConnectionId);
-                writer.WriteBytes(reader/*.RemainingData*/);
+                writer.WriteBytes(reader.RemainingData);
 
                 if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
                 {
