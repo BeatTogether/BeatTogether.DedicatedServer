@@ -4,7 +4,6 @@ using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
-using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using System;
 using System.Collections.Concurrent;
@@ -175,7 +174,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
 
-            _instance.BeatmapChanged(CurrentBeatmap, CurrentModifiers, true, DateTime.Now.AddSeconds(_songStartTime - _instance.RunTime));
+            //_instance.BeatmapChanged(CurrentBeatmap, CurrentModifiers, true, DateTime.Now.AddSeconds(_songStartTime - _instance.RunTime));
 
             await Task.WhenAll(_levelFinishedTcs.Values.Select(p => p.Task));
 
@@ -201,7 +200,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }
             }
 
-            _instance.LevelFinished(CurrentBeatmap, PlayerResults);
+            //_instance.LevelFinished(CurrentBeatmap, PlayerResults);
 
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared) && _instance._configuration.CountdownConfig.ResultsScreenTime > 0)
                 await Task.Delay((int)(_instance._configuration.CountdownConfig.ResultsScreenTime * 1000), cancellationToken);

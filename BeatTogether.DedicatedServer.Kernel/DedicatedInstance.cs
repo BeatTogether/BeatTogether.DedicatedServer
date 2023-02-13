@@ -38,15 +38,15 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
 
-        public event Action<IDedicatedInstance> StartEvent = null!;
+        //public event Action<IDedicatedInstance> StartEvent = null!;
         public event Action<IDedicatedInstance> StopEvent = null!;
         public event Action<IPlayer> PlayerConnectedEvent = null!;
         public event Action<IPlayer, int> PlayerDisconnectedEvent = null!;
         public event Action<string, int> PlayerCountChangeEvent = null!;
         public event Action<string, Enums.CountdownState, MultiplayerGameState, Enums.GameplayManagerState> StateChangedEvent = null!;
-        public event Action<IDedicatedInstance> UpdateInstanceEvent = null!;
-        public event Action<string, BeatmapIdentifier?, GameplayModifiers, bool, DateTime> UpdateBeatmapEvent = null!;
-        public event Action<string, BeatmapIdentifier, List<(string, BeatmapDifficulty, LevelCompletionResults)>> LevelFinishedEvent = null!;
+        //public event Action<IDedicatedInstance> UpdateInstanceEvent = null!;
+        //public event Action<string, BeatmapIdentifier?, GameplayModifiers, bool, DateTime> UpdateBeatmapEvent = null!;
+        //public event Action<string, BeatmapIdentifier, List<(string, BeatmapDifficulty, LevelCompletionResults)>> LevelFinishedEvent = null!;
 
 
         private readonly IPlayerRegistry _playerRegistry;
@@ -91,6 +91,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             StateChangedEvent?.Invoke(_configuration.Secret, countdown, State, gameplay);
         }
+        /*
         public void BeatmapChanged(BeatmapIdentifier? map, GameplayModifiers modifiers, bool IsGameplay, DateTime CountdownEnd)
         {
             UpdateBeatmapEvent?.Invoke(_configuration.Secret, map, modifiers, IsGameplay, CountdownEnd);
@@ -103,6 +104,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             LevelFinishedEvent?.Invoke(_configuration.Secret, beatmap, Results);
         }
+        */
         public IPlayerRegistry GetPlayerRegistry()
         {
             return _playerRegistry;
@@ -154,7 +156,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }, cancellationToken);
             }
 
-            StartEvent?.Invoke(this);
+            //StartEvent?.Invoke(this);
 
             base.Start();
             return Task.CompletedTask;
@@ -417,7 +419,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.Players.Count == 1) && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
                 {
                     _configuration.ManagerId = player.UserId;
-                    InstanceChanged();
+                    //InstanceChanged();
                 }
 
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
@@ -541,7 +543,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                                 }).ToList()
                             }
                         }, DeliveryMethod.ReliableOrdered);
-                        InstanceChanged();
+                        //InstanceChanged();
                     }
                 }
             }

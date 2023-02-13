@@ -391,7 +391,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     break;
             }
-            _instance.BeatmapChanged(SelectedBeatmap, SelectedModifiers, false, DateTime.Now.AddSeconds(_instance.RunTime - CountdownEndTime));
+            //_instance.BeatmapChanged(SelectedBeatmap, SelectedModifiers, false, DateTime.Now.AddSeconds(_instance.RunTime - CountdownEndTime));
         }
 
         public void CancelCountdown()

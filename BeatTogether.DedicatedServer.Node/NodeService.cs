@@ -14,7 +14,6 @@ using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Node
 {
@@ -71,13 +70,13 @@ namespace BeatTogether.DedicatedServer.Node
 
             matchmakingServer.PlayerConnectedEvent += HandleUpdatePlayerEvent;
             matchmakingServer.PlayerDisconnectedEvent += HandlePlayerDisconnectEvent;
-            matchmakingServer.PlayerCountChangeEvent += HandlePlayerCountChange;
-            matchmakingServer.StartEvent += HandleStartEvent;
+            matchmakingServer.PlayerCountChangeEvent += HandlePlayerCountChange;//Updates master server player count
+            //matchmakingServer.StartEvent += HandleStartEvent;
             matchmakingServer.StopEvent += HandleStopEvent;
-            matchmakingServer.StateChangedEvent += HandleStateChangedEvent;
-            matchmakingServer.UpdateBeatmapEvent += HandleBeatmapChangedEvent;
-            matchmakingServer.UpdateInstanceEvent += HandleConfigChangeEvent;
-            matchmakingServer.LevelFinishedEvent += HandleLevelFinishedEvent;
+            matchmakingServer.StateChangedEvent += HandleStateChangedEvent; //For master server to check if a game is ongoing or not
+            //matchmakingServer.UpdateBeatmapEvent += HandleBeatmapChangedEvent;
+            //matchmakingServer.UpdateInstanceEvent += HandleConfigChangeEvent;
+            //matchmakingServer.LevelFinishedEvent += HandleLevelFinishedEvent;
 
             await matchmakingServer.Start();
             return new CreateMatchmakingServerResponse(
@@ -90,6 +89,7 @@ namespace BeatTogether.DedicatedServer.Node
 
 
         #region EventHandlers
+        /*
         private void HandleLevelFinishedEvent(string secret, BeatmapIdentifier beatmap, List<(string, BeatmapDifficulty, LevelCompletionResults)> Results)
         {
             Interface.Models.BeatmapIdentifier beatmapIdentifier = new(beatmap.LevelId, beatmap.Characteristic, (Interface.Models.BeatmapDifficulty)beatmap.Difficulty);
@@ -100,14 +100,18 @@ namespace BeatTogether.DedicatedServer.Node
             }
             _autobus.Publish(new LevelCompletionResultsEvent(secret, beatmapIdentifier, FinalResults));
         }
+        */
+        
         private void HandleStateChangedEvent(string secret, CountdownState countdownState, MultiplayerGameState gameState, GameplayManagerState GameplayState)
         {
             _autobus.Publish(new UpdateStatusEvent(secret, (Interface.Enums.CountdownState)countdownState, (Interface.Enums.MultiplayerGameState)gameState, (Interface.Enums.GameplayState)GameplayState));
         }
+        /*
         private void HandleBeatmapChangedEvent(string secret, BeatmapIdentifier? beatmap, GameplayModifiers modifiers, bool IsGameplay, DateTime StartTime)
         {
             _autobus.Publish(new SelectedBeatmapEvent(secret, beatmap is not null ? beatmap.LevelId : string.Empty, beatmap is not null ? beatmap.Characteristic : string.Empty, beatmap is not null ? (uint)beatmap.Difficulty : uint.MinValue, IsGameplay, GameplayCast(modifiers), StartTime));
         }
+        */
         public Interface.Models.GameplayModifiers GameplayCast(GameplayModifiers v)
         {
             return new Interface.Models.GameplayModifiers((Interface.Models.EnergyType)v.Energy, v.NoFailOn0Energy, v.DemoNoFail, v.InstaFail, v.FailOnSaberClash, (Interface.Models.EnabledObstacleType)v.EnabledObstacle, v.DemoNoObstacles, v.FastNotes, v.StrictAngles, v.DisappearingArrows, v.GhostNotes, v.NoBombs, (Interface.Models.SongSpeed)v.Speed, v.NoArrows, v.ProMode, v.ZenMode, v.SmallCubes);
@@ -136,6 +140,8 @@ namespace BeatTogether.DedicatedServer.Node
                 v.EyesId,
                 v.MouthId);
         }
+
+        /*
         private void HandleConfigChangeEvent(IDedicatedInstance inst)
         {
             _autobus.Publish(new UpdateServerEvent(
@@ -164,10 +170,12 @@ namespace BeatTogether.DedicatedServer.Node
                 inst._configuration.CountdownConfig.BeatMapStartCountdownTime,
                 inst._configuration.CountdownConfig.ResultsScreenTime));
         }
+
         private void HandleStartEvent(IDedicatedInstance inst)
         {
             HandleConfigChangeEvent(inst);
         }
+        */
         private void HandleStopEvent(IDedicatedInstance inst)
         {
             _autobus.Publish(new MatchmakingServerStoppedEvent(inst._configuration.Secret));//Tells the master server and api server that the server has stopped
@@ -176,11 +184,11 @@ namespace BeatTogether.DedicatedServer.Node
         {
             _autobus.Publish(new PlayerJoinEvent(player.Secret, player.Endpoint.ToString()!, player.UserId, player.UserName, player.ConnectionId, player.SortIndex, AvatarCast(player.Avatar)));
         }
-        private void HandlePlayerDisconnectEvent(IPlayer player, int count)
+        private void HandlePlayerDisconnectEvent(IPlayer player, int count) //Updates master server player count And informs master server that player has left a game
         {
             _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, player.UserId, ((IPEndPoint)player.Endpoint).ToString(), count));
         }
-        private void HandlePlayerCountChange(string Secret, int count)
+        private void HandlePlayerCountChange(string Secret, int count) //Updates master server player count
         {
             _autobus.Publish(new PlayerLeaveServerEvent(Secret,string.Empty, string.Empty, count));
         }
