@@ -49,12 +49,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private readonly ConcurrentDictionary<string, TaskCompletionSource> _songReadyTcs = new();
 
 
-        private CancellationTokenSource levelFinishedCts;
-        private CancellationTokenSource linkedLevelFinishedCts;
-        private CancellationTokenSource sceneReadyCts;
-        private CancellationTokenSource linkedSceneReadyCts;
-        private CancellationTokenSource songReadyCts;
-        private CancellationTokenSource linkedSongReadyCts;
+        private CancellationTokenSource? levelFinishedCts = null;
+        private CancellationTokenSource? linkedLevelFinishedCts = null;
+        private CancellationTokenSource? sceneReadyCts = null;
+        private CancellationTokenSource? linkedSceneReadyCts = null;
+        private CancellationTokenSource? songReadyCts = null;
+        private CancellationTokenSource? linkedSongReadyCts = null;
 
         public GameplayManager(
             IDedicatedInstance instance,
@@ -145,7 +145,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Set scene sync finished
             State = GameplayManagerState.SongLoad;
-            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
+            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
 
             //Wait for players to have the song ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
@@ -167,7 +167,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _songStartTime = _instance.RunTime + SongStartDelay + (StartDelay * 2f);
 
             State = GameplayManagerState.Gameplay;
-            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
+            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
 
             _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
@@ -179,7 +179,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             await Task.WhenAll(_levelFinishedTcs.Values.Select(p => p.Task));
 
             State = GameplayManagerState.Results;
-            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
+            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
 
             /*
             List<(string, BeatmapDifficulty, LevelCompletionResults)> PlayerResults = new();
@@ -285,7 +285,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 return;
             _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
             PlayerFinishLevel(player.UserId);
-            if(_levelCompletionResults.Values.Count(t => t.LevelEndStateType == LevelEndStateType.Cleared) >= PlayersAtStart.Count / 2)
+            if(_levelCompletionResults.Values.Count(t => t.LevelEndStateType == LevelEndStateType.Cleared) >= PlayersAtStart.Count / 2 && levelFinishedCts != null)
             {
                 levelFinishedCts.CancelAfter(5000);
             }

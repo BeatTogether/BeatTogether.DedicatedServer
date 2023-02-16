@@ -50,8 +50,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 }
                 sender.InLobby = packet.IsInLobby;
 
-                if (_instance.State == MultiplayerGameState.Game && packet.IsInLobby == true && _playerRegistry.Players.TrueForAll(p => p.InLobby))
-                    _gameplayManager.SignalRequestReturnToMenu();
+                //if (_instance.State == MultiplayerGameState.Game && packet.IsInLobby == true && _playerRegistry.Players.TrueForAll(p => p.InLobby))
+                //    _gameplayManager.SignalRequestReturnToMenu();
 
 
                 //If your not the lobby manager then the selecteed beatmap dissapears
