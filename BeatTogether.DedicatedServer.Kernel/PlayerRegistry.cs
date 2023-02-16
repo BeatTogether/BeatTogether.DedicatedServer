@@ -10,12 +10,16 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class PlayerRegistry : IPlayerRegistry
     {
-        public List<IPlayer> Players { get => _playersByUserId.Values.ToList(); }
+        public IPlayer[] Players { get => _playersByUserId.Values.ToArray(); }
 
         private readonly ConcurrentDictionary<EndPoint, IPlayer> _playersByRemoteEndPoint = new();
         private readonly ConcurrentDictionary<byte, IPlayer> _playersByConnectionId = new();
         private readonly ConcurrentDictionary<string, IPlayer> _playersByUserId = new();
 
+        public int GetPlayerCount()
+        {
+            return _playersByUserId.Count;
+        }
         public bool AddPlayer(IPlayer player)
         {
             if(_playersByUserId.TryAdd(player.UserId, player))

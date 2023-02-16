@@ -249,7 +249,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
         }
 
-        public void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
+        private void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
         {
             if (SelectedBeatmap != beatmap)
             {
@@ -294,7 +294,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         // Sets countdown and beatmap how the client would expect it to
         // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled, whereas SetCountdown will now
-        public void SetCountdown(CountdownState countdownState, float countdown = 0)
+        private void SetCountdown(CountdownState countdownState, float countdown = 0)
         {
             CountDownState = countdownState;
             switch (CountDownState)
@@ -329,6 +329,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         //Checks the lobby settings and sends the player the correct beatmap
         private void StartBeatmapPacket()
         {
+            _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+            {
+                Beatmap = SelectedBeatmap!,
+                Modifiers = SelectedModifiers,
+                StartTime = CountdownEndTime
+            }, DeliveryMethod.ReliableOrdered);
+            /* Per player difficulties and modifiers are not enabled yet so ima just comment them out for now
             switch (_configuration.AllowPerPlayerModifiers)
             {
                 case false:
@@ -391,10 +398,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     break;
             }
+            */
             //_instance.BeatmapChanged(SelectedBeatmap, SelectedModifiers, false, DateTime.Now.AddSeconds(_instance.RunTime - CountdownEndTime));
         }
 
-        public void CancelCountdown()
+        private void CancelCountdown()
         {
             switch (CountDownState)
             {
@@ -416,7 +424,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             SetCountdown(CountdownState.NotCountingDown);
         }
 
-        public BeatmapIdentifier? GetSelectedBeatmap()
+        private BeatmapIdentifier? GetSelectedBeatmap()
         {
             switch(_configuration.SongSelectionMode)
             {
@@ -458,7 +466,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             return null;
         }
 
-        public GameplayModifiers GetSelectedModifiers()
+        private GameplayModifiers GetSelectedModifiers()
 		{
             switch(_configuration.SongSelectionMode)
 			{

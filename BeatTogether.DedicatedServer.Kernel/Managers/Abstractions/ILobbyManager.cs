@@ -18,8 +18,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
         GameplayModifiers EmptyModifiers {get; }
 
         void Update();
-        void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers);
         List<BeatmapDifficulty> GetSelectedBeatmapDifficulties();
-        void SetCountdown(CountdownState countdownState, float countdown = 0);
     }
 }
