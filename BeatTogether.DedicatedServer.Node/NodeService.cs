@@ -104,7 +104,8 @@ namespace BeatTogether.DedicatedServer.Node
         
         private void HandleStateChangedEvent(string secret, CountdownState countdownState, MultiplayerGameState gameState, GameplayManagerState GameplayState)
         {
-            _autobus.Publish(new UpdateStatusEvent(secret, (Interface.Enums.CountdownState)countdownState, (Interface.Enums.MultiplayerGameState)gameState, (Interface.Enums.GameplayState)GameplayState));
+            //_autobus.Publish(new UpdateStatusEvent(secret, (Interface.Enums.CountdownState)countdownState, (Interface.Enums.MultiplayerGameState)gameState, (Interface.Enums.GameplayState)GameplayState));
+            _autobus.Publish(new ServerInGameplayEvent(secret, gameState == MultiplayerGameState.Game));
         }
         /*
         private void HandleBeatmapChangedEvent(string secret, BeatmapIdentifier? beatmap, GameplayModifiers modifiers, bool IsGameplay, DateTime StartTime)

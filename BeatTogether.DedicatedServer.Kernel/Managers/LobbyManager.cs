@@ -323,7 +323,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     StartBeatmapPacket();
                     break;
             }
-            _instance.InstanceStateChanged(CountDownState, _gameplayManager.State);
+            //_instance.InstanceStateChanged(CountDownState, _gameplayManager.State);
         }
 
         //Checks the lobby settings and sends the player the correct beatmap

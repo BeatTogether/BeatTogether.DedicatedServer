@@ -145,7 +145,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Set scene sync finished
             State = GameplayManagerState.SongLoad;
-            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
+            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
 
             //Wait for players to have the song ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
@@ -167,7 +167,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _songStartTime = _instance.RunTime + SongStartDelay + (StartDelay * 2f);
 
             State = GameplayManagerState.Gameplay;
-            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
+            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
 
             _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
@@ -179,7 +179,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             await Task.WhenAll(_levelFinishedTcs.Values.Select(p => p.Task));
 
             State = GameplayManagerState.Results;
-            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
+            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
 
             /*
             List<(string, BeatmapDifficulty, LevelCompletionResults)> PlayerResults = new();
