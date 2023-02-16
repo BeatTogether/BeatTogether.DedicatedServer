@@ -185,8 +185,9 @@ namespace BeatTogether.DedicatedServer.Node
         {
             _autobus.Publish(new PlayerJoinEvent(player.Secret, player.Endpoint.ToString()!, player.UserId, player.UserName, player.ConnectionId, player.SortIndex, AvatarCast(player.Avatar)));
         }
-        private void HandlePlayerDisconnectEvent(IPlayer player, int count) //Updates master server player count And informs master server that player has left a game
+        private void HandlePlayerDisconnectEvent(IPlayer player, int count) //Updates master server player count And removes the players encryption data from the server
         {
+            _packetEncryptionLayer.RemoveEncryptedEndPoint((IPEndPoint)player.Endpoint);
             _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, player.UserId, ((IPEndPoint)player.Endpoint).ToString(), count));
         }
         private void HandlePlayerCountChange(string Secret, int count) //Updates master server player count
