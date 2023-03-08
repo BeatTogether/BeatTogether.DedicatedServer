@@ -7,11 +7,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
     public interface IPlayerRegistry
     {
-        List<IPlayer> Players { get; }
+        IPlayer[] Players { get; }
 
         bool AddPlayer(IPlayer player);
         void RemovePlayer(IPlayer player);
-
+        int GetPlayerCount();
         IPlayer GetPlayer(EndPoint remoteEndPoint);
         IPlayer GetPlayer(byte connectionId);
         IPlayer GetPlayer(string userId);

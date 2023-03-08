@@ -38,6 +38,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             lock (sender.ReadyLock)
             {
                 sender.IsReady = packet.IsReady;
+                //If the player somehow is in the lobby during gameplay then readying should send them to spectate
                 if (sender.IsReady && _instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null && _gameplayManager.State == GameplayManagerState.Gameplay)
                 {
                     _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
