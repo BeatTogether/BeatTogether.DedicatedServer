@@ -91,7 +91,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             //Reset
             ResetValues();
-            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
+            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
             SessionGameId = Guid.NewGuid().ToString();
 
             State = GameplayManagerState.SceneLoad;
@@ -210,8 +210,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             SetBeatmap(null, new());
             ResetValues();
             _instance.SetState(MultiplayerGameState.Lobby);
+            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
             _packetDispatcher.SendToNearbyPlayers( new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
-            _instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
         }
 
         private void ResetValues()
@@ -285,9 +285,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 return;
             _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
             PlayerFinishLevel(player.UserId);
-            if(_levelCompletionResults.Values.Count(t => t.LevelEndStateType == LevelEndStateType.Cleared) >= PlayersAtStart.Count / 2 && levelFinishedCts != null)
+            if(_levelCompletionResults.Values.Count(t => t.LevelEndStateType == LevelEndStateType.Cleared) >= PlayersAtStart.Count / 2 && levelFinishedCts != null && State == GameplayManagerState.Gameplay)//If half the players have cleared the level then end it, in case someones game somehow keeps playing or if someone has somehow played the wrong level client side
             {
-                levelFinishedCts.CancelAfter(5000);
+                levelFinishedCts.CancelAfter(Math.Min(5000, (int)(_instance._configuration.CountdownConfig.ResultsScreenTime * 1000)));
             }
         }
 

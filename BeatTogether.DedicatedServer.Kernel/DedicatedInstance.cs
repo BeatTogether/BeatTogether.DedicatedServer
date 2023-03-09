@@ -43,7 +43,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public event Action<IPlayer> PlayerConnectedEvent = null!;
         public event Action<IPlayer, int> PlayerDisconnectedEvent = null!;
         public event Action<string, int> PlayerCountChangeEvent = null!;
-        public event Action<string, Enums.CountdownState, MultiplayerGameState, Enums.GameplayManagerState> StateChangedEvent = null!;
+        public event Action<string, bool> GameIsInLobby = null!;
+        //public event Action<string, Enums.CountdownState, MultiplayerGameState, Enums.GameplayManagerState> StateChangedEvent = null!;
         //public event Action<IDedicatedInstance> UpdateInstanceEvent = null!;
         //public event Action<string, BeatmapIdentifier?, GameplayModifiers, bool, DateTime> UpdateBeatmapEvent = null!;
         //public event Action<string, BeatmapIdentifier, List<(string, BeatmapDifficulty, LevelCompletionResults)>> LevelFinishedEvent = null!;
@@ -87,11 +88,12 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             PlayerConnectedEvent?.Invoke(player);
         }
+        /*
         public void InstanceStateChanged(CountdownState countdown, GameplayManagerState gameplay)
         {
             StateChangedEvent?.Invoke(_configuration.Secret, countdown, State, gameplay);
         }
-        /*
+        
         public void BeatmapChanged(BeatmapIdentifier? map, GameplayModifiers modifiers, bool IsGameplay, DateTime CountdownEnd)
         {
             UpdateBeatmapEvent?.Invoke(_configuration.Secret, map, modifiers, IsGameplay, CountdownEnd);
@@ -238,6 +240,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 State = state
             }, DeliveryMethod.ReliableOrdered);
+            GameIsInLobby?.Invoke(_configuration.Secret, state == MultiplayerGameState.Lobby);
         }
 
         #endregion
