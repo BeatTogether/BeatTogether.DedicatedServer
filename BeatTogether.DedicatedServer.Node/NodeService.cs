@@ -73,7 +73,8 @@ namespace BeatTogether.DedicatedServer.Node
             matchmakingServer.PlayerCountChangeEvent += HandlePlayerCountChange;//Updates master server player count
             //matchmakingServer.StartEvent += HandleStartEvent;
             matchmakingServer.StopEvent += HandleStopEvent;
-            matchmakingServer.StateChangedEvent += HandleStateChangedEvent; //For master server to check if a game is ongoing or not
+            matchmakingServer.GameIsInLobby += HandleGameInLobbyEvent;
+            //matchmakingServer.StateChangedEvent += HandleStateChangedEvent; //For master server to check if a game is ongoing or not
             //matchmakingServer.UpdateBeatmapEvent += HandleBeatmapChangedEvent;
             //matchmakingServer.UpdateInstanceEvent += HandleConfigChangeEvent;
             //matchmakingServer.LevelFinishedEvent += HandleLevelFinishedEvent;
@@ -101,13 +102,18 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Publish(new LevelCompletionResultsEvent(secret, beatmapIdentifier, FinalResults));
         }
         */
-        
+        private void HandleGameInLobbyEvent(string secret, bool state)
+        {
+            //_autobus.Publish(new UpdateStatusEvent(secret, (Interface.Enums.CountdownState)countdownState, (Interface.Enums.MultiplayerGameState)gameState, (Interface.Enums.GameplayState)GameplayState));
+            _autobus.Publish(new ServerInGameplayEvent(secret, state));
+        }
+        /*
         private void HandleStateChangedEvent(string secret, CountdownState countdownState, MultiplayerGameState gameState, GameplayManagerState GameplayState)
         {
             //_autobus.Publish(new UpdateStatusEvent(secret, (Interface.Enums.CountdownState)countdownState, (Interface.Enums.MultiplayerGameState)gameState, (Interface.Enums.GameplayState)GameplayState));
             _autobus.Publish(new ServerInGameplayEvent(secret, gameState == MultiplayerGameState.Game));
         }
-        /*
+        
         private void HandleBeatmapChangedEvent(string secret, BeatmapIdentifier? beatmap, GameplayModifiers modifiers, bool IsGameplay, DateTime StartTime)
         {
             _autobus.Publish(new SelectedBeatmapEvent(secret, beatmap is not null ? beatmap.LevelId : string.Empty, beatmap is not null ? beatmap.Characteristic : string.Empty, beatmap is not null ? (uint)beatmap.Difficulty : uint.MinValue, IsGameplay, GameplayCast(modifiers), StartTime));
