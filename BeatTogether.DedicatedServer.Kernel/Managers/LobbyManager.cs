@@ -121,7 +121,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             _packetDispatcher.SendToPlayer(player, new SetPlayersMissingEntitlementsToLevelPacket
                             {
                                 PlayersWithoutEntitlements = _playerRegistry.Players
-                                    .Where(p => p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown)
+                                    .Where(p => p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned/* or EntitlementStatus.Unknown*/)
                                     .Select(p => p.UserId).ToList()
                             }, DeliveryMethod.ReliableOrdered);
                         player.UpdateEntitlement = false;
@@ -145,21 +145,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             }, DeliveryMethod.ReliableOrdered);
                         else
                         {
-                            switch (allPlayersOwnBeatmap)
+                            _packetDispatcher.SendToPlayer(manager!, new SetIsStartButtonEnabledPacket
                             {
-                                case true:
-                                    _packetDispatcher.SendToPlayer(manager!, new SetIsStartButtonEnabledPacket
-                                    {
-                                        Reason = CannotStartGameReason.None
-                                    }, DeliveryMethod.ReliableOrdered);
-                                    break;
-                                case false:
-                                    _packetDispatcher.SendToPlayer(manager!, new SetIsStartButtonEnabledPacket
-                                    {
-                                        Reason = CannotStartGameReason.DoNotOwnSong
-                                    }, DeliveryMethod.ReliableOrdered);
-                                    break;
-                            }
+                                Reason = allPlayersOwnBeatmap ? CannotStartGameReason.None : CannotStartGameReason.DoNotOwnSong
+                            }, DeliveryMethod.ReliableOrdered);
                         }
                     }
                 }
@@ -231,12 +220,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     if (CountdownEndTime + _configuration.KickPlayersWithoutEntitlementTimeout <= _instance.RunTime)
                     {
-                        List<IPlayer> MissingEntitlement = _playerRegistry.Players.Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is not EntitlementStatus.Ok).ToList();
+                        IPlayer[] MissingEntitlement = _playerRegistry.Players.Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is not EntitlementStatus.Ok).ToArray();
                         foreach (IPlayer p in MissingEntitlement)
                         {
                             _packetDispatcher.SendToPlayer(p, new KickPlayerPacket()
                             {
-                                DisconnectedReason = DisconnectedReason.Kicked,
+                                DisconnectedReason = DisconnectedReason.Unknown,
                             }, DeliveryMethod.ReliableOrdered);
                         }
                     }

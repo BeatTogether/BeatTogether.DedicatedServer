@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
@@ -254,8 +253,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 );
                 return;
             }
-
-            //Do magic to not send certain packets if 
 
             // Is this packet meant to be routed?
             if (routingHeader.ReceiverId != 0)

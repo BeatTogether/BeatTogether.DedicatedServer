@@ -32,7 +32,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 sender.State = packet.PlayerState;
                 sender.Random = packet.Random.Data ?? Array.Empty<byte>();
                 sender.PublicEncryptionKey = packet.PublicEncryptionKey.Data ?? Array.Empty<byte>();
-                _instance.PlayerUpdated(sender);
                 _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
             }
             return Task.CompletedTask;
