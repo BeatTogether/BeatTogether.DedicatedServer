@@ -14,7 +14,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -40,9 +39,9 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         //public event Action<IDedicatedInstance> StartEvent = null!;
         public event Action<IDedicatedInstance> StopEvent = null!;
-        public event Action<IPlayer> PlayerConnectedEvent = null!;
+        public event Action<IPlayer, int> PlayerConnectedEvent = null!;
         public event Action<IPlayer, int> PlayerDisconnectedEvent = null!;
-        public event Action<string, int> PlayerCountChangeEvent = null!;
+        public event Action<string, EndPoint, int> PlayerDisconnectBeforeJoining = null!;
         public event Action<string, bool> GameIsInLobby = null!;
         //public event Action<string, Enums.CountdownState, MultiplayerGameState, Enums.GameplayManagerState> StateChangedEvent = null!;
         //public event Action<IDedicatedInstance> UpdateInstanceEvent = null!;
@@ -84,11 +83,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         }
 
         #region Public Methods
+        /*
         public void PlayerUpdated(IPlayer player)
         {
-            PlayerConnectedEvent?.Invoke(player);
+            PlayerConnectedEvent?.Invoke(player, _playerRegistry.GetPlayerCount());
         }
-        /*
         public void InstanceStateChanged(CountdownState countdown, GameplayManagerState gameplay)
         {
             StateChangedEvent?.Invoke(_configuration.Secret, countdown, State, gameplay);
@@ -254,7 +253,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             if (ShouldDenyConnection(endPoint, ref additionalData))
             {
-                PlayerCountChangeEvent?.Invoke(_configuration.Secret, _playerRegistry.GetPlayerCount());
+                PlayerDisconnectBeforeJoining?.Invoke(_configuration.Secret, endPoint, _playerRegistry.GetPlayerCount());
                 return false;
             }
             return true;
@@ -434,7 +433,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.GetPlayerCount() == 1) && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
                 {
                     _configuration.ManagerId = player.UserId;
-                    //InstanceChanged();
                 }
 
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
@@ -452,7 +450,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         }).ToList()
                     }
                 }, DeliveryMethod.ReliableOrdered);
-                PlayerConnectedEvent?.Invoke(player);
+                PlayerConnectedEvent?.Invoke(player, _playerRegistry.GetPlayerCount());
             }
             
         }

@@ -88,6 +88,8 @@ namespace BeatTogether.DedicatedServer.Node
         {
             if(_instanceRegistry.TryGetInstance(disconnectEvent.Secret, out var instance))
                 instance.DisconnectPlayer(disconnectEvent.UserId);
+            if(disconnectEvent.UserEndPoint != string.Empty)
+                _packetEncryptionLayer.RemoveEncryptedEndPoint(IPEndPoint.Parse(disconnectEvent.UserEndPoint));
             return Task.CompletedTask;
         }
         private Task HandleCloseServer(CloseServerInstanceEvent closeEvent)
