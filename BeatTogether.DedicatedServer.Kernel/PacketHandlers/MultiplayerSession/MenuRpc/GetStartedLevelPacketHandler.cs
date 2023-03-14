@@ -7,7 +7,7 @@ using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -67,9 +67,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                             Modifiers = sender.Modifiers;
                         if (_configuration.AllowPerPlayerDifficulties)
                         {
-                            List<BeatmapDifficulty> diff = _lobbyManager.GetSelectedBeatmapDifficulties();
-                            if (sender.PreferredDifficulty != null && diff.Contains((BeatmapDifficulty)sender.PreferredDifficulty))
-                                Beatmap.Difficulty = (BeatmapDifficulty)sender.PreferredDifficulty!;
+                            BeatmapDifficulty[] diff = _lobbyManager.GetSelectedBeatmapDifficulties();
+                            if (sender.BeatmapIdentifier != null && diff.Contains(sender.BeatmapIdentifier.Difficulty))
+                                Beatmap.Difficulty = sender.BeatmapIdentifier.Difficulty;
                         }
                         _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
                         {

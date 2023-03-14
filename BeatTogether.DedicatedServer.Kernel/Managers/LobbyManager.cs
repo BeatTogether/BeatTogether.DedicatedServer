@@ -264,20 +264,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
         }
 
-        public List<BeatmapDifficulty> GetSelectedBeatmapDifficulties()
+        public BeatmapDifficulty[] GetSelectedBeatmapDifficulties()
         {
             if (!SelectedBeatmap!.LevelId.StartsWith("custom_level_"))
             {
-                return new();
+                return Array.Empty<BeatmapDifficulty>();
             }
             foreach (var player in _playerRegistry.Players)
             {
                 if(SelectedBeatmap!.LevelId == player.MapHash)
                 {
-                    return player.Difficulties;
+                    return player.BeatmapDifficulties;
                 }
             }
-            return new();
+            return Array.Empty<BeatmapDifficulty>();
         }
 
 
@@ -312,83 +312,34 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     StartBeatmapPacket();
                     break;
             }
-            //_instance.InstanceStateChanged(CountDownState, _gameplayManager.State);
         }
 
         //Checks the lobby settings and sends the player the correct beatmap
         private void StartBeatmapPacket()
         {
-            _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+            if (!_configuration.AllowPerPlayerModifiers && !_configuration.AllowPerPlayerDifficulties)
             {
-                Beatmap = SelectedBeatmap!,
-                Modifiers = SelectedModifiers,
-                StartTime = CountdownEndTime
-            }, DeliveryMethod.ReliableOrdered);
-            /* Per player difficulties and modifiers are not enabled yet so ima just comment them out for now
-            switch (_configuration.AllowPerPlayerModifiers)
-            {
-                case false:
-                    switch (_configuration.AllowPerPlayerDifficulties)
-                    {
-                        case false:
-                            _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
-                            {
-                                Beatmap = SelectedBeatmap!,
-                                Modifiers = SelectedModifiers,
-                                StartTime = CountdownEndTime
-                            }, DeliveryMethod.ReliableOrdered);
-                            break;
-                        case true:
-                            List<BeatmapDifficulty> diff = GetSelectedBeatmapDifficulties();
-                            foreach (var player in _playerRegistry.Players)
-                            {
-                                BeatmapIdentifier bm = SelectedBeatmap!;
-                                if (player.PreferredDifficulty != null && diff.Contains((BeatmapDifficulty)player.PreferredDifficulty))
-                                    bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
-                                _packetDispatcher.SendToPlayer(player, new StartLevelPacket
-                                {
-                                    Beatmap = bm!,
-                                    Modifiers = SelectedModifiers,
-                                    StartTime = CountdownEndTime
-                                }, DeliveryMethod.ReliableOrdered);
-                            }
-                            break;
-                    }
-                    break;
-                case true:
-                    switch (_configuration.AllowPerPlayerDifficulties)
-                    {
-                        case false:
-                            foreach (var player in _playerRegistry.Players)
-                            {
-                                _packetDispatcher.SendToPlayer(player, new StartLevelPacket
-                                {
-                                    Beatmap = SelectedBeatmap!,
-                                    Modifiers = player.Modifiers,
-                                    StartTime = CountdownEndTime
-                                }, DeliveryMethod.ReliableOrdered);
-                            }
-                            break;
-                        case true:
-                            List<BeatmapDifficulty> diff = GetSelectedBeatmapDifficulties();
-                            foreach (var player in _playerRegistry.Players)
-                            {
-                                BeatmapIdentifier bm = SelectedBeatmap!;
-                                if (player.PreferredDifficulty != null && diff.Contains((BeatmapDifficulty)player.PreferredDifficulty))
-                                    bm.Difficulty = (BeatmapDifficulty)player.PreferredDifficulty!;
-                                _packetDispatcher.SendToPlayer(player, new StartLevelPacket
-                                {
-                                    Beatmap = bm!,
-                                    Modifiers = player.Modifiers,
-                                    StartTime = CountdownEndTime
-                                }, DeliveryMethod.ReliableOrdered);
-                            }
-                            break;
-                    }
-                    break;
+                _packetDispatcher.SendToNearbyPlayers(new StartLevelPacket
+                {
+                    Beatmap = SelectedBeatmap!,
+                    Modifiers = SelectedModifiers,
+                    StartTime = CountdownEndTime
+                }, DeliveryMethod.ReliableOrdered);
+                return;
             }
-            */
-            //_instance.BeatmapChanged(SelectedBeatmap, SelectedModifiers, false, DateTime.Now.AddSeconds(_instance.RunTime - CountdownEndTime));
+            BeatmapDifficulty[] diff = GetSelectedBeatmapDifficulties();
+            BeatmapIdentifier bm = SelectedBeatmap!;
+            foreach (var player in _playerRegistry.Players)
+            {
+                if (_configuration.AllowPerPlayerDifficulties && player.BeatmapIdentifier != null && diff.Contains(player.BeatmapIdentifier.Difficulty))
+                    bm.Difficulty = player.BeatmapIdentifier.Difficulty;
+                _packetDispatcher.SendToPlayer(player, new StartLevelPacket
+                {
+                    Beatmap = bm!,
+                    Modifiers = _configuration.AllowPerPlayerModifiers ?  player.Modifiers : SelectedModifiers,
+                    StartTime = CountdownEndTime
+                }, DeliveryMethod.ReliableOrdered);
+            }
         }
 
         private void CancelCountdown()

@@ -60,9 +60,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool InMenu => State.Contains("in_menu");
         public bool IsModded => State.Contains("modded");
 
-        public object PreferDiffLock { get; set; } = new();
-        public BeatmapDifficulty? PreferredDifficulty { get; set; } = null;
-
         private const float _syncTimeOffset = 0.06f;
         private ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();
 
@@ -90,7 +87,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool Chroma { get; set; } = false;
         public bool NoodleExtensions { get; set; } = false;
         public bool MappingExtensions { get; set; } = false;
-        public List<BeatmapDifficulty> Difficulties { get; set; } = new();
+        public BeatmapDifficulty[] BeatmapDifficulties { get; set; } = Array.Empty<BeatmapDifficulty>();
 
         public void ResetRecommendedMapRequirements()
         {
@@ -98,7 +95,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             Chroma  = false;
             NoodleExtensions  = false;
             MappingExtensions = false;
-            Difficulties.Clear();
+            BeatmapDifficulties = Array.Empty<BeatmapDifficulty>();
         }
     }
 }
