@@ -24,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"(SenderId={sender.ConnectionId})."
             );
 
-            if (sender.IsManager)
+            if (sender.IsServerOwner)
                 _gameplayManager.SignalRequestReturnToMenu();
 
             return Task.CompletedTask;

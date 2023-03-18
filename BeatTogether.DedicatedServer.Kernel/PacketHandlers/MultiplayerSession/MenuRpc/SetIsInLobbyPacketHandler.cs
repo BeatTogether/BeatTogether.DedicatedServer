@@ -54,7 +54,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 
 
                 //If your not the lobby manager then the selecteed beatmap dissapears
-                if (sender.InLobby && !sender.IsManager)
+                if (sender.InLobby && !sender.IsServerOwner)
                 {
                     if (_lobbyManager.SelectedBeatmap is null)
                         _packetDispatcher.SendToPlayer(sender, new ClearSelectedBeatmap(), DeliveryMethod.ReliableOrdered);
