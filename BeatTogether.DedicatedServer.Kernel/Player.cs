@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Types;
@@ -40,12 +39,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         public GameplayModifiers Modifiers { get; set; } = new();
         public object StateLock { get; set; } = new();
         public PlayerStateHash State { get; set; } = new();
-
-        public bool IsManager => UserId == Instance._configuration.ManagerId;
+        public bool IsServerOwner => UserId == Instance._configuration.ServerOwnerId;
         public bool CanRecommendBeatmaps => true;
         public bool CanRecommendModifiers =>
             Instance._configuration.GameplayServerControlSettings is Enums.GameplayServerControlSettings.AllowModifierSelection or Enums.GameplayServerControlSettings.All;
-        public bool CanKickVote => UserId == Instance._configuration.ManagerId;
+        public bool CanKickVote => UserId == Instance._configuration.ServerOwnerId;
         public bool CanInvite =>
             Instance._configuration.DiscoveryPolicy is Enums.DiscoveryPolicy.WithCode or Enums.DiscoveryPolicy.Public;
 

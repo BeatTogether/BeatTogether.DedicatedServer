@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
@@ -7,7 +7,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 {
     public sealed class SetPlayersMissingEntitlementsToLevelPacket : BaseRpcWithValuesPacket
     {
-        public List<string> PlayersWithoutEntitlements { get; set; } = new();
+        public string[] PlayersWithoutEntitlements { get; set; } = Array.Empty<string>();
 
         public override void ReadFrom(ref SpanBufferReader reader)
         {
@@ -15,11 +15,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 
             if (HasValue0)
             {
-                // PlayersMissingEntitlementsNetSerializable
-                int count = reader.ReadInt32();
-                for (int i = 0; i < count; i++)
+                PlayersWithoutEntitlements = new string[reader.ReadInt32()];
+                for (int i = 0; i < PlayersWithoutEntitlements.Length; i++)
                 {
-                    PlayersWithoutEntitlements.Add(reader.ReadString());
+                    PlayersWithoutEntitlements[i] = reader.ReadString();
                 }
             }
         }
@@ -28,8 +27,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         {
             base.WriteTo(ref writer);
             
-            // PlayersMissingEntitlementsNetSerializable
-            writer.WriteInt32(PlayersWithoutEntitlements.Count);
+            writer.WriteInt32(PlayersWithoutEntitlements.Length);
             foreach (string player in PlayersWithoutEntitlements)
             {
                 writer.WriteString(player);

@@ -19,6 +19,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             lock (sender.StateLock)
             {
                 sender.State = packet.PlayerState;
+                //TODO hmmm would have thought that there would be a thing to send packets to everyone here, so add that if test no worky
             }
             return Task.CompletedTask;
         }

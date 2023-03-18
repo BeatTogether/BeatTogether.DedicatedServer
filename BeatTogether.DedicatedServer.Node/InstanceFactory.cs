@@ -50,7 +50,7 @@ namespace BeatTogether.DedicatedServer.Node
             var instanceConfig = scope.ServiceProvider.GetRequiredService<InstanceConfiguration>();
             instanceConfig.Port = (int)port!;
             instanceConfig.Secret = secret;
-            instanceConfig.ManagerId = managerId;
+            instanceConfig.ServerOwnerId = managerId;
             instanceConfig.MaxPlayerCount = Math.Min(config.MaxPlayerCount,250); //max size of 254, id 127 routes packets to all, max is 250, last 4 ID's will be reserved for future features
             instanceConfig.DiscoveryPolicy = (DiscoveryPolicy)config.DiscoveryPolicy;
             instanceConfig.InvitePolicy = (InvitePolicy)config.InvitePolicy;

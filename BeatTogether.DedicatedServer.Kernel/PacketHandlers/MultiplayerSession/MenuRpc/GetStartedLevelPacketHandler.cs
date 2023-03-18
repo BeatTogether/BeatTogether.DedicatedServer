@@ -41,7 +41,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetStartedLevelPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            if (_instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null && _gameplayManager.State != GameplayManagerState.Results && _gameplayManager.State != GameplayManagerState.None)
+            if (_instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null && _gameplayManager.State != GameplayManagerState.None)
             {
                 _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
                 {

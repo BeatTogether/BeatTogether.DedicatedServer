@@ -34,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         object StateLock { get; set; }
         PlayerStateHash State { get; set; }
 
-        public bool IsManager { get; }
+        public bool IsServerOwner { get; }
         public bool CanRecommendBeatmaps { get; }
         public bool CanRecommendModifiers { get; }
         public bool CanKickVote { get; }
