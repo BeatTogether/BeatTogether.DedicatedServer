@@ -61,11 +61,18 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandlePlayerConnectedToMatchmaking(PlayerConnectedToMatchmakingServerEvent @event)
         {
-            if(@event.NodeEndpoint == _configuration.HostName)
+            if (@event.NodeEndpoint != _configuration.HostName)
+                return Task.CompletedTask;
+
+            var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
+            var random = @event.Random;
+            var publicKey = @event.PublicKey;
+
+            // Clients connecting via Graph API will connect directly to us to negotiate encryption parameters
+            var hasEncryptionParams = random != null && publicKey != null;
+
+            if (hasEncryptionParams)
             {
-                var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
-                var random = @event.Random;
-                var publicKey = @event.PublicKey;
                 _logger.Verbose(
                     "Adding encrypted end point " +
                     $"(RemoteEndPoint='{remoteEndPoint}', " +
@@ -73,8 +80,16 @@ namespace BeatTogether.DedicatedServer.Node
                     $"PublicKey='{BitConverter.ToString(publicKey)}')."
                 );
                 _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random, publicKey);
-                _autobus.Publish(new NodeReceivedPlayerEncryptionEvent(_configuration.HostName, @event.RemoteEndPoint));
             }
+            else
+            {
+                _logger.Information(
+                    "Master server notified us of connecting graph client " +
+                    $"(RemoteEndPoint='{remoteEndPoint}')."
+                );
+            }
+
+            _autobus.Publish(new NodeReceivedPlayerEncryptionEvent(_configuration.HostName, @event.RemoteEndPoint));
             return Task.CompletedTask;
         }
 
