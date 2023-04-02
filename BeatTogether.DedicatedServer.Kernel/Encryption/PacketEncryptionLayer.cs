@@ -91,9 +91,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 return;
 
             var bufferReader = new SpanBufferReader(data);
+            
             if (!bufferReader.ReadBool())  // isEncrypted
             {
-                _logger.Warning($"Received an unencrypted packet (RemoteEndPoint='{endPoint}').");
+                // Received an unencrypted packet - this is valid if the client is still negotiating 
+                // TODO Reject unencrypted inbound packets for regular clients past the negotiation stage?
                 return;
             }
 

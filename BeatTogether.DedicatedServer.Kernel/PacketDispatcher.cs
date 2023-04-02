@@ -5,7 +5,6 @@ using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Dispatchers;
 using BeatTogether.LiteNetLib.Enums;
-using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 using Serilog;
 using System;
