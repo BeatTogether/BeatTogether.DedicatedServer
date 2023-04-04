@@ -34,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 sender.NoodleExtensions = Requirements.Contains("Noodle Extensions");
                 sender.MappingExtensions = Requirements.Contains("Mapping Extensions");
             }
-            sender.Difficulties = packet.requirements.Keys.Select(b => (BeatmapDifficulty)b).ToList();
+            sender.BeatmapDifficulties = packet.requirements.Keys.Select(b => (BeatmapDifficulty)b).ToArray();
             return Task.CompletedTask;
         }
     }

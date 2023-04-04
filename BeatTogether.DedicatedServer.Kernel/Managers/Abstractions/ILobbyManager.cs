@@ -18,6 +18,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
         GameplayModifiers EmptyModifiers {get; }
 
         void Update();
-        List<BeatmapDifficulty> GetSelectedBeatmapDifficulties();
+        BeatmapDifficulty[] GetSelectedBeatmapDifficulties();
     }
 }

@@ -27,10 +27,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             lock (sender.LatencyLock)
             {
                 sender.Latency.Update(packet.Latency);
+                /* //TODO testing this
                 _packetDispatcher.SendFromPlayer(sender, new PlayerLatencyPacket
                 {
                     Latency = sender.Latency.CurrentAverage
                 }, DeliveryMethod.ReliableOrdered);
+                */
             }
             return Task.CompletedTask;
         }

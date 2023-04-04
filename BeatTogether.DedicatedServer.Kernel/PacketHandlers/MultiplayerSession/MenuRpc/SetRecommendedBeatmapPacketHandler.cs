@@ -12,7 +12,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 		private readonly IPacketDispatcher _packetDispatcher;
 		private readonly ILobbyManager _lobbyManager;
 		private readonly IPlayerRegistry _playerRegistry;
-		private readonly ILogger _logger = Log.ForContext<SetRecommendedBeatmapPacket>();
+		private readonly ILogger _logger = Log.ForContext<SetRecommendedBeatmapPacketHandler>();
 
 		public SetRecommendedBeatmapPacketHandler(
             IPacketDispatcher packetDispatcher,

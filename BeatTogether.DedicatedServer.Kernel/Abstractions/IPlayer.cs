@@ -1,7 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using System.Collections.Generic;
 using System.Net;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
@@ -15,8 +14,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         string Secret { get; }
         string UserId { get; }
         string UserName { get; }
-        byte[] Random { get; set; }
-        byte[] PublicEncryptionKey { get; set; }
+        byte[]? Random { get; set; }
+        byte[]? PublicEncryptionKey { get; set; }
 
         object LatencyLock { get; set; }
         RollingAverage Latency { get; }
@@ -35,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         object StateLock { get; set; }
         PlayerStateHash State { get; set; }
 
-        public bool IsManager { get; }
+        public bool IsServerOwner { get; }
         public bool CanRecommendBeatmaps { get; }
         public bool CanRecommendModifiers { get; }
         public bool CanKickVote { get; }
@@ -53,10 +52,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool IsModded { get; }
         object InLobbyLock { get; set; }
         bool InLobby { get; set; }
-
-        object PreferDiffLock { get; set; }
-        BeatmapDifficulty? PreferredDifficulty { get; set; }
-
         object EntitlementLock { get; set; }
         EntitlementStatus GetEntitlement(string levelId);
         void SetEntitlement(string levelId, EntitlementStatus entitlement);
@@ -65,7 +60,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         public bool Chroma { get; set; }
         public bool NoodleExtensions { get; set; }
         public bool MappingExtensions { get; set; }
-        public List<BeatmapDifficulty> Difficulties { get; set; }
+        public BeatmapDifficulty[] BeatmapDifficulties { get; set; }
         void ResetRecommendedMapRequirements();
     }
 }

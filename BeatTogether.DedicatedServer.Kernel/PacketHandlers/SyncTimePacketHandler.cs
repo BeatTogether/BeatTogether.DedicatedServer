@@ -23,11 +23,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 $"(SenderId={sender.ConnectionId}, SyncTime={packet.SyncTime})."
             );
 
+            /* //TODO testing stuff
             _packetDispatcher.SendToPlayer(sender, new SyncTimePacket
             {
                 SyncTime = sender.SyncTime
             }, DeliveryMethod.ReliableOrdered);
-
+            */
             return Task.CompletedTask;
         }
     }

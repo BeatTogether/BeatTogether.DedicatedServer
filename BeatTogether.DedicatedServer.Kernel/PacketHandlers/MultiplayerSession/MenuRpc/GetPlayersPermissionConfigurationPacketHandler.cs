@@ -40,12 +40,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                     PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
                     {
                         UserId = x.UserId,
-                        IsServerOwner = x.IsManager,
+                        IsServerOwner = x.IsServerOwner,
                         HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
                         HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
                         HasKickVotePermission = x.CanKickVote,
                         HasInvitePermission = x.CanInvite
-                    }).ToList()
+                    }).ToArray()
                 }
             }, DeliveryMethod.ReliableOrdered);
 

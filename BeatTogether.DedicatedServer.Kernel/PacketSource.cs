@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
@@ -17,7 +16,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class PacketSource : ConnectedMessageSource
     {
-        public const byte LocalConnectionId = 0;
+        public const byte LocalConnectionId = 127;//TODO testing this
         public const byte AllConnectionIds = 127;
 
         private readonly IServiceProvider _serviceProvider;
