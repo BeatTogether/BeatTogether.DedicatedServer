@@ -1,5 +1,4 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Kernel.Managers;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
@@ -51,11 +50,11 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 sender.InLobby = packet.IsInLobby;
 
                 //if (_instance.State == MultiplayerGameState.Game && packet.IsInLobby == true && _playerRegistry.Players.TrueForAll(p => p.InLobby))
-                //    _gameplayManager.SignalRequestReturnToMenu();
+                //    _gameplayManager.SignalRequestReturnToMenu(); //TODO set the game to lobby if all players are in lobby?
 
 
                 //If your not the lobby manager then the selecteed beatmap dissapears
-                if (sender.InLobby && !sender.IsManager)
+                if (sender.InLobby && !sender.IsServerOwner)
                 {
                     if (_lobbyManager.SelectedBeatmap is null)
                         _packetDispatcher.SendToPlayer(sender, new ClearSelectedBeatmap(), DeliveryMethod.ReliableOrdered);

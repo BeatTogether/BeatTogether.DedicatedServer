@@ -14,7 +14,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -40,9 +39,9 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         //public event Action<IDedicatedInstance> StartEvent = null!;
         public event Action<IDedicatedInstance> StopEvent = null!;
-        public event Action<IPlayer> PlayerConnectedEvent = null!;
+        public event Action<IPlayer, int> PlayerConnectedEvent = null!;
         public event Action<IPlayer, int> PlayerDisconnectedEvent = null!;
-        public event Action<string, int> PlayerCountChangeEvent = null!;
+        public event Action<string, EndPoint, int> PlayerDisconnectBeforeJoining = null!;
         public event Action<string, bool> GameIsInLobby = null!;
         //public event Action<string, Enums.CountdownState, MultiplayerGameState, Enums.GameplayManagerState> StateChangedEvent = null!;
         //public event Action<IDedicatedInstance> UpdateInstanceEvent = null!;
@@ -84,11 +83,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         }
 
         #region Public Methods
+        /*
         public void PlayerUpdated(IPlayer player)
         {
-            PlayerConnectedEvent?.Invoke(player);
+            PlayerConnectedEvent?.Invoke(player, _playerRegistry.GetPlayerCount());
         }
-        /*
         public void InstanceStateChanged(CountdownState countdown, GameplayManagerState gameplay)
         {
             StateChangedEvent?.Invoke(_configuration.Secret, countdown, State, gameplay);
@@ -129,7 +128,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(Port={Port}," +
                 $"ServerName='{_configuration.ServerName}', " +
                 $"Secret='{_configuration.Secret}', " +
-                $"ManagerId='{_configuration.ManagerId}', " +
+                $"ManagerId='{_configuration.ServerOwnerId}', " +
                 $"MaxPlayerCount={_configuration.MaxPlayerCount}, " +
                 $"DiscoveryPolicy={_configuration.DiscoveryPolicy}, " +
                 $"InvitePolicy={_configuration.InvitePolicy}, " +
@@ -175,7 +174,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(Port={Port}," +
                 $"ServerName='{_configuration.ServerName}', " +
                 $"Secret='{_configuration.Secret}', " +
-                $"ManagerId='{_configuration.ManagerId}', " +
+                $"ManagerId='{_configuration.ServerOwnerId}', " +
                 $"MaxPlayerCount={_configuration.MaxPlayerCount}, " +
                 $"DiscoveryPolicy={_configuration.DiscoveryPolicy}, " +
                 $"InvitePolicy={_configuration.InvitePolicy}, " +
@@ -215,18 +214,19 @@ namespace BeatTogether.DedicatedServer.Kernel
             _releasedSortIndices.Enqueue(sortIndex);
 
         object ConnectionIDLock = new();
-        public byte GetNextConnectionId() //ID 0 is server, ID 127 means send to all players, 255 will mean perm spectator when/if implimented
+        public byte GetNextConnectionId() //ID 127 is server, ID 127 also means send to all players, 255 will mean perm spectator when/if implimented
         {
             if (_releasedConnectionIds.TryDequeue(out var connectionId))
                 return connectionId;
             lock (ConnectionIDLock)
             {
+                byte ID = _connectionIdCount;
                 _connectionIdCount++;
                 if (_connectionIdCount == 127)
                     _connectionIdCount++;
-                if (_connectionIdCount > (byte.MaxValue - 4))
+                if (_connectionIdCount > (byte.MaxValue - 5))
                     return 255; //Give them an unusedID so they dont conflict with anyone
-                return _connectionIdCount;
+                return ID;
             }
         }
 
@@ -254,7 +254,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             if (ShouldDenyConnection(endPoint, ref additionalData))
             {
-                PlayerCountChangeEvent?.Invoke(_configuration.Secret, _playerRegistry.GetPlayerCount());
+                PlayerDisconnectBeforeJoining?.Invoke(_configuration.Secret, endPoint, _playerRegistry.GetPlayerCount());
                 return false;
             }
             return true;
@@ -386,7 +386,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 // Send host player to new player
                 _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
                 {
-                    RemoteConnectionId = 0,
+                    RemoteConnectionId = 127,//TODO testing this
                     UserId = _configuration.ServerId,
                     UserName = _configuration.ServerName,
                     IsConnectionOwner = true
@@ -424,17 +424,16 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 }
 
-                // Disable start button if they are manager without selected song
+                // Disable start button if they are server owner without selected song
                 _packetDispatcher.SendToPlayer(player, new SetIsStartButtonEnabledPacket
                 {
-                    Reason = player.UserId == _configuration.ManagerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
+                    Reason = player.UserId == _configuration.ServerOwnerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
                 }, DeliveryMethod.ReliableOrdered);
 
                 // Update permissions
                 if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.GetPlayerCount() == 1) && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
                 {
-                    _configuration.ManagerId = player.UserId;
-                    //InstanceChanged();
+                    _configuration.ServerOwnerId = player.UserId;
                 }
 
                 _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
@@ -444,15 +443,15 @@ namespace BeatTogether.DedicatedServer.Kernel
                         PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
                         {
                             UserId = x.UserId,
-                            IsServerOwner = x.IsManager,
+                            IsServerOwner = x.IsServerOwner,
                             HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
                             HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
                             HasKickVotePermission = x.CanKickVote,
                             HasInvitePermission = x.CanInvite
-                        }).ToList()
+                        }).ToArray()
                     }
                 }, DeliveryMethod.ReliableOrdered);
-                PlayerConnectedEvent?.Invoke(player);
+                PlayerConnectedEvent?.Invoke(player, _playerRegistry.GetPlayerCount());
             }
             
         }
@@ -496,8 +495,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                         DisconnectedReason = DisconnectedReason.ClientConnectionClosed
                     }, DeliveryMethod.ReliableOrdered);
 
-                    if (_configuration.ManagerId == player.UserId)
-                        _configuration.ManagerId = "";
+                    if (_configuration.ServerOwnerId == player.UserId)
+                        _configuration.ServerOwnerId = "";
 
                     _playerRegistry.RemovePlayer(player);
                     ReleaseSortIndex(player.SortIndex);
@@ -529,15 +528,15 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 else
                 {
-                    // Set new manager if manager left
-                    if (_configuration.ManagerId == "" && _configuration.GameplayServerMode == GameplayServerMode.Managed)
+                    // Set new server owner if server owner left
+                    if (_configuration.ServerOwnerId == "" && _configuration.GameplayServerMode == GameplayServerMode.Managed)
                     {
-                        _configuration.ManagerId = _playerRegistry.Players[0].UserId;
-                        var manager = _playerRegistry.GetPlayer(_configuration.ManagerId);
+                        _configuration.ServerOwnerId = _playerRegistry.Players[0].UserId;
+                        var serverOwner = _playerRegistry.GetPlayer(_configuration.ServerOwnerId);
 
-                        // Disable start button if they are manager without selected song
-                        if (manager.BeatmapIdentifier == null)
-                            _packetDispatcher.SendToPlayer(manager, new SetIsStartButtonEnabledPacket
+                        // Disable start button if they are server owner without selected song
+                        if (serverOwner.BeatmapIdentifier == null)
+                            _packetDispatcher.SendToPlayer(serverOwner, new SetIsStartButtonEnabledPacket
                             {
                                 Reason = CannotStartGameReason.NoSongSelected
                             }, DeliveryMethod.ReliableOrdered);
@@ -550,15 +549,14 @@ namespace BeatTogether.DedicatedServer.Kernel
                                 PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
                                 {
                                     UserId = x.UserId,
-                                    IsServerOwner = x.IsManager,
+                                    IsServerOwner = x.IsServerOwner,
                                     HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
                                     HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
                                     HasKickVotePermission = x.CanKickVote,
                                     HasInvitePermission = x.CanInvite
-                                }).ToList()
+                                }).ToArray()
                             }
                         }, DeliveryMethod.ReliableOrdered);
-                        //InstanceChanged();
                     }
                 }
             }

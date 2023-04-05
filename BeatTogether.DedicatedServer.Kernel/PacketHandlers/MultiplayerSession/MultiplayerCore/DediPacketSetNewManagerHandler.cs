@@ -36,9 +36,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
             lock (handleLock)
             {
-                if (sender.IsManager && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
+                if (sender.IsServerOwner && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
                 {
-                    _configuration.ManagerId = packet.NewManagerID;
+                    _configuration.ServerOwnerId = packet.NewManagerID;
 
                     _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
                     {
@@ -47,12 +47,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                             PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
                             {
                                 UserId = x.UserId,
-                                IsServerOwner = x.IsManager,
+                                IsServerOwner = x.IsServerOwner,
                                 HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
                                 HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
                                 HasKickVotePermission = x.CanKickVote,
                                 HasInvitePermission = x.CanInvite
-                            }).ToList()
+                            }).ToArray()
                         }
                     }, DeliveryMethod.ReliableOrdered);
                 }

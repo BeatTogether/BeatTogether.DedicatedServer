@@ -6,7 +6,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
     {
         public int Port { get; set; }
         public string Secret { get; set; } = string.Empty;
-        public string ManagerId { get; set; } = string.Empty;
+        public string ServerOwnerId { get; set; } = string.Empty;
         public string ServerId { get; set; } = "ziuMSceapEuNN7wRGQXrZg";
         public string ServerName { get; set; } = string.Empty;
         public float DestroyInstanceTimeout { get; set; } = 0f; //set to -1 for no timeout(must close using api), 0 would be for lobbies made the usaual way, or set a number for a timeout

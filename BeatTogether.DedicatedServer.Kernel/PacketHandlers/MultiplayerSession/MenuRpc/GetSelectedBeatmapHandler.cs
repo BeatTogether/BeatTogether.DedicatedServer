@@ -41,7 +41,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 }, DeliveryMethod.ReliableOrdered);
                 return Task.CompletedTask;
             }
-            if (_instance.State == Messaging.Enums.MultiplayerGameState.Game && _gameplayManager.State != Enums.GameplayManagerState.Results && _gameplayManager.CurrentBeatmap != null)
+            if (_instance.State == Messaging.Enums.MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null)
             {
                 _packetDispatcher.SendToPlayer(sender, new SetSelectedBeatmap
                 {

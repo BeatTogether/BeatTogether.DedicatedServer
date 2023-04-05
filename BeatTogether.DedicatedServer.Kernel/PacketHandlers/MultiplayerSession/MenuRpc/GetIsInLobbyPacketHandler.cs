@@ -33,7 +33,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 
             _packetDispatcher.SendToPlayer(sender, new SetIsInLobbyPacket
             {
-                IsInLobby = _instance.State != MultiplayerGameState.Game || _gameplayManager.State == GameplayManagerState.Results
+                IsInLobby = _instance.State != MultiplayerGameState.Game
             }, DeliveryMethod.ReliableOrdered);
 
             return Task.CompletedTask;

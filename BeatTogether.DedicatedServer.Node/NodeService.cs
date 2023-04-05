@@ -11,8 +11,6 @@ using Serilog;
 using System;
 using System.Threading.Tasks;
 using System.Net;
-using BeatTogether.DedicatedServer.Kernel.Enums;
-using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 
 namespace BeatTogether.DedicatedServer.Node
@@ -61,16 +59,16 @@ namespace BeatTogether.DedicatedServer.Node
                 request.PlayersReadyCountdownTime ,
                 request.AllowPerPlayerModifiers,
                 request.AllowPerPlayerDifficulties,
-                request.AllowChroma ,
-                request.AllowME ,
-                request.AllowNE 
+                request.AllowChroma,
+                request.AllowME,
+                request.AllowNE
                 );
             if (matchmakingServer is null)
                 return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.NoAvailableSlots, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
 
             matchmakingServer.PlayerConnectedEvent += HandleUpdatePlayerEvent;
             matchmakingServer.PlayerDisconnectedEvent += HandlePlayerDisconnectEvent;
-            matchmakingServer.PlayerCountChangeEvent += HandlePlayerCountChange;//Updates master server player count
+            matchmakingServer.PlayerDisconnectBeforeJoining += HandlePlayerCountChange;//Updates master server player count
             //matchmakingServer.StartEvent += HandleStartEvent;
             matchmakingServer.StopEvent += HandleStopEvent;
             matchmakingServer.GameIsInLobby += HandleGameInLobbyEvent;
@@ -119,15 +117,15 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Publish(new SelectedBeatmapEvent(secret, beatmap is not null ? beatmap.LevelId : string.Empty, beatmap is not null ? beatmap.Characteristic : string.Empty, beatmap is not null ? (uint)beatmap.Difficulty : uint.MinValue, IsGameplay, GameplayCast(modifiers), StartTime));
         }
         */
-        public Interface.Models.GameplayModifiers GameplayCast(GameplayModifiers v)
+        public static Interface.Models.GameplayModifiers GameplayCast(GameplayModifiers v)
         {
             return new Interface.Models.GameplayModifiers((Interface.Models.EnergyType)v.Energy, v.NoFailOn0Energy, v.DemoNoFail, v.InstaFail, v.FailOnSaberClash, (Interface.Models.EnabledObstacleType)v.EnabledObstacle, v.DemoNoObstacles, v.FastNotes, v.StrictAngles, v.DisappearingArrows, v.GhostNotes, v.NoBombs, (Interface.Models.SongSpeed)v.Speed, v.NoArrows, v.ProMode, v.ZenMode, v.SmallCubes);
         }
-        public Interface.Models.LevelCompletionResults LevelCompletionCast(LevelCompletionResults y)
+        public static Interface.Models.LevelCompletionResults LevelCompletionCast(LevelCompletionResults y)
         {
             return new(GameplayCast(y.GameplayModifiers), y.ModifiedScore, y.MultipliedScore, (Interface.Models.Rank)y.Rank, y.FullCombo, y.LeftSaberMovementDistance, y.RightSaberMovementDistance, y.LeftHandMovementDistance, y.RightHandMovementDistance, (Interface.Models.LevelEndStateType)y.LevelEndStateType, (Interface.Models.LevelEndAction)y.LevelEndAction, y.Energy, y.GoodCutsCount, y.BadCutsCount, y.MissedCount, y.NotGoodCount, y.OkCount, y.MaxCutScore, y.TotalCutScore, y.GoodCutsCountForNotesWithFullScoreScoringType, y.AverageCenterDistanceCutScoreForNotesWithFullScoreScoringType, y.AverageCutScoreForNotesWithFullScoreScoringType, y.MaxCombo, y.EndSongTime);
         }
-        public Interface.Models.AvatarData AvatarCast(AvatarData v)
+        public static Interface.Models.AvatarData AvatarCast(AvatarData v)
         {
             return new(
                 v.HeadTopId,
@@ -187,17 +185,19 @@ namespace BeatTogether.DedicatedServer.Node
         {
             _autobus.Publish(new MatchmakingServerStoppedEvent(inst._configuration.Secret));//Tells the master server and api server that the server has stopped
         }
-        private void HandleUpdatePlayerEvent(IPlayer player)
+        private void HandleUpdatePlayerEvent(IPlayer player, int PlayerCount)
         {
-            _autobus.Publish(new PlayerJoinEvent(player.Secret, player.Endpoint.ToString()!, player.UserId, player.UserName, player.ConnectionId, player.SortIndex, AvatarCast(player.Avatar)));
+            _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, string.Empty, string.Empty, PlayerCount));
+            //_autobus.Publish(new PlayerJoinEvent(player.Secret, player.Endpoint.ToString()!, player.UserId, player.UserName, player.ConnectionId, player.SortIndex, AvatarCast(player.Avatar)));
         }
         private void HandlePlayerDisconnectEvent(IPlayer player, int count) //Updates master server player count And removes the players encryption data from the server
         {
             _packetEncryptionLayer.RemoveEncryptedEndPoint((IPEndPoint)player.Endpoint);
             _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, player.UserId, ((IPEndPoint)player.Endpoint).ToString(), count));
         }
-        private void HandlePlayerCountChange(string Secret, int count) //Updates master server player count
+        private void HandlePlayerCountChange(string Secret, EndPoint endPoint, int count) //Updates master server player count
         {
+            _packetEncryptionLayer.RemoveEncryptedEndPoint((IPEndPoint)endPoint);
             _autobus.Publish(new PlayerLeaveServerEvent(Secret,string.Empty, string.Empty, count));
         }
         #endregion

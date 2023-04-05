@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Types;
@@ -25,8 +24,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                      Instance.RunTime);
         public object SortLock { get; set; } = new();
         public int SortIndex { get; set; }
-        public byte[] Random { get; set; }
-        public byte[] PublicEncryptionKey { get; set; }
+        public byte[]? Random { get; set; }
+        public byte[]? PublicEncryptionKey { get; set; }
         public object PlayerIdentityLock { get; set; } = new();
         public AvatarData Avatar { get; set; } = new();
         public object ReadyLock { get; set; } = new();
@@ -40,12 +39,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         public GameplayModifiers Modifiers { get; set; } = new();
         public object StateLock { get; set; } = new();
         public PlayerStateHash State { get; set; } = new();
-
-        public bool IsManager => UserId == Instance._configuration.ManagerId;
+        public bool IsServerOwner => UserId == Instance._configuration.ServerOwnerId;
         public bool CanRecommendBeatmaps => true;
         public bool CanRecommendModifiers =>
             Instance._configuration.GameplayServerControlSettings is Enums.GameplayServerControlSettings.AllowModifierSelection or Enums.GameplayServerControlSettings.All;
-        public bool CanKickVote => UserId == Instance._configuration.ManagerId;
+        public bool CanKickVote => UserId == Instance._configuration.ServerOwnerId;
         public bool CanInvite =>
             Instance._configuration.DiscoveryPolicy is Enums.DiscoveryPolicy.WithCode or Enums.DiscoveryPolicy.Public;
 
@@ -59,9 +57,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool FinishedLevel => State.Contains("finished_level");
         public bool InMenu => State.Contains("in_menu");
         public bool IsModded => State.Contains("modded");
-
-        public object PreferDiffLock { get; set; } = new();
-        public BeatmapDifficulty? PreferredDifficulty { get; set; } = null;
 
         private const float _syncTimeOffset = 0.06f;
         private ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();
@@ -90,7 +85,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool Chroma { get; set; } = false;
         public bool NoodleExtensions { get; set; } = false;
         public bool MappingExtensions { get; set; } = false;
-        public List<BeatmapDifficulty> Difficulties { get; set; } = new();
+        public BeatmapDifficulty[] BeatmapDifficulties { get; set; } = Array.Empty<BeatmapDifficulty>();
 
         public void ResetRecommendedMapRequirements()
         {
@@ -98,7 +93,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             Chroma  = false;
             NoodleExtensions  = false;
             MappingExtensions = false;
-            Difficulties.Clear();
+            BeatmapDifficulties = Array.Empty<BeatmapDifficulty>();
         }
     }
 }
