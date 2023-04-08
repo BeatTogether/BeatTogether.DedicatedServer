@@ -1,7 +1,7 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BeatTogether.Extensions
 {
@@ -15,6 +15,20 @@ namespace BeatTogether.Extensions
         public static IServiceCollection AddAllPacketHandlersFromAssembly(this IServiceCollection services, Assembly assembly)
         {
             var genericInterface = typeof(IPacketHandler<>);
+            var eventHandlerTypes = assembly
+                .GetTypes()
+                .Where(type => type.GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == genericInterface));
+            foreach (var eventHandlerType in eventHandlerTypes)
+                if (!eventHandlerType.IsAbstract)
+                    services.AddTransient(
+                        genericInterface.MakeGenericType(eventHandlerType.BaseType!.GetGenericArguments()),
+                        eventHandlerType);
+            return services;
+        }
+        
+        public static IServiceCollection AddAllHandshakeMessageHandlersFromAssembly(this IServiceCollection services, Assembly assembly)
+        {
+            var genericInterface = typeof(IHandshakeMessageHandler<>);
             var eventHandlerTypes = assembly
                 .GetTypes()
                 .Where(type => type.GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == genericInterface));

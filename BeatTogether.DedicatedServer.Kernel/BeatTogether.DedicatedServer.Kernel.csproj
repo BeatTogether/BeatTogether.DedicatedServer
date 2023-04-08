@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\BeatTogether.LiteNetLib\dependencies\AsyncUdpServer\AsyncUdpServer\AsyncUdpServer.csproj" />
     <ProjectReference Include="..\BeatTogether.DedicatedServer.Messaging\BeatTogether.DedicatedServer.Messaging.csproj" />
   </ItemGroup>
 

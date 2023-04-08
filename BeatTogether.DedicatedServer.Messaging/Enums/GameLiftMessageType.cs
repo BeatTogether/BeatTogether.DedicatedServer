@@ -1,6 +1,6 @@
 ﻿namespace BeatTogether.DedicatedServer.Messaging.Enums
 {
-    public enum GameLiftMessageType
+    public enum GameLiftMessageType : uint
     {
         AuthenticateUserRequest,
         AuthenticateUserResponse,
