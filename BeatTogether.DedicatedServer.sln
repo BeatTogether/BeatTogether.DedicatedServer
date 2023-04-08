@@ -13,10 +13,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServer.Node", "BeatTogether.DedicatedServer.Node\BeatTogether.DedicatedServer.Node.csproj", "{D2B3DC3B-FECD-4E06-8B20-7A60A0BE3C2E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeatTogether.LiteNetLib", "..\BeatTogether.LiteNetLib\BeatTogether.LiteNetLib\BeatTogether.LiteNetLib.csproj", "{BF9AADDF-5B61-4ACC-A93B-2E3870D4CA47}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncUdpServer", "..\BeatTogether.LiteNetLib\dependencies\AsyncUdpServer\AsyncUdpServer\AsyncUdpServer.csproj", "{03AC6CCE-7FAE-4B2F-B7C3-53B85A3F3CCE}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,14 +39,6 @@ Global
 		{D2B3DC3B-FECD-4E06-8B20-7A60A0BE3C2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2B3DC3B-FECD-4E06-8B20-7A60A0BE3C2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2B3DC3B-FECD-4E06-8B20-7A60A0BE3C2E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BF9AADDF-5B61-4ACC-A93B-2E3870D4CA47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BF9AADDF-5B61-4ACC-A93B-2E3870D4CA47}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BF9AADDF-5B61-4ACC-A93B-2E3870D4CA47}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BF9AADDF-5B61-4ACC-A93B-2E3870D4CA47}.Release|Any CPU.Build.0 = Release|Any CPU
-		{03AC6CCE-7FAE-4B2F-B7C3-53B85A3F3CCE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{03AC6CCE-7FAE-4B2F-B7C3-53B85A3F3CCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{03AC6CCE-7FAE-4B2F-B7C3-53B85A3F3CCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{03AC6CCE-7FAE-4B2F-B7C3-53B85A3F3CCE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
