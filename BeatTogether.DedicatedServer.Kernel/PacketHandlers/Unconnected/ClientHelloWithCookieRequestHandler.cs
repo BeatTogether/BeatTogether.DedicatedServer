@@ -8,7 +8,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.Unconnected
 {
     public class ClientHelloWithCookieRequestHandler : BaseHandshakeMessageHandler<ClientHelloWithCookieRequest>
     {
-        private IHandshakeService _handshakeService;
+        private readonly IHandshakeService _handshakeService;
 
         public ClientHelloWithCookieRequestHandler(IHandshakeService handshakeService)
         {

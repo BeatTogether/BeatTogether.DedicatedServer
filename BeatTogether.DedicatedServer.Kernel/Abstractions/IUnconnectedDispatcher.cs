@@ -6,6 +6,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
     public interface IUnconnectedDispatcher
     {
         void Send(HandshakeSession session, IMessage message);
-        void Acknowledge(HandshakeSession session, uint responseId);
+        bool Acknowledge(HandshakeSession session, uint responseId, bool handled = true);
     }
 }

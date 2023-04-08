@@ -8,7 +8,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.Unconnected
 {
     public class AcknowledgeMessageHandler : BaseHandshakeMessageHandler<AcknowledgeMessage>
     {
-        private IUnconnectedDispatcher _unconnectedDispatcher;
+        private readonly IUnconnectedDispatcher _unconnectedDispatcher;
 
         public AcknowledgeMessageHandler(IUnconnectedDispatcher unconnectedDispatcher)
         {
@@ -17,7 +17,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.Unconnected
 
         public override Task<IMessage?> Handle(HandshakeSession session, AcknowledgeMessage message)
         {
-            _unconnectedDispatcher.Acknowledge(session, message.ResponseId);
+            _unconnectedDispatcher.Acknowledge(session, message.ResponseId, message.MessageHandled);
             return Task.FromResult(default(IMessage?));
         }
             

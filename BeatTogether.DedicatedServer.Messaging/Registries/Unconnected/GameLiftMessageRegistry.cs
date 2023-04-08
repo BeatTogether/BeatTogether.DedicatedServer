@@ -7,7 +7,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries.Unconnected
 {
     public class GameLiftMessageRegistry : BaseMessageRegistry
     {
-        public override uint MessageGroup => 1U; // MessageGroup.User?
+        public override uint MessageGroup => 3U; 
 
         public GameLiftMessageRegistry()
         {

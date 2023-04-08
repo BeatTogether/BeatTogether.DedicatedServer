@@ -4,7 +4,6 @@ using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Handshake;
 using BeatTogether.DedicatedServer.Kernel.Managers;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
-using BeatTogether.DedicatedServer.Kernel.Providers;
 using BeatTogether.DedicatedServer.Messaging.Registries.Unconnected;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
@@ -32,8 +31,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Extensions
                         .AddScoped<DedicatedInstance>()
                         .AddExisting<IDedicatedInstance, DedicatedInstance>()
                         .AddExisting<LiteNetServer, DedicatedInstance>()
-                        .AddSingleton<ICookieProvider, CookieProvider>()
-                        .AddSingleton<IRandomProvider, RandomProvider>()
                         .AddScoped<IPlayerRegistry, PlayerRegistry>()
                         .AddScoped<UnconnectedMessageSource, UnconnectedSource>()
                         .AddScoped<ConnectedMessageSource, PacketSource>()

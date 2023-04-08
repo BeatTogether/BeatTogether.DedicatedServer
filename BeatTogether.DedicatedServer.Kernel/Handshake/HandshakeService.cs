@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using BeatTogether.Core.Security.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
+using BeatTogether.DedicatedServer.Messaging.Messages.GameLift;
 using BeatTogether.DedicatedServer.Messaging.Messages.Handshake;
 using Krypton.Buffers;
 using Serilog;
@@ -23,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
         private readonly ICertificateSigningService _certificateSigningService;
         private readonly IDiffieHellmanService _diffieHellmanService;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
-        
+
         private readonly ILogger _logger;
 
         private static readonly byte[] MasterSecretSeed = Encoding.UTF8.GetBytes("master secret");
@@ -46,7 +47,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             _certificateSigningService = certificateSigningService;
             _diffieHellmanService = diffieHellmanService;
             _packetEncryptionLayer = packetEncryptionLayer;
-            
+
             _logger = Log.ForContext<HandshakeService>();
         }
 
@@ -58,11 +59,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
                 $"Handling {nameof(ClientHelloRequest)} " +
                 $"(Random='{BitConverter.ToString(request.Random)}')."
             );
+
             session.Epoch = request.RequestId & EpochMask;
-            session.State = HandshakeSessionState.New;
             session.EncryptionParameters = null;
             session.Cookie = _cookieProvider.GetCookie();
             session.ClientRandom = request.Random;
+
             return Task.FromResult(new HelloVerifyRequest
             {
                 Cookie = session.Cookie
@@ -78,6 +80,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
                 $"Random='{BitConverter.ToString(request.Random)}', " +
                 $"Cookie='{BitConverter.ToString(request.Cookie)}')."
             );
+
             if (!request.Cookie.SequenceEqual(session.Cookie))
             {
                 _logger.Warning(
@@ -115,7 +118,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
                 ResponseId = request.CertificateResponseId,
                 Certificates = new List<byte[]>() {_certificate.RawData}
             });
-            
+
             return new ServerHelloRequest
             {
                 Random = session.ServerRandom,
@@ -131,15 +134,55 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
                 $"Handling {nameof(ClientKeyExchange)} " +
                 $"(ClientPublicKey='{BitConverter.ToString(request.ClientPublicKey)}')."
             );
-            
+
             session.ClientPublicKey = request.ClientPublicKey;
             session.ClientPublicKeyParameters = _diffieHellmanService.DeserializeECPublicKey(request.ClientPublicKey);
             session.PreMasterSecret = _diffieHellmanService.GetPreMasterSecret(
                 session.ClientPublicKeyParameters,
                 session.ServerPrivateKeyParameters!
             );
-            
+
+
+            var sendKey = new byte[32];
+            var receiveKey = new byte[32];
+            var sendMacSourceArray = new byte[64];
+            var receiveMacSourceArray = new byte[64];
+            var masterSecretSeed = MakeSeed(MasterSecretSeed, session.ServerRandom!, session.ClientRandom!);
+            var keyExpansionSeed = MakeSeed(KeyExpansionSeed, session.ServerRandom!, session.ClientRandom!);
+            var sourceArray = PRF(
+                PRF(session.PreMasterSecret, masterSecretSeed, 48),
+                keyExpansionSeed,
+                192
+            );
+            Array.Copy(sourceArray, 0, sendKey, 0, 32);
+            Array.Copy(sourceArray, 32, receiveKey, 0, 32);
+            Array.Copy(sourceArray, 64, sendMacSourceArray, 0, 64);
+            Array.Copy(sourceArray, 128, receiveMacSourceArray, 0, 64);
+            session.EncryptionParameters = new BeatTogether.Core.Messaging.Models.EncryptionParameters(
+                receiveKey,
+                sendKey,
+                new HMACSHA256(receiveMacSourceArray),
+                new HMACSHA256(sendMacSourceArray)
+            );
+
             return Task.FromResult(new ChangeCipherSpecRequest());
+        }
+
+        public Task<AuthenticateGameLiftUserResponse> AuthenticateGameLiftUser(HandshakeSession session,
+            AuthenticateGameLiftUserRequest request)
+        {
+            // TODO Check player session ID from master server event
+            
+            _logger.Information("GameLift user authenticated (EndPoint={EndPoint}, UserId={UserId}, " +
+                                "UserName={UserName}, PlayerSessionId={PlayerSessionId})",
+                session.EndPoint.ToString(), request.UserId, request.UserName, request.PlayerSessionId);
+
+            // TODO Sticky encryption parameters by player session ID (recover on GameLift connect packet)
+            
+            return Task.FromResult(new AuthenticateGameLiftUserResponse()
+            {
+                Result = AuthenticateUserResult.Success
+            });
         }
 
         #endregion

@@ -8,7 +8,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.Unconnected
 {
     public class ClientKeyExchangeRequestHandler : BaseHandshakeMessageHandler<ClientKeyExchangeRequest>
     {
-        private IHandshakeService _handshakeService;
+        private readonly IHandshakeService _handshakeService;
 
         public ClientKeyExchangeRequestHandler(IHandshakeService handshakeService)
         {

@@ -73,7 +73,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             }
 
             // Dispatch to handler
-            _logger.Information("Handling handshake message of type {MessageType} (EndPoint={EndPoint})",
+            _logger.Verbose("Handling handshake message of type {MessageType} (EndPoint={EndPoint})",
                 messageType.Name, session.EndPoint.ToString());
             
             var targetHandlerType = typeof(IHandshakeMessageHandler<>).MakeGenericType(messageType);
@@ -86,16 +86,24 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
                 return;
             }
 
-            var replyMessage = await ((IHandshakeMessageHandler) messageHandler).Handle(session, message);
-            
-            // Send response, if any
-            if (replyMessage == null)
-                return;
+            try
+            {
+                var replyMessage = await ((IHandshakeMessageHandler) messageHandler).Handle(session, message);
 
-            if (replyMessage is IResponse responseMessage)
-                responseMessage.ResponseId = requestId;
-            
-            _unconnectedDispatcher.Send(session, replyMessage);
+                // Send response, if any
+                if (replyMessage == null)
+                    return;
+
+                if (replyMessage is IResponse responseMessage)
+                    responseMessage.ResponseId = requestId;
+
+                _unconnectedDispatcher.Send(session, replyMessage);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Exception handling message {MessageType} (EndPoint={EndPoint})",
+                    messageType.Name, session.EndPoint.ToString());
+            }
         }
 
         #endregion

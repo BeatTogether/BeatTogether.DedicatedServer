@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Net;
 using BeatTogether.Core.Messaging.Implementations;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -15,11 +16,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
     
     public class HandshakeSession : BaseSession
     {
-        public HandshakeSession(EndPoint endPoint) : base(endPoint)
-        {
-        }
         
-        public HandshakeSessionState State { get; set; }
         public byte[] Cookie { get; set; }
         public byte[] ClientRandom { get; set; }
         public byte[] ServerRandom { get; set; }
@@ -28,5 +25,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
         public ECPrivateKeyParameters ServerPrivateKeyParameters { get; set; }
         public byte[] PreMasterSecret { get; set; }
         public DateTimeOffset LastKeepAlive { get; set; }
+
+        public ConcurrentDictionary<uint, HandshakePendingRequest> PendingRequests;
+        
+        public HandshakeSession(EndPoint endPoint) : base(endPoint)
+        {
+            PendingRequests = new();
+        }
     }
 }
