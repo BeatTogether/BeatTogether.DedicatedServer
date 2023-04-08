@@ -95,6 +95,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             if (!bufferReader.ReadBool())  // isEncrypted
             {
                 // Received an unencrypted packet - this is valid if the client is still negotiating 
+                // Slice out the encryption flag and continue
+                data = data[1..];
                 // TODO Reject unencrypted inbound packets for regular clients past the negotiation stage?
                 return;
             }
