@@ -27,11 +27,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             if (message is IRequest requestMessage)
                 requestMessage.RequestId = session.GetNextRequestId();
             
-            // TODO Reliable retries
+            // TODO Reliable retries (enqueue - start retrying)
 
             var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
             _messageWriter.WriteTo(ref bufferWriter, message);
             Send(session.EndPoint, bufferWriter, UnconnectedMessageType.BasicMessage);
+        }
+
+        public void Acknowledge(HandshakeSession session, uint responseId)
+        {
+            // TODO Reliable retries (acknowledge - stop retrying)
         }
     }
 }

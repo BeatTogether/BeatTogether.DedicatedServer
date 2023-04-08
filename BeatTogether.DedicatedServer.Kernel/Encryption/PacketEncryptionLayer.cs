@@ -45,6 +45,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
         #region Public Methods
 
+        public void AddEncryptedEndPoint(IPEndPoint endPoint, EncryptionParameters encryptionParameters)
+        {
+            _potentialEncryptionParameters[endPoint.Address] = encryptionParameters;
+            _encryptionParameters.TryRemove(endPoint, out _);
+        }
+
         public void AddEncryptedEndPoint(
             IPEndPoint endPoint,
             byte[] clientRandom,
@@ -73,8 +79,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 receiveMacSourceArray,
                 sendMacSourceArray
             );
-            _potentialEncryptionParameters[endPoint.Address] = encryptionParameters;
-            _encryptionParameters.TryRemove(endPoint, out _);
+            
+            AddEncryptedEndPoint(endPoint, encryptionParameters);
         }
 
         public void RemoveEncryptedEndPoint(IPEndPoint endPoint)
@@ -125,7 +131,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 return;
             }
 
-            _logger.Verbose(
+            _logger.Warning(
                 "Failed to retrieve decryption parameters " +
                 $"(RemoteEndPoint='{endPoint}')."
             );
