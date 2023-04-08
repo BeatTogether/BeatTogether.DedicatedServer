@@ -24,6 +24,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             _logger.Information("Sending handshake message of type {MessageType} (EndPoint={EndPoint})",
                 message.GetType().Name, session.EndPoint.ToString());
 
+            if (message is IRequest requestMessage)
+                requestMessage.RequestId = session.GetNextRequestId();
+            
+            // TODO Reliable retries
+
             var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
             _messageWriter.WriteTo(ref bufferWriter, message);
             Send(session.EndPoint, bufferWriter, UnconnectedMessageType.BasicMessage);

@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Handshake;
 using BeatTogether.DedicatedServer.Messaging.Messages.Handshake;
@@ -8,18 +9,13 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.Unconnected
     public class ClientHelloRequestHandler : BaseHandshakeMessageHandler<ClientHelloRequest>
     {
         private IHandshakeService _handshakeService;
-        private IUnconnectedDispatcher _unconnectedDispatcher;
 
-        public ClientHelloRequestHandler(IHandshakeService handshakeService, IUnconnectedDispatcher unconnectedDispatcher)
+        public ClientHelloRequestHandler(IHandshakeService handshakeService)
         {
             _handshakeService = handshakeService;
-            _unconnectedDispatcher = unconnectedDispatcher;
         }
         
-        public override async Task Handle(HandshakeSession session, ClientHelloRequest message)
-        {
-            var request = await _handshakeService.ClientHello(session, message);
-            _unconnectedDispatcher.Send(session, request);
-        }
+        public override async Task<IMessage?> Handle(HandshakeSession session, ClientHelloRequest message) => 
+            await _handshakeService.ClientHello(session, message);
     }
 }

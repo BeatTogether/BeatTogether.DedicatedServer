@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Threading.Tasks;
 using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.Core.Messaging.Messages;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
@@ -41,10 +42,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             var session = _sessions.GetOrAdd(remoteEndPoint, (ep) => new HandshakeSession(ep));
             var message = _messageReader.ReadFrom(ref reader);
 
-            HandleMessage(session, message);
+            Task.Run(() => HandleMessage(session, message));
         }
 
-        public void HandleMessage(HandshakeSession session, IMessage message)
+        public async Task HandleMessage(HandshakeSession session, IMessage message)
         {
             var messageType = message.GetType();
 
@@ -58,11 +59,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             }
 
             // Acknowledge reliable messages
+            uint requestId = 0;
+            
             if (message is IReliableRequest reliableRequest)
             {
+                requestId = reliableRequest.RequestId;
+                
                 _unconnectedDispatcher.Send(session, new AcknowledgeMessage()
                 {
-                    ResponseId = reliableRequest.RequestId,
+                    ResponseId = requestId,
                     MessageHandled = true
                 });
             }
@@ -81,7 +86,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
                 return;
             }
 
-            ((IHandshakeMessageHandler) messageHandler).Handle(session, message);
+            var replyMessage = await ((IHandshakeMessageHandler) messageHandler).Handle(session, message);
+            
+            // Send response, if any
+            if (replyMessage == null)
+                return;
+
+            if (replyMessage is IResponse responseMessage)
+                responseMessage.ResponseId = requestId;
+            
+            _unconnectedDispatcher.Send(session, replyMessage);
         }
 
         #endregion

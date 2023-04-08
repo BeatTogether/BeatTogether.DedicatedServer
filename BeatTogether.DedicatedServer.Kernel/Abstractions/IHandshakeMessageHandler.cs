@@ -6,12 +6,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
     public interface IHandshakeMessageHandler
     {
-        Task Handle(HandshakeSession session, IMessage message);
+        Task<IMessage?> Handle(HandshakeSession session, IMessage message);
     }
 
     public interface IHandshakeMessageHandler<TMessage> : IHandshakeMessageHandler
         where TMessage : class, IMessage
     {
-        Task Handle(HandshakeSession session, TMessage message);
+        Task<IMessage?> Handle(HandshakeSession session, TMessage message);
     }
 }
