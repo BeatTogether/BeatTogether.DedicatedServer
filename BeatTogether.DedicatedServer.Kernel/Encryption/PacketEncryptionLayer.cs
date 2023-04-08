@@ -136,30 +136,36 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
         {
             if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
             {
-                if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint)endPoint).Address, out var encryptionParametersold))
+                if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint)endPoint).Address, out var encryptionParametersOld))
                 {
                     _logger.Warning($"Re-assigning encryption parameters as old parameters (RemoteEndPoint='{endPoint}').");
-                    encryptionParameters = _encryptionParameters.GetOrAdd(endPoint, encryptionParametersold);
-                }
-                else
-                {
-                    _logger.Warning(
-                        "Failed to retrieve encryption parameters " +
-                        $"(RemoteEndPoint='{endPoint}')."
-                    );
-                    return;
+                    encryptionParameters = _encryptionParameters.GetOrAdd(endPoint, encryptionParametersOld);
                 }
             }
 
             var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
-            bufferWriter.WriteBool(true);  // isEncrypted
-            using (var hmac = new HMACSHA256(encryptionParameters.SendMac))
+
+            if (encryptionParameters != null)
             {
-                _encryptedPacketWriter.WriteTo(
-                    ref bufferWriter, data,//.Slice(0, data.Length),
-                    encryptionParameters.GetNextSequenceId(),
-                    encryptionParameters.SendKey, hmac);
+                bufferWriter.WriteBool(true);  // isEncrypted
+                
+                using (var hmac = new HMACSHA256(encryptionParameters.SendMac))
+                {
+                    _encryptedPacketWriter.WriteTo(
+                        ref bufferWriter, data,//.Slice(0, data.Length),
+                        encryptionParameters.GetNextSequenceId(),
+                        encryptionParameters.SendKey, hmac);
+                }
             }
+            else
+            {
+                // Failed to retrieve encryption parameters for send
+                // During early handshake, this is legitimate
+                
+                bufferWriter.WriteBool(false);  // isEncrypted
+                bufferWriter.WriteBytes(data);
+            }
+
             data = bufferWriter.Data.ToArray();
         }
 
