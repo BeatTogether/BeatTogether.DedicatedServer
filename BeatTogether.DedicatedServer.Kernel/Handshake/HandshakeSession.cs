@@ -31,10 +31,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
         public string? PlayerSessionId { get; set; } = null;
 
         public ConcurrentDictionary<uint, HandshakePendingRequest> PendingRequests;
+        public ConcurrentDictionary<uint, HandshakePendingMultipart> PendingMultiparts;
         
         public HandshakeSession(EndPoint endPoint) : base(endPoint)
         {
             PendingRequests = new();
+            PendingMultiparts = new();
         }
     }
 }

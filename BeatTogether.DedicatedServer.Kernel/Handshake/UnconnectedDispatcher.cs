@@ -45,8 +45,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             _instance.StopEvent -= HandleInstanceStop;
         }
 
-        private void HandleInstanceStop(IDedicatedInstance inst) =>
-            _stopCts.Cancel();
+        private void HandleInstanceStop(IDedicatedInstance inst) => _stopCts.Cancel();
 
         #region API
 
@@ -119,7 +118,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
                         if (pendingRequest.HasExpired)
                         {
                             // Max retries exceeded
-                            _logger.Information("out of retry time");
                             session.PendingRequests.TryRemove(pendingRequest.RequestId, out _);
                             break;
                         }
@@ -129,8 +127,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
                             // Waiting for retry interval
                             continue;
                         }
-
-                        _logger.Information("we retry");
 
                         pendingRequest.Retry();
                     }

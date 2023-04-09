@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.Core.Messaging.Messages;
@@ -13,28 +15,50 @@ using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.Handshake
 {
-    public class UnconnectedSource : UnconnectedMessageSource
+    public class UnconnectedSource : UnconnectedMessageSource, IDisposable
     {
+        private readonly IDedicatedInstance _instance;
         private readonly IServiceProvider _serviceProvider;
         private readonly IUnconnectedDispatcher _unconnectedDispatcher;
         private readonly IMessageReader _messageReader;
         private readonly IHandshakeSessionRegistry _handshakeSessionRegistry;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
 
+        private readonly ConcurrentDictionary<EndPoint, HandshakeSession> _activeSessions;
+        private readonly CancellationTokenSource _stopCts;
         private readonly ILogger _logger;
 
-        public UnconnectedSource(IServiceProvider serviceProvider, IUnconnectedDispatcher unconnectedDispatcher,
-            IMessageReader messageReader, IHandshakeSessionRegistry handshakeSessionRegistry,
+        public UnconnectedSource(
+            IDedicatedInstance instance, 
+            IServiceProvider serviceProvider,
+            IUnconnectedDispatcher unconnectedDispatcher,
+            IMessageReader messageReader,
+            IHandshakeSessionRegistry handshakeSessionRegistry,
             PacketEncryptionLayer packetEncryptionLayer)
         {
+            _instance = instance;
             _serviceProvider = serviceProvider;
             _unconnectedDispatcher = unconnectedDispatcher;
             _messageReader = messageReader;
             _handshakeSessionRegistry = handshakeSessionRegistry;
             _packetEncryptionLayer = packetEncryptionLayer;
-
+            
+            _activeSessions = new();
+            _stopCts = new();
             _logger = Log.ForContext<UnconnectedSource>();
+            
+            Task.Run(() => UpdateLoop(_stopCts.Token));
+            _instance.StopEvent += HandleInstanceStop;
         }
+
+        public void Dispose()
+        {
+            _instance.StopEvent -= HandleInstanceStop;
+        }
+
+        private void HandleInstanceStop(IDedicatedInstance inst) => _stopCts.Cancel();
+
+        public IMessageReader GetMessageReader() => _messageReader;
 
         #region Receive
 
@@ -84,6 +108,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             // Dispatch to handler
             _logger.Verbose("Handling handshake message of type {MessageType} (EndPoint={EndPoint})",
                 messageType.Name, session.EndPoint.ToString());
+
+            if (message is MultipartMessage multipartMessage)
+            {
+                if (!session.PendingMultiparts.ContainsKey(multipartMessage.MultipartMessageId))
+                {
+                    session.PendingMultiparts.TryAdd(multipartMessage.MultipartMessageId,
+                        new HandshakePendingMultipart(this, session, multipartMessage.MultipartMessageId,
+                            multipartMessage.TotalLength));
+                }
+                
+                session.PendingMultiparts[multipartMessage.MultipartMessageId].AddMessage(multipartMessage);
+                return;
+            }
             
             var targetHandlerType = typeof(IHandshakeMessageHandler<>).MakeGenericType(messageType);
             var messageHandler = _serviceProvider.GetService(targetHandlerType);
@@ -112,6 +149,40 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             {
                 _logger.Error(ex, "Exception handling message {MessageType} (EndPoint={EndPoint})",
                     messageType.Name, session.EndPoint.ToString());
+            }
+        }
+
+        #endregion
+        
+        #region Update / Retry
+
+        private async Task UpdateLoop(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                foreach (var session in _activeSessions.Values)
+                {
+                    var pendingInSession = session.PendingMultiparts.Values;
+
+                    if (pendingInSession.Count == 0)
+                    {
+                        // Nothing left pending in session, remove from tracked list
+                        _activeSessions.TryRemove(session.EndPoint, out _);
+                        continue;
+                    }
+
+                    foreach (var pendingRequest in pendingInSession)
+                    {
+                        if (pendingRequest.HasExpired || pendingRequest.IsComplete)
+                        {
+                            // Clean up completed / expired
+                            session.PendingMultiparts.TryRemove(pendingRequest.MultipartMessageId, out _);
+                            break;
+                        }
+                    }
+                }
+
+                await Task.Delay(1000, cancellationToken);
             }
         }
 
