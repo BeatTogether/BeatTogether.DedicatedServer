@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.Core.Messaging.Messages;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Encryption;
+using BeatTogether.DedicatedServer.Messaging.Messages.Handshake;
 using BeatTogether.LiteNetLib.Enums;
 using BeatTogether.LiteNetLib.Sources;
 using Krypton.Buffers;
@@ -17,16 +19,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
         private readonly IUnconnectedDispatcher _unconnectedDispatcher;
         private readonly IMessageReader _messageReader;
         private readonly IHandshakeSessionRegistry _handshakeSessionRegistry;
+        private readonly PacketEncryptionLayer _packetEncryptionLayer;
 
         private readonly ILogger _logger;
 
         public UnconnectedSource(IServiceProvider serviceProvider, IUnconnectedDispatcher unconnectedDispatcher,
-            IMessageReader messageReader, IHandshakeSessionRegistry handshakeSessionRegistry)
+            IMessageReader messageReader, IHandshakeSessionRegistry handshakeSessionRegistry,
+            PacketEncryptionLayer packetEncryptionLayer)
         {
             _serviceProvider = serviceProvider;
             _unconnectedDispatcher = unconnectedDispatcher;
             _messageReader = messageReader;
             _handshakeSessionRegistry = handshakeSessionRegistry;
+            _packetEncryptionLayer = packetEncryptionLayer;
 
             _logger = Log.ForContext<UnconnectedSource>();
         }
@@ -45,6 +50,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
         public async Task HandleMessage(HandshakeSession session, IMessage message)
         {
             var messageType = message.GetType();
+
+            if (message is ClientHelloRequest)
+            {
+                // Received client hello, first handshake message - ensure encryption is OFF for this endpoint
+                // This prevents outbound encryption with stale parameters from previous/incomplete handshake
+                _packetEncryptionLayer.RemoveEncryptedEndPoint((IPEndPoint)session.EndPoint);
+            }
 
             // Skip previously handled messages
             if (message is IRequest request && !session.ShouldHandleRequest(request.RequestId))

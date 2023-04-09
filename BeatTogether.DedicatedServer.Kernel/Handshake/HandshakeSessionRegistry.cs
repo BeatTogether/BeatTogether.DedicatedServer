@@ -35,13 +35,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
 
         public void AddPendingPlayerSessionId(string playerSessionId)
         {
-            _logger.Error("AddPendingPlayerSessionId");
             _pendingPlayerSessionIds[playerSessionId] = true;
         }
 
         public bool TryRemovePendingPlayerSessionId(string playerSessionId)
         {
-            _logger.Error("TryRemovePendingPlayerSessionId");
             return _pendingPlayerSessionIds.TryRemove(playerSessionId, out _);
         }
     }
