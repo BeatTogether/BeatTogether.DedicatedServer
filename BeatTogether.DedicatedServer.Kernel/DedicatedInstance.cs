@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
@@ -45,6 +46,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly IHandshakeSessionRegistry _handshakeSessionRegistry;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
+        private readonly PacketEncryptionLayer _packetEncryptionLayer;
         
         private readonly ConcurrentQueue<byte> _releasedConnectionIds = new();
         private readonly ConcurrentQueue<int> _releasedSortIndices = new();
@@ -64,7 +66,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             LiteNetConfiguration liteNetConfiguration,
             LiteNetPacketRegistry registry,
             IServiceProvider serviceProvider,
-            IPacketLayer packetLayer)
+            IPacketLayer packetLayer,
+            PacketEncryptionLayer packetEncryptionLayer)
             : base (
                   new IPEndPoint(IPAddress.Any, configuration.Port),
                   liteNetConfiguration,
@@ -77,6 +80,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _handshakeSessionRegistry = handshakeSessionRegistry;
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
+            _packetEncryptionLayer = packetEncryptionLayer;
         }
 
         #region Public Methods
@@ -278,6 +282,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 );
                 return true;
             }
+            
             lock (AcceptConnectionLock)
             {
                 if (_playerRegistry.GetPlayerCount() >= _configuration.MaxPlayerCount)
@@ -293,7 +298,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     connectionId,
                     _configuration.Secret,
                     connectionRequestData.UserId,
-                    connectionRequestData.UserName
+                    connectionRequestData.UserName,
+                    connectionRequestData.PlayerSessionId
                 )
                 {
                     SortIndex = sortIndex
@@ -318,6 +324,20 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (_waitForPlayerCts != null)
                     _waitForPlayerCts.Cancel();
             }
+            
+            // Retrieve encryption params from handshake process by player session token, if provided
+            if (!string.IsNullOrEmpty(connectionRequestData.PlayerSessionId))
+            {
+                var handshakeSession =
+                    _handshakeSessionRegistry.TryGetByPlayerSessionId(connectionRequestData.PlayerSessionId);
+
+                if (handshakeSession != null && handshakeSession.EncryptionParameters != null)
+                {
+                    _packetEncryptionLayer.AddEncryptedEndPoint((IPEndPoint)endPoint, 
+                        handshakeSession.EncryptionParameters, true);
+                }
+            }
+            
             return false;
         }
 

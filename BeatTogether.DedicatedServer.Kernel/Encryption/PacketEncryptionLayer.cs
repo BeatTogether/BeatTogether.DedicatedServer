@@ -45,24 +45,34 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
         #region Public Methods
 
-        public void AddEncryptedEndPoint(IPEndPoint endPoint, EncryptionParameters encryptionParameters)
+        public void AddEncryptedEndPoint(IPEndPoint endPoint, EncryptionParameters encryptionParameters, 
+            bool definitive = false)
         {
-            _potentialEncryptionParameters[endPoint.Address] = encryptionParameters;
-            _encryptionParameters.TryRemove(endPoint, out _);
+            if (definitive)
+            {
+                _encryptionParameters[endPoint] = encryptionParameters;
+            }
+            else
+            {
+                _potentialEncryptionParameters[endPoint.Address] = encryptionParameters;
+                _encryptionParameters.TryRemove(endPoint, out _);    
+            }
         }
 
         public void AddEncryptedEndPoint(IPEndPoint endPoint,
-            BeatTogether.Core.Messaging.Models.EncryptionParameters encryptionParameters)
+            BeatTogether.Core.Messaging.Models.EncryptionParameters encryptionParameters, 
+            bool definitive = false)
         {
-            _potentialEncryptionParameters[endPoint.Address] = new EncryptionParameters(encryptionParameters.ReceiveKey,
-                encryptionParameters.SendKey, encryptionParameters.ReceiveMac.Key, encryptionParameters.SendMac.Key);
-            _encryptionParameters.TryRemove(endPoint, out _);
+            AddEncryptedEndPoint(endPoint, new EncryptionParameters(encryptionParameters.ReceiveKey,
+                encryptionParameters.SendKey, encryptionParameters.ReceiveMac.Key, encryptionParameters.SendMac.Key),
+                definitive);
         }
 
         public void AddEncryptedEndPoint(
             IPEndPoint endPoint,
             byte[] clientRandom,
-            byte[] clientPublicKey)
+            byte[] clientPublicKey, 
+            bool definitive = false)
         {
             var clientPublicKeyParameters = _diffieHellmanService.DeserializeECPublicKey(clientPublicKey);
             var preMasterSecret =
@@ -89,7 +99,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 sendMacSourceArray
             );
 
-            AddEncryptedEndPoint(endPoint, encryptionParameters);
+            AddEncryptedEndPoint(endPoint, encryptionParameters, definitive);
         }
 
         public void RemoveEncryptedEndPoint(IPEndPoint endPoint)
