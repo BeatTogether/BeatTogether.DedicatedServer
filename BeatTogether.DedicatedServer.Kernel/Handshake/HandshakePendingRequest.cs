@@ -7,22 +7,27 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
     public class HandshakePendingRequest
     {
         public IUnconnectedDispatcher UnconnectedDispatcher { get; private set; }
+        public HandshakeSession Session { get; private set; }
         public IReliableRequest Request { get; private set; }
         public DateTime LastSend { get; private set; }
         public int RetryCount { get; private set; }
 
         public uint RequestId => Request.RequestId;
 
-        public HandshakePendingRequest(IUnconnectedDispatcher unconnectedDispatcher, IReliableRequest request)
+        public HandshakePendingRequest(IUnconnectedDispatcher unconnectedDispatcher, HandshakeSession session,
+            IReliableRequest request)
         {
             UnconnectedDispatcher = unconnectedDispatcher;
+            Session = session;
             Request = request;
             LastSend = DateTime.Now;
             RetryCount = 0;
         }
 
-        public void MarkRetried()
+
+        public void Retry()
         {
+            UnconnectedDispatcher.Send(Session, Request, true);
             LastSend = DateTime.Now;
             RetryCount++;
         }
@@ -57,11 +62,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
                 var interval = GetRetryInterval();
                 return interval.HasValue && MsSinceLastSend >= interval;
             }
-        }
-
-        public void Retry()
-        {
-            
         }
     }
 }

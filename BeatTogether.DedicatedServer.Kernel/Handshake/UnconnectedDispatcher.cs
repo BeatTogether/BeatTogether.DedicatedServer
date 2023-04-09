@@ -50,13 +50,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
 
         #region API
 
-        public void Send(HandshakeSession session, IMessage message)
+        public void Send(HandshakeSession session, IMessage message, bool retry = false)
         {
             _logger.Verbose("Sending handshake message of type {MessageType} (EndPoint={EndPoint})",
                 message.GetType().Name, session.EndPoint.ToString());
 
             // Assign request ID to outgoing requests
-            if (message is IRequest requestMessage)
+            if (message is IRequest requestMessage && !retry) 
             {
                 requestMessage.RequestId = session.GetNextRequestId();
             }
@@ -64,9 +64,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             // Track reliable requests for retry
             if (message is IReliableRequest reliableRequest)
             {
-                session.PendingRequests[reliableRequest.RequestId] =
-                    new HandshakePendingRequest(this, reliableRequest);
-                _activeSessions.TryAdd(session.EndPoint, session);
+                if (!retry)
+                {
+                    session.PendingRequests[reliableRequest.RequestId] =
+                        new HandshakePendingRequest(this, session, reliableRequest);
+                    _activeSessions.TryAdd(session.EndPoint, session);
+                }
             }
 
             var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
