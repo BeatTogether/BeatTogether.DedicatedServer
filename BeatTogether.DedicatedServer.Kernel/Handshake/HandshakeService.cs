@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 using BeatTogether.Core.Security.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Messaging.Messages.GameLift;
 using BeatTogether.DedicatedServer.Messaging.Messages.Handshake;
 using Krypton.Buffers;
@@ -23,7 +22,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
         private readonly X509Certificate2 _certificate;
         private readonly ICertificateSigningService _certificateSigningService;
         private readonly IDiffieHellmanService _diffieHellmanService;
-        private readonly PacketEncryptionLayer _packetEncryptionLayer;
+        private readonly IHandshakeSessionRegistry _handshakeSessionRegistry;
 
         private readonly ILogger _logger;
 
@@ -38,7 +37,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             X509Certificate2 certificate,
             ICertificateSigningService certificateSigningService,
             IDiffieHellmanService diffieHellmanService,
-            PacketEncryptionLayer packetEncryptionLayer)
+            IHandshakeSessionRegistry handshakeSessionRegistry)
         {
             _messageDispatcher = messageDispatcher;
             _cookieProvider = cookieProvider;
@@ -46,7 +45,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             _certificate = certificate;
             _certificateSigningService = certificateSigningService;
             _diffieHellmanService = diffieHellmanService;
-            _packetEncryptionLayer = packetEncryptionLayer;
+            _handshakeSessionRegistry = handshakeSessionRegistry;
 
             _logger = Log.ForContext<HandshakeService>();
         }
@@ -171,14 +170,28 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
         public Task<AuthenticateGameLiftUserResponse> AuthenticateGameLiftUser(HandshakeSession session,
             AuthenticateGameLiftUserRequest request)
         {
-            // TODO Check player session ID from master server event
+            if (!_handshakeSessionRegistry.TryRemovePendingPlayerSessionId(request.PlayerSessionId))
+            {
+                // Not a pending player session ID, auth failure
+                _logger.Warning("Bad session token, GameLift auth failed " +
+                                "(EndPoint={EndPoint}, PlayerSessionId={PlayerSessionId})",
+                    session.EndPoint.ToString(), request.PlayerSessionId);
+                
+                return Task.FromResult(new AuthenticateGameLiftUserResponse()
+                {
+                    Result = AuthenticateUserResult.Failed
+                });
+            }
+
+            // Auth success
+            session.PlayerSessionId = request.PlayerSessionId;
+            session.UserId = request.UserId;
+            session.UserName = request.UserName;
             
             _logger.Information("GameLift user authenticated (EndPoint={EndPoint}, UserId={UserId}, " +
                                 "UserName={UserName}, PlayerSessionId={PlayerSessionId})",
                 session.EndPoint.ToString(), request.UserId, request.UserName, request.PlayerSessionId);
 
-            // TODO Sticky encryption parameters by player session ID (recover on GameLift connect packet)
-            
             return Task.FromResult(new AuthenticateGameLiftUserResponse()
             {
                 Result = AuthenticateUserResult.Success

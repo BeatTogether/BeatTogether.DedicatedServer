@@ -31,6 +31,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Extensions
                         .AddScoped<DedicatedInstance>()
                         .AddExisting<IDedicatedInstance, DedicatedInstance>()
                         .AddExisting<LiteNetServer, DedicatedInstance>()
+                        .AddScoped<IHandshakeSessionRegistry, HandshakeSessionRegistry>()
                         .AddScoped<IPlayerRegistry, PlayerRegistry>()
                         .AddScoped<UnconnectedMessageSource, UnconnectedSource>()
                         .AddScoped<ConnectedMessageSource, PacketSource>()

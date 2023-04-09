@@ -26,6 +26,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
         public byte[] PreMasterSecret { get; set; }
         public DateTimeOffset LastKeepAlive { get; set; }
 
+        public string? UserId { get; set; } = null;
+        public string? UserName { get; set; } = null;
+        public string? PlayerSessionId { get; set; } = null;
+
         public ConcurrentDictionary<uint, HandshakePendingRequest> PendingRequests;
         
         public HandshakeSession(EndPoint endPoint) : base(endPoint)

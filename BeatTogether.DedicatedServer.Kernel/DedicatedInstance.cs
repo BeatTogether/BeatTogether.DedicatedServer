@@ -1,3 +1,9 @@
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Enums;
@@ -12,13 +18,6 @@ using BeatTogether.LiteNetLib.Enums;
 using Krypton.Buffers;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using System;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -37,20 +36,16 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
 
-        //public event Action<IDedicatedInstance> StartEvent = null!;
         public event Action<IDedicatedInstance> StopEvent = null!;
         public event Action<IPlayer, int> PlayerConnectedEvent = null!;
         public event Action<IPlayer, int> PlayerDisconnectedEvent = null!;
         public event Action<string, EndPoint, int> PlayerDisconnectBeforeJoining = null!;
         public event Action<string, bool> GameIsInLobby = null!;
-        //public event Action<string, Enums.CountdownState, MultiplayerGameState, Enums.GameplayManagerState> StateChangedEvent = null!;
-        //public event Action<IDedicatedInstance> UpdateInstanceEvent = null!;
-        //public event Action<string, BeatmapIdentifier?, GameplayModifiers, bool, DateTime> UpdateBeatmapEvent = null!;
-        //public event Action<string, BeatmapIdentifier, List<(string, BeatmapDifficulty, LevelCompletionResults)>> LevelFinishedEvent = null!;
 
-
+        private readonly IHandshakeSessionRegistry _handshakeSessionRegistry;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
+        
         private readonly ConcurrentQueue<byte> _releasedConnectionIds = new();
         private readonly ConcurrentQueue<int> _releasedSortIndices = new();
         private readonly ILogger _logger = Log.ForContext<DedicatedInstance>();
@@ -64,6 +59,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public DedicatedInstance(
             InstanceConfiguration configuration,
+            IHandshakeSessionRegistry handshakeSessionRegistry,
             IPlayerRegistry playerRegistry,
             LiteNetConfiguration liteNetConfiguration,
             LiteNetPacketRegistry registry,
@@ -77,35 +73,19 @@ namespace BeatTogether.DedicatedServer.Kernel
                   packetLayer)
         {
             _configuration = configuration;
+
+            _handshakeSessionRegistry = handshakeSessionRegistry;
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
-
         }
 
         #region Public Methods
-        /*
-        public void PlayerUpdated(IPlayer player)
-        {
-            PlayerConnectedEvent?.Invoke(player, _playerRegistry.GetPlayerCount());
-        }
-        public void InstanceStateChanged(CountdownState countdown, GameplayManagerState gameplay)
-        {
-            StateChangedEvent?.Invoke(_configuration.Secret, countdown, State, gameplay);
-        }
         
-        public void BeatmapChanged(BeatmapIdentifier? map, GameplayModifiers modifiers, bool IsGameplay, DateTime CountdownEnd)
+        public IHandshakeSessionRegistry GetHandshakeSessionRegistry()
         {
-            UpdateBeatmapEvent?.Invoke(_configuration.Secret, map, modifiers, IsGameplay, CountdownEnd);
+            return _handshakeSessionRegistry;
         }
-        public void InstanceChanged()
-        {
-            UpdateInstanceEvent?.Invoke(this);
-        }
-        public void LevelFinished(BeatmapIdentifier beatmap, List<(string, BeatmapDifficulty, LevelCompletionResults)> Results)
-        {
-            LevelFinishedEvent?.Invoke(_configuration.Secret, beatmap, Results);
-        }
-        */
+
         public IPlayerRegistry GetPlayerRegistry()
         {
             return _playerRegistry;

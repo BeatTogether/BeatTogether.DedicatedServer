@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Threading.Tasks;
 using BeatTogether.Core.Messaging.Abstractions;
@@ -17,19 +16,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
         private readonly IServiceProvider _serviceProvider;
         private readonly IUnconnectedDispatcher _unconnectedDispatcher;
         private readonly IMessageReader _messageReader;
-
-        private readonly ConcurrentDictionary<EndPoint, HandshakeSession> _sessions;
+        private readonly IHandshakeSessionRegistry _handshakeSessionRegistry;
 
         private readonly ILogger _logger;
 
         public UnconnectedSource(IServiceProvider serviceProvider, IUnconnectedDispatcher unconnectedDispatcher,
-            IMessageReader messageReader)
+            IMessageReader messageReader, IHandshakeSessionRegistry handshakeSessionRegistry)
         {
             _serviceProvider = serviceProvider;
             _unconnectedDispatcher = unconnectedDispatcher;
             _messageReader = messageReader;
-
-            _sessions = new();
+            _handshakeSessionRegistry = handshakeSessionRegistry;
 
             _logger = Log.ForContext<UnconnectedSource>();
         }
@@ -39,7 +36,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
         public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader,
             UnconnectedMessageType type)
         {
-            var session = _sessions.GetOrAdd(remoteEndPoint, (ep) => new HandshakeSession(ep));
+            var session = _handshakeSessionRegistry.GetOrAdd(remoteEndPoint);
             var message = _messageReader.ReadFrom(ref reader);
 
             Task.Run(() => HandleMessage(session, message));
