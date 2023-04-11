@@ -17,6 +17,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public string Secret { get; }
         public string UserId { get; }
         public string UserName { get; }
+        public string? PlayerSessionId { get; }
         public object LatencyLock { get; set; } = new();
         public RollingAverage Latency { get; } = new(30);
         public float SyncTime =>
@@ -62,7 +63,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();
 
         public Player(EndPoint endPoint, IDedicatedInstance instance,
-            byte connectionId, string secret, string userId, string userName)
+            byte connectionId, string secret, string userId, string userName, string? playerSessionId)
         {
             Endpoint = endPoint;
             Instance = instance;
@@ -70,6 +71,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             Secret = secret;
             UserId = userId;
             UserName = userName;
+            PlayerSessionId = playerSessionId;
         }
 
         public object EntitlementLock { get; set; } = new();

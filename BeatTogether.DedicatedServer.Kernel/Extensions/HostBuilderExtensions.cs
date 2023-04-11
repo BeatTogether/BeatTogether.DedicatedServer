@@ -1,7 +1,10 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.Core.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Kernel.Handshake;
 using BeatTogether.DedicatedServer.Kernel.Managers;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Registries.Unconnected;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Configuration;
@@ -28,13 +31,23 @@ namespace BeatTogether.DedicatedServer.Kernel.Extensions
                         .AddScoped<DedicatedInstance>()
                         .AddExisting<IDedicatedInstance, DedicatedInstance>()
                         .AddExisting<LiteNetServer, DedicatedInstance>()
+                        .AddScoped<IHandshakeSessionRegistry, HandshakeSessionRegistry>()
                         .AddScoped<IPlayerRegistry, PlayerRegistry>()
+                        .AddScoped<UnconnectedMessageSource, UnconnectedSource>()
                         .AddScoped<ConnectedMessageSource, PacketSource>()
+                        .AddScoped<UnconnectedDispatcher>()
+                        .AddExisting<UnconnectedMessageDispatcher, UnconnectedDispatcher>()
+                        .AddExisting<IUnconnectedDispatcher, UnconnectedDispatcher>()
                         .AddScoped<PacketDispatcher>()
                         .AddExisting<IPacketDispatcher, PacketDispatcher>()
                         .AddExisting<ConnectedMessageDispatcher, PacketDispatcher>()
+                        .AddScoped<IHandshakeService, HandshakeService>()
                         .AddScoped<ILobbyManager, LobbyManager>()
                         .AddScoped<IGameplayManager, GameplayManager>()
+                        .AddCoreMessaging()
+                        .AddSingleton<IMessageRegistry, HandshakeMessageRegistry>()
+                        .AddSingleton<IMessageRegistry, GameLiftMessageRegistry>()
+                        .AddAllHandshakeMessageHandlersFromAssembly(typeof(UnconnectedSource).Assembly)
                         .AddAllPacketHandlersFromAssembly(typeof(PacketSource).Assembly)
                 );
     }

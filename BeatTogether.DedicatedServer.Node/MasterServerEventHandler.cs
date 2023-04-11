@@ -1,15 +1,16 @@
-﻿using Autobus;
+﻿using System;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
+using Autobus;
 using BeatTogether.DedicatedServer.Interface.Events;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
 using BeatTogether.MasterServer.Interface.Events;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using System;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Node
 {
@@ -33,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Node
             _instanceRegistry = instanceRegistry;
         }
 
-        #region Public Methods
+        #region Start/Stop
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
@@ -57,15 +58,24 @@ namespace BeatTogether.DedicatedServer.Node
 
         #endregion
 
-        #region Private Methods
+        #region Handlers
 
         private Task HandlePlayerConnectedToMatchmaking(PlayerConnectedToMatchmakingServerEvent @event)
         {
-            if(@event.NodeEndpoint == _configuration.HostName)
+            if (@event.NodeEndpoint != _configuration.HostName)
+                return Task.CompletedTask;
+
+            var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
+            var random = @event.Random;
+            var publicKey = @event.PublicKey;
+            var playerSessionId = @event.PlayerSessionId;
+            var serverSecret = @event.Secret;
+
+            // Clients connecting via Graph API will connect directly to us to negotiate encryption parameters
+            var hasEncryptionParams = random != null && publicKey != null && random.Length > 0 && publicKey.Length > 0;
+
+            if (hasEncryptionParams)
             {
-                var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
-                var random = @event.Random;
-                var publicKey = @event.PublicKey;
                 _logger.Verbose(
                     "Adding encrypted end point " +
                     $"(RemoteEndPoint='{remoteEndPoint}', " +
@@ -73,8 +83,21 @@ namespace BeatTogether.DedicatedServer.Node
                     $"PublicKey='{BitConverter.ToString(publicKey)}')."
                 );
                 _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random, publicKey);
-                _autobus.Publish(new NodeReceivedPlayerEncryptionEvent(_configuration.HostName, @event.RemoteEndPoint));
             }
+            else
+            {
+                _logger.Verbose(
+                    "Master server notified us of connecting graph client " +
+                    $"(RemoteEndPoint='{remoteEndPoint}', " +
+                    $"PlayerSessionId='{playerSessionId}')."
+                );
+                
+                TryGetDedicatedInstance(serverSecret)?
+                    .GetHandshakeSessionRegistry()
+                    .AddPendingPlayerSessionId(playerSessionId);
+            }
+
+            _autobus.Publish(new NodeReceivedPlayerEncryptionEvent(_configuration.HostName, @event.RemoteEndPoint));
             return Task.CompletedTask;
         }
 
@@ -86,20 +109,27 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandleDisconnectPlayer(DisconnectPlayerFromMatchmakingServerEvent disconnectEvent)
         {
-            if(_instanceRegistry.TryGetInstance(disconnectEvent.Secret, out var instance))
-                instance.DisconnectPlayer(disconnectEvent.UserId);
-            if(disconnectEvent.UserEndPoint != string.Empty)
+            TryGetDedicatedInstance(disconnectEvent.Secret)?.DisconnectPlayer(disconnectEvent.UserId);
+            
+            if (!string.IsNullOrEmpty(disconnectEvent.UserEndPoint))
                 _packetEncryptionLayer.RemoveEncryptedEndPoint(IPEndPoint.Parse(disconnectEvent.UserEndPoint));
+            
             return Task.CompletedTask;
         }
+        
         private Task HandleCloseServer(CloseServerInstanceEvent closeEvent)
         {
-            if (_instanceRegistry.TryGetInstance(closeEvent.Secret, out var instance))
-            {
-                instance.Stop();
-            }
+            TryGetDedicatedInstance(closeEvent.Secret)?.Stop();
             return Task.CompletedTask;
         }
+        
+        #endregion
+
+        #region Util
+
+        private IDedicatedInstance? TryGetDedicatedInstance(string secret) =>
+            _instanceRegistry.TryGetInstance(secret, out var instance) ? instance : null;
+
         #endregion
     }
 }

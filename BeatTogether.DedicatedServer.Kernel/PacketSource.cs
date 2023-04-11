@@ -8,7 +8,6 @@ using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Enums;
-using BeatTogether.LiteNetLib.Extensions;
 using BeatTogether.LiteNetLib.Sources;
 using Krypton.Buffers;
 using Serilog;
@@ -17,7 +16,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class PacketSource : ConnectedMessageSource
     {
-        public const byte LocalConnectionId = 0;//TODO testing this
+        public const byte LocalConnectionId = 0;
         public const byte AllConnectionIds = 127;
 
         private readonly IServiceProvider _serviceProvider;

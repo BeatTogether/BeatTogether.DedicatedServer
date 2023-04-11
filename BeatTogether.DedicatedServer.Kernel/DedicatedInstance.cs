@@ -1,5 +1,12 @@
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
@@ -12,14 +19,6 @@ using BeatTogether.LiteNetLib.Enums;
 using Krypton.Buffers;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using System;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Net;
-using System.Numerics;
-using System.Threading;
-using System.Threading.Tasks;
-
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -38,20 +37,17 @@ namespace BeatTogether.DedicatedServer.Kernel
         public MultiplayerGameState State => GameStatePacket.State;
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
 
-        //public event Action<IDedicatedInstance> StartEvent = null!;
         public event Action<IDedicatedInstance> StopEvent = null!;
         public event Action<IPlayer, int> PlayerConnectedEvent = null!;
         public event Action<IPlayer, int> PlayerDisconnectedEvent = null!;
         public event Action<string, EndPoint, int> PlayerDisconnectBeforeJoining = null!;
         public event Action<string, bool> GameIsInLobby = null!;
-        //public event Action<string, Enums.CountdownState, MultiplayerGameState, Enums.GameplayManagerState> StateChangedEvent = null!;
-        //public event Action<IDedicatedInstance> UpdateInstanceEvent = null!;
-        //public event Action<string, BeatmapIdentifier?, GameplayModifiers, bool, DateTime> UpdateBeatmapEvent = null!;
-        //public event Action<string, BeatmapIdentifier, List<(string, BeatmapDifficulty, LevelCompletionResults)>> LevelFinishedEvent = null!;
 
-
+        private readonly IHandshakeSessionRegistry _handshakeSessionRegistry;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
+        private readonly PacketEncryptionLayer _packetEncryptionLayer;
+        
         private readonly ConcurrentQueue<byte> _releasedConnectionIds = new();
         private readonly ConcurrentQueue<int> _releasedSortIndices = new();
         private readonly ILogger _logger = Log.ForContext<DedicatedInstance>();
@@ -65,12 +61,14 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public DedicatedInstance(
             InstanceConfiguration configuration,
+            IHandshakeSessionRegistry handshakeSessionRegistry,
             IPlayerRegistry playerRegistry,
             LiteNetConfiguration liteNetConfiguration,
             LiteNetPacketRegistry registry,
             IServiceProvider serviceProvider,
-            IPacketLayer packetLayer)
-            : base(
+            IPacketLayer packetLayer,
+            PacketEncryptionLayer packetEncryptionLayer)
+            : base (
                   new IPEndPoint(IPAddress.Any, configuration.Port),
                   liteNetConfiguration,
                   registry,
@@ -78,35 +76,20 @@ namespace BeatTogether.DedicatedServer.Kernel
                   packetLayer)
         {
             _configuration = configuration;
+
+            _handshakeSessionRegistry = handshakeSessionRegistry;
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
-
+            _packetEncryptionLayer = packetEncryptionLayer;
         }
 
         #region Public Methods
-        /*
-        public void PlayerUpdated(IPlayer player)
-        {
-            PlayerConnectedEvent?.Invoke(player, _playerRegistry.GetPlayerCount());
-        }
-        public void InstanceStateChanged(CountdownState countdown, GameplayManagerState gameplay)
-        {
-            StateChangedEvent?.Invoke(_configuration.Secret, countdown, State, gameplay);
-        }
         
-        public void BeatmapChanged(BeatmapIdentifier? map, GameplayModifiers modifiers, bool IsGameplay, DateTime CountdownEnd)
+        public IHandshakeSessionRegistry GetHandshakeSessionRegistry()
         {
-            UpdateBeatmapEvent?.Invoke(_configuration.Secret, map, modifiers, IsGameplay, CountdownEnd);
+            return _handshakeSessionRegistry;
         }
-        public void InstanceChanged()
-        {
-            UpdateInstanceEvent?.Invoke(this);
-        }
-        public void LevelFinished(BeatmapIdentifier beatmap, List<(string, BeatmapDifficulty, LevelCompletionResults)> Results)
-        {
-            LevelFinishedEvent?.Invoke(_configuration.Secret, beatmap, Results);
-        }
-        */
+
         public IPlayerRegistry GetPlayerRegistry()
         {
             return _playerRegistry;
@@ -295,6 +278,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 );
                 return true;
             }
+            
             lock (AcceptConnectionLock)
             {
                 if (_playerRegistry.GetPlayerCount() >= _configuration.MaxPlayerCount)
@@ -310,7 +294,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     connectionId,
                     _configuration.Secret,
                     connectionRequestData.UserId,
-                    connectionRequestData.UserName
+                    connectionRequestData.UserName,
+                    connectionRequestData.PlayerSessionId
                 )
                 {
                     SortIndex = sortIndex
@@ -335,6 +320,20 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (_waitForPlayerCts != null)
                     _waitForPlayerCts.Cancel();
             }
+            
+            // Retrieve encryption params from handshake process by player session token, if provided
+            if (!string.IsNullOrEmpty(connectionRequestData.PlayerSessionId))
+            {
+                var handshakeSession =
+                    _handshakeSessionRegistry.TryGetByPlayerSessionId(connectionRequestData.PlayerSessionId);
+
+                if (handshakeSession != null && handshakeSession.EncryptionParameters != null)
+                {
+                    _packetEncryptionLayer.AddEncryptedEndPoint((IPEndPoint)endPoint, 
+                        handshakeSession.EncryptionParameters, true);
+                }
+            }
+            
             return false;
         }
 
