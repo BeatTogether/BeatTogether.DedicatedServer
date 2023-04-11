@@ -16,6 +16,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,8 +34,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public InstanceConfiguration _configuration { get; private set; }
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
-        public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
-
+        private SetMultiplayerGameStatePacket GameStatePacket = new() {State = MultiplayerGameState.Lobby};
+        public MultiplayerGameState State => GameStatePacket.State;
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
 
         //public event Action<IDedicatedInstance> StartEvent = null!;
@@ -69,7 +70,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             LiteNetPacketRegistry registry,
             IServiceProvider serviceProvider,
             IPacketLayer packetLayer)
-            : base (
+            : base(
                   new IPEndPoint(IPAddress.Any, configuration.Port),
                   liteNetConfiguration,
                   registry,
@@ -138,7 +139,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
             _stopServerCts = new CancellationTokenSource();
 
-            
+
 
             if (_configuration.DestroyInstanceTimeout != -1)
             {
@@ -202,7 +203,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             lock (SortIndexLock)
             {
                 _lastSortIndex++;
-                if(_lastSortIndex > _configuration.MaxPlayerCount)
+                if (_lastSortIndex > _configuration.MaxPlayerCount)
                 {
                     return 0;
                 }
@@ -214,19 +215,18 @@ namespace BeatTogether.DedicatedServer.Kernel
             _releasedSortIndices.Enqueue(sortIndex);
 
         object ConnectionIDLock = new();
-        public byte GetNextConnectionId() //ID 127 is server, ID 127 also means send to all players, 255 will mean perm spectator when/if implimented
+        public byte GetNextConnectionId() //ID 0 is server, ID 127 also means send to all players, 255 will mean perm spectator when/if implimented. Starts at 1 because funny server logic
         {
             if (_releasedConnectionIds.TryDequeue(out var connectionId))
                 return connectionId;
             lock (ConnectionIDLock)
             {
-                byte ID = _connectionIdCount;
                 _connectionIdCount++;
                 if (_connectionIdCount == 127)
                     _connectionIdCount++;
                 if (_connectionIdCount > (byte.MaxValue - 5))
                     return 255; //Give them an unusedID so they dont conflict with anyone
-                return ID;
+                return _connectionIdCount;
             }
         }
 
@@ -235,11 +235,8 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public void SetState(MultiplayerGameState state)
         {
-            State = state;
-            _packetDispatcher.SendToNearbyPlayers(new SetMultiplayerGameStatePacket
-            {
-                State = state
-            }, DeliveryMethod.ReliableOrdered);
+            GameStatePacket.State = state;
+            _packetDispatcher.SendToNearbyPlayers(GameStatePacket, DeliveryMethod.ReliableOrdered);
             GameIsInLobby?.Invoke(_configuration.Secret, state == MultiplayerGameState.Lobby);
         }
 
@@ -345,6 +342,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             => _logger.Verbose($"Latency updated (RemoteEndPoint='{endPoint}', Latency={0.001f * latency}).");
 
         object ConnectionLock = new();
+        private readonly SyncTimePacket _SyncTimePacket = new();
         public override void OnConnect(EndPoint endPoint)
         {
             lock (ConnectionLock)
@@ -362,10 +360,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
 
                 // Update SyncTime
-                _packetDispatcher.SendToNearbyPlayers(new SyncTimePacket
-                {
-                    SyncTime = RunTime
-                }, DeliveryMethod.ReliableOrdered);
+                _SyncTimePacket.SyncTime = RunTime;
+                _packetDispatcher.SendToNearbyPlayers(_SyncTimePacket, DeliveryMethod.ReliableOrdered);
 
                 // Send new player's connection data
                 _packetDispatcher.SendExcludingPlayer(player, new PlayerConnectedPacket
@@ -386,7 +382,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 // Send host player to new player
                 _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
                 {
-                    RemoteConnectionId = 127,//TODO testing this
+                    RemoteConnectionId = 0,//TODO testing this
                     UserId = _configuration.ServerId,
                     UserName = _configuration.ServerName,
                     IsConnectionOwner = true
@@ -568,10 +564,10 @@ namespace BeatTogether.DedicatedServer.Kernel
         private async void SendSyncTime(CancellationToken cancellationToken)
         {
             foreach (IPlayer player in _playerRegistry.Players)
-                _packetDispatcher.SendToPlayer(player, new SyncTimePacket
-                {
-                    SyncTime = player.SyncTime
-                }, DeliveryMethod.ReliableOrdered);
+            {
+                _SyncTimePacket.SyncTime = player.SyncTime;
+                _packetDispatcher.SendToPlayer(player, _SyncTimePacket, DeliveryMethod.ReliableOrdered);
+            }
             try
             {
                 await Task.Delay(SyncTimeDelay, cancellationToken);
