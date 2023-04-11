@@ -2,15 +2,14 @@
 {
     public enum HandshakeMessageType : uint
     {
-        ClientHelloRequest = 0,
-        HelloVerifyRequest = 1,
-        ClientHelloWithCookieRequest = 2,
-        ServerHelloRequest = 3,
-        ServerCertificateRequest = 4,
-        ServerCertificateResponse = 5,
+        ClientHelloRequest,
+        HelloVerifyRequest,
+        ClientHelloWithCookieRequest,
+        ServerHelloRequest,
+        ServerCertificateRequest,
         ClientKeyExchangeRequest = 6,
-        ChangeCipherSpecRequest = 7,
-        MessageReceivedAcknowledge = 8,
-        MultipartMessage = 9
+        ChangeCipherSpecRequest,
+        MessageReceivedAcknowledge,
+        MultipartMessage
     }
 }

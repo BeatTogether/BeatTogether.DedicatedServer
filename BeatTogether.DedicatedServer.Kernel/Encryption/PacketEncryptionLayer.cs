@@ -26,7 +26,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
         private readonly ConcurrentDictionary<IPAddress, EncryptionParameters> _potentialEncryptionParameters = new();
         private readonly ConcurrentDictionary<EndPoint, EncryptionParameters> _encryptionParameters = new();
 
-        private static readonly byte[]  _masterSecretSeed = Encoding.UTF8.GetBytes("master secret");
+        private static readonly byte[] _masterSecretSeed = Encoding.UTF8.GetBytes("master secret");
         private static readonly byte[] _keyExpansionSeed = Encoding.UTF8.GetBytes("key expansion");
 
         public PacketEncryptionLayer(
@@ -45,13 +45,38 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
         #region Public Methods
 
+        public void AddEncryptedEndPoint(IPEndPoint endPoint, EncryptionParameters encryptionParameters, 
+            bool definitive = false)
+        {
+            if (definitive)
+            {
+                _encryptionParameters[endPoint] = encryptionParameters;
+            }
+            else
+            {
+                _potentialEncryptionParameters[endPoint.Address] = encryptionParameters;
+                _encryptionParameters.TryRemove(endPoint, out _);    
+            }
+        }
+
+        public void AddEncryptedEndPoint(IPEndPoint endPoint,
+            BeatTogether.Core.Messaging.Models.EncryptionParameters encryptionParameters, 
+            bool definitive = false)
+        {
+            AddEncryptedEndPoint(endPoint, new EncryptionParameters(encryptionParameters.ReceiveKey,
+                encryptionParameters.SendKey, encryptionParameters.ReceiveMac.Key, encryptionParameters.SendMac.Key),
+                definitive);
+        }
+
         public void AddEncryptedEndPoint(
             IPEndPoint endPoint,
             byte[] clientRandom,
-            byte[] clientPublicKey)
+            byte[] clientPublicKey, 
+            bool definitive = false)
         {
             var clientPublicKeyParameters = _diffieHellmanService.DeserializeECPublicKey(clientPublicKey);
-            var preMasterSecret = _diffieHellmanService.GetPreMasterSecret(clientPublicKeyParameters, KeyPair.PrivateKeyParameters);
+            var preMasterSecret =
+                _diffieHellmanService.GetPreMasterSecret(clientPublicKeyParameters, KeyPair.PrivateKeyParameters);
             var sendKey = new byte[32];
             var receiveKey = new byte[32];
             var sendMacSourceArray = new byte[64];
@@ -73,8 +98,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 receiveMacSourceArray,
                 sendMacSourceArray
             );
-            _potentialEncryptionParameters[endPoint.Address] = encryptionParameters;
-            _encryptionParameters.TryRemove(endPoint, out _);
+
+            AddEncryptedEndPoint(endPoint, encryptionParameters, definitive);
         }
 
         public void RemoveEncryptedEndPoint(IPEndPoint endPoint)
@@ -85,16 +110,18 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
         public void ProcessInboundPacket(EndPoint endPoint, ref Span<byte> data)
         {
-            var address = ((IPEndPoint)endPoint).Address;
+            var address = ((IPEndPoint) endPoint).Address;
 
             if (data.Length == 0)
                 return;
 
             var bufferReader = new SpanBufferReader(data);
-            
-            if (!bufferReader.ReadBool())  // isEncrypted
+
+            if (!bufferReader.ReadBool()) // isEncrypted
             {
                 // Received an unencrypted packet - this is valid if the client is still negotiating 
+                // Slice out the encryption flag and continue
+                data = data[1..];
                 // TODO Reject unencrypted inbound packets for regular clients past the negotiation stage?
                 return;
             }
@@ -120,9 +147,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 }
                 else
                     data = Array.Empty<byte>();
+
                 return;
             }
 
+            // Cannot decrypt incoming packet
+            // This can happen briefly when the handshake process switches to encrypted mode
             _logger.Verbose(
                 "Failed to retrieve decryption parameters " +
                 $"(RemoteEndPoint='{endPoint}')."
@@ -134,30 +164,38 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
         {
             if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
             {
-                if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint)endPoint).Address, out var encryptionParametersold))
-                {
-                    _logger.Warning($"Re-assigning encryption parameters as old parameters (RemoteEndPoint='{endPoint}').");
-                    encryptionParameters = _encryptionParameters.GetOrAdd(endPoint, encryptionParametersold);
-                }
-                else
+                if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint) endPoint).Address,
+                        out var encryptionParametersOld))
                 {
                     _logger.Warning(
-                        "Failed to retrieve encryption parameters " +
-                        $"(RemoteEndPoint='{endPoint}')."
-                    );
-                    return;
+                        $"Re-assigning encryption parameters as old parameters (RemoteEndPoint='{endPoint}').");
+                    encryptionParameters = _encryptionParameters.GetOrAdd(endPoint, encryptionParametersOld);
                 }
             }
 
             var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
-            bufferWriter.WriteBool(true);  // isEncrypted
-            using (var hmac = new HMACSHA256(encryptionParameters.SendMac))
+
+            if (encryptionParameters != null)
             {
-                _encryptedPacketWriter.WriteTo(
-                    ref bufferWriter, data,//.Slice(0, data.Length),
-                    encryptionParameters.GetNextSequenceId(),
-                    encryptionParameters.SendKey, hmac);
+                bufferWriter.WriteBool(true); // isEncrypted
+
+                using (var hmac = new HMACSHA256(encryptionParameters.SendMac))
+                {
+                    _encryptedPacketWriter.WriteTo(
+                        ref bufferWriter, data, //.Slice(0, data.Length),
+                        encryptionParameters.GetNextSequenceId(),
+                        encryptionParameters.SendKey, hmac);
+                }
             }
+            else
+            {
+                // Failed to retrieve encryption parameters for send
+                // During early handshake, this is legitimate
+
+                bufferWriter.WriteBool(false); // isEncrypted
+                bufferWriter.WriteBytes(data);
+            }
+
             data = bufferWriter.Data.ToArray();
         }
 
@@ -183,6 +221,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 Array.Copy(seed, 0, array, i, seed.Length);
                 PRFHash(key, array, ref i);
             }
+
             var array2 = new byte[length];
             Array.Copy(array, 0, array2, 0, length);
             return array2;
@@ -210,6 +249,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                         .ReadFrom(ref bufferReader, encryptionParameters.ReceiveKey, hmac)
                         .ToArray();
                 }
+
                 return true;
             }
             catch (Exception e)

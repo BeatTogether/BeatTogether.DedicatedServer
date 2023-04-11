@@ -16,7 +16,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class PacketSource : ConnectedMessageSource
     {
-        public const byte LocalConnectionId = 127;//TODO testing this
+        public const byte LocalConnectionId = 0;
         public const byte AllConnectionIds = 127;
 
         private readonly IServiceProvider _serviceProvider;
@@ -44,7 +44,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _packetDispatcher = packetDispatcher;
             _configuration = instconfiguration;
         }
-        
+
         public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader, DeliveryMethod method)
         {
             if (!reader.TryReadRoutingHeader(out var routingHeader))
@@ -65,7 +65,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return;
             }
 
-            // Is this packet meant to be routed?
+            //Is this packet meant to be routed?
             if (routingHeader.ReceiverId != 0)
                 RoutePacket(sender, routingHeader, ref reader, method);
 
@@ -80,7 +80,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     return;
                 }
 
-                var prevPosition = reader.Offset;
+                int prevPosition = reader.Offset;
                 INetSerializable? packet;
                 IPacketRegistry packetRegistry = _packetRegistry;
                 while (true)
@@ -155,7 +155,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private void RoutePacket(IPlayer sender,
             (byte SenderId, byte ReceiverId) routingHeader,
-            ref SpanBufferReader/*ReadOnlySpan<byte>*/ reader, DeliveryMethod deliveryMethod)
+            ref SpanBufferReader reader, DeliveryMethod deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
             var writer = new SpanBufferWriter(stackalloc byte[412]);

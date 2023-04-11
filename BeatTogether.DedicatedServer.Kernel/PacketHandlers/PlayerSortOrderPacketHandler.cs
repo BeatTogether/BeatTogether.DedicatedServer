@@ -28,7 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 if (sender.UserId == packet.UserId && sender.SortIndex != packet.SortIndex)
                 {
                     sender.SortIndex = packet.SortIndex;
-                    //_packetDispatcher.SendExcludingPlayer(sender, packet, DeliveryMethod.ReliableOrdered); //TODO testing this
+                    _packetDispatcher.SendExcludingPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
                 }
             }
             return Task.CompletedTask;

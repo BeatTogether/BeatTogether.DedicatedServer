@@ -7,7 +7,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries.Unconnected
 {
     public class HandshakeMessageRegistry : BaseMessageRegistry
     {
-        public override uint MessageGroup => 3192347326U; // MessageGroup.Handshake?
+        public override uint MessageGroup => 3192347326U;
 
         public HandshakeMessageRegistry()
         {
