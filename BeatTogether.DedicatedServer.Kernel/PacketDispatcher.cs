@@ -15,6 +15,7 @@ namespace BeatTogether.DedicatedServer.Kernel
     public sealed class PacketDispatcher : ConnectedMessageDispatcher, IPacketDispatcher
     {
         public const byte LocalConnectionId = 0;
+        public const byte ServerId = 0;
         public const byte AllConnectionIds = 127;
 
         private readonly IPacketRegistry _packetRegistry;
@@ -38,11 +39,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
-                $"(SenderId={LocalConnectionId})"
+                $"(SenderId={ServerId})"
             );
 
             var writer = new SpanBufferWriter(stackalloc byte[412]);
-            writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteOne(ref writer, packet);
             _logger.Verbose("Packet: " + packet.GetType().Name + " Was entered into the spanbuffer correctly, now sending once to each player");
             foreach (var player in _playerRegistry.Players)
@@ -57,7 +58,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBufferWriter(stackalloc byte[412]);
-            writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteOne(ref writer, packet);
 
             foreach (IPlayer player in _playerRegistry.Players)
@@ -73,7 +74,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBufferWriter(stackalloc byte[412]);
-            writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteOne(ref writer, packet);
 
             Send(endpoint, writer.Data, deliveryMethod);
@@ -111,11 +112,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
-                $"(SenderId={LocalConnectionId}, ReceiverId={LocalConnectionId})."
+                $"(SenderId={ServerId}, ReceiverId={LocalConnectionId})."
             );
 
             var writer = new SpanBufferWriter(stackalloc byte[412]);
-            writer.WriteRoutingHeader(LocalConnectionId, LocalConnectionId);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteOne(ref writer, packet);
             Send(player.Endpoint, writer, deliveryMethod);
         }
