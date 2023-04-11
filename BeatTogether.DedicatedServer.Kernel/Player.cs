@@ -24,8 +24,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                      Instance.RunTime);
         public object SortLock { get; set; } = new();
         public int SortIndex { get; set; }
-        public byte[] Random { get; set; }
-        public byte[] PublicEncryptionKey { get; set; }
+        public byte[]? Random { get; set; }
+        public byte[]? PublicEncryptionKey { get; set; }
         public object PlayerIdentityLock { get; set; } = new();
         public AvatarData Avatar { get; set; } = new();
         public object ReadyLock { get; set; } = new();
