@@ -33,9 +33,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public InstanceConfiguration _configuration { get; private set; }
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
-        private SetMultiplayerGameStatePacket GameStatePacket = new() {State = MultiplayerGameState.Lobby};
-        public MultiplayerGameState State => GameStatePacket.State;
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
+        public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
 
         public event Action<IDedicatedInstance> StopEvent = null!;
         public event Action<IPlayer, int> PlayerConnectedEvent = null!;
@@ -218,8 +217,11 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public void SetState(MultiplayerGameState state)
         {
-            GameStatePacket.State = state;
-            _packetDispatcher.SendToNearbyPlayers(GameStatePacket, DeliveryMethod.ReliableOrdered);
+            State = state;
+            _packetDispatcher.SendToNearbyPlayers(new SetMultiplayerGameStatePacket()
+            {
+                State = state
+            }, DeliveryMethod.ReliableOrdered);
             GameIsInLobby?.Invoke(_configuration.Secret, state == MultiplayerGameState.Lobby);
         }
 

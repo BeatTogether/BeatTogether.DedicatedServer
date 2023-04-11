@@ -25,8 +25,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             lock (sender.StateLock)
             {
                 sender.State = packet.PlayerState;
-                //_packetDispatcher.SendExcludingPlayer(sender, packet, DeliveryMethod.ReliableOrdered); //TODO testing what adding this does
             }
+            _packetDispatcher.SendExcludingPlayer(sender, packet, DeliveryMethod.ReliableOrdered); //TODO testing what adding this does
             return Task.CompletedTask;
         }
     }
