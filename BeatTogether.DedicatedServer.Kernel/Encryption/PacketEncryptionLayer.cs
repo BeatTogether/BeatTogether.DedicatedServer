@@ -182,7 +182,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 using (var hmac = new HMACSHA256(encryptionParameters.SendMac))
                 {
                     _encryptedPacketWriter.WriteTo(
-                        ref bufferWriter, data, //.Slice(0, data.Length),
+                        ref bufferWriter, data,
                         encryptionParameters.GetNextSequenceId(),
                         encryptionParameters.SendKey, hmac);
                 }
@@ -195,7 +195,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 bufferWriter.WriteBool(false); // isEncrypted
                 bufferWriter.WriteBytes(data);
             }
-
             data = bufferWriter.Data.ToArray();
         }
 

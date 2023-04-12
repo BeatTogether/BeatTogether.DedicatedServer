@@ -3,11 +3,6 @@ using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
-    public sealed class ClearSelectedBeatmap : BaseRpcWithValuesPacket
-    {
-        public override void WriteTo(ref SpanBufferWriter writer)
-        {
-            base.WriteTo(ref writer);
-        }
-    }
+    public sealed class ClearSelectedBeatmap : BaseRpcWithValuesPacket { }
+
 }
