@@ -9,7 +9,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
         public string ServerOwnerId { get; set; } = string.Empty;
         public string ServerId { get; set; } = "ziuMSceapEuNN7wRGQXrZg";
         public string ServerName { get; set; } = string.Empty;
-        public float DestroyInstanceTimeout { get; set; } = 0f; //set to -1 for no timeout(must close using api), 0 would be for lobbies made the usaual way, or set a number for a timeout
+        public float DestroyInstanceTimeout { get; set; } = 10f; //set to -1 for no timeout(must close using api), 0 would be for instant close, 10 seconds is default. Less than 6 seconds can cause cfr-3 issues
         public string SetConstantManagerFromUserId { get; set; } = string.Empty; //If a user creates a server using the api and enteres there userId (eg uses discord bot with linked account))
         public bool AllowPerPlayerDifficulties { get; set; } = false;
         public bool AllowPerPlayerModifiers { get; set; } = false;

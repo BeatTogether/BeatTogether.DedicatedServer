@@ -343,7 +343,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             => _logger.Verbose($"Latency updated (RemoteEndPoint='{endPoint}', Latency={0.001f * latency}).");
 
         object ConnectionLock = new();
-        private readonly SyncTimePacket _SyncTimePacket = new();
         public override void OnConnect(EndPoint endPoint)
         {
             lock (ConnectionLock)
@@ -361,8 +360,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
 
                 // Update SyncTime
-                _SyncTimePacket.SyncTime = RunTime;
-                _packetDispatcher.SendToNearbyPlayers(_SyncTimePacket, DeliveryMethod.ReliableOrdered);
+                _packetDispatcher.SendToNearbyPlayers(new SyncTimePacket()
+                {
+                    SyncTime = RunTime
+                }, DeliveryMethod.ReliableOrdered);
 
                 // Send new player's connection data
                 _packetDispatcher.SendExcludingPlayer(player, new PlayerConnectedPacket
@@ -383,7 +384,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 // Send host player to new player
                 _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
                 {
-                    RemoteConnectionId = 0,//TODO testing this
+                    RemoteConnectionId = 0,
                     UserId = _configuration.ServerId,
                     UserName = _configuration.ServerName,
                     IsConnectionOwner = true
@@ -427,7 +428,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     Reason = player.UserId == _configuration.ServerOwnerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
                 }, DeliveryMethod.ReliableOrdered);
 
-                // Update permissions
+                // Update permissions - constant manager possibly does not work
                 if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.GetPlayerCount() == 1) && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
                 {
                     _configuration.ServerOwnerId = player.UserId;
