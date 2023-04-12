@@ -223,7 +223,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         {
                             _packetDispatcher.SendToPlayer(p, new KickPlayerPacket()
                             {
-                                DisconnectedReason = DisconnectedReason.Unknown,
+                                DisconnectedReason = DisconnectedReason.Kicked,
                             }, DeliveryMethod.ReliableOrdered);
                         }
                     }
