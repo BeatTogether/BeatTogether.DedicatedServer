@@ -1,7 +1,6 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
-using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {

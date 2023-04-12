@@ -85,7 +85,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 IPacketRegistry packetRegistry = _packetRegistry;
                 while (true)
                 {
-                    if (!(packetRegistry is MultiplayerCorePacketRegistry MPCoreRegistry))
+                    if (packetRegistry is not MultiplayerCorePacketRegistry MPCoreRegistry)
                     {
                         byte packetId;
                         try
