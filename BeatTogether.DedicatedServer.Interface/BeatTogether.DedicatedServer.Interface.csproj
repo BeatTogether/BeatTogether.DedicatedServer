@@ -7,7 +7,7 @@
     <Authors>BeatTogether Team</Authors>
     <Company>BeatTogether</Company>
     <RepositoryUrl>https://github.com/beattogether/BeatTogether.DedicatedServer</RepositoryUrl>
-    <Version>1.5.6</Version>
+    <Version>1.5.7</Version>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 

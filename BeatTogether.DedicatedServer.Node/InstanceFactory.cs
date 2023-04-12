@@ -28,17 +28,17 @@ namespace BeatTogether.DedicatedServer.Node
             string secret,
             string managerId,
             GameplayServerConfiguration config,
-            bool permanentManager = false,//If a user links there account to discord and uses a bot to make a lobby, then can enter there userId
-            float instanceTimeout = 0f,
-            string ServerName = "",
-            float resultScreenTime = 20.0f,
-            float BeatmapStartTime = 5.0f,
-            float PlayersReadyCountdownTime = 0f,
-            bool AllowPerPlayerModifiers = false,
-            bool AllowPerPlayerDifficulties = false,
-            bool AllowChroma = true,
-            bool AllowME = true,
-            bool AllowNE = true
+            bool permanentManager,
+            float instanceTimeout,
+            string ServerName,
+            float resultScreenTime,
+            float BeatmapStartTime,
+            float PlayersReadyCountdownTime,
+            bool AllowPerPlayerModifiers,
+            bool AllowPerPlayerDifficulties,
+            bool AllowChroma,
+            bool AllowME,
+            bool AllowNE
             )
         {
             var port = _portAllocator.AcquirePort();
