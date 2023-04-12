@@ -567,8 +567,10 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             foreach (IPlayer player in _playerRegistry.Players)
             {
-                _SyncTimePacket.SyncTime = player.SyncTime;
-                _packetDispatcher.SendToPlayer(player, _SyncTimePacket, DeliveryMethod.ReliableOrdered);
+                _packetDispatcher.SendToPlayer(player, new SyncTimePacket()
+                {
+                    SyncTime = player.SyncTime
+                }, DeliveryMethod.ReliableOrdered);
             }
             try
             {
