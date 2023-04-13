@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
+using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
@@ -359,55 +360,73 @@ namespace BeatTogether.DedicatedServer.Kernel
                     return;
                 }
 
-                // Update SyncTime
-                _packetDispatcher.SendToNearbyPlayers(new SyncTimePacket()
-                {
-                    SyncTime = RunTime
-                }, DeliveryMethod.ReliableOrdered);
+                //Send to existing players that a new player has joined
+                _packetDispatcher.SendExcludingPlayer(player, new INetSerializable[]
+                    {
+                    new SyncTimePacket
+                        {
+                            SyncTime = RunTime
+                        },
+                    new PlayerConnectedPacket
+                        {
+                            RemoteConnectionId = player.ConnectionId,
+                            UserId = player.UserId,
+                            UserName = player.UserName,
+                            IsConnectionOwner = false
+                        },
+                    new PlayerSortOrderPacket
+                        {
+                            UserId = player.UserId,
+                            SortIndex = player.SortIndex
+                        }
+                    }
+                    ,DeliveryMethod.ReliableOrdered);
 
-                // Send new player's connection data
-                _packetDispatcher.SendExcludingPlayer(player, new PlayerConnectedPacket
-                {
-                    RemoteConnectionId = player.ConnectionId,
-                    UserId = player.UserId,
-                    UserName = player.UserName,
-                    IsConnectionOwner = false
-                }, DeliveryMethod.ReliableOrdered);
+                //Send new player their sort order and other data
+                _packetDispatcher.SendToPlayer(player, new INetSerializable[]
+                    {
+                    new SyncTimePacket
+                        {
+                            SyncTime = RunTime
+                        },
+                    new PlayerSortOrderPacket
+                        {
+                            UserId = player.UserId,
+                            SortIndex = player.SortIndex
+                        },
+                    new PlayerConnectedPacket
+                        {
+                            RemoteConnectionId = 0,
+                            UserId = _configuration.ServerId,
+                            UserName = _configuration.ServerName,
+                            IsConnectionOwner = true
+                        },
+                    new SetIsStartButtonEnabledPacket// Disables start button if they are server owner without selected song
+                        {
+                            Reason = player.UserId == _configuration.ServerOwnerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
+                        }
+                     }
+                    ,DeliveryMethod.ReliableOrdered);
 
-                // Send new player's sort order
-                _packetDispatcher.SendToNearbyPlayers(new PlayerSortOrderPacket
-                {
-                    UserId = player.UserId,
-                    SortIndex = player.SortIndex
-                }, DeliveryMethod.ReliableOrdered);
-
-                // Send host player to new player
-                _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
-                {
-                    RemoteConnectionId = 0,
-                    UserId = _configuration.ServerId,
-                    UserName = _configuration.ServerName,
-                    IsConnectionOwner = true
-                }, DeliveryMethod.ReliableOrdered);
 
                 foreach (IPlayer p in _playerRegistry.Players)
                 {
-                    if(p.ConnectionId != player.ConnectionId)
+                    if (p.ConnectionId != player.ConnectionId)
                     {
                         // Send all player connection data packets to new player
-                        _packetDispatcher.SendToPlayer(player, new PlayerConnectedPacket
-                        {
-                            RemoteConnectionId = p.ConnectionId,
-                            UserId = p.UserId,
-                            UserName = p.UserName,
-                            IsConnectionOwner = false
-                        }, DeliveryMethod.ReliableOrdered);
-
-                        // Send all player sort index packets to new player
-                        _packetDispatcher.SendToPlayer(player, new PlayerSortOrderPacket
-                        {
-                            UserId = p.UserId,
-                            SortIndex = p.SortIndex
+                        _packetDispatcher.SendToPlayer(player,new INetSerializable[]{
+                            new PlayerConnectedPacket
+                            {
+                                RemoteConnectionId = p.ConnectionId,
+                                UserId = p.UserId,
+                                UserName = p.UserName,
+                                IsConnectionOwner = false
+                            },
+                            new PlayerSortOrderPacket
+                            {
+                                UserId = p.UserId,
+                                SortIndex = p.SortIndex
+                            }
                         }, DeliveryMethod.ReliableOrdered);
 
                         // Send all player identity packets to new player
@@ -419,14 +438,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                             PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
                         }, DeliveryMethod.ReliableOrdered);
                     }
-
                 }
-
-                // Disable start button if they are server owner without selected song
-                _packetDispatcher.SendToPlayer(player, new SetIsStartButtonEnabledPacket
-                {
-                    Reason = player.UserId == _configuration.ServerOwnerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
-                }, DeliveryMethod.ReliableOrdered);
 
                 // Update permissions - constant manager possibly does not work
                 if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.GetPlayerCount() == 1) && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)

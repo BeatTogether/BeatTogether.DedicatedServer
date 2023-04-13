@@ -49,7 +49,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 }, DeliveryMethod.ReliableOrdered);
                 return Task.CompletedTask;
             }
-            //_packetDispatcher.SendToPlayer(sender, new ClearSelectedBeatmap(), DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToPlayer(sender, new ClearSelectedBeatmap(), DeliveryMethod.ReliableOrdered);
             return Task.CompletedTask;
         }
     }
