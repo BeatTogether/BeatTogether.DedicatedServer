@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="BeatTogether.Core.Messaging" Version="1.8.0" />
     <PackageReference Include="BeatTogether.Extensions.BinaryRecords" Version="1.0.3" />
-    <PackageReference Include="BeatTogether.LiteNetLib" Version="0.3.18" />
+    <PackageReference Include="BeatTogether.LiteNetLib" Version="0.3.19" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
   </ItemGroup>
 

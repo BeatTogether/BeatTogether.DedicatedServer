@@ -10,7 +10,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public void ReadFrom(ref SpanBufferReader reader)
         {
             int count = reader.ReadInt32();
-            ActivePlayerSpecificSettingsAtStart = new PlayerSpecificSettings[count-1];
+            ActivePlayerSpecificSettingsAtStart = new PlayerSpecificSettings[count];
             for (int i = 0; i < count; i++)
             {
                 ActivePlayerSpecificSettingsAtStart[i].ReadFrom(ref reader);
