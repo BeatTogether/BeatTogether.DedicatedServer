@@ -103,7 +103,7 @@ namespace BeatTogether.DedicatedServer.Node
         private void HandleGameInLobbyEvent(string secret, bool state)
         {
             //_autobus.Publish(new UpdateStatusEvent(secret, (Interface.Enums.CountdownState)countdownState, (Interface.Enums.MultiplayerGameState)gameState, (Interface.Enums.GameplayState)GameplayState));
-            _autobus.Publish(new ServerInGameplayEvent(secret, state));
+            _autobus.Publish(new ServerInGameplayEvent(secret, !state));
         }
         /*
         private void HandleStateChangedEvent(string secret, CountdownState countdownState, MultiplayerGameState gameState, GameplayManagerState GameplayState)
