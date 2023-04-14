@@ -1,17 +1,17 @@
+using System.Security.Cryptography;
 using Autobus;
 using BeatTogether.DedicatedServer.Interface;
-using BeatTogether.DedicatedServer.Kernel;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Extensions;
+using BeatTogether.DedicatedServer.Kernel.Providers;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Security.Cryptography;
 
 namespace BeatTogether.DedicatedServer.Node.Extensions
 {
@@ -28,6 +28,8 @@ namespace BeatTogether.DedicatedServer.Node.Extensions
                         .AddCoreSecurity()
                         .AddConfiguration<NodeConfiguration>("Node")
                         .AddTransient<RNGCryptoServiceProvider>()
+                        .AddSingleton<ICookieProvider, CookieProvider>()
+                        .AddSingleton<IRandomProvider, RandomProvider>()
                         .AddSingleton<IEncryptedPacketReader, EncryptedPacketReader>()
                         .AddSingleton<IEncryptedPacketWriter, EncryptedPacketWriter>()
                         .AddSingleton<PacketEncryptionLayer>()

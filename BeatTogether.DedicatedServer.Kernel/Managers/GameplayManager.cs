@@ -95,7 +95,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             SessionGameId = Guid.NewGuid().ToString();
 
             State = GameplayManagerState.SceneLoad;
-
             foreach (var player in _playerRegistry.Players)//Array of players that are playing at the start
             {
                 if (!player.IsSpectating)
@@ -145,7 +144,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             // Set scene sync finished
             State = GameplayManagerState.SongLoad;
-            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
 
             //Wait for players to have the song ready
             _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
@@ -167,42 +165,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _songStartTime = _instance.RunTime + SongStartDelay + (StartDelay * 2f);
 
             State = GameplayManagerState.Gameplay;
-            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
 
             _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
 
-            //_instance.BeatmapChanged(CurrentBeatmap, CurrentModifiers, true, DateTime.Now.AddSeconds(_songStartTime - _instance.RunTime));
 
             await Task.WhenAll(_levelFinishedTcs.Values.Select(p => p.Task));
 
             State = GameplayManagerState.Results;
-            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
 
-            /*
-            List<(string, BeatmapDifficulty, LevelCompletionResults)> PlayerResults = new();
-            foreach (string p in PlayersAtStart)
-            {
-                if(_levelCompletionResults.TryGetValue(p, out var results))
-                {
-                    if (_playerRegistry.TryGetPlayer(p, out var player))
-                    {
-                        BeatmapDifficulty diff = CurrentBeatmap.Difficulty;
-                        if (_instance._configuration.AllowPerPlayerDifficulties && player.PreferredDifficulty != null)
-                            diff = (BeatmapDifficulty)player.PreferredDifficulty;
-                        PlayerResults.Add((player.UserId, diff, results));
-                    }
-                    else
-                    {
-                        PlayerResults.Add((p, CurrentBeatmap.Difficulty, results));
-                    }
-                }
-            }
-
-            _instance.LevelFinished(CurrentBeatmap, PlayerResults);
-            */
             if (_levelCompletionResults.Values.Any(result => result.LevelEndStateType == LevelEndStateType.Cleared) && _instance._configuration.CountdownConfig.ResultsScreenTime > 0)
                 await Task.Delay((int)(_instance._configuration.CountdownConfig.ResultsScreenTime * 1000), cancellationToken);
 
@@ -210,7 +183,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             SetBeatmap(null, new());
             ResetValues();
             _instance.SetState(MultiplayerGameState.Lobby);
-            //_instance.InstanceStateChanged(CountdownState.NotCountingDown, State);
             _packetDispatcher.SendToNearbyPlayers( new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
         }
 
@@ -285,10 +257,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 return;
             _levelCompletionResults[player.UserId] = packet.Results.LevelCompletionResults;
             PlayerFinishLevel(player.UserId);
-            if(_levelCompletionResults.Values.Count(t => t.LevelEndStateType == LevelEndStateType.Cleared) >= PlayersAtStart.Count / 2 && levelFinishedCts != null && State == GameplayManagerState.Gameplay)//If half the players have cleared the level then end it, in case someones game somehow keeps playing or if someone has somehow played the wrong level client side
-            {
-                levelFinishedCts.CancelAfter(Math.Min(5000, (int)(_instance._configuration.CountdownConfig.ResultsScreenTime * 1000)));
-            }
         }
 
         object RequestReturnLock = new();

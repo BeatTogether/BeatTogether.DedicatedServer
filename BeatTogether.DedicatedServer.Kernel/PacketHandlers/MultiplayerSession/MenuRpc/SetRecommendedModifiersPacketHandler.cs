@@ -11,7 +11,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 	{
 		private readonly IPacketDispatcher _packetDispatcher;
 		private readonly ILobbyManager _lobbyManager;
-		private readonly ILogger _logger = Log.ForContext<SetRecommendedModifiersPacket>();
+		private readonly ILogger _logger = Log.ForContext<SetRecommendedModifiersPacketHandler>();
 
 		public SetRecommendedModifiersPacketHandler(
 			IPacketDispatcher packetDispatcher,

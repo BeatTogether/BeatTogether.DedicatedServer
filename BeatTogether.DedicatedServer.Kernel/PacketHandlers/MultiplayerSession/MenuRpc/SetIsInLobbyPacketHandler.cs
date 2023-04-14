@@ -1,5 +1,4 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Kernel.Managers;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
@@ -50,29 +49,21 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 }
                 sender.InLobby = packet.IsInLobby;
 
-                //if (_instance.State == MultiplayerGameState.Game && packet.IsInLobby == true && _playerRegistry.Players.TrueForAll(p => p.InLobby))
-                //    _gameplayManager.SignalRequestReturnToMenu();
+                if (_lobbyManager.SelectedBeatmap is null)
+                    _packetDispatcher.SendToPlayer(sender, new ClearSelectedBeatmap(), DeliveryMethod.ReliableOrdered);
+                else
+                    _packetDispatcher.SendToPlayer(sender, new SetSelectedBeatmap
+                    {
+                        Beatmap = _lobbyManager.SelectedBeatmap
+                    }, DeliveryMethod.ReliableOrdered);
 
-
-                //If your not the lobby manager then the selecteed beatmap dissapears
-                if (sender.InLobby && !sender.IsManager)
-                {
-                    if (_lobbyManager.SelectedBeatmap is null)
-                        _packetDispatcher.SendToPlayer(sender, new ClearSelectedBeatmap(), DeliveryMethod.ReliableOrdered);
-                    else
-                        _packetDispatcher.SendToPlayer(sender, new SetSelectedBeatmap
-                        {
-                            Beatmap = _lobbyManager.SelectedBeatmap
-                        }, DeliveryMethod.ReliableOrdered);
-
-                    if (_lobbyManager.SelectedModifiers == _lobbyManager.EmptyModifiers)
-                        _packetDispatcher.SendToPlayer(sender, new ClearSelectedGameplayModifiers(), DeliveryMethod.ReliableOrdered);
-                    else
-                        _packetDispatcher.SendToPlayer(sender, new SetSelectedGameplayModifiers
-                        {
-                            Modifiers = _lobbyManager.SelectedModifiers
-                        }, DeliveryMethod.ReliableOrdered);
-                }
+                if (_lobbyManager.SelectedModifiers == _lobbyManager.EmptyModifiers)
+                    _packetDispatcher.SendToPlayer(sender, new ClearSelectedGameplayModifiers(), DeliveryMethod.ReliableOrdered);
+                else
+                    _packetDispatcher.SendToPlayer(sender, new SetSelectedGameplayModifiers
+                    {
+                        Modifiers = _lobbyManager.SelectedModifiers
+                    }, DeliveryMethod.ReliableOrdered);
             }
             return Task.CompletedTask;
         }

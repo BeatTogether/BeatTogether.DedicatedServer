@@ -1,7 +1,5 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
 using Krypton.Buffers;
-using System;
-using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -12,12 +10,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public void ReadFrom(ref SpanBufferReader reader)
         {
             int count = reader.ReadInt32();
-            ActivePlayerSpecificSettingsAtStart = new PlayerSpecificSettings[count-1];
+            ActivePlayerSpecificSettingsAtStart = new PlayerSpecificSettings[count];
             for (int i = 0; i < count; i++)
             {
-                PlayerSpecificSettings playerSpecificSettings = new();
-                playerSpecificSettings.ReadFrom(ref reader);
-                ActivePlayerSpecificSettingsAtStart[i] = playerSpecificSettings;
+                ActivePlayerSpecificSettingsAtStart[i].ReadFrom(ref reader);
             }
         }
 

@@ -2,7 +2,7 @@
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
-    public sealed class ClearSelectedGameplayModifiers : BaseRpcWithValuesPacket
+    public sealed class ClearSelectedGameplayModifiers : BaseRpcPacket
     {
     }
 }

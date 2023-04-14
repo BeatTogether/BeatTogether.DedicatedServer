@@ -7,7 +7,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
 {
     public sealed class SetGameplaySceneSyncFinishedPacket : BaseRpcWithValuesPacket
     {
-        public PlayerSpecificSettingsAtStart PlayersAtStart { get; set; } = new();
+        public PlayerSpecificSettingsAtStart PlayersAtStart { get; set; } = null!;
         public string SessionGameId { get; set; } = null!;
 
         public override void ReadFrom(ref SpanBufferReader reader)

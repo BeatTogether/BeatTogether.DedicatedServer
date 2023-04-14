@@ -27,7 +27,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             {
                 SyncTime = sender.SyncTime
             }, DeliveryMethod.ReliableOrdered);
-
             return Task.CompletedTask;
         }
     }
