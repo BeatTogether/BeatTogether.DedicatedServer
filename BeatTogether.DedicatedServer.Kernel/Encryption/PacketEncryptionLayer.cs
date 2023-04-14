@@ -192,7 +192,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 // Failed to retrieve encryption parameters for send
                 // During early handshake, this is legitimate
 
-                bufferWriter.WriteBool(false); // isEncrypted
+                bufferWriter.WriteBool(false); // NotEncrypted
                 bufferWriter.WriteBytes(data);
             }
             data = bufferWriter.Data.ToArray();

@@ -1,5 +1,4 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
