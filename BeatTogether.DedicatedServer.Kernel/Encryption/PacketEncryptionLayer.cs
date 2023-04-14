@@ -117,7 +117,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
             var bufferReader = new SpanBufferReader(data);
 
-            if (!bufferReader.ReadBool()) // isEncrypted
+            if (!bufferReader.ReadBool()) // NotEncrypted
             {
                 // Received an unencrypted packet - this is valid if the client is still negotiating 
                 // Slice out the encryption flag and continue
