@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
-using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
@@ -73,6 +72,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                   liteNetConfiguration,
                   registry,
                   serviceProvider,
+                  false,
+                  0,
                   packetLayer)
         {
             _configuration = configuration;
