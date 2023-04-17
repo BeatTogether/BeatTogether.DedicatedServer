@@ -1,6 +1,6 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets
 {
@@ -8,12 +8,21 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCo
     {
         public string NewManagerID { get; set; } = null!;
 
-        public void WriteTo(ref SpanBufferWriter bufferWriter)
+        public void WriteTo(ref SpanBuffer bufferWriter)
         {
             bufferWriter.WriteString(NewManagerID);
         }
 
-        public void ReadFrom(ref SpanBufferReader bufferReader)
+        public void ReadFrom(ref SpanBuffer bufferReader)
+        {
+            NewManagerID = bufferReader.ReadString();
+        }
+        public void WriteTo(ref MemoryBuffer bufferWriter)
+        {
+            bufferWriter.WriteString(NewManagerID);
+        }
+
+        public void ReadFrom(ref MemoryBuffer bufferReader)
         {
             NewManagerID = bufferReader.ReadString();
         }

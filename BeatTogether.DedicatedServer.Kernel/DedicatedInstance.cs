@@ -16,6 +16,7 @@ using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Enums;
+using BeatTogether.LiteNetLib.Util;
 using Krypton.Buffers;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -233,7 +234,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         object AcceptConnectionLock = new();
 
-        public override bool ShouldAcceptConnection(EndPoint endPoint, ref SpanBufferReader additionalData)
+        public override bool ShouldAcceptConnection(EndPoint endPoint, ref MemoryBuffer additionalData)
         {
 
             if (ShouldDenyConnection(endPoint, ref additionalData))
@@ -243,7 +244,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             return true;
         }
-        public bool ShouldDenyConnection(EndPoint endPoint, ref SpanBufferReader additionalData)
+        public bool ShouldDenyConnection(EndPoint endPoint, ref MemoryBuffer additionalData)
         {
             var connectionRequestData = new ConnectionRequestData();
             try

@@ -1,5 +1,5 @@
 ﻿using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 

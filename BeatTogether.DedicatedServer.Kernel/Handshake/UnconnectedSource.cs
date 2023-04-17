@@ -10,6 +10,7 @@ using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Messaging.Messages.Handshake;
 using BeatTogether.LiteNetLib.Enums;
 using BeatTogether.LiteNetLib.Sources;
+using BeatTogether.LiteNetLib.Util;
 using Krypton.Buffers;
 using Serilog;
 
@@ -62,13 +63,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
 
         #region Receive
 
-        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader,
+        public override void OnReceive(EndPoint remoteEndPoint, ref MemoryBuffer reader,
             UnconnectedMessageType type)
         {
+
+            SpanBufferReader spanBufferReader = new(reader.RemainingData.Span.ToArray());
             var session = _handshakeSessionRegistry.GetOrAdd(remoteEndPoint);
-            var message = _messageReader.ReadFrom(ref reader);
+            var message = _messageReader.ReadFrom(ref spanBufferReader);
 
             Task.Run(() => HandleMessage(session, message));
+
         }
 
         public async Task HandleMessage(HandshakeSession session, IMessage message)

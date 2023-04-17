@@ -9,6 +9,7 @@ using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Enums;
 using BeatTogether.LiteNetLib.Sources;
+using BeatTogether.LiteNetLib.Util;
 using Krypton.Buffers;
 using Serilog;
 
@@ -45,7 +46,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _configuration = instconfiguration;
         }
 
-        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader, DeliveryMethod method)
+        public override void OnReceive(EndPoint remoteEndPoint, ref MemoryBuffer reader, DeliveryMethod method)
         {
             if (!reader.TryReadRoutingHeader(out var routingHeader))
             {
@@ -155,14 +156,14 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private void RoutePacket(IPlayer sender,
             (byte SenderId, byte ReceiverId) routingHeader,
-            ref SpanBufferReader reader, DeliveryMethod deliveryMethod)
+            ref MemoryBuffer reader, DeliveryMethod deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new MemoryBuffer(GC.AllocateArray<byte>(2048));
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
                 writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
-                writer.WriteBytes(reader.RemainingData);
+                writer.WriteBytes(reader.RemainingData.Span);
 
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
@@ -170,12 +171,12 @@ namespace BeatTogether.DedicatedServer.Kernel
                 );
                 foreach (var player in _playerRegistry.Players)
                     if (player != sender)
-                        _packetDispatcher.Send(player.Endpoint, writer, deliveryMethod);
+                        _packetDispatcher.Send(player.Endpoint, writer.Data, deliveryMethod);
             }
             else
             {
                 writer.WriteRoutingHeader(routingHeader.SenderId, LocalConnectionId);
-                writer.WriteBytes(reader.RemainingData);
+                writer.WriteBytes(reader.RemainingData.Span);
 
                 if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
                 {
@@ -189,7 +190,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
-                _packetDispatcher.Send(receiver.Endpoint, writer, deliveryMethod);
+                _packetDispatcher.Send(receiver.Endpoint, writer.Data, deliveryMethod);
             }
         }
 

@@ -1,5 +1,5 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Abstractions
 {
@@ -7,12 +7,21 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
     {
         public float SyncTime { get; set; }
 
-        public virtual void ReadFrom(ref SpanBufferReader reader)
+        public virtual void ReadFrom(ref SpanBuffer reader)
         {
             SyncTime = reader.ReadFloat32();
         }
 
-        public virtual void WriteTo(ref SpanBufferWriter writer)
+        public virtual void WriteTo(ref SpanBuffer writer)
+        {
+            writer.WriteFloat32(SyncTime);
+        }
+        public virtual void ReadFrom(ref MemoryBuffer reader)
+        {
+            SyncTime = reader.ReadFloat32();
+        }
+
+        public virtual void WriteTo(ref MemoryBuffer writer)
         {
             writer.WriteFloat32(SyncTime);
         }

@@ -1,6 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.LiteNetLib.Abstractions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
@@ -11,7 +11,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         public ByteArray Random { get; set; } = new();
         public ByteArray PublicEncryptionKey { get; set; } = new();
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             PlayerState.ReadFrom(ref reader);
             PlayerAvatar.ReadFrom(ref reader);
@@ -19,7 +19,22 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
             PublicEncryptionKey.ReadFrom(ref reader);
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
+        {
+            PlayerState.WriteTo(ref writer);
+            PlayerAvatar.WriteTo(ref writer);
+            Random.WriteTo(ref writer);
+            PublicEncryptionKey.WriteTo(ref writer);
+        }
+        public void ReadFrom(ref MemoryBuffer reader)
+        {
+            PlayerState.ReadFrom(ref reader);
+            PlayerAvatar.ReadFrom(ref reader);
+            Random.ReadFrom(ref reader);
+            PublicEncryptionKey.ReadFrom(ref reader);
+        }
+
+        public void WriteTo(ref MemoryBuffer writer)
         {
             PlayerState.WriteTo(ref writer);
             PlayerAvatar.WriteTo(ref writer);

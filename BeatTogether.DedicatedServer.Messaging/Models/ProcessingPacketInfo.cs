@@ -2,7 +2,7 @@
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
-    public struct ProcessingPacketInfo
+    public struct ProcessingPacketInfo //TODO this isnt used?
     {
         public uint length;
         public int startPosition;

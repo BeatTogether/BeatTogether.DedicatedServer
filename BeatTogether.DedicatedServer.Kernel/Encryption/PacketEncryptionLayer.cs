@@ -110,6 +110,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
         public void ProcessInboundPacket(EndPoint endPoint, ref Span<byte> data)
         {
+            _logger.Information("Inbound Before decryption: " + BitConverter.ToString(data.ToArray()));
             var address = ((IPEndPoint) endPoint).Address;
 
             if (data.Length == 0)
@@ -122,6 +123,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 // Received an unencrypted packet - this is valid if the client is still negotiating 
                 // Slice out the encryption flag and continue
                 data = data[1..];
+                _logger.Information("Inbound After decryption(Unencrypted): " + BitConverter.ToString(data.ToArray()));
                 // TODO Reject unencrypted inbound packets for regular clients past the negotiation stage?
                 return;
             }
@@ -134,6 +136,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                     data = decryptedData;
                 else
                     data = Array.Empty<byte>();
+
+                _logger.Information("Inbound After decryption: " + BitConverter.ToString(data.ToArray()));
                 return;
             }
 
@@ -147,13 +151,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 }
                 else
                     data = Array.Empty<byte>();
-
+                _logger.Information("Inbound After decryption: " + BitConverter.ToString(data.ToArray()));
                 return;
             }
 
             // Cannot decrypt incoming packet
             // This can happen briefly when the handshake process switches to encrypted mode
-            _logger.Verbose(
+            _logger.Information(
                 "Failed to retrieve decryption parameters " +
                 $"(RemoteEndPoint='{endPoint}')."
             );
@@ -162,6 +166,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
         public void ProcessOutBoundPacket(EndPoint endPoint, ref Span<byte> data)
         {
+
+            _logger.Information("Before encryption: " + BitConverter.ToString(data.ToArray()));
             if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
             {
                 if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint) endPoint).Address,
@@ -195,8 +201,106 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 bufferWriter.WriteBool(false); // NotEncrypted
                 bufferWriter.WriteBytes(data);
             }
+            _logger.Information("After encryption: " + BitConverter.ToString(bufferWriter.Data.ToArray()));
             data = bufferWriter.Data.ToArray();
         }
+
+        public void ProcessInboundPacket(EndPoint endPoint, ref Memory<byte> data)
+        {
+            _logger.Information("Inbound Before decryption: " + BitConverter.ToString(data.ToArray()));
+            var address = ((IPEndPoint)endPoint).Address;
+
+            if (data.Length == 0)
+                return;
+
+            var bufferReader = new SpanBufferReader(data.Span);
+
+            if (!bufferReader.ReadBool()) // NotEncrypted
+            {
+                // Received an unencrypted packet - this is valid if the client is still negotiating 
+                // Slice out the encryption flag and continue
+                data = data[1..];
+                _logger.Information("Inbound After decryption(Unencrypted): " + BitConverter.ToString(data.ToArray()));
+                // TODO Reject unencrypted inbound packets for regular clients past the negotiation stage?
+                return;
+            }
+
+            byte[]? decryptedData;
+
+            if (_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
+            {
+                if (TryDecrypt(ref bufferReader, encryptionParameters, out decryptedData))
+                    data = decryptedData;
+                else
+                    data = Array.Empty<byte>();
+                _logger.Information("Inbound After decryption: " + BitConverter.ToString(data.ToArray()));
+                return;
+            }
+
+            if (_potentialEncryptionParameters.TryGetValue(address, out encryptionParameters))
+            {
+                if (TryDecrypt(ref bufferReader, encryptionParameters, out decryptedData))
+                {
+                    _encryptionParameters[endPoint] = encryptionParameters;
+                    _potentialEncryptionParameters.TryRemove(address, out _);
+                    data = decryptedData;
+                }
+                else
+                    data = Array.Empty<byte>();
+                _logger.Information("Inbound After decryption(Unencrypted): " + BitConverter.ToString(data.ToArray()));
+                return;
+            }
+
+            // Cannot decrypt incoming packet
+            // This can happen briefly when the handshake process switches to encrypted mode
+            _logger.Information(
+                "Failed to retrieve decryption parameters " +
+                $"(RemoteEndPoint='{endPoint}')."
+            );
+            data = Array.Empty<byte>();
+        }
+
+        public void ProcessOutBoundPacket(EndPoint endPoint, ref Memory<byte> data)
+        {
+            _logger.Information("Before encryption: " + BitConverter.ToString(data.Span.ToArray()));
+            if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
+            {
+                if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint)endPoint).Address,
+                        out var encryptionParametersOld))
+                {
+                    _logger.Warning(
+                        $"Re-assigning encryption parameters as old parameters (RemoteEndPoint='{endPoint}').");
+                    encryptionParameters = _encryptionParameters.GetOrAdd(endPoint, encryptionParametersOld);
+                }
+            }
+
+            var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
+
+            if (encryptionParameters != null)
+            {
+                bufferWriter.WriteBool(true); // isEncrypted
+
+                using (var hmac = new HMACSHA256(encryptionParameters.SendMac))
+                {
+                    _encryptedPacketWriter.WriteTo(
+                        ref bufferWriter, data.Span,
+                        encryptionParameters.GetNextSequenceId(),
+                        encryptionParameters.SendKey, hmac);
+                }
+            }
+            else
+            {
+                // Failed to retrieve encryption parameters for send
+                // During early handshake, this is legitimate
+
+                bufferWriter.WriteBool(false); // NotEncrypted
+                bufferWriter.WriteBytes(data.Span);
+            }
+            _logger.Information("After encryption: " + BitConverter.ToString(bufferWriter.Data.ToArray()));
+            data = new Memory<byte>(bufferWriter.Data.ToArray());
+            _logger.Information("After encryption & convertBack: " + BitConverter.ToString(data.Span.ToArray()));
+        }
+
 
         #endregion
 
