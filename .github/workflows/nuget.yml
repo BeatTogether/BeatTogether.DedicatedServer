@@ -6,6 +6,7 @@ on:
       - dev
       - dev-1.29
       - dev-1.29-Net6.0
+      - dev-1.29-Net6.0-Faster
 
 jobs:
   nuget-1:
