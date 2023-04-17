@@ -51,7 +51,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
 
         public void Send(HandshakeSession session, IMessage message, bool retry = false)
         {
-            _logger.Information("Sending handshake message of type {MessageType} (EndPoint={EndPoint})",
+            _logger.Verbose("Sending handshake message of type {MessageType} (EndPoint={EndPoint})",
                 message.GetType().Name, session.EndPoint.ToString());
 
             // Assign request ID to outgoing requests

@@ -110,7 +110,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
         public void ProcessInboundPacket(EndPoint endPoint, ref Span<byte> data)
         {
-            _logger.Information("Inbound Before decryption: " + BitConverter.ToString(data.ToArray()));
             var address = ((IPEndPoint) endPoint).Address;
 
             if (data.Length == 0)
@@ -123,7 +122,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 // Received an unencrypted packet - this is valid if the client is still negotiating 
                 // Slice out the encryption flag and continue
                 data = data[1..];
-                _logger.Information("Inbound After decryption(Unencrypted): " + BitConverter.ToString(data.ToArray()));
                 // TODO Reject unencrypted inbound packets for regular clients past the negotiation stage?
                 return;
             }
@@ -136,8 +134,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                     data = decryptedData;
                 else
                     data = Array.Empty<byte>();
-
-                _logger.Information("Inbound After decryption: " + BitConverter.ToString(data.ToArray()));
                 return;
             }
 
@@ -151,7 +147,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 }
                 else
                     data = Array.Empty<byte>();
-                _logger.Information("Inbound After decryption: " + BitConverter.ToString(data.ToArray()));
                 return;
             }
 
@@ -167,7 +162,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
         public void ProcessOutBoundPacket(EndPoint endPoint, ref Span<byte> data)
         {
 
-            _logger.Information("Before encryption: " + BitConverter.ToString(data.ToArray()));
             if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
             {
                 if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint) endPoint).Address,
@@ -201,13 +195,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 bufferWriter.WriteBool(false); // NotEncrypted
                 bufferWriter.WriteBytes(data);
             }
-            _logger.Information("After encryption: " + BitConverter.ToString(bufferWriter.Data.ToArray()));
             data = bufferWriter.Data.ToArray();
         }
 
         public void ProcessInboundPacket(EndPoint endPoint, ref Memory<byte> data)
         {
-            _logger.Information("Inbound Before decryption: " + BitConverter.ToString(data.ToArray()));
             var address = ((IPEndPoint)endPoint).Address;
 
             if (data.Length == 0)
@@ -220,7 +212,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 // Received an unencrypted packet - this is valid if the client is still negotiating 
                 // Slice out the encryption flag and continue
                 data = data[1..];
-                _logger.Information("Inbound After decryption(Unencrypted): " + BitConverter.ToString(data.ToArray()));
                 // TODO Reject unencrypted inbound packets for regular clients past the negotiation stage?
                 return;
             }
@@ -233,7 +224,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                     data = decryptedData;
                 else
                     data = Array.Empty<byte>();
-                _logger.Information("Inbound After decryption: " + BitConverter.ToString(data.ToArray()));
                 return;
             }
 
@@ -247,7 +237,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 }
                 else
                     data = Array.Empty<byte>();
-                _logger.Information("Inbound After decryption(Unencrypted): " + BitConverter.ToString(data.ToArray()));
                 return;
             }
 
@@ -262,7 +251,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 
         public void ProcessOutBoundPacket(EndPoint endPoint, ref Memory<byte> data)
         {
-            _logger.Information("Before encryption: " + BitConverter.ToString(data.Span.ToArray()));
             if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
             {
                 if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint)endPoint).Address,
@@ -296,9 +284,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 bufferWriter.WriteBool(false); // NotEncrypted
                 bufferWriter.WriteBytes(data.Span);
             }
-            _logger.Information("After encryption: " + BitConverter.ToString(bufferWriter.Data.ToArray()));
             data = new Memory<byte>(bufferWriter.Data.ToArray());
-            _logger.Information("After encryption & convertBack: " + BitConverter.ToString(data.Span.ToArray()));
         }
 
 

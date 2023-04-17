@@ -65,23 +65,24 @@ namespace BeatTogether.DedicatedServer.Kernel
                 );
                 return;
             }
-
+            SpanBuffer HandleRead = new(reader.RemainingData.ToArray());
+            
             //Is this packet meant to be routed?
             if (routingHeader.ReceiverId != 0)
                 RoutePacket(sender, routingHeader, ref reader, method);
 
-            while (reader.RemainingSize > 0)
+            while (HandleRead.RemainingSize > 0)
             {
                 uint length;
-                try { length = reader.ReadVarUInt(); }
+                try { length = HandleRead.ReadVarUInt(); }
                 catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
-                if (reader.RemainingSize < length)
+                if (HandleRead.RemainingSize < length)
                 {
-                    _logger.Warning($"Packet fragmented (RemainingSize={reader.RemainingSize}, Expected={length}).");
+                    _logger.Warning($"Packet fragmented (RemainingSize={HandleRead.RemainingSize}, Expected={length}).");
                     return;
                 }
 
-                int prevPosition = reader.Offset;
+                int prevPosition = HandleRead.Offset;
                 INetSerializable? packet;
                 IPacketRegistry packetRegistry = _packetRegistry;
                 while (true)
@@ -90,7 +91,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     {
                         byte packetId;
                         try
-                        { packetId = reader.ReadByte(); }
+                        { packetId = HandleRead.ReadByte(); }
                         catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
                         if (packetRegistry.TryCreatePacket(packetId, out packet))
                             break;
@@ -104,7 +105,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     {
                         string MPCpacketId;
                         try
-                        { MPCpacketId = reader.ReadString(); }
+                        { MPCpacketId = HandleRead.ReadString(); }
                         catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
                         if (MPCoreRegistry.TryCreatePacket(MPCpacketId, out packet))
                             break;
@@ -115,8 +116,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (packet == null)
                 {
                     // skip any unprocessed bytes
-                    var processedBytes = reader.Offset - prevPosition;
-                    try { reader.SkipBytes((int)length - processedBytes); }
+                    var processedBytes = HandleRead.Offset - prevPosition;
+                    try { HandleRead.SkipBytes((int)length - processedBytes); }
                     catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
                     continue;
                 }
@@ -130,21 +131,21 @@ namespace BeatTogether.DedicatedServer.Kernel
                     _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
 
                     // skip any unprocessed bytes
-                    var processedBytes = reader.Offset - prevPosition;
-                    try { reader.SkipBytes((int)length - processedBytes); }
+                    var processedBytes = HandleRead.Offset - prevPosition;
+                    try { HandleRead.SkipBytes((int)length - processedBytes); }
                     catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
                     continue;
                 }
 
                 try
                 {
-                    packet.ReadFrom(ref reader);
+                    packet.ReadFrom(ref HandleRead);
                 }
                 catch
                 {
                     // skip any unprocessed bytes
-                    var processedBytes = reader.Offset - prevPosition;
-                    reader.SkipBytes((int)length - processedBytes);
+                    var processedBytes = HandleRead.Offset - prevPosition;
+                    HandleRead.SkipBytes((int)length - processedBytes);
                     continue;
                 }
 

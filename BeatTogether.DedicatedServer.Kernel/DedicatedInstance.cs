@@ -246,10 +246,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         }
         public bool ShouldDenyConnection(EndPoint endPoint, ref MemoryBuffer additionalData)
         {
+            SpanBuffer spanBuffer = new(additionalData.RemainingData.Span); 
             var connectionRequestData = new ConnectionRequestData();
             try
             {
-                connectionRequestData.ReadFrom(ref additionalData);
+                connectionRequestData.ReadFrom(ref spanBuffer);
             }
             catch (Exception e)
             {
