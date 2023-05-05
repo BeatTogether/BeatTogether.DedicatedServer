@@ -35,26 +35,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteFloat32(HeadPosToPlayerHeightOffset);
             ColorScheme.WriteTo(ref writer);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            UserId = reader.ReadString();
-            UserName = reader.ReadString();
-            LeftHanded = reader.ReadBool();
-            AutomaticPlayerHeight = reader.ReadBool();
-            PlayerHeight = reader.ReadFloat32();
-            HeadPosToPlayerHeightOffset = reader.ReadFloat32();
-            ColorScheme.ReadFrom(ref reader);
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteString(UserId);
-            writer.WriteString(UserName);
-            writer.WriteBool(LeftHanded);
-            writer.WriteBool(AutomaticPlayerHeight);
-            writer.WriteFloat32(PlayerHeight);
-            writer.WriteFloat32(HeadPosToPlayerHeightOffset);
-            ColorScheme.WriteTo(ref writer);
-        }
     }
 }

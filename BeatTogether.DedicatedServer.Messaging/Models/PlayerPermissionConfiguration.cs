@@ -30,22 +30,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             int num = (IsServerOwner ? 1 : 0) | (HasRecommendBeatmapsPermission ? 2 : 0) | (HasRecommendGameplayModifiersPermission ? 4 : 0) | (HasKickVotePermission ? 8 : 0) | (HasInvitePermission ? 16 : 0);
             writer.WriteUInt8((byte)num);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            UserId = reader.ReadString();
-            byte num = reader.ReadUInt8();
-            IsServerOwner = (num & 1) > 0;
-            HasRecommendBeatmapsPermission = (num & 2) > 0;
-            HasRecommendGameplayModifiersPermission = (num & 4) > 0;
-            HasKickVotePermission = (num & 8) > 0;
-            HasInvitePermission = (num & 16) > 0;
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteString(UserId);
-            int num = (IsServerOwner ? 1 : 0) | (HasRecommendBeatmapsPermission ? 2 : 0) | (HasRecommendGameplayModifiersPermission ? 4 : 0) | (HasKickVotePermission ? 8 : 0) | (HasInvitePermission ? 16 : 0);
-            writer.WriteUInt8((byte)num);
-        }
     }
 }

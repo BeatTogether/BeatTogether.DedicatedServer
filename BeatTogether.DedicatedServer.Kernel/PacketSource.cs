@@ -2,6 +2,7 @@
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
@@ -46,7 +47,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _configuration = instconfiguration;
         }
 
-        public override void OnReceive(EndPoint remoteEndPoint, ref MemoryBuffer reader, DeliveryMethod method)
+        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, DeliveryMethod method)
         {
             if (!reader.TryReadRoutingHeader(out var routingHeader))
             {
@@ -67,9 +68,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             SpanBuffer HandleRead = new(reader.RemainingData.ToArray());
             
-            //Is this packet meant to be routed?
-            if (routingHeader.ReceiverId != 0)
-                RoutePacket(sender, routingHeader, ref reader, method);
+
 
             while (HandleRead.RemainingSize > 0)
             {
@@ -121,7 +120,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                     catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
                     continue;
                 }
-
+                if(packet is NoteSpawnPacket || packet is ObstacleSpawnPacket || packet is SliderSpawnPacket) //Note packet logic
+                {
+                    if (_configuration.DisableNotes || _playerRegistry.GetPlayerCount() > 14)
+                        return;
+                    method = DeliveryMethod.Unreliable;
+                    break;
+                }
                 var packetType = packet.GetType();
                 var packetHandlerType = typeof(Abstractions.IPacketHandler<>)
                     .MakeGenericType(packetType);
@@ -151,20 +156,24 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
             }
+
+            //Is this packet meant to be routed?
+            if (routingHeader.ReceiverId != 0)
+                RoutePacket(sender, routingHeader, ref reader, method);
         }
         
         #region Private Methods
 
         private void RoutePacket(IPlayer sender,
             (byte SenderId, byte ReceiverId) routingHeader,
-            ref MemoryBuffer reader, DeliveryMethod deliveryMethod)
+            ref SpanBuffer reader, DeliveryMethod deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
-            var writer = new MemoryBuffer(GC.AllocateArray<byte>(2048));
+            var writer = new SpanBuffer(stackalloc byte[412]);
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
                 writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
-                writer.WriteBytes(reader.RemainingData.Span);
+                writer.WriteBytes(reader.RemainingData);
 
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
@@ -177,7 +186,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             else
             {
                 writer.WriteRoutingHeader(routingHeader.SenderId, LocalConnectionId);
-                writer.WriteBytes(reader.RemainingData.Span);
+                writer.WriteBytes(reader.RemainingData);
 
                 if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
                 {

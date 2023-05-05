@@ -25,20 +25,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
             PlayersAtStart.WriteTo(ref writer);
             writer.WriteString(SessionGameId);
         }
-        public override void ReadFrom(ref MemoryBuffer reader)
-        {
-            base.ReadFrom(ref reader);
-            if (HasValue0)
-                PlayersAtStart.ReadFrom(ref reader);
-            if (HasValue1)
-                SessionGameId = reader.ReadString();
-        }
-
-        public override void WriteTo(ref MemoryBuffer writer)
-        {
-            base.WriteTo(ref writer);
-            PlayersAtStart.WriteTo(ref writer);
-            writer.WriteString(SessionGameId);
-        }
     }
 }

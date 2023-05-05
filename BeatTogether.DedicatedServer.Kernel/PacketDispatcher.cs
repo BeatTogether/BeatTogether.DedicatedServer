@@ -1,4 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Enums;
+using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
@@ -56,7 +58,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={ServerId})"
             );
 
-            var writer = new SpanBuffer(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteMany(ref writer, packets);
             _logger.Verbose("Packets were entered into the spanbuffer correctly, now sending once to each player");
@@ -86,7 +88,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(ExcludedId={excludedPlayer.ConnectionId})"
             );
 
-            var writer = new SpanBuffer(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteMany(ref writer, packets);
 
@@ -115,7 +117,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(To endpoint ={endpoint})"
             );
 
-            var writer = new SpanBuffer(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteMany(ref writer, packets);
 
@@ -143,7 +145,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={fromPlayer.ConnectionId})"
             );
 
-            var writer = new SpanBuffer(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteMany(ref writer, packets);
 
@@ -171,7 +173,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={LocalConnectionId})."
             );
 
-            var writer = new SpanBuffer(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteMany(ref writer, packets);
             Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
@@ -197,7 +199,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={ServerId}, ReceiverId={LocalConnectionId})."
             );
 
-            var writer = new SpanBuffer(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteMany(ref writer, packets);
             Send(player.Endpoint, writer.Data, deliveryMethod);
@@ -206,11 +208,22 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void WriteOne(ref SpanBuffer writer, INetSerializable packet)
         {
             var type = packet.GetType();
-            if (!_packetRegistry.TryGetPacketIds(type, out var packetIds))
-                throw new Exception($"Failed to retrieve identifier for packet of type '{type.Name}'");
             var packetWriter = new SpanBuffer(stackalloc byte[412]);
-            foreach (byte packetId in packetIds)
-                packetWriter.WriteUInt8(packetId);
+
+            if (_packetRegistry.TryGetPacketIds(type, out var packetIds))
+            {
+                foreach (byte packetId in packetIds)
+                    packetWriter.WriteUInt8(packetId);
+            }
+            else
+            {
+
+                packetWriter.WriteUInt8(7);
+                packetWriter.WriteUInt8(100);
+                packetWriter.WriteString(type.Name);
+                //Presume it is a mpcore packet and use the mpcore packet ID, would thow an exeption here if not
+                //throw new Exception($"Failed to retrieve identifier for packet of type '{type.Name}'");
+            }
             packet.WriteTo(ref packetWriter);
             writer.WriteVarUInt((uint)packetWriter.Size);
             writer.WriteBytes(packetWriter.Data.ToArray());

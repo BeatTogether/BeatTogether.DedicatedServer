@@ -63,11 +63,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
 
         #region Receive
 
-        public override void OnReceive(EndPoint remoteEndPoint, ref MemoryBuffer reader,
+        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader,
             UnconnectedMessageType type)
         {
 
-            SpanBufferReader spanBufferReader = new(reader.RemainingData.Span.ToArray());
+            SpanBufferReader spanBufferReader = new(reader.RemainingData);
             var session = _handshakeSessionRegistry.GetOrAdd(remoteEndPoint);
             var message = _messageReader.ReadFrom(ref spanBufferReader);
 
@@ -78,7 +78,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
         public async Task HandleMessage(HandshakeSession session, IMessage message)
         {
             var messageType = message.GetType();
-
             if (message is ClientHelloRequest)
             {
                 // Received client hello, first handshake message - ensure encryption is OFF for this endpoint
@@ -110,7 +109,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Handshake
             }
 
             // Dispatch to handler
-            _logger.Verbose("Handling handshake message of type {MessageType} (EndPoint={EndPoint})",
+            _logger.Debug("Handling handshake message of type {MessageType} (EndPoint={EndPoint})",
                 messageType.Name, session.EndPoint.ToString());
 
             if (message is MultipartMessage multipartMessage)

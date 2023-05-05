@@ -28,23 +28,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             Modifiers.WriteTo(ref writer);
             writer.WriteFloat32(StartTime);
         }
-        public override void ReadFrom(ref MemoryBuffer reader)
-        {
-            base.ReadFrom(ref reader);
-            if (HasValue0)
-                Beatmap.ReadFrom(ref reader);
-            if (HasValue1)
-                Modifiers.ReadFrom(ref reader);
-            if (HasValue2)
-                StartTime = reader.ReadFloat32();
-        }
-
-        public override void WriteTo(ref MemoryBuffer writer)
-        {
-            base.WriteTo(ref writer);
-            Beatmap.WriteTo(ref writer);
-            Modifiers.WriteTo(ref writer);
-            writer.WriteFloat32(StartTime);
-        }
     }
 }

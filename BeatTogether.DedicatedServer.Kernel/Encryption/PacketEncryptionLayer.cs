@@ -125,7 +125,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 // TODO Reject unencrypted inbound packets for regular clients past the negotiation stage?
                 return;
             }
-
             byte[]? decryptedData;
 
             if (_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
@@ -134,6 +133,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                     data = decryptedData;
                 else
                     data = Array.Empty<byte>();
+
                 return;
             }
 
@@ -159,9 +159,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             data = Array.Empty<byte>();
         }
 
-        public void ProcessOutBoundPacket(EndPoint endPoint, ref Span<byte> data)
+        public void ProcessOutBoundPacket(EndPoint endPoint, ref Span<byte> data) //Not used
         {
-
             if (!_encryptionParameters.TryGetValue(endPoint, out var encryptionParameters))
             {
                 if (_potentialEncryptionParameters.TryGetValue(((IPEndPoint) endPoint).Address,
@@ -196,9 +195,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 bufferWriter.WriteBytes(data);
             }
             data = bufferWriter.Data.ToArray();
+
         }
 
-        public void ProcessInboundPacket(EndPoint endPoint, ref Memory<byte> data)
+        public void ProcessInboundPacket(EndPoint endPoint, ref Memory<byte> data) // Not used
         {
             var address = ((IPEndPoint)endPoint).Address;
 
@@ -262,7 +262,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 }
             }
 
-            var bufferWriter = new SpanBufferWriter(stackalloc byte[412]);
+            var bufferWriter = new SpanBufferWriter(stackalloc byte[(int)((data.Length + 1)* 1.8)]); //Kinda just estimating the size the packet will be after encryption, to avoid having the span buffer get resized
 
             if (encryptionParameters != null)
             {
@@ -284,10 +284,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 bufferWriter.WriteBool(false); // NotEncrypted
                 bufferWriter.WriteBytes(data.Span);
             }
-            data = new Memory<byte>(bufferWriter.Data.ToArray());
+            data = bufferWriter.Data.ToArray();
         }
-
-
         #endregion
 
         #region Private Methods

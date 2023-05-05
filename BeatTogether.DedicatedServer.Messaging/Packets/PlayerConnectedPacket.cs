@@ -26,20 +26,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
             writer.WriteString(UserName);
             writer.WriteBool(IsConnectionOwner);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            RemoteConnectionId = reader.ReadUInt8();
-            UserId = reader.ReadString();
-            UserName = reader.ReadString();
-            IsConnectionOwner = reader.ReadBool();
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteUInt8(RemoteConnectionId);
-            writer.WriteString(UserId);
-            writer.WriteString(UserName);
-            writer.WriteBool(IsConnectionOwner);
-        }
     }
 }

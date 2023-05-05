@@ -25,23 +25,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
                 playerSpecificSettings.WriteTo(ref writer);
             }
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            int count = reader.ReadInt32();
-            ActivePlayerSpecificSettingsAtStart = new PlayerSpecificSettings[count];
-            for (int i = 0; i < count; i++)
-            {
-                ActivePlayerSpecificSettingsAtStart[i].ReadFrom(ref reader);
-            }
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteInt32(ActivePlayerSpecificSettingsAtStart.Length);
-            foreach(PlayerSpecificSettings playerSpecificSettings in ActivePlayerSpecificSettingsAtStart)
-            {
-                playerSpecificSettings.WriteTo(ref writer);
-            }
-        }
     }
 }

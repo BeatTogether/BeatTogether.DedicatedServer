@@ -25,20 +25,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             writer.WriteString(LevelId);
             writer.WriteVarInt((int)Entitlement);
         }
-        public override void ReadFrom(ref MemoryBuffer reader)
-        {
-            base.ReadFrom(ref reader);
-            if (HasValue0)
-                LevelId = reader.ReadString();
-            if (HasValue1)
-                Entitlement = (EntitlementStatus)reader.ReadVarInt();
-        }
-
-        public override void WriteTo(ref MemoryBuffer writer)
-        {
-            base.WriteTo(ref writer);
-            writer.WriteString(LevelId);
-            writer.WriteVarInt((int)Entitlement);
-        }
     }
 }

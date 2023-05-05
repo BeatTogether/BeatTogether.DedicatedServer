@@ -23,18 +23,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
             writer.WriteFloat32(Time);
             State.WriteTo(ref writer);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            SyncStateId = reader.ReadUInt8();
-            Time = reader.ReadFloat32();
-            State.ReadFrom(ref reader);
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteUInt8(SyncStateId);
-            writer.WriteFloat32(Time);
-            State.WriteTo(ref writer);
-        }
     }
 }

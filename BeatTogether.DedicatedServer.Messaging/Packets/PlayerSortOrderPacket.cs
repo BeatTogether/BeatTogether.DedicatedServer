@@ -20,16 +20,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
             writer.WriteString(UserId);
             writer.WriteVarInt(SortIndex);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            UserId = reader.ReadString();
-            SortIndex = reader.ReadVarInt();
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteString(UserId);
-            writer.WriteVarInt(SortIndex);
-        }
     }
 }

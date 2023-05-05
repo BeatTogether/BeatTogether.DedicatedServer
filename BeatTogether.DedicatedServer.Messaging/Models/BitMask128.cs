@@ -43,17 +43,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteUInt64(Top);
             writer.WriteUInt64(Bottom);
         }
-		public void ReadFrom(ref MemoryBuffer reader)
-        {
-            Top = reader.ReadUInt64();
-            Bottom = reader.ReadUInt64();
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteUInt64(Top);
-            writer.WriteUInt64(Bottom);
-        }
 
 		private static uint MurmurHash2(string key)
 		{

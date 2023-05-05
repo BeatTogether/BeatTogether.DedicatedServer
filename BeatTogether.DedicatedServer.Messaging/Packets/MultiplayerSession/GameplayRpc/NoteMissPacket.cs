@@ -24,20 +24,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
             writer.WriteFloat32(SongTime);
             Info.WriteTo(ref writer);
         }
-        public override void ReadFrom(ref MemoryBuffer reader)
-        {
-            base.ReadFrom(ref reader);
-            if (HasValue0)
-                SongTime = reader.ReadFloat32();
-            if (HasValue1)
-                Info.ReadFrom(ref reader);
-        }
-
-        public override void WriteTo(ref MemoryBuffer writer)
-        {
-            base.WriteTo(ref writer);
-            writer.WriteFloat32(SongTime);
-            Info.WriteTo(ref writer);
-        }
     }
 }

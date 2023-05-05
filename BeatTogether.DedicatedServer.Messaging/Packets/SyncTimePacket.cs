@@ -16,14 +16,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         {
             SyncTime = reader.ReadFloat32();
         }
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteFloat32(SyncTime);
-        }
-
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            SyncTime = reader.ReadFloat32();
-        }
     }
 }

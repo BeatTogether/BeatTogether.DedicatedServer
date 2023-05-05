@@ -17,14 +17,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCo
         {
             NewManagerID = bufferReader.ReadString();
         }
-        public void WriteTo(ref MemoryBuffer bufferWriter)
-        {
-            bufferWriter.WriteString(NewManagerID);
-        }
-
-        public void ReadFrom(ref MemoryBuffer bufferReader)
-        {
-            NewManagerID = bufferReader.ReadString();
-        }
     }
 }

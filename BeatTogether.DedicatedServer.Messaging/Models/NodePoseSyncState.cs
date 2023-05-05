@@ -22,18 +22,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             LeftController.WriteTo(ref writer);
             RightController.WriteTo(ref writer);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            Head.ReadFrom(ref reader);
-            LeftController.ReadFrom(ref reader);
-            RightController.ReadFrom(ref reader);
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            Head.WriteTo(ref writer);
-            LeftController.WriteTo(ref writer);
-            RightController.WriteTo(ref writer);
-        }
     }
 }

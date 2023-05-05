@@ -23,18 +23,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteVarInt(y);
             writer.WriteVarInt(z);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            x = reader.ReadVarInt();
-            y = reader.ReadVarInt();
-            z = reader.ReadVarInt();
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteVarInt(x);
-            writer.WriteVarInt(y);
-            writer.WriteVarInt(z);
-        }
     }
 }

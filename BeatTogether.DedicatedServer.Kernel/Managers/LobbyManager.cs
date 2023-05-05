@@ -11,7 +11,6 @@ using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
@@ -391,26 +390,41 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         return null;
                     }
-                    return voteDictionary.OrderByDescending(n => n.Value).First().Key;
-                case SongSelectionMode.RandomPlayerPicks: //TODO, Make this pick a random beatsaver map or something like that
-                    return new BeatmapIdentifier()
+                    BeatmapIdentifier? Selected = null;
+                    int Votes = 0;
+                    foreach (var item in voteDictionary)
                     {
-                        Characteristic = "Standard",
-                        Difficulty = BeatmapDifficulty.ExpertPlus,
-                        LevelId = "custom_level_103d39b43966277c5e4167ab086f404e0943891f"
-                    };
-                case SongSelectionMode.ServerPicks:
+                        if (item.Value > Votes)
+                        {
+                            Selected = item.Key;
+                            Votes = item.Value;
+                        }
+                    }
+                    return Selected;
+                case SongSelectionMode.RandomPlayerPicks:
+                    if (CountDownState == CountdownState.CountingDown || CountDownState == CountdownState.NotCountingDown)
+                    {
+                        Random rand = new();
+                        int selectedPlayer = rand.Next(_playerRegistry.GetPlayerCount() - 1);
+                        RandomlyPickedPlayer = _playerRegistry.Players[selectedPlayer].UserId;
+                        return _playerRegistry.Players[selectedPlayer].BeatmapIdentifier;
+                    }
+                    return SelectedBeatmap;
+
+                case SongSelectionMode.ServerPicks: //TODO, Make this pick a random beatsaver map or something like that
                     return SelectedBeatmap!;
             };
             return null;
         }
+
+        string RandomlyPickedPlayer = string.Empty;
 
         private GameplayModifiers GetSelectedModifiers()
 		{
             switch(_configuration.SongSelectionMode)
 			{
                 case SongSelectionMode.ServerOwnerPicks: return _playerRegistry.GetPlayer(_configuration.ServerOwnerId).Modifiers;
-                case SongSelectionMode.Vote or SongSelectionMode.RandomPlayerPicks:
+                case SongSelectionMode.Vote:
                     GameplayModifiers gameplayModifiers = new();
                     Dictionary<GameplayModifiers, int> voteDictionary = new();
                     foreach (IPlayer player in _playerRegistry.Players.Where(p => p.Modifiers != null))
@@ -420,9 +434,33 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         else
                             voteDictionary.Add(player.Modifiers!, 1);
                     }
-                    if (voteDictionary.Any())
-                        gameplayModifiers = voteDictionary.OrderByDescending(n => n.Value).First().Key;
-                    gameplayModifiers.NoFailOn0Energy = true;
+                    if (!voteDictionary.Any())
+                    {
+                        int Votes = 0;
+                        foreach (var item in voteDictionary)
+                        {
+                            if (item.Value > Votes)
+                            {
+                                gameplayModifiers = item.Key;
+                                Votes = item.Value;
+                            }
+                        }
+                    }
+                    if(_configuration.ApplyNoFailModifier)
+                        gameplayModifiers.NoFailOn0Energy = true;
+                    return gameplayModifiers;
+                case SongSelectionMode.RandomPlayerPicks:
+                    if (RandomlyPickedPlayer == string.Empty)
+                    {
+                        GameplayModifiers Modifiers = new()
+                        {
+                            NoFailOn0Energy = _configuration.ApplyNoFailModifier
+                        };
+                        return Modifiers;
+                    }
+                    gameplayModifiers = _playerRegistry.GetPlayer(RandomlyPickedPlayer).Modifiers;
+                    if (_configuration.ApplyNoFailModifier)
+                        gameplayModifiers.NoFailOn0Energy = true;
                     return gameplayModifiers;
                 case SongSelectionMode.ServerPicks:
                     return SelectedModifiers;

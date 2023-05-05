@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
@@ -63,7 +64,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();
 
         public Player(EndPoint endPoint, IDedicatedInstance instance,
-            byte connectionId, string secret, string userId, string userName, string? playerSessionId)
+            byte connectionId, string secret, string userId, string userName, string? playerSessionId, AccessLevel accessLevel = AccessLevel.Player)
         {
             Endpoint = endPoint;
             Instance = instance;
@@ -72,6 +73,28 @@ namespace BeatTogether.DedicatedServer.Kernel
             UserId = userId;
             UserName = userName;
             PlayerSessionId = playerSessionId;
+            _AccessLevel = accessLevel;
+        }
+        public bool IsPatreon { get; set; } = false;
+        public object MPChatLock { get; set; } = new();
+        public bool CanTextChat { get; set; } = false;
+        public bool CanReceiveVoiceChat { get; set; } = false;
+        public bool CanTransmitVoiceChat { get; set; } = false;
+
+        private AccessLevel _AccessLevel;
+        public AccessLevel GetAccessLevel()
+        {
+            AccessLevel accessLevel = _AccessLevel;
+            if (IsServerOwner)
+                accessLevel = AccessLevel.Manager;
+            if (IsPatreon)
+                accessLevel++;
+            return accessLevel;
+        }
+
+        public void SetAccessLevel(AccessLevel newLevel)
+        {
+            _AccessLevel = newLevel;
         }
 
         public object EntitlementLock { get; set; } = new();

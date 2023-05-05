@@ -16,14 +16,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         {
             writer.WriteFloat32(Latency);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            Latency = reader.ReadFloat32();
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteFloat32(Latency);
-        }
     }
 }

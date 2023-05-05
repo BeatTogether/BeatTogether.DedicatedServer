@@ -24,22 +24,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
                 PlayersPermission[i].WriteTo(ref writer);
             }
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            PlayersPermission = new PlayerPermissionConfiguration[reader.ReadInt32()];
-            for (int i = 0; i < PlayersPermission.Length; i++)
-            {
-                PlayersPermission[i].ReadFrom(ref reader);
-            }
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteInt32(PlayersPermission.Length);
-            for (int i = 0; i < PlayersPermission.Length; i++)
-            {
-                PlayersPermission[i].WriteTo(ref writer);
-            }
-        }
     }
 }

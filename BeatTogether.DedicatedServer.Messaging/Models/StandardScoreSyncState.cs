@@ -29,22 +29,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteVarInt(Combo);
             writer.WriteVarInt(Multiplier);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            ModifiedScore = reader.ReadVarInt();
-            RawScore = reader.ReadVarInt();
-            ImmediateMaxPossibleScore = reader.ReadVarInt();
-            Combo = reader.ReadVarInt();
-            Multiplier = reader.ReadVarInt();
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteVarInt(ModifiedScore);
-            writer.WriteVarInt(RawScore);
-            writer.WriteVarInt(ImmediateMaxPossibleScore);
-            writer.WriteVarInt(Combo);
-            writer.WriteVarInt(Multiplier);
-        }
     }
 }

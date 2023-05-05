@@ -24,18 +24,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteString(Characteristic);
             writer.WriteVarUInt((uint)Difficulty);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            LevelId = reader.ReadString();
-            Characteristic = reader.ReadString();
-            Difficulty = (BeatmapDifficulty)reader.ReadVarUInt();
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteString(LevelId);
-            writer.WriteString(Characteristic);
-            writer.WriteVarUInt((uint)Difficulty);
-        }
     }
 }

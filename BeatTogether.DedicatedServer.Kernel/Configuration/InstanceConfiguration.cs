@@ -8,6 +8,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
         public string Secret { get; set; } = string.Empty;
         public string ServerOwnerId { get; set; } = string.Empty;
         public string ServerId { get; set; } = "ziuMSceapEuNN7wRGQXrZg";
+        public string WelcomeMessage { get; set; } = string.Empty;
         public string ServerName { get; set; } = string.Empty;
         public float DestroyInstanceTimeout { get; set; } = 10f; //set to -1 for no timeout(must close using api), 0 would be for instant close, 10 seconds is default. Less than 6 seconds can cause cfr-3 issues
         public string SetConstantManagerFromUserId { get; set; } = string.Empty; //If a user creates a server using the api and enteres there userId (eg uses discord bot with linked account))
@@ -23,7 +24,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
         public bool AllowChroma { get; set; }
         public bool AllowMappingExtensions { get; set; }
         public bool AllowNoodleExtensions { get; set; }
+        public bool DisableNotes { get; set; }
         public float KickPlayersWithoutEntitlementTimeout { get; set; } = 30f;
+        public int MaxLengthCommand { get; set; } = 200;
+        public bool ApplyNoFailModifier { get; set; } = true;
     }
 
     public sealed class CountdownConfig

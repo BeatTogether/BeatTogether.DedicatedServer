@@ -18,14 +18,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         {
             DisconnectedReason = (DisconnectedReason)reader.ReadVarInt();
         }
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteVarInt((int)DisconnectedReason);
-        }
-
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            DisconnectedReason = (DisconnectedReason)reader.ReadVarInt();
-        }
     }
 }

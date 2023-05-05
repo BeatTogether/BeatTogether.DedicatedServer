@@ -1,4 +1,5 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Types;
+﻿using BeatTogether.DedicatedServer.Kernel.Enums;
+using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using System.Net;
@@ -53,6 +54,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         object InLobbyLock { get; set; }
         bool InLobby { get; set; }
         object EntitlementLock { get; set; }
+        bool IsPatreon { get; set; }
+        object MPChatLock { get; set; }
+        bool CanTextChat { get; set; }
+        public bool CanReceiveVoiceChat { get; set; }
+        public bool CanTransmitVoiceChat { get; set; }
+        public AccessLevel GetAccessLevel();
+        public void SetAccessLevel(AccessLevel newAccessLevel);
         EntitlementStatus GetEntitlement(string levelId);
         void SetEntitlement(string levelId, EntitlementStatus entitlement);
         bool UpdateEntitlement { get; set; }

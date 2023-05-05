@@ -17,14 +17,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         {
             PlayerState.WriteTo(ref writer);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            PlayerState.ReadFrom(ref reader);
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            PlayerState.WriteTo(ref writer);
-        }
     }
 }

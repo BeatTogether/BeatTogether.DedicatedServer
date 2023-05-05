@@ -79,10 +79,10 @@ namespace BeatTogether.DedicatedServer.Node
                 _logger.Verbose(
                     "Adding encrypted end point " +
                     $"(RemoteEndPoint='{remoteEndPoint}', " +
-                    $"Random='{BitConverter.ToString(random)}', " +
-                    $"PublicKey='{BitConverter.ToString(publicKey)}')."
+                    $"Random='{BitConverter.ToString(random!)}', " +
+                    $"PublicKey='{BitConverter.ToString(publicKey!)}')."
                 );
-                _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random, publicKey);
+                _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random!, publicKey!);
             }
             else
             {

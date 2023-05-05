@@ -21,17 +21,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 			base.WriteTo(ref writer);
 			writer.WriteVarInt((int)Reason);
 		}
-		public override void ReadFrom(ref MemoryBuffer reader)
-        {
-			base.ReadFrom(ref reader);
-			if (HasValue0)
-				Reason = (CannotStartGameReason)reader.ReadVarInt();
-		}
-
-		public override void WriteTo(ref MemoryBuffer writer)
-        {
-			base.WriteTo(ref writer);
-			writer.WriteVarInt((int)Reason);
-		}
 	}
 }

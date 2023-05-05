@@ -21,16 +21,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteVarUInt((Data != null) ? (uint)Data.Length : 0);
             writer.WriteBytes(Data);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            int length = (int)reader.ReadVarUInt();
-            Data = reader.ReadBytes(length).ToArray();
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteVarUInt((Data != null) ? (uint)Data.Length : 0);
-            writer.WriteBytes(Data);
-        }
     }
 }

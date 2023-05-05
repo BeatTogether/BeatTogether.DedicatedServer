@@ -11,20 +11,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
     {
         //event Action<IDedicatedInstance> StartEvent;
         event Action<IDedicatedInstance> StopEvent;
-        event Action<IPlayer, int> PlayerConnectedEvent;
-        event Action<IPlayer, int> PlayerDisconnectedEvent;
-        event Action<string, EndPoint, int> PlayerDisconnectBeforeJoining;
+        event Action<IPlayer> PlayerConnectedEvent;
+        event Action<IPlayer> PlayerDisconnectedEvent;
+        event Action<string, EndPoint, string[]> PlayerDisconnectBeforeJoining;
         event Action<string, bool> GameIsInLobby;
-        //event Action<string, Enums.CountdownState, MultiplayerGameState, Enums.GameplayManagerState> StateChangedEvent;
-        //event Action<IDedicatedInstance> UpdateInstanceEvent;
-        //event Action<string, BeatmapIdentifier?, GameplayModifiers, bool, DateTime> UpdateBeatmapEvent;
-        //event Action<string, BeatmapIdentifier, List<(string, BeatmapDifficulty, LevelCompletionResults)>> LevelFinishedEvent; 
+        event Action<IDedicatedInstance> UpdateInstanceEvent;
 
-        //void PlayerUpdated(IPlayer player);
-        //void InstanceStateChanged(CountdownState countdown, GameplayManagerState gameplay);
-        //void BeatmapChanged(BeatmapIdentifier? map, GameplayModifiers modifiers, bool IsGameplay, DateTime CountdownEnd);
-        //void LevelFinished(BeatmapIdentifier beatmap, List<(string, BeatmapDifficulty, LevelCompletionResults)> Results);
-        //void InstanceChanged();
+        void InstanceConfigUpdated();
         InstanceConfiguration _configuration { get; }
         bool IsRunning { get; }
         float RunTime { get; }

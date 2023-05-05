@@ -25,19 +25,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
             writer.WriteVarInt(TimeOffsetMs);
             Delta.WriteTo(ref writer);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            SyncStateId = reader.ReadUInt8();
-            TimeOffsetMs = reader.ReadVarInt();
-            if (!((SyncStateId & 128) > 0))
-                Delta.ReadFrom(ref reader);
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteUInt8(SyncStateId);
-            writer.WriteVarInt(TimeOffsetMs);
-            Delta.WriteTo(ref writer);
-        }
     }
 }

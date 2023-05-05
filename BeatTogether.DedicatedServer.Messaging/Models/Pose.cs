@@ -20,16 +20,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             Position.WriteTo(ref writer);
             Rotation.WriteTo(ref writer);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            Position.ReadFrom(ref reader);
-            Rotation.ReadFrom(ref reader);
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            Position.WriteTo(ref writer);
-            Rotation.WriteTo(ref writer);
-        }
     }
 }

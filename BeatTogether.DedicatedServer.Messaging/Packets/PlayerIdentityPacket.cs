@@ -26,20 +26,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
             Random.WriteTo(ref writer);
             PublicEncryptionKey.WriteTo(ref writer);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            PlayerState.ReadFrom(ref reader);
-            PlayerAvatar.ReadFrom(ref reader);
-            Random.ReadFrom(ref reader);
-            PublicEncryptionKey.ReadFrom(ref reader);
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            PlayerState.WriteTo(ref writer);
-            PlayerAvatar.WriteTo(ref writer);
-            Random.WriteTo(ref writer);
-            PublicEncryptionKey.WriteTo(ref writer);
-        }
     }
 }

@@ -60,42 +60,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteFloat32(TimeToNextNote);
             MoveVec.WriteTo(ref writer);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            CutWasOk = reader.ReadUInt8();
-            SaberSpeed = reader.ReadFloat32();
-            SaberDir.ReadFrom(ref reader);
-            CutPoint.ReadFrom(ref reader);
-            CutNormal.ReadFrom(ref reader);
-            NotePosition.ReadFrom(ref reader);
-            NoteScale.ReadFrom(ref reader);
-            NoteRotation.ReadFrom(ref reader);
-            GameplayType = (NoteGameplayType) reader.ReadVarInt();
-            ColorType = reader.ReadVarInt();
-            LineLayer = reader.ReadVarInt();
-            NoteLineIndex = reader.ReadVarInt();
-            NoteTime = reader.ReadFloat32();
-            TimeToNextNote = reader.ReadFloat32();
-            MoveVec.ReadFrom(ref reader);
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteUInt8(CutWasOk);
-            writer.WriteFloat32(SaberSpeed);
-            SaberDir.WriteTo(ref writer);
-            CutPoint.WriteTo(ref writer);
-            CutNormal.WriteTo(ref writer);
-            NotePosition.WriteTo(ref writer);
-            NoteScale.WriteTo(ref writer);
-            NoteRotation.WriteTo(ref writer);
-            writer.WriteVarInt((int)GameplayType);
-            writer.WriteVarInt(ColorType);
-            writer.WriteVarInt(LineLayer);
-            writer.WriteVarInt(NoteLineIndex);
-            writer.WriteFloat32(NoteTime);
-            writer.WriteFloat32(TimeToNextNote);
-            MoveVec.WriteTo(ref writer);
-        }
     }
 }

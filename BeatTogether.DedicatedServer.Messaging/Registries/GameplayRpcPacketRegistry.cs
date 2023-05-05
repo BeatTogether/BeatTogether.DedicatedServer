@@ -20,6 +20,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries
             AddPacket<LevelFinishedPacket>(GameplayRpcPacketType.LevelFinished);
             AddPacket<NoteCutPacket>(GameplayRpcPacketType.NoteCut);
             AddPacket<NoteMissPacket>(GameplayRpcPacketType.NoteMissed);
+            AddPacket<ObstacleSpawnPacket>(GameplayRpcPacketType.ObstacleSpawned);
+            AddPacket<NoteSpawnPacket>(GameplayRpcPacketType.NoteSpawned);
+            AddPacket<SliderSpawnPacket>(GameplayRpcPacketType.SliderSpawned);
         }
     }
 }

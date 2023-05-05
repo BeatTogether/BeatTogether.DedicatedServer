@@ -17,7 +17,6 @@ using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Enums;
 using BeatTogether.LiteNetLib.Util;
-using Krypton.Buffers;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -38,10 +37,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
 
         public event Action<IDedicatedInstance> StopEvent = null!;
-        public event Action<IPlayer, int> PlayerConnectedEvent = null!;
-        public event Action<IPlayer, int> PlayerDisconnectedEvent = null!;
-        public event Action<string, EndPoint, int> PlayerDisconnectBeforeJoining = null!;
+        public event Action<IPlayer> PlayerConnectedEvent = null!;
+        public event Action<IPlayer> PlayerDisconnectedEvent = null!;
+        public event Action<string, EndPoint, string[]> PlayerDisconnectBeforeJoining = null!;
         public event Action<string, bool> GameIsInLobby = null!;
+        public event Action<IDedicatedInstance> UpdateInstanceEvent = null!;
 
         private readonly IHandshakeSessionRegistry _handshakeSessionRegistry;
         private readonly IPlayerRegistry _playerRegistry;
@@ -133,7 +133,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if (!t.IsCanceled)
                     {
-                        _logger.Warning("Stopping instance: " + _configuration.ServerName);
                         _ = Stop(CancellationToken.None);
                     }
                     else
@@ -234,23 +233,24 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         object AcceptConnectionLock = new();
 
-        public override bool ShouldAcceptConnection(EndPoint endPoint, ref MemoryBuffer additionalData)
+        public override bool ShouldAcceptConnection(EndPoint endPoint, ref SpanBuffer additionalData)
         {
-
+            
             if (ShouldDenyConnection(endPoint, ref additionalData))
             {
-                PlayerDisconnectBeforeJoining?.Invoke(_configuration.Secret, endPoint, _playerRegistry.GetPlayerCount());
+                string[] Players = _playerRegistry.Players.Select(p => p.UserId).ToArray();
+                PlayerDisconnectBeforeJoining?.Invoke(_configuration.Secret, endPoint, Players);
                 return false;
             }
+            _logger.Information("connection accepted");
             return true;
         }
-        public bool ShouldDenyConnection(EndPoint endPoint, ref MemoryBuffer additionalData)
+        public bool ShouldDenyConnection(EndPoint endPoint, ref SpanBuffer additionalData)
         {
-            SpanBuffer spanBuffer = new(additionalData.RemainingData.Span); 
             var connectionRequestData = new ConnectionRequestData();
             try
             {
-                connectionRequestData.ReadFrom(ref spanBuffer);
+                connectionRequestData.ReadFrom(ref additionalData);
             }
             catch (Exception e)
             {
@@ -289,6 +289,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 if (_playerRegistry.GetPlayerCount() >= _configuration.MaxPlayerCount)
                 {
+                    _logger.Information("Max player count");
+                    return true;
+                }
+                if(connectionRequestData.UserName == "IGGAMES" || connectionRequestData.UserName == "IGGGAMES")
+                {
+                    _logger.Information("an IGG player just tried joining after passing master auth");
                     return true;
                 }
                 int sortIndex = GetNextSortIndex();
@@ -306,7 +312,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     SortIndex = sortIndex
                 };
-
+                if (_configuration.ServerName == string.Empty)
+                {
+                    _logger.Information("About to update servers name" + _configuration.ServerName);
+                    _configuration.ServerName = player.UserName + "'s server";
+                    InstanceConfigUpdated();
+                    _logger.Information("Updated servers name to: " + _configuration.ServerName);
+                }
                 if (!_playerRegistry.AddPlayer(player))
                 {
                     ReleaseSortIndex(player.SortIndex);
@@ -444,7 +456,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
 
                 // Update permissions - constant manager possibly does not work
-                if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.GetPlayerCount() == 1) && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
+                if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.GetPlayerCount() == 1) && _configuration.GameplayServerMode == GameplayServerMode.Managed)
                 {
                     _configuration.ServerOwnerId = player.UserId;
                 }
@@ -464,7 +476,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         }).ToArray()
                     }
                 }, DeliveryMethod.ReliableOrdered);
-                PlayerConnectedEvent?.Invoke(player, _playerRegistry.GetPlayerCount());
+                PlayerConnectedEvent?.Invoke(player);
             }
             
         }
@@ -515,7 +527,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     ReleaseSortIndex(player.SortIndex);
                     ReleaseConnectionId(player.ConnectionId);
 
-                    PlayerDisconnectedEvent?.Invoke(player, _playerRegistry.GetPlayerCount());
+                    PlayerDisconnectedEvent?.Invoke(player);
                 }
 
 
@@ -596,6 +608,11 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return;
             }
             SendSyncTime(cancellationToken);
+        }
+
+        public void InstanceConfigUpdated()
+        {
+            UpdateInstanceEvent?.Invoke(this);
         }
 
         #endregion

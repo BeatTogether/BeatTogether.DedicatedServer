@@ -28,23 +28,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             if (HasAnyResult())
                 LevelCompletionResults.WriteTo(ref writer);
         }
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            PlayerLevelEndState = (MultiplayerPlayerLevelEndState) reader.ReadVarInt();
-            PlayerLevelEndReason = (MultiplayerPlayerLevelEndReason) reader.ReadVarInt();
-
-            if (HasAnyResult())
-                LevelCompletionResults.ReadFrom(ref reader);
-        }
-
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteVarInt((int) PlayerLevelEndState);
-            writer.WriteVarInt((int) PlayerLevelEndReason);
-
-            if (HasAnyResult())
-                LevelCompletionResults.WriteTo(ref writer);
-        }
 
         public bool HasAnyResult()
         {

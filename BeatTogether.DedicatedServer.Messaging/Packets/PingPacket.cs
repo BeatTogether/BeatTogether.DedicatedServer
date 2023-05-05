@@ -16,14 +16,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         {
             PingTime = reader.ReadFloat32();
         }
-        public void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteFloat32(PingTime);
-        }
-
-        public void ReadFrom(ref MemoryBuffer reader)
-        {
-            PingTime = reader.ReadFloat32();
-        }
     }
 }
