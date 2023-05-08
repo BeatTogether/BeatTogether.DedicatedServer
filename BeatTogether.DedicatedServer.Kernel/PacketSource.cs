@@ -122,7 +122,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 if(packet is NoteSpawnPacket || packet is ObstacleSpawnPacket || packet is SliderSpawnPacket) //Note packet logic
                 {
-                    if (_configuration.DisableNotes || _playerRegistry.GetPlayerCount() > 14)
+                    if (_configuration.DisableNotes || _playerRegistry.GetPlayerCount() > 15)
                         return;
                     method = DeliveryMethod.Unreliable;
                     break;
