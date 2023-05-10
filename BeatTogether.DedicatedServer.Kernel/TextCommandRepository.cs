@@ -95,12 +95,12 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             RegisterCommand<HelpCommand>(AccessLevel.Player);
 
-            RegisterCommand<AllowChroma>(AccessLevel.Manager);
-            RegisterCommand<AllowNoodle>(AccessLevel.Manager);
-            RegisterCommand<AllowMappingExtensions>(AccessLevel.Manager);
-            RegisterCommand<AllowPerPlayerDifficulties>(AccessLevel.Manager);
-            RegisterCommand<AllowPerPlayerModifiers>(AccessLevel.Manager);
-            RegisterCommand<DisableBeatmapNotes>(AccessLevel.Manager);
+            RegisterCommand<SetChroma>(AccessLevel.Manager);
+            RegisterCommand<SetNoodleExtensions>(AccessLevel.Manager);
+            RegisterCommand<SetMappingExtensions>(AccessLevel.Manager);
+            RegisterCommand<SetPerPlayerDifficulties>(AccessLevel.Manager);
+            RegisterCommand<SetPerPlayerModifiers>(AccessLevel.Manager);
+            RegisterCommand<SetNoteRouting>(AccessLevel.Manager);
             RegisterCommand<SetCountdown>(AccessLevel.Manager);
             RegisterCommand<SetBeatmapStartTime>(AccessLevel.Manager);
             RegisterCommand<SetResultsTime>(AccessLevel.Manager);

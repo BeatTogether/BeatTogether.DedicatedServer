@@ -17,7 +17,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         string UserName { get; }
         byte[]? Random { get; set; }
         byte[]? PublicEncryptionKey { get; set; }
-
+        string ClientVersion { get; set; }
+        Platform Platform { get; set; }
+        string PlatformUserId { get; set; }
         object LatencyLock { get; set; }
         RollingAverage Latency { get; }
         float SyncTime { get; }
@@ -50,7 +52,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool IsActive { get; }
         bool FinishedLevel { get; }
         bool InMenu { get; }
-        bool IsModded { get; }
         object InLobbyLock { get; set; }
         bool InLobby { get; set; }
         object EntitlementLock { get; set; }

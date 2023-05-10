@@ -2,18 +2,18 @@
 
 namespace BeatTogether.DedicatedServer.Kernel.Commands
 {
-    public class DisableBeatmapNotes : ITextCommand
+    public class SetNoteRouting : ITextCommand
     {
-        public string CommandName => "disablenotes";
-        public string ShortHandName => "dn";
+        public string CommandName => "setnotesvisible";
+        public string ShortHandName => "n";
         public string Description => "disables beatmap notes if set to true. Notes will be disabled automaticly if there are over 14 players, default false";
 
-        public bool Disabled = false;
+        public bool Enabled = true;
 
         public void ReadValues(string[] Values)
         {
             if (Values != null)
-               Disabled = Values[0] == "true";
+                Enabled = Values[0] == "true" || Values[0] == "t";
         }
     }
 }

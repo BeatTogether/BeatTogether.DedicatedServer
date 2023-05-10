@@ -262,19 +262,17 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
                 }
             }
 
-            var bufferWriter = new SpanBufferWriter(stackalloc byte[(int)((data.Length + 1)* 1.8)]); //Kinda just estimating the size the packet will be after encryption, to avoid having the span buffer get resized
+            var bufferWriter = new SpanBufferWriter(stackalloc byte[data.Length + 256], false);
 
             if (encryptionParameters != null)
             {
                 bufferWriter.WriteBool(true); // isEncrypted
 
-                using (var hmac = new HMACSHA256(encryptionParameters.SendMac))
-                {
-                    _encryptedPacketWriter.WriteTo(
-                        ref bufferWriter, data.Span,
-                        encryptionParameters.GetNextSequenceId(),
-                        encryptionParameters.SendKey, hmac);
-                }
+                using var hmac = new HMACSHA256(encryptionParameters.SendMac);
+                _encryptedPacketWriter.WriteTo(
+                    ref bufferWriter, data.Span,
+                    encryptionParameters.GetNextSequenceId(),
+                    encryptionParameters.SendKey, hmac);
             }
             else
             {

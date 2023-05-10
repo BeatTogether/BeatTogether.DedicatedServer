@@ -2,9 +2,9 @@
 
 namespace BeatTogether.DedicatedServer.Kernel.Commands
 {
-    public class AllowPerPlayerDifficulties : ITextCommand
+    public class SetPerPlayerDifficulties : ITextCommand
     {
-        public string CommandName => "allowperplayerdifficulties";
+        public string CommandName => "setperplayerdifficulties";
         public string ShortHandName => "ppd";
         public string Description => "if set to true, then players will use what ever difficulty they have selected, default false";
 
@@ -13,7 +13,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands
         public void ReadValues(string[] Values)
         {
             if (Values != null)
-                Enabled = Values[0] == "true";
+                Enabled = Values[0] == "true" || Values[0] == "t";
         }
     }
 }

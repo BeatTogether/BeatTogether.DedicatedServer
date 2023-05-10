@@ -423,7 +423,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 		{
             switch(_configuration.SongSelectionMode)
 			{
-                case SongSelectionMode.ServerOwnerPicks: return _playerRegistry.GetPlayer(_configuration.ServerOwnerId).Modifiers;
+                case SongSelectionMode.ServerOwnerPicks:
+                    if(_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var ServerOwner))
+                        return ServerOwner.Modifiers;
+                    return EmptyModifiers;
                 case SongSelectionMode.Vote:
                     GameplayModifiers gameplayModifiers = new();
                     Dictionary<GameplayModifiers, int> voteDictionary = new();
@@ -458,7 +461,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         };
                         return Modifiers;
                     }
-                    gameplayModifiers = _playerRegistry.GetPlayer(RandomlyPickedPlayer).Modifiers;
+                    gameplayModifiers = new();
+                    if (_playerRegistry.TryGetPlayer(RandomlyPickedPlayer, out var Randomplayer))
+                        gameplayModifiers = Randomplayer.Modifiers;
                     if (_configuration.ApplyNoFailModifier)
                         gameplayModifiers.NoFailOn0Energy = true;
                     return gameplayModifiers;

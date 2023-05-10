@@ -5,23 +5,23 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPa
 
 namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
 {
-    class AllowMappingExtensionsHandler : BaseCommandHandler<AllowMappingExtensions>
+    class SetNoteRoutingHandler : BaseCommandHandler<SetNoteRouting>
     {
         private readonly IPacketDispatcher _packetDisapatcher;
         private readonly InstanceConfiguration _Configuration;
 
-        public AllowMappingExtensionsHandler(IPacketDispatcher packetDisapatcher, InstanceConfiguration instanceConfiguration)
+        public SetNoteRoutingHandler(IPacketDispatcher packetDisapatcher, InstanceConfiguration instanceConfiguration)
         {
             _packetDisapatcher = packetDisapatcher;
             _Configuration = instanceConfiguration;
         }
 
-        public override void Handle(IPlayer player, AllowMappingExtensions command)
+        public override void Handle(IPlayer player, SetNoteRouting command)
         {
-            _Configuration.AllowMappingExtensions = command.Enabled;
+            _Configuration.DisableNotes = !command.Enabled;
             _packetDisapatcher.SendToNearbyPlayers(new MpcTextChatPacket
             {
-                Text = "Allow Mapping Extensions is: " + command.Enabled
+                Text = "Beatmap notes: " + command.Enabled
             }, LiteNetLib.Enums.DeliveryMethod.ReliableOrdered);
         }
     }

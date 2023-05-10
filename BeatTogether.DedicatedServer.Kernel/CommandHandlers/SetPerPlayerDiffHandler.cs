@@ -5,23 +5,23 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPa
 
 namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
 {
-    class DisableBeatmapNotesHandler : BaseCommandHandler<DisableBeatmapNotes>
+    class SetPerPlayerDiffHandler : BaseCommandHandler<SetPerPlayerDifficulties>
     {
         private readonly IPacketDispatcher _packetDisapatcher;
         private readonly InstanceConfiguration _Configuration;
 
-        public DisableBeatmapNotesHandler(IPacketDispatcher packetDisapatcher, InstanceConfiguration instanceConfiguration)
+        public SetPerPlayerDiffHandler(IPacketDispatcher packetDisapatcher, InstanceConfiguration instanceConfiguration)
         {
             _packetDisapatcher = packetDisapatcher;
             _Configuration = instanceConfiguration;
         }
 
-        public override void Handle(IPlayer player, DisableBeatmapNotes command)
+        public override void Handle(IPlayer player, SetPerPlayerDifficulties command)
         {
-            _Configuration.DisableNotes = command.Disabled;
+            _Configuration.AllowPerPlayerDifficulties = command.Enabled;
             _packetDisapatcher.SendToNearbyPlayers(new MpcTextChatPacket
             {
-                Text = "Disabled beatmap notes is: " + command.Disabled
+                Text = "Per player difficulties: " + command.Enabled
             }, LiteNetLib.Enums.DeliveryMethod.ReliableOrdered);
         }
     }

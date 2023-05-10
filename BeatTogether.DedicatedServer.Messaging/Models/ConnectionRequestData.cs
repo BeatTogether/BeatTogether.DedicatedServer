@@ -2,6 +2,7 @@
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
 using BeatTogether.LiteNetLib.Util;
+using BinaryRecords.Exceptions;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -35,7 +36,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
                 IsConnectionOwner = reader.ReadBool();
                 PlayerSessionId = reader.ReadString();
             }
-            catch (Exception ex) { }
+            catch (EndOfBufferException) { }
 
             if (PlayerSessionId != null && PlayerSessionId.StartsWith(SessionIdPrefix))
                 // Read OK, valid session identifier

@@ -1,6 +1,4 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
@@ -9,7 +7,6 @@ using BeatTogether.LiteNetLib.Dispatchers;
 using BeatTogether.LiteNetLib.Enums;
 using BeatTogether.LiteNetLib.Util;
 using Serilog;
-using System;
 using System.Net;
 
 namespace BeatTogether.DedicatedServer.Kernel

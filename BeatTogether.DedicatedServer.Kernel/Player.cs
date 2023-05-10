@@ -28,6 +28,9 @@ namespace BeatTogether.DedicatedServer.Kernel
         public int SortIndex { get; set; }
         public byte[]? Random { get; set; }
         public byte[]? PublicEncryptionKey { get; set; }
+        public string ClientVersion { get; set; } = "Pre-1.29";
+        public Platform Platform { get; set; } = Platform.Test; //Unknown
+        public string PlatformUserId { get; set; } = "";
         public object PlayerIdentityLock { get; set; } = new();
         public AvatarData Avatar { get; set; } = new();
         public object ReadyLock { get; set; } = new();
@@ -58,7 +61,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool IsActive => State.Contains("is_active");
         public bool FinishedLevel => State.Contains("finished_level");
         public bool InMenu => State.Contains("in_menu");
-        public bool IsModded => State.Contains("modded");
 
         private const float _syncTimeOffset = 0.06f;
         private ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();

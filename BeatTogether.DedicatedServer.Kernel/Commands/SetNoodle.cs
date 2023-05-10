@@ -2,9 +2,9 @@
 
 namespace BeatTogether.DedicatedServer.Kernel.Commands
 {
-    public class AllowNoodle : ITextCommand
+    public class SetNoodleExtensions : ITextCommand
     {
-        public string CommandName => "allownoodle";
+        public string CommandName => "setnoodleextensions";
         public string ShortHandName => "ne";
         public string Description => "if set to false, then noodle maps will be unplayable, default true";
 
@@ -13,7 +13,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands
         public void ReadValues(string[] Values)
         {
             if (Values != null)
-                Enabled = Values[0] == "true";
+                Enabled = Values[0] == "true" || Values[0] == "t";
         }
     }
 }

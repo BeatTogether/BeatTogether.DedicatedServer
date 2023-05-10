@@ -5,23 +5,23 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPa
 
 namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
 {
-    class AllowChromaHandler : BaseCommandHandler<AllowChroma>
+    class SetMappingExtensionsHandler : BaseCommandHandler<SetMappingExtensions>
     {
         private readonly IPacketDispatcher _packetDisapatcher;
         private readonly InstanceConfiguration _Configuration;
 
-        public AllowChromaHandler(IPacketDispatcher packetDisapatcher, InstanceConfiguration instanceConfiguration)
+        public SetMappingExtensionsHandler(IPacketDispatcher packetDisapatcher, InstanceConfiguration instanceConfiguration)
         {
             _packetDisapatcher = packetDisapatcher;
             _Configuration = instanceConfiguration;
         }
 
-        public override void Handle(IPlayer player, AllowChroma command)
+        public override void Handle(IPlayer player, SetMappingExtensions command)
         {
-            _Configuration.AllowChroma = command.Enabled;
+            _Configuration.AllowMappingExtensions = command.Enabled;
             _packetDisapatcher.SendToNearbyPlayers(new MpcTextChatPacket
             {
-                Text = "Allow Chroma is: " + command.Enabled
+                Text = "Mapping Extensions: " + command.Enabled
             }, LiteNetLib.Enums.DeliveryMethod.ReliableOrdered);
         }
     }

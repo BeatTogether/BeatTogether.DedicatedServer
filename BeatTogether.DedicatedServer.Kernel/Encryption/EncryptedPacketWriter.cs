@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography;
 using BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions;
+using BeatTogether.LiteNetLib.Util;
 using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Kernel.Encryption
@@ -14,18 +15,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
         {
             _rngCryptoServiceProvider = rngCryptoServiceProvider;
         }
-
         public void WriteTo(ref SpanBufferWriter bufferWriter, ReadOnlySpan<byte> data, uint sequenceId, byte[] key, HMAC hmac)
         {
-            var unencryptedBufferWriter = new SpanBufferWriter(stackalloc byte[data.Length]);
+            var unencryptedBufferWriter = new SpanBuffer(stackalloc byte[data.Length + 128 + 10], false);
             unencryptedBufferWriter.WriteBytes(data);
-
-            var hashBufferWriter = new SpanBufferWriter(stackalloc byte[data.Length + 4]);
-            hashBufferWriter.WriteBytes(data);
-            hashBufferWriter.WriteUInt32(sequenceId);
+            unencryptedBufferWriter.WriteUInt32(sequenceId);
             Span<byte> hash = stackalloc byte[32];
-            if (!hmac.TryComputeHash(hashBufferWriter.Data, hash, out _))
+            if (!hmac.TryComputeHash(unencryptedBufferWriter.Data, hash, out _))
                 throw new Exception("Failed to compute message hash.");
+            unencryptedBufferWriter.SetOffset(data.Length);
             unencryptedBufferWriter.WriteBytes(hash.Slice(0, 10));
 
             var iv = new byte[16];

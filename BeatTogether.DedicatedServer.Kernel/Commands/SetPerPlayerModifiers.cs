@@ -2,9 +2,9 @@
 
 namespace BeatTogether.DedicatedServer.Kernel.Commands
 {
-    public class AllowPerPlayerModifiers : ITextCommand
+    public class SetPerPlayerModifiers : ITextCommand
     {
-        public string CommandName => "allowperplayermodifiers";
+        public string CommandName => "setperplayermodifiers";
         public string ShortHandName => "ppm";
         public string Description => "if set to true, then players will use what ever modifiers they have selected, default false";
 
@@ -13,7 +13,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands
         public void ReadValues(string[] Values)
         {
             if (Values != null)
-                Enabled = Values[0] == "true";
+                Enabled = Values[0] == "true" || Values[0] == "t";
         }
     }
 }
