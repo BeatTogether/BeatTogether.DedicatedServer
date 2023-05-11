@@ -81,7 +81,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                   liteNetConfiguration,
                   registry,
                   serviceProvider,
-                  (configuration.MaxPlayerCount/5),
+                  (configuration.MaxPlayerCount/20+1),
                   packetLayer)
         {
             _configuration = configuration;
@@ -394,7 +394,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 Disconnect(endPoint);
                 return;
             }
-            //Send new player their sort order and other data
+            //Send new player their sort order and server's data
             _packetDispatcher.SendToPlayer(player, new INetSerializable[]
                 {
                 new SyncTimePacket
@@ -417,9 +417,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     {
                         Reason = player.UserId == _configuration.ServerOwnerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
                     }
-                    }
-                ,DeliveryMethod.ReliableOrdered);
-
+                },DeliveryMethod.ReliableOrdered);
+            _playerRegistry.SetShouldPauseSyncPackets(true);
             //Sends to all players that they have connected
             _packetDispatcher.SendExcludingPlayer(player, new INetSerializable[]
             {
@@ -482,6 +481,47 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 }
             }
+            // Update permissions - constant manager possibly does not work
+            if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.GetPlayerCount() == 1) && _configuration.GameplayServerMode == GameplayServerMode.Managed)
+            {
+                _configuration.ServerOwnerId = player.UserId;
+            }
+            _packetDispatcher.SendToPlayer(player, new SetPlayersPermissionConfigurationPacket
+            {
+                PermissionConfiguration = new PlayersPermissionConfiguration
+                {
+                    PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
+                    {
+                        UserId = x.UserId,
+                        IsServerOwner = x.IsServerOwner,
+                        HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
+                        HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
+                        HasKickVotePermission = x.CanKickVote,
+                        HasInvitePermission = x.CanInvite
+                    }).ToArray()
+                }
+            }, DeliveryMethod.ReliableOrdered);
+
+            _packetDispatcher.SendExcludingPlayer(player, new SetPlayersPermissionConfigurationPacket
+            {
+                PermissionConfiguration = new PlayersPermissionConfiguration
+                {
+                    PlayersPermission = new PlayerPermissionConfiguration[]
+                    {
+                        new PlayerPermissionConfiguration()
+                        {
+                            UserId = player!.UserId,
+                            IsServerOwner = player.IsServerOwner,
+                            HasRecommendBeatmapsPermission = player.CanRecommendBeatmaps,
+                            HasRecommendGameplayModifiersPermission = player.CanRecommendModifiers,
+                            HasKickVotePermission = player.CanKickVote,
+                            HasInvitePermission = player.CanInvite
+                        }
+                    }
+                }
+            }, DeliveryMethod.ReliableOrdered);
+            _playerRegistry.SetShouldPauseSyncPackets(false);
+
             ConnectDisconnectSemaphore.Release();
 
 
@@ -498,27 +538,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
             }
 
-            // Update permissions - constant manager possibly does not work
-            if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.GetPlayerCount() == 1) && _configuration.GameplayServerMode == GameplayServerMode.Managed)
-            {
-                _configuration.ServerOwnerId = player.UserId;
-            }
-
-            _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
-            {
-                PermissionConfiguration = new PlayersPermissionConfiguration
-                {
-                    PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
-                    {
-                        UserId = x.UserId,
-                        IsServerOwner = x.IsServerOwner,
-                        HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
-                        HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
-                        HasKickVotePermission = x.CanKickVote,
-                        HasInvitePermission = x.CanInvite
-                    }).ToArray()
-                }
-            }, DeliveryMethod.ReliableOrdered);
             PlayerConnectedEvent?.Invoke(player);
 
             if((_playerRegistry.GetPlayerCount() == 6 || _playerRegistry.GetPlayerCount() == 10) && _playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var serverOwner))
@@ -587,15 +606,18 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     PermissionConfiguration = new PlayersPermissionConfiguration
                     {
-                        PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
+                        PlayersPermission = new PlayerPermissionConfiguration[]
                         {
-                            UserId = x.UserId,
-                            IsServerOwner = x.IsServerOwner,
-                            HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
-                            HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
-                            HasKickVotePermission = x.CanKickVote,
-                            HasInvitePermission = x.CanInvite
-                        }).ToArray()
+                            new PlayerPermissionConfiguration()
+                            {
+                                UserId = serverOwner!.UserId,
+                                IsServerOwner = serverOwner.IsServerOwner,
+                                HasRecommendBeatmapsPermission = serverOwner.CanRecommendBeatmaps,
+                                HasRecommendGameplayModifiersPermission = serverOwner.CanRecommendModifiers,
+                                HasKickVotePermission = serverOwner.CanKickVote,
+                                HasInvitePermission = serverOwner.CanInvite
+                            }
+                        }
                     }
                 }, DeliveryMethod.ReliableOrdered);
 

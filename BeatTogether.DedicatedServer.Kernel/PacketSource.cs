@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Messaging.Models;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.Extensions;
@@ -67,7 +70,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return;
             }
             SpanBuffer HandleRead = new(reader.RemainingData.ToArray());
-            
 
 
             while (HandleRead.RemainingSize > 0)
@@ -111,7 +113,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }
                     break;
                 }
-
+                //TODO disable join message config packet
                 if (packet == null)
                 {
                     // skip any unprocessed bytes
@@ -122,10 +124,27 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 if(packet is NoteSpawnPacket || packet is ObstacleSpawnPacket || packet is SliderSpawnPacket) //Note packet logic
                 {
-                    if (_configuration.DisableNotes || (_playerRegistry.GetPlayerCount() > 15 ) && !_configuration.ForceEnableNotes)
+                    if (_configuration.DisableNotes || (_playerRegistry.GetPlayerCount() > 16) && !_configuration.ForceEnableNotes)
                         return;
                     method = DeliveryMethod.Unreliable;
                     break;
+                }
+                if (packet is NodePoseSyncStatePacket)
+                {
+                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets() || _playerRegistry.ShouldPauseNodePoseSyncPackets())
+                    {
+                        return;
+                    }
+                    method = DeliveryMethod.Unreliable;
+                    sender.TicksAtLastSyncState = DateTime.UtcNow.Ticks;
+                }
+                if (packet is NodePoseSyncStateDeltaPacket)
+                {
+                    if((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets() || _playerRegistry.ShouldPauseNodePoseSyncPackets())
+                    {
+                        return;
+                    }
+                    sender.TicksAtLastSyncStateDelta = DateTime.UtcNow.Ticks;
                 }
                 var packetType = packet.GetType();
                 var packetHandlerType = typeof(Abstractions.IPacketHandler<>)

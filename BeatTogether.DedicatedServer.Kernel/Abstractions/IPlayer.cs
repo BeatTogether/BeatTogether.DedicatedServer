@@ -71,5 +71,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         public bool MappingExtensions { get; set; }
         public BeatmapDifficulty[] BeatmapDifficulties { get; set; }
         void ResetRecommendedMapRequirements();
+        long TicksAtLastSyncStateDelta { get; set; }
+        long TicksAtLastSyncState { get; set; }
     }
 }

@@ -122,5 +122,9 @@ namespace BeatTogether.DedicatedServer.Kernel
             MappingExtensions = false;
             BeatmapDifficulties = Array.Empty<BeatmapDifficulty>();
         }
+
+        public long TicksAtLastSyncStateDelta { get; set; } = 0; //33ms gaps for 30/sec, 66ms gap for 15/sec
+        public long TicksAtLastSyncState { get; set; } = 0;
+
     }
 }

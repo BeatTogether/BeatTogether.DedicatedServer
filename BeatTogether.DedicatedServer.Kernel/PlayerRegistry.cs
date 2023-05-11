@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 
 namespace BeatTogether.DedicatedServer.Kernel
@@ -33,6 +34,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                     _playersByRemoteEndPoint.TryAdd(player.Endpoint, player);
                     _playersByConnectionId.TryAdd(player.ConnectionId, player);
                     _PlayerCount++;
+                    lock (MillisBetweenSyncStatePackets_Lock)
+                    {
+                        MillisBetweenSyncStatePackets = (int)(0.84 * _PlayerCount + 15.789);
+                    }
                     return true;
                 }
             }
@@ -48,6 +53,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                     _playersByRemoteEndPoint.Remove(player.Endpoint, out _);
                     _playersByConnectionId.Remove(player.ConnectionId, out _);
                     _PlayerCount--;
+                    lock (MillisBetweenSyncStatePackets_Lock)
+                    {
+                        MillisBetweenSyncStatePackets = (int)(0.84 * _PlayerCount + 15.789);
+                    }
                 }
             }
         }
@@ -71,6 +80,33 @@ namespace BeatTogether.DedicatedServer.Kernel
             lock (PlayerDictionaries_Lock)
             {
                 return _playersByUserId.TryGetValue(userId, out player);
+            }
+        }
+
+        private readonly object UnreliableRoutingHold_Lock = new();
+        bool UnreliableRoutingHold = false;
+        public bool ShouldPauseNodePoseSyncPackets()
+        {
+            lock (UnreliableRoutingHold_Lock)
+            {
+                return UnreliableRoutingHold && GetPlayerCount() > 15;
+            }
+        }
+        public void SetShouldPauseSyncPackets(bool Joining)
+        {
+            lock (UnreliableRoutingHold_Lock)
+            {
+                UnreliableRoutingHold = Joining;
+            }
+        }
+
+        private readonly object MillisBetweenSyncStatePackets_Lock = new();
+        private int MillisBetweenSyncStatePackets = 0;
+        public int GetMillisBetweenSyncStatePackets()
+        {
+            lock (MillisBetweenSyncStatePackets_Lock)
+            {
+                return MillisBetweenSyncStatePackets;
             }
         }
     }
