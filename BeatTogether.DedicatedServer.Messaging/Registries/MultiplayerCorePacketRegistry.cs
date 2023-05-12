@@ -19,6 +19,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries
             AddPacket<MpcTextChatPacket>();
             AddPacket<GetMpPlayerData>();
             AddPacket<MpPlayerData>();
+            AddPacket<MpNodePoseSyncStatePacket>();
         }
 
         public bool TryCreatePacket(string packetId, [MaybeNullWhen(false)] out INetSerializable packet)

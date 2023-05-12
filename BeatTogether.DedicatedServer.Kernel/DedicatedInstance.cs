@@ -540,7 +540,14 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             PlayerConnectedEvent?.Invoke(player);
 
-            if((_playerRegistry.GetPlayerCount() == 6 || _playerRegistry.GetPlayerCount() == 10) && _playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var serverOwner))
+
+            _packetDispatcher.SendToNearbyPlayers(new MpNodePoseSyncStatePacket
+            {
+                fullStateUpdateFrequency = 0.1f,
+                deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets() * 0.001f
+            }, DeliveryMethod.ReliableOrdered);
+
+            if((_playerRegistry.GetPlayerCount() == 7 || _playerRegistry.GetPlayerCount() == 13) && _playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var serverOwner))
             {
                 _packetDispatcher.SendToPlayer(serverOwner, new MpcTextChatPacket()
                 {
@@ -549,7 +556,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             _packetDispatcher.SendToNearbyPlayers(new MpcTextChatPacket()
             {
-                Text = "Player joined: " + player.UserName + " They are using: " + player.Platform.ToString() + " And game version: " + player.ClientVersion
+                Text = "Player joined: " + player.UserName + " Platform: " + player.Platform.ToString() + " Game version: " + player.ClientVersion
             }, DeliveryMethod.ReliableOrdered);
         }
 
@@ -629,6 +636,12 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }, DeliveryMethod.ReliableOrdered);
             }
             ConnectDisconnectSemaphore.Release();
+
+            _packetDispatcher.SendToNearbyPlayers(new MpNodePoseSyncStatePacket
+            {
+                fullStateUpdateFrequency = 0.1f,
+                deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets() * 0.001f
+            }, DeliveryMethod.ReliableOrdered);
 
             if (_playerRegistry.GetPlayerCount() == 0)
             {
