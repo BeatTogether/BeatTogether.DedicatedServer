@@ -2,14 +2,14 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
-using System.Runtime.CompilerServices;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class PlayerRegistry : IPlayerRegistry
     {
-        public IPlayer[] Players { get => _playersByUserId.Values.ToArray(); }
+        
+        public IPlayer[] Players { get => GetPlayers(); }
 
         private object PlayerDictionaries_Lock = new();
         private readonly Dictionary<EndPoint, IPlayer> _playersByRemoteEndPoint = new();
@@ -25,6 +25,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return _PlayerCount;
             }
         }
+
+        private IPlayer[] GetPlayers()
+        {
+            lock (PlayerDictionaries_Lock)
+            {
+                return _playersByUserId.Values.ToArray();
+            }
+        }
+
+
         public bool AddPlayer(IPlayer player)
         {
             lock (PlayerDictionaries_Lock)
@@ -80,23 +90,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             lock (PlayerDictionaries_Lock)
             {
                 return _playersByUserId.TryGetValue(userId, out player);
-            }
-        }
-
-        private readonly object UnreliableRoutingHold_Lock = new();
-        bool UnreliableRoutingHold = false;
-        public bool ShouldPauseNodePoseSyncPackets()
-        {
-            lock (UnreliableRoutingHold_Lock)
-            {
-                return UnreliableRoutingHold && GetPlayerCount() > 15;
-            }
-        }
-        public void SetShouldPauseSyncPackets(bool Joining)
-        {
-            lock (UnreliableRoutingHold_Lock)
-            {
-                UnreliableRoutingHold = Joining;
             }
         }
 

@@ -84,12 +84,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             try
             {
                 await Task.Delay(LoopTime, cancellationToken);
+                await ((DedicatedInstance)_instance).ConnectDisconnectSemaphore.WaitAsync(cancellationToken);
                 Update();
+                ((DedicatedInstance)_instance).ConnectDisconnectSemaphore.Release();
                 UpdateLoop(cancellationToken);
             }
-            catch
-            {
-
+            catch (TaskCanceledException){}
+            catch (OperationCanceledException){
+                ((DedicatedInstance)_instance).ConnectDisconnectSemaphore.Release();
             }
         }
 

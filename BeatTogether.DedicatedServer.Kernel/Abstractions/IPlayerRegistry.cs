@@ -12,9 +12,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool TryGetPlayer(EndPoint remoteEndPoint, [MaybeNullWhen(false)] out IPlayer player);
         bool TryGetPlayer(byte connectionId, [MaybeNullWhen(false)] out IPlayer player);
         bool TryGetPlayer(string userId, [MaybeNullWhen(false)] out IPlayer player);
-
-        bool ShouldPauseNodePoseSyncPackets();
-        void SetShouldPauseSyncPackets(bool Joining);
         int GetMillisBetweenSyncStatePackets();
     }
 }

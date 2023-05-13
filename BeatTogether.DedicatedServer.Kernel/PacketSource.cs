@@ -131,7 +131,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 if (packet is NodePoseSyncStatePacket)
                 {
-                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets() || _playerRegistry.ShouldPauseNodePoseSyncPackets())
+                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
                     {
                         return;
                     }
@@ -140,7 +140,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 if (packet is NodePoseSyncStateDeltaPacket)
                 {
-                    if((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets() || _playerRegistry.ShouldPauseNodePoseSyncPackets())
+                    if((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
                     {
                         return;
                     }
