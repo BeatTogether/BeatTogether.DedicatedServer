@@ -23,12 +23,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         public override Task Handle(IPlayer sender, MpcCapabilitiesPacket packet)
         {
             bool FirstJoin = !sender.CanTextChat && packet.CanTextChat;
-            lock (sender.MPChatLock)
-            {
-                sender.CanReceiveVoiceChat = packet.CanReceiveVoiceChat;
-                sender.CanTransmitVoiceChat = packet.CanTransmitVoiceChat;
-                sender.CanTextChat = packet.CanTextChat;
-            }
+            sender.CanReceiveVoiceChat = packet.CanReceiveVoiceChat;
+            sender.CanTransmitVoiceChat = packet.CanTransmitVoiceChat;
+            sender.CanTextChat = packet.CanTextChat;
             if (FirstJoin)
             {
                 _packetDispatcher.SendToPlayer(sender, new MpcTextChatPacket

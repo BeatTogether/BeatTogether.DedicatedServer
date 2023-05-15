@@ -25,6 +25,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             {
                 _PacketDispatcher.SendFromPlayerToPlayer(Player, sender, new MpPlayerData()
                 {
+                    PlatformID = Player.PlatformUserId,
                     Platform = (byte)Player.Platform,
                     ClientVersion = Player.ClientVersion
                 }, DeliveryMethod.ReliableOrdered);

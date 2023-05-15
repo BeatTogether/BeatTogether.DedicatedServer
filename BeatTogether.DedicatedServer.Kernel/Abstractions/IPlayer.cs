@@ -3,11 +3,15 @@ using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
     public interface IPlayer
     {
+        SemaphoreSlim PlayerAccessSemaphore { get; set; }
+        TaskCompletionSource PlayerInitialised { get; set; }
         EndPoint Endpoint { get; }
         IDedicatedInstance Instance { get; }
         byte ConnectionId { get; }
@@ -20,21 +24,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         string ClientVersion { get; set; }
         Platform Platform { get; set; }
         string PlatformUserId { get; set; }
-        object LatencyLock { get; set; }
         RollingAverage Latency { get; }
         float SyncTime { get; }
-        object SortLock { get; set; }
         int SortIndex { get; set; }
-        object PlayerIdentityLock { get; set; }
         AvatarData Avatar { get; set; }
-        object ReadyLock { get; set; }
         bool IsReady { get; set; }
 
-        object BeatmapLock { get; set; }
         BeatmapIdentifier? BeatmapIdentifier { get; set; }
-        object ModifiersLock { get; set; }
         GameplayModifiers Modifiers { get; set; }
-        object StateLock { get; set; }
         PlayerStateHash State { get; set; }
 
         public bool IsServerOwner { get; }
@@ -52,11 +49,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool IsActive { get; }
         bool FinishedLevel { get; }
         bool InMenu { get; }
-        object InLobbyLock { get; set; }
         bool InLobby { get; set; }
-        object EntitlementLock { get; set; }
         bool IsPatreon { get; set; }
-        object MPChatLock { get; set; }
         bool CanTextChat { get; set; }
         public bool CanReceiveVoiceChat { get; set; }
         public bool CanTransmitVoiceChat { get; set; }

@@ -5,6 +5,8 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System;
+using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -32,22 +34,24 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _lobbyManager = lobbyManager;
         }
 
-        public override Task Handle(IPlayer sender, SetIsInLobbyPacket packet)
+        public override async Task Handle(IPlayer sender, SetIsInLobbyPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(SetIsInLobbyPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, InLobby={packet.IsInLobby})."
             );
-            lock (sender.InLobbyLock)
+            await sender.PlayerAccessSemaphore.WaitAsync();
+            bool InLobby = sender.InLobby;
+            if (packet.IsInLobby == sender.InLobby)
+                return;
+            sender.InLobby = packet.IsInLobby;
+            sender.PlayerAccessSemaphore.Release();
+            if (InLobby)
             {
-                if (packet.IsInLobby && !sender.InLobby)
+                _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
                 {
-                    _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
-                    {
-                        Reason = CannotStartGameReason.NoSongSelected
-                    }, DeliveryMethod.ReliableOrdered);
-                }
-                sender.InLobby = packet.IsInLobby;
+                    Reason = sender.IsServerOwner ? _lobbyManager.GetCannotStartGameReason(sender, _lobbyManager.DoesEveryoneOwnBeatmap) : CannotStartGameReason.None
+                }, DeliveryMethod.ReliableOrdered);
 
                 if (_lobbyManager.SelectedBeatmap is null)
                     _packetDispatcher.SendToPlayer(sender, new ClearSelectedBeatmap(), DeliveryMethod.ReliableOrdered);
@@ -65,7 +69,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                         Modifiers = _lobbyManager.SelectedModifiers
                     }, DeliveryMethod.ReliableOrdered);
             }
-            return Task.CompletedTask;
+            return;
         }
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -50,8 +49,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
-
-        public readonly SemaphoreSlim ConnectDisconnectSemaphore = new(1);
+        public SemaphoreSlim ConnectDisconnectSemaphore { get; } = new(1); //Stops lobby loop from running during player connection/disconnection, and stops disconnects and connects happening simultaneously
 
         private byte _connectionIdCount = 0;
         private readonly object _ConnectionIDLock = new();
@@ -253,20 +251,18 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         #region LiteNetServer
 
-        public override bool ShouldAcceptConnection(EndPoint endPoint, ref SpanBuffer additionalData)
+        public override async Task<bool> ShouldAcceptConnection(EndPoint endPoint, MemoryBuffer additionalData)
         {
             
-            if (ShouldDenyConnection(endPoint, ref additionalData))
+            if (await ShouldDenyConnection(endPoint, additionalData))
             {
                 string[] Players = _playerRegistry.Players.Select(p => p.UserId).ToArray();
                 PlayerDisconnectBeforeJoining?.Invoke(_configuration.Secret, endPoint, Players);
                 return false;
             }
-            _logger.Information("connection accepted");
             return true;
         }
-        private readonly object _PlayerJoining_Lock = new();
-        public bool ShouldDenyConnection(EndPoint endPoint, ref SpanBuffer additionalData)
+        public async Task<bool> ShouldDenyConnection(EndPoint endPoint, MemoryBuffer additionalData)
         {
             var connectionRequestData = new ConnectionRequestData();
             try
@@ -302,40 +298,37 @@ namespace BeatTogether.DedicatedServer.Kernel
                 );
                 return true;
             }
-            IPlayer player;
-            lock (_PlayerJoining_Lock)
+            await ConnectDisconnectSemaphore.WaitAsync();
+            if (_playerRegistry.GetPlayerCount() >= _configuration.MaxPlayerCount)
             {
-                if (_playerRegistry.GetPlayerCount() >= _configuration.MaxPlayerCount)
-                {
-                    _logger.Information("Max player count");
-                    return true;
-                }
-                if (connectionRequestData.UserName == "IGGAMES" || connectionRequestData.UserName == "IGGGAMES")
-                {
-                    _logger.Information("an IGG player just tried joining after passing master auth");
-                    return true;
-                }
-                int sortIndex = GetNextSortIndex();
-                byte connectionId = GetNextConnectionId();
+                _logger.Warning("Master server sent a player to a full server");
+                return true;
+            }
+            if (connectionRequestData.UserName == "IGGAMES" || connectionRequestData.UserName == "IGGGAMES")
+            {
+                _logger.Information("an IGG player just tried joining after passing master auth");
+                return true;
+            }
+            int sortIndex = GetNextSortIndex();
+            byte connectionId = GetNextConnectionId();
 
-                player = new Player(
-                    endPoint,
-                    this,
-                    connectionId,
-                    _configuration.Secret,
-                    connectionRequestData.UserId,
-                    connectionRequestData.UserName,
-                    connectionRequestData.PlayerSessionId
-                )
-                {
-                    SortIndex = sortIndex
-                };
-                if (!_playerRegistry.AddPlayer(player))
-                {
-                    ReleaseSortIndex(player.SortIndex);
-                    ReleaseConnectionId(player.ConnectionId);
-                    return true;
-                }
+            var player = new Player(
+                endPoint,
+                this,
+                connectionId,
+                _configuration.Secret,
+                connectionRequestData.UserId,
+                connectionRequestData.UserName,
+                connectionRequestData.PlayerSessionId
+            )
+            {
+                SortIndex = sortIndex
+            };
+            if (!_playerRegistry.AddPlayer(player))
+            {
+                ReleaseSortIndex(player.SortIndex);
+                ReleaseConnectionId(player.ConnectionId);
+                return true;
             }
 
             if (_configuration.ServerName == string.Empty)
@@ -373,9 +366,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                         handshakeSession.EncryptionParameters, true);
                 }
             }
-            
+            ConnectDisconnectSemaphore.Release();
             return false;
-}
+        }
         public override void OnLatencyUpdate(EndPoint endPoint, int latency)
             => _logger.Verbose($"Latency updated (RemoteEndPoint='{endPoint}', Latency={0.001f * latency}).");
 
@@ -383,7 +376,6 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public override async void OnConnect(EndPoint endPoint)
         {
-            await ConnectDisconnectSemaphore.WaitAsync();
             _logger.Information($"Endpoint connected (RemoteEndPoint='{endPoint}')");
 
             if (!_playerRegistry.TryGetPlayer(endPoint, out var player))
@@ -395,9 +387,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 Disconnect(endPoint);
                 return;
             }
-            //TODO add in max waiting time so that one player having ping issues does not murderise the whole server
+            await ConnectDisconnectSemaphore.WaitAsync();
 
-            await _packetDispatcher.SendToPlayerAndAwait(player, new INetSerializable[]
+            IPlayer[] PlayersAtJoin = _playerRegistry.Players;
+
+            await player.PlayerAccessSemaphore.WaitAsync();
+
+            var Player_ConnectPacket = new INetSerializable[]
                {
                 new SyncTimePacket
                     {
@@ -419,9 +415,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                     {
                         Reason = player.UserId == _configuration.ServerOwnerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
                     }
-               }, DeliveryMethod.ReliableOrdered);
-            //Sends to all players that they have connected
-            await _packetDispatcher.SendExcludingPlayerAndAwait(player, new INetSerializable[]
+               };
+
+            var SendToOtherPlayers = new INetSerializable[]
             {
             new SyncTimePacket
                 {
@@ -439,16 +435,24 @@ namespace BeatTogether.DedicatedServer.Kernel
                     UserId = player.UserId,
                     SortIndex = player.SortIndex
                 },
-            }
-            , DeliveryMethod.ReliableOrdered);
+            };
+            player.PlayerAccessSemaphore.Release();
+            _packetDispatcher.SendToPlayer(player, Player_ConnectPacket, DeliveryMethod.ReliableOrdered);
 
+            //Sends to all players that they have connected
+            await _packetDispatcher.SendExcludingPlayerAndAwait(player, SendToOtherPlayers, DeliveryMethod.ReliableOrdered).WaitAsync(TimeSpan.FromMilliseconds(100));
+            INetSerializable[] SendToPlayer;
+            INetSerializable[] SendToPlayerFromPlayers;
             Task[] ConnectionTasks = new Task[2];
-            foreach (IPlayer p in _playerRegistry.Players)
+            foreach (IPlayer p in PlayersAtJoin)
             {
                 if (p.ConnectionId != player.ConnectionId)
                 {
                     // Send all player connection data packets to new player
-                    ConnectionTasks[0] = _packetDispatcher.SendToPlayerAndAwait(player, new INetSerializable[]{
+                    if (!p.PlayerInitialised.Task.IsCompleted)
+                        await p.PlayerInitialised.Task.WaitAsync(TimeSpan.FromMilliseconds(200)); //awaits the player connecting
+                    await p.PlayerAccessSemaphore.WaitAsync();
+                    SendToPlayer = new INetSerializable[]{
                         new PlayerConnectedPacket
                         {
                             RemoteConnectionId = p.ConnectionId,
@@ -461,17 +465,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                             UserId = p.UserId,
                             SortIndex = p.SortIndex
                         }
-                    }, DeliveryMethod.ReliableOrdered);
-
-                    // Send all player identity packets to new player
-                    ConnectionTasks[1] = _packetDispatcher.SendFromPlayerToPlayerAndAwait(p, player, new INetSerializable[]
+                    };
+                    SendToPlayerFromPlayers = new INetSerializable[]
                     {
-                        new PlayerIdentityPacket
+                        new PlayerAvatarPacket
                         {
-                            PlayerState = p.State,
-                            PlayerAvatar = p.Avatar,
-                            Random = new ByteArray { Data = p.Random },
-                            PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey }
+                            PlayerAvatar = p.Avatar
+                        },
+                        new PlayerStatePacket
+                        {
+                            PlayerState = p.State
                         },
                         new MpPlayerData
                         {
@@ -479,8 +482,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                             Platform = (byte)p.Platform,
                             ClientVersion = p.ClientVersion!
                         }
-                    }, DeliveryMethod.ReliableOrdered);
-                    await Task.WhenAll(ConnectionTasks);
+                    };
+                    p.PlayerAccessSemaphore.Release();
+                    ConnectionTasks[0] = _packetDispatcher.SendToPlayerAndAwait(player, SendToPlayer, DeliveryMethod.ReliableOrdered);
+
+                    // Send all player avatars and states to just joined player
+                    ConnectionTasks[1] = _packetDispatcher.SendFromPlayerToPlayerAndAwait(p, player, SendToPlayerFromPlayers, DeliveryMethod.ReliableOrdered);
+                    await Task.WhenAll(ConnectionTasks).WaitAsync(TimeSpan.FromMilliseconds(100));
                 }
             }
 
@@ -492,13 +500,13 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             //Send remaining join packets
             ConnectionTasks = new Task[4];
-            foreach (IPlayer p in _playerRegistry.Players)
+            foreach (IPlayer p in PlayersAtJoin)
             {
                 ConnectionTasks[0] = _packetDispatcher.SendToPlayerAndAwait(p,new SetPlayersPermissionConfigurationPacket
                 {
                     PermissionConfiguration = new PlayersPermissionConfiguration
                     {
-                        PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
+                        PlayersPermission = PlayersAtJoin.Select(x => new PlayerPermissionConfiguration
                         {
                             UserId = x.UserId,
                             IsServerOwner = x.IsServerOwner,
@@ -531,13 +539,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     Text = "Player joined: " + player.UserName + " Platform: " + player.Platform.ToString() + " Game version: " + player.ClientVersion
                 }, DeliveryMethod.ReliableOrdered);
-                await Task.WhenAll(ConnectionTasks);
+                await Task.WhenAll(ConnectionTasks).WaitAsync(TimeSpan.FromMilliseconds(100));
             }
             ConnectDisconnectSemaphore.Release();
             PlayerConnectedEvent?.Invoke(player);
         }
 
-        public void DisconnectPlayer(string UserId)
+        public void DisconnectPlayer(string UserId) //Used my master server kick player event
         {
 
             if(_playerRegistry.TryGetPlayer(UserId, out var player))
@@ -579,6 +587,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 PlayerDisconnectedEvent?.Invoke(player);
             }
+            ConnectDisconnectSemaphore.Release();
 
             if (_playerRegistry.GetPlayerCount() != 0 && string.IsNullOrEmpty(_configuration.ServerOwnerId) && _configuration.GameplayServerMode == GameplayServerMode.Managed)
             {
@@ -612,7 +621,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         Reason = CannotStartGameReason.NoSongSelected
                     }, DeliveryMethod.ReliableOrdered);
             }
-            ConnectDisconnectSemaphore.Release();
+
 
             _packetDispatcher.SendToNearbyPlayers(new MpNodePoseSyncStatePacket
             {

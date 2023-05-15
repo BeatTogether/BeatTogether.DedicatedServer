@@ -29,27 +29,25 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _packetDispatcher = packetDispatcher;
         }
 
-        public override Task Handle(IPlayer sender, SetIsReadyPacket packet)
+        public override async Task Handle(IPlayer sender, SetIsReadyPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(SetIsReadyPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, IsReady={packet.IsReady})."
             );
-            lock (sender.ReadyLock)
-            {
-                sender.IsReady = packet.IsReady;
-                //If the player somehow is in the lobby during gameplay then readying should send them to spectate
-                if (sender.IsReady && _instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null && _gameplayManager.State == GameplayManagerState.Gameplay)
+            bool SendToSpectate = false;
+            await sender.PlayerAccessSemaphore.WaitAsync();
+            sender.IsReady = packet.IsReady;
+            //If the player somehow is in the lobby during gameplay then readying should send them to spectate
+            SendToSpectate = sender.IsReady && _instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null && _gameplayManager.State == GameplayManagerState.Gameplay;
+            sender.PlayerAccessSemaphore.Release();
+            if (SendToSpectate)
+                _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
                 {
-                    _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
-                    {
-                        Beatmap = _gameplayManager.CurrentBeatmap!,
-                        Modifiers = _gameplayManager.CurrentModifiers,
-                        StartTime = _instance.RunTime
-                    }, DeliveryMethod.ReliableOrdered);
-                }
-            }
-            return Task.CompletedTask;
+                    Beatmap = _gameplayManager.CurrentBeatmap!,
+                    Modifiers = _gameplayManager.CurrentModifiers,
+                    StartTime = _instance.RunTime
+                }, DeliveryMethod.ReliableOrdered);
         }
     }
 }

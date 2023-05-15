@@ -27,35 +27,32 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _configuration = configuration;
         }
 
-        object handleLock = new();
         public override Task Handle(IPlayer sender, DediPacketSetNewManagerPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(DediPacketSetNewManagerPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            lock (handleLock)
-            {
-                if (sender.IsServerOwner && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
-                {
-                    _configuration.ServerOwnerId = packet.NewManagerID;
 
-                    _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
+            if (sender.IsServerOwner && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
+            {
+                _configuration.ServerOwnerId = packet.NewManagerID;
+
+                _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
+                {
+                    PermissionConfiguration = new PlayersPermissionConfiguration
                     {
-                        PermissionConfiguration = new PlayersPermissionConfiguration
+                        PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
                         {
-                            PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
-                            {
-                                UserId = x.UserId,
-                                IsServerOwner = x.IsServerOwner,
-                                HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
-                                HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
-                                HasKickVotePermission = x.CanKickVote,
-                                HasInvitePermission = x.CanInvite
-                            }).ToArray()
-                        }
-                    }, DeliveryMethod.ReliableOrdered);
-                }
+                            UserId = x.UserId,
+                            IsServerOwner = x.IsServerOwner,
+                            HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
+                            HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
+                            HasKickVotePermission = x.CanKickVote,
+                            HasInvitePermission = x.CanInvite
+                        }).ToArray()
+                    }
+                }, DeliveryMethod.ReliableOrdered);
             }
             return Task.CompletedTask;
         }

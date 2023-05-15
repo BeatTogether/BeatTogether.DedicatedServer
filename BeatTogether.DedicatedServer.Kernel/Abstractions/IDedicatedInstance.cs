@@ -16,7 +16,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         event Action<string, EndPoint, string[]> PlayerDisconnectBeforeJoining;
         event Action<string, bool> GameIsInLobby;
         event Action<IDedicatedInstance> UpdateInstanceEvent;
-
+        SemaphoreSlim ConnectDisconnectSemaphore { get; }
         void InstanceConfigUpdated();
         InstanceConfiguration _configuration { get; }
         bool IsRunning { get; }

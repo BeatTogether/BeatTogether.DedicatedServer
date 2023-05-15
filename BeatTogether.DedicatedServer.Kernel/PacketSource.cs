@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Net;
+using System.Reflection.Emit;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
-using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Registries;
@@ -76,11 +75,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 uint length;
                 try { length = HandleRead.ReadVarUInt(); }
-                catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                 if (HandleRead.RemainingSize < length)
                 {
                     _logger.Warning($"Packet fragmented (RemainingSize={HandleRead.RemainingSize}, Expected={length}).");
-                    return;
+                    goto RoutePacket;
                 }
 
                 int prevPosition = HandleRead.Offset;
@@ -93,7 +92,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         byte packetId;
                         try
                         { packetId = HandleRead.ReadByte(); }
-                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                         if (packetRegistry.TryCreatePacket(packetId, out packet))
                             break;
                         if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
@@ -107,19 +106,18 @@ namespace BeatTogether.DedicatedServer.Kernel
                         string MPCpacketId;
                         try
                         { MPCpacketId = HandleRead.ReadString(); }
-                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                         if (MPCoreRegistry.TryCreatePacket(MPCpacketId, out packet))
                             break;
                     }
                     break;
                 }
-                //TODO disable join message config packet
                 if (packet == null)
                 {
                     // skip any unprocessed bytes
                     var processedBytes = HandleRead.Offset - prevPosition;
                     try { HandleRead.SkipBytes((int)length - processedBytes); }
-                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                     continue;
                 }
                 if(packet is NoteSpawnPacket || packet is ObstacleSpawnPacket || packet is SliderSpawnPacket) //Note packet logic
@@ -157,7 +155,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     // skip any unprocessed bytes
                     var processedBytes = HandleRead.Offset - prevPosition;
                     try { HandleRead.SkipBytes((int)length - processedBytes); }
-                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                     continue;
                 }
 
@@ -169,13 +167,14 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     // skip any unprocessed bytes
                     var processedBytes = HandleRead.Offset - prevPosition;
-                    HandleRead.SkipBytes((int)length - processedBytes);
+                    try { HandleRead.SkipBytes((int)length - processedBytes); }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                     continue;
                 }
 
                 ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
             }
-
+            RoutePacket:
             //Is this packet meant to be routed?
             if (routingHeader.ReceiverId != 0)
                 RoutePacket(sender, routingHeader, ref reader, method);

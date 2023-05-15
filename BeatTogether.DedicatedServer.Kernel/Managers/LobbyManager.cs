@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,11 +28,18 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
     public sealed class LobbyManager : ILobbyManager, IDisposable
     {
-
-        public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel); //if all players are ready OR spectating
-        public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady);                           //if *any* are ready
-        public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel); //players not ready or spectating 
-        public bool AllPlayersSpectating => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel);         //if all spectating
+        //TODO - todo list below
+        /* - Players who dont want to play next level should not block current players from being able to play (if spectating then dont beatmap check them)
+         * - Use per player semaphores instead of locks around handlers as there are locks around packet sends, which is probably causing a few issues
+         * - basicly re-write the lobby manager stuff and some gameplay manager things
+         * 
+         */
+        public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel); //If all are ready or not playing
+        public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady); //If anyone is readied
+        public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel); //players not ready or are going to spectate
+        public bool AllPlayersNotWantToPlayNextLevel => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel);//if all are going to be spectating
+        public bool AllPlayersAreInLobby => _playerRegistry.Players.All(p => p.InMenu);//if all are going to be spectating
+        public bool DoesEveryoneOwnBeatmap => SelectedBeatmap == null || !_playerRegistry.Players.Any(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown);
 
         public BeatmapIdentifier? SelectedBeatmap { get; private set; } = null;
         public GameplayModifiers SelectedModifiers { get; private set; } = new();
@@ -84,14 +92,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             try
             {
                 await Task.Delay(LoopTime, cancellationToken);
-                await ((DedicatedInstance)_instance).ConnectDisconnectSemaphore.WaitAsync(cancellationToken);
+                await _instance.ConnectDisconnectSemaphore.WaitAsync(cancellationToken);
                 Update();
-                ((DedicatedInstance)_instance).ConnectDisconnectSemaphore.Release();
+                _instance.ConnectDisconnectSemaphore.Release();
                 UpdateLoop(cancellationToken);
             }
             catch (TaskCanceledException){}
             catch (OperationCanceledException){
-                ((DedicatedInstance)_instance).ConnectDisconnectSemaphore.Release();
+                _instance.ConnectDisconnectSemaphore.Release();
             }
         }
 
@@ -113,45 +121,32 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             foreach (IPlayer player in _playerRegistry.Players)
             {
-                lock (player.EntitlementLock)
+                if (player.UpdateEntitlement)
                 {
-                    if (player.UpdateEntitlement)
-                    {
-                        if (player.BeatmapIdentifier != null)
-                            _packetDispatcher.SendToPlayer(player, new SetPlayersMissingEntitlementsToLevelPacket
-                            {
-                                PlayersWithoutEntitlements = _playerRegistry.Players
-                                    .Where(p => p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned/* or EntitlementStatus.Unknown*/)
-                                    .Select(p => p.UserId).ToArray()
-                            }, DeliveryMethod.ReliableOrdered);
-                        player.UpdateEntitlement = false;
-                    }
+                    if (player.BeatmapIdentifier != null)
+                        _packetDispatcher.SendToPlayer(player, new SetPlayersMissingEntitlementsToLevelPacket
+                        {
+                            PlayersWithoutEntitlements = _playerRegistry.Players
+                                .Where(p => p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown)
+                                .Select(p => p.UserId).ToArray()
+                        }, DeliveryMethod.ReliableOrdered);
+                    player.UpdateEntitlement = false;
                 }
             }
+            bool allPlayersOwnBeatmap = DoesEveryoneOwnBeatmap;
 
+            if (_configuration.SongSelectionMode == SongSelectionMode.ServerOwnerPicks)
+            {
+                if (_lastBeatmap != SelectedBeatmap || _AllOwnMap != allPlayersOwnBeatmap || _lastSpectatorState != AllPlayersNotWantToPlayNextLevel)
+                {
+                    _packetDispatcher.SendToPlayer(serverOwner!, new SetIsStartButtonEnabledPacket
+                    {
+                        Reason = GetCannotStartGameReason(serverOwner!, allPlayersOwnBeatmap)
+                    }, DeliveryMethod.ReliableOrdered);
+                }
+            }
             if (SelectedBeatmap != null)
             {
-                bool allPlayersOwnBeatmap = _playerRegistry.Players
-                    .All(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.Ok or EntitlementStatus.NotDownloaded);
-
-                if(_configuration.SongSelectionMode == SongSelectionMode.ServerOwnerPicks)
-                {
-                    if (_lastBeatmap != SelectedBeatmap || _AllOwnMap != allPlayersOwnBeatmap || _lastSpectatorState != AllPlayersSpectating)
-                    {
-                        if (AllPlayersSpectating)
-                            _packetDispatcher.SendToPlayer(serverOwner!, new SetIsStartButtonEnabledPacket
-                            {
-                                Reason = CannotStartGameReason.AllPlayersSpectating
-                            }, DeliveryMethod.ReliableOrdered);
-                        else
-                        {
-                            _packetDispatcher.SendToPlayer(serverOwner!, new SetIsStartButtonEnabledPacket
-                            {
-                                Reason = allPlayersOwnBeatmap ? CannotStartGameReason.None : CannotStartGameReason.DoNotOwnSong
-                            }, DeliveryMethod.ReliableOrdered);
-                        }
-                    }
-                }
                 _AllOwnMap = allPlayersOwnBeatmap;
 
                 switch (_configuration.SongSelectionMode) //server modes
@@ -172,18 +167,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
             else
             {
-                if(_configuration.SongSelectionMode == SongSelectionMode.ServerOwnerPicks && _lastBeatmap != SelectedBeatmap)
-                    _packetDispatcher.SendToPlayer(serverOwner!, new SetIsStartButtonEnabledPacket
-                    {
-                        Reason = CannotStartGameReason.NoSongSelected
-                    }, DeliveryMethod.ReliableOrdered);
                 //Send stop countdown packet if the beatmap is somehow set to null (serrver owner may disconnect, or if tournament server setting the beatmap to null should stop the countdown)
                 if (CountDownState != CountdownState.NotCountingDown)
                     CancelCountdown();
             }
 
             _lastManagerId = _configuration.ServerOwnerId;
-            _lastSpectatorState = AllPlayersSpectating;
+            _lastSpectatorState = AllPlayersNotWantToPlayNextLevel;
             _lastBeatmap = SelectedBeatmap;
         }
 
@@ -194,7 +184,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 if (CountdownEndTime != 0 && CountdownEndTime <= _instance.RunTime)
                     CancelCountdown();
-                if ((AllPlayersReady && !AllPlayersSpectating && _AllOwnMap))
+                if ((AllPlayersReady && !AllPlayersNotWantToPlayNextLevel && _AllOwnMap))
                     SetCountdown(CountdownState.StartBeatmapCountdown, _configuration.CountdownConfig.BeatMapStartCountdownTime);
                 else if (isReady && _AllOwnMap)
                     SetCountdown(CountdownState.CountingDown, _configuration.CountdownConfig.CountdownTimePlayersReady);
@@ -231,7 +221,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                 }
                 // If server owner/all players are no longer ready or not all players own beatmap
-                if (NotStartable || !_AllOwnMap || AllPlayersSpectating)
+                if (NotStartable || !_AllOwnMap || AllPlayersNotWantToPlayNextLevel)
                     CancelCountdown();
                 else if (CountDownState == CountdownState.CountingDown && (AllPlayersReady || (CountdownEndTime - _instance.RunTime) < _configuration.CountdownConfig.BeatMapStartCountdownTime))
                     SetCountdown(CountdownState.StartBeatmapCountdown, _configuration.CountdownConfig.BeatMapStartCountdownTime);
@@ -413,7 +403,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     return SelectedBeatmap;
 
-                case SongSelectionMode.ServerPicks: //TODO, Make this pick a random beatsaver map or something like that
+                case SongSelectionMode.ServerPicks:
                     return SelectedBeatmap!;
             };
             return null;
@@ -474,5 +464,18 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             };
             return new GameplayModifiers();
 		}
+
+        public CannotStartGameReason GetCannotStartGameReason(IPlayer player, bool DoesEveryoneOwnBeatmap)
+        {
+            if (player.IsServerOwner && player.BeatmapIdentifier == null)
+                return CannotStartGameReason.NoSongSelected;
+            if (!AllPlayersAreInLobby)
+                return CannotStartGameReason.AllPlayersNotInLobby;
+            if (AllPlayersNotWantToPlayNextLevel)
+                return CannotStartGameReason.AllPlayersSpectating;
+            if (SelectedBeatmap != null && ((_configuration.ForceStartMode && player.GetEntitlement(SelectedBeatmap.LevelId) == EntitlementStatus.NotOwned) || (!_configuration.ForceStartMode && !DoesEveryoneOwnBeatmap)))
+                return CannotStartGameReason.DoNotOwnSong;
+            return CannotStartGameReason.None;
+        }
     }
 }
