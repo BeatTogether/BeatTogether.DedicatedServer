@@ -43,7 +43,10 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             await sender.PlayerAccessSemaphore.WaitAsync();
             bool InLobby = sender.InLobby;
             if (packet.IsInLobby == sender.InLobby)
+            {
+                sender.PlayerAccessSemaphore.Release();
                 return;
+            }
             sender.InLobby = packet.IsInLobby;
             sender.PlayerAccessSemaphore.Release();
             if (InLobby)

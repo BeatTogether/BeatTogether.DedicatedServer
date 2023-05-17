@@ -124,12 +124,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 if (player.UpdateEntitlement)
                 {
                     if (player.BeatmapIdentifier != null)
+                    {
                         _packetDispatcher.SendToPlayer(player, new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
                                 .Where(p => p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown)
                                 .Select(p => p.UserId).ToArray()
                         }, DeliveryMethod.ReliableOrdered);
+                        _logger.Information("Sent missing entitlement packet");
+                    }
                     player.UpdateEntitlement = false;
                 }
             }

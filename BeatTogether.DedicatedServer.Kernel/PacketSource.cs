@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Reflection.Emit;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;

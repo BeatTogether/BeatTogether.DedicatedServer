@@ -22,13 +22,16 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 $"Handling packet of type '{nameof(PlayerSortOrderPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
+            bool Send = false;
             await sender.PlayerAccessSemaphore.WaitAsync();
             if (sender.UserId == packet.UserId && sender.SortIndex != packet.SortIndex) //If they send themselves as being in the wrong place, correct them. Although this probably shouldnt have a handler
-                {
-                    packet.SortIndex = sender.SortIndex;
-                    _packetDispatcher.SendToPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
-                }
+            {
+                packet.SortIndex = sender.SortIndex;
+                Send = true;
+            }
             sender.PlayerAccessSemaphore.Release();
+            if(Send)
+                _packetDispatcher.SendToPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
             return;
         }
     }

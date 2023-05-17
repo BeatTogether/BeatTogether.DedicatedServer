@@ -251,7 +251,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         #region LiteNetServer
 
-        public override async Task<bool> ShouldAcceptConnection(EndPoint endPoint, MemoryBuffer additionalData)
+        public override async Task<bool> ShouldAcceptConnection(EndPoint endPoint, byte[] additionalData)
         {
             
             if (await ShouldDenyConnection(endPoint, additionalData))
@@ -262,22 +262,37 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             return true;
         }
-        public async Task<bool> ShouldDenyConnection(EndPoint endPoint, MemoryBuffer additionalData)
+
+        private bool GetConnectionData(byte[] additionalData, out ConnectionRequestData connectionRequestData)
         {
-            var connectionRequestData = new ConnectionRequestData();
+            connectionRequestData = new();
+            SpanBuffer spanBuffer = new(additionalData);
             try
             {
-                connectionRequestData.ReadFrom(ref additionalData);
+                connectionRequestData.ReadFrom(ref spanBuffer);
             }
-            catch (Exception e)
+            catch(Exception ex)
             {
-                _logger.Warning(e,
+                _logger.Warning(ex +
+                    "Failed to deserialize connection request data"
+                );
+                return false;
+            }
+            return true;
+        }
+
+
+        public async Task<bool> ShouldDenyConnection(EndPoint endPoint, byte[] additionalData)
+        {
+            //var connectionRequestData = new ConnectionRequestData();
+            if(!GetConnectionData(additionalData, out var connectionRequestData))
+            {
+                _logger.Warning(
                     "Failed to deserialize connection request data " +
                     $"(RemoteEndPoint='{endPoint}')."
                 );
                 return true;
             }
-
             _logger.Debug(
                 "Handling connection request " +
                 $"(RemoteEndPoint='{endPoint}', " +
@@ -301,11 +316,13 @@ namespace BeatTogether.DedicatedServer.Kernel
             await ConnectDisconnectSemaphore.WaitAsync();
             if (_playerRegistry.GetPlayerCount() >= _configuration.MaxPlayerCount)
             {
+                ConnectDisconnectSemaphore.Release();
                 _logger.Warning("Master server sent a player to a full server");
                 return true;
             }
             if (connectionRequestData.UserName == "IGGAMES" || connectionRequestData.UserName == "IGGGAMES")
             {
+                ConnectDisconnectSemaphore.Release();
                 _logger.Information("an IGG player just tried joining after passing master auth");
                 return true;
             }
@@ -328,6 +345,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 ReleaseSortIndex(player.SortIndex);
                 ReleaseConnectionId(player.ConnectionId);
+                ConnectDisconnectSemaphore.Release();
                 return true;
             }
 
@@ -366,7 +384,39 @@ namespace BeatTogether.DedicatedServer.Kernel
                         handshakeSession.EncryptionParameters, true);
                 }
             }
+
             ConnectDisconnectSemaphore.Release();
+            //Send to all other players that they are connected, before sending to the new player that they have connected
+            await player.PlayerAccessSemaphore.WaitAsync();
+            var SendToOtherPlayers = new INetSerializable[]
+            {
+            new SyncTimePacket
+                {
+                    SyncTime = RunTime
+                },
+            new PlayerConnectedPacket
+                {
+                    RemoteConnectionId = player.ConnectionId,
+                    UserId = player.UserId,
+                    UserName = player.UserName,
+                    IsConnectionOwner = false
+                },
+            new PlayerSortOrderPacket
+                {
+                    UserId = player.UserId,
+                    SortIndex = player.SortIndex
+                },
+            new MpNodePoseSyncStatePacket
+                {
+                    fullStateUpdateFrequency = 0.1f,
+                    deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets() * 0.001f
+                },
+            };
+            player.PlayerAccessSemaphore.Release();
+
+            _packetDispatcher.SendExcludingPlayer(player, SendToOtherPlayers, DeliveryMethod.ReliableOrdered);
+
+            
             return false;
         }
         public override void OnLatencyUpdate(EndPoint endPoint, int latency)
@@ -387,12 +437,15 @@ namespace BeatTogether.DedicatedServer.Kernel
                 Disconnect(endPoint);
                 return;
             }
-            await ConnectDisconnectSemaphore.WaitAsync();
+            PlayerConnectedEvent?.Invoke(player);
+            await Task.Delay(50);
+            //The player has already been sent to every other player in the should connect function.
 
+            //Start of sending other players to player
+            //Now send all players already in the game to the new player
             IPlayer[] PlayersAtJoin = _playerRegistry.Players;
 
             await player.PlayerAccessSemaphore.WaitAsync();
-
             var Player_ConnectPacket = new INetSerializable[]
                {
                 new SyncTimePacket
@@ -414,138 +467,156 @@ namespace BeatTogether.DedicatedServer.Kernel
                 new SetIsStartButtonEnabledPacket// Disables start button if they are server owner without selected song
                     {
                         Reason = player.UserId == _configuration.ServerOwnerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
-                    }
+                    },
+                new MpNodePoseSyncStatePacket
+                    {
+                        fullStateUpdateFrequency = 0.1f,
+                        deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets() * 0.001f
+                    },
                };
-
-            var SendToOtherPlayers = new INetSerializable[]
-            {
-            new SyncTimePacket
-                {
-                    SyncTime = RunTime
-                },
-            new PlayerConnectedPacket
-                {
-                    RemoteConnectionId = player.ConnectionId,
-                    UserId = player.UserId,
-                    UserName = player.UserName,
-                    IsConnectionOwner = false
-                },
-            new PlayerSortOrderPacket
-                {
-                    UserId = player.UserId,
-                    SortIndex = player.SortIndex
-                },
-            };
             player.PlayerAccessSemaphore.Release();
-            _packetDispatcher.SendToPlayer(player, Player_ConnectPacket, DeliveryMethod.ReliableOrdered);
 
-            //Sends to all players that they have connected
-            await _packetDispatcher.SendExcludingPlayerAndAwait(player, SendToOtherPlayers, DeliveryMethod.ReliableOrdered).WaitAsync(TimeSpan.FromMilliseconds(100));
-            INetSerializable[] SendToPlayer;
-            INetSerializable[] SendToPlayerFromPlayers;
-            Task[] ConnectionTasks = new Task[2];
+            await _packetDispatcher.SendToPlayerAndAwait(player, Player_ConnectPacket, DeliveryMethod.ReliableOrdered);
+
+            List<INetSerializable> MakeBigPacketToSendToPlayer = new();
             foreach (IPlayer p in PlayersAtJoin)
             {
-                if (p.ConnectionId != player.ConnectionId)
+                if(p.ConnectionId != player.ConnectionId)
                 {
-                    // Send all player connection data packets to new player
-                    if (!p.PlayerInitialised.Task.IsCompleted)
-                        await p.PlayerInitialised.Task.WaitAsync(TimeSpan.FromMilliseconds(200)); //awaits the player connecting
                     await p.PlayerAccessSemaphore.WaitAsync();
-                    SendToPlayer = new INetSerializable[]{
-                        new PlayerConnectedPacket
-                        {
-                            RemoteConnectionId = p.ConnectionId,
-                            UserId = p.UserId,
-                            UserName = p.UserName,
-                            IsConnectionOwner = false
-                        },
-                        new PlayerSortOrderPacket
-                        {
-                            UserId = p.UserId,
-                            SortIndex = p.SortIndex
-                        }
-                    };
-                    SendToPlayerFromPlayers = new INetSerializable[]
+                    MakeBigPacketToSendToPlayer.Add(new PlayerConnectedPacket
                     {
-                        new PlayerAvatarPacket
-                        {
-                            PlayerAvatar = p.Avatar
-                        },
-                        new PlayerStatePacket
-                        {
-                            PlayerState = p.State
-                        },
-                        new MpPlayerData
-                        {
-                            PlatformID = p.PlatformUserId!,
-                            Platform = (byte)p.Platform,
-                            ClientVersion = p.ClientVersion!
-                        }
-                    };
+                        RemoteConnectionId = p.ConnectionId,
+                        UserId = p.UserId,
+                        UserName = p.UserName,
+                        IsConnectionOwner = false
+                    });
+                    MakeBigPacketToSendToPlayer.Add(new PlayerSortOrderPacket
+                    {
+                        UserId = p.UserId,
+                        SortIndex = p.SortIndex
+                    });
                     p.PlayerAccessSemaphore.Release();
-                    ConnectionTasks[0] = _packetDispatcher.SendToPlayerAndAwait(player, SendToPlayer, DeliveryMethod.ReliableOrdered);
-
-                    // Send all player avatars and states to just joined player
-                    ConnectionTasks[1] = _packetDispatcher.SendFromPlayerToPlayerAndAwait(p, player, SendToPlayerFromPlayers, DeliveryMethod.ReliableOrdered);
-                    await Task.WhenAll(ConnectionTasks).WaitAsync(TimeSpan.FromMilliseconds(100));
                 }
             }
+            foreach (var SubPacket in MakeBigPacketToSendToPlayer.Chunk(20))
+            {
+                await _packetDispatcher.SendToPlayerAndAwait(player, SubPacket.ToArray(), DeliveryMethod.ReliableOrdered);
+            }
+            //End of sending other players to player
+
 
             // Update permissions - constant manager possibly does not work
             if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.GetPlayerCount() == 1) && _configuration.GameplayServerMode == GameplayServerMode.Managed)
             {
                 _configuration.ServerOwnerId = player.UserId;
-            }
-
-            //Send remaining join packets
-            ConnectionTasks = new Task[4];
-            foreach (IPlayer p in PlayersAtJoin)
-            {
-                ConnectionTasks[0] = _packetDispatcher.SendToPlayerAndAwait(p,new SetPlayersPermissionConfigurationPacket
+                _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket //Sends updated value to all players.//TODO Make a function for updating players permissions as there will be commands for it soon
                 {
                     PermissionConfiguration = new PlayersPermissionConfiguration
                     {
-                        PlayersPermission = PlayersAtJoin.Select(x => new PlayerPermissionConfiguration
+                        PlayersPermission = new PlayerPermissionConfiguration[]
                         {
-                            UserId = x.UserId,
-                            IsServerOwner = x.IsServerOwner,
-                            HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
-                            HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
-                            HasKickVotePermission = x.CanKickVote,
-                            HasInvitePermission = x.CanInvite
-                        }).ToArray()
+                            new PlayerPermissionConfiguration()
+                            {
+                                UserId = player.UserId,
+                                IsServerOwner = player.IsServerOwner,
+                                HasRecommendBeatmapsPermission = player.CanRecommendBeatmaps,
+                                HasRecommendGameplayModifiersPermission = player.CanRecommendModifiers,
+                                HasKickVotePermission = player.CanKickVote,
+                                HasInvitePermission = player.CanInvite
+                            }
+                        }
                     }
                 }, DeliveryMethod.ReliableOrdered);
+            }
+
+            if (player.Platform == Platform.Test) //If the player is a bot, send permissions. Normal players request this in a packet when they join
+            {
+                bool HasManager = (_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var ServerOwner) && !player.IsServerOwner);
+                PlayerPermissionConfiguration[] playerPermissionConfigurations = new PlayerPermissionConfiguration[HasManager ? 2 : 1];
+                playerPermissionConfigurations[0] = new PlayerPermissionConfiguration
+                {
+                    UserId = player.UserId,
+                    IsServerOwner = player.IsServerOwner,
+                    HasRecommendBeatmapsPermission = player.CanRecommendBeatmaps,
+                    HasRecommendGameplayModifiersPermission = player.CanRecommendModifiers,
+                    HasKickVotePermission = player.CanKickVote,
+                    HasInvitePermission = player.CanInvite
+                };
+                if (HasManager)
+                    playerPermissionConfigurations[1] = new PlayerPermissionConfiguration
+                    {
+                        UserId = ServerOwner!.UserId,
+                        IsServerOwner = ServerOwner!.IsServerOwner,
+                        HasRecommendBeatmapsPermission = ServerOwner!.CanRecommendBeatmaps,
+                        HasRecommendGameplayModifiersPermission = ServerOwner!.CanRecommendModifiers,
+                        HasKickVotePermission = ServerOwner!.CanKickVote,
+                        HasInvitePermission = ServerOwner!.CanInvite
+                    };
+                _packetDispatcher.SendToPlayer(player, new SetPlayersPermissionConfigurationPacket
+                {
+                    PermissionConfiguration = new PlayersPermissionConfiguration
+                    {
+                        PlayersPermission = playerPermissionConfigurations
+                    }
+                }, DeliveryMethod.ReliableOrdered);
+            }
+
+            //Start of sending player avatars and states to new player
+            INetSerializable[] SendToPlayerFromPlayers = new INetSerializable[3];
+            SendToPlayerFromPlayers[0] = new PlayerAvatarPacket();
+            SendToPlayerFromPlayers[1] = new PlayerStatePacket();
+            SendToPlayerFromPlayers[2] = new MpPlayerData();
+
+            foreach (IPlayer p in PlayersAtJoin)
+            {
                 if (p.ConnectionId != player.ConnectionId)
                 {
-                    ConnectionTasks[1] = _packetDispatcher.SendFromPlayerToPlayerAndAwait(player, p, new MpPlayerData
+                    // Send all player connection data packets to new player
+                    //No need to await for players to have sent avatar data or state as the client will share it with them on connect anyway
+                    await p.PlayerAccessSemaphore.WaitAsync();
+                    ((PlayerAvatarPacket)SendToPlayerFromPlayers[0]).PlayerAvatar = p.Avatar;
+                    ((PlayerStatePacket)SendToPlayerFromPlayers[1]).PlayerState = p.State;
+                    ((MpPlayerData)SendToPlayerFromPlayers[2]).PlatformID = p.PlatformUserId;
+                    ((MpPlayerData)SendToPlayerFromPlayers[2]).Platform = (byte)p.Platform;
+                    ((MpPlayerData)SendToPlayerFromPlayers[2]).ClientVersion = p.ClientVersion;
+                    p.PlayerAccessSemaphore.Release();
+                    // Send all player avatars and states to just joined player
+                    await Task.WhenAny(_packetDispatcher.SendFromPlayerToPlayerAndAwait(p, player, SendToPlayerFromPlayers, DeliveryMethod.ReliableOrdered), Task.Delay(50));
+                    //Sends them one by one to avoid server lag
+                }
+            }
+            //End of sending avatars and states to new player
+
+            foreach (IPlayer p in PlayersAtJoin)
+            {
+                if (p.ConnectionId != player.ConnectionId)
+                {
+                    await Task.WhenAny(
+                    _packetDispatcher.SendFromPlayerToPlayerAndAwait(player, p, new MpPlayerData
                     {
                         PlatformID = player.PlatformUserId!,
                         Platform = (byte)player.Platform,
                         ClientVersion = player.ClientVersion!
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, DeliveryMethod.ReliableOrdered),
+                    Task.Delay(50));
                 }
-                else
-                {
-                    ConnectionTasks[1] = Task.CompletedTask;
-                }
-                ConnectionTasks[2] = _packetDispatcher.SendToPlayerAndAwait(p, new MpNodePoseSyncStatePacket
-                {
-                    fullStateUpdateFrequency = 0.1f,
-                    deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets() * 0.001f
-                }, DeliveryMethod.ReliableOrdered);
-                ConnectionTasks[3] = _packetDispatcher.SendToPlayerAndAwait(p, new MpcTextChatPacket()
-                {
-                    Text = "Player joined: " + player.UserName + " Platform: " + player.Platform.ToString() + " Game version: " + player.ClientVersion
-                }, DeliveryMethod.ReliableOrdered);
-                await Task.WhenAll(ConnectionTasks).WaitAsync(TimeSpan.FromMilliseconds(100));
             }
-            ConnectDisconnectSemaphore.Release();
-            PlayerConnectedEvent?.Invoke(player);
+
+            await player.PlayerAccessSemaphore.WaitAsync();
+            var packet = new MpcTextChatPacket { Text = player.UserName + " Joined, Platform: " + player.Platform.ToString() + " Version: " + player.ClientVersion };
+            player.PlayerAccessSemaphore.Release();
+            foreach (var p in PlayersAtJoin)
+            {
+                if (p.CanTextChat)
+                {
+                    await Task.WhenAny(_packetDispatcher.SendToPlayerAndAwait(p, packet, DeliveryMethod.ReliableOrdered), Task.Delay(50));
+                }
+            }
+
         }
 
-        public void DisconnectPlayer(string UserId) //Used my master server kick player event
+        public void DisconnectPlayer(string UserId) //Used my master servers kick player event
         {
 
             if(_playerRegistry.TryGetPlayer(UserId, out var player))
@@ -573,11 +644,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (_playerRegistry.TryGetPlayer(endPoint, out var player))
             {
                 //Sends to all players that they have disconnected
+
                 _packetDispatcher.SendFromPlayer(player, new PlayerDisconnectedPacket
                 {
                     DisconnectedReason = DisconnectedReason.ClientConnectionClosed
                 }, DeliveryMethod.ReliableOrdered);
-                
+
                 if (_configuration.ServerOwnerId == player.UserId)
                     _configuration.ServerOwnerId = "";
 
