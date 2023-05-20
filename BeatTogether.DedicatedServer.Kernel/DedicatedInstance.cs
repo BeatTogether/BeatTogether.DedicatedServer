@@ -386,14 +386,10 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
 
             ConnectDisconnectSemaphore.Release();
-            //Send to all other players that they are connected, before sending to the new player that they have connected
+            //Send to all other players that they have connected, so that they can recieve the routed avatar packet
             await player.PlayerAccessSemaphore.WaitAsync();
             var SendToOtherPlayers = new INetSerializable[]
             {
-            new SyncTimePacket
-                {
-                    SyncTime = RunTime
-                },
             new PlayerConnectedPacket
                 {
                     RemoteConnectionId = player.ConnectionId,
@@ -562,7 +558,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }, DeliveryMethod.ReliableOrdered);
             }
 
-            //Start of sending player avatars and states to new player
+            //Start of sending player avatars and states of other players to new player
             INetSerializable[] SendToPlayerFromPlayers = new INetSerializable[3];
             SendToPlayerFromPlayers[0] = new PlayerAvatarPacket();
             SendToPlayerFromPlayers[1] = new PlayerStatePacket();
@@ -613,7 +609,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                     await Task.WhenAny(_packetDispatcher.SendToPlayerAndAwait(p, packet, DeliveryMethod.ReliableOrdered), Task.Delay(50));
                 }
             }
-
         }
 
         public void DisconnectPlayer(string UserId) //Used my master servers kick player event

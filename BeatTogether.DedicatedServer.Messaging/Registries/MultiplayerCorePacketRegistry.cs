@@ -17,6 +17,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries
             AddPacket<MpcBasePacket>();
             AddPacket<MpcCapabilitiesPacket>();
             AddPacket<MpcTextChatPacket>();
+            AddPacket<MpcVoicePacket>();
             AddPacket<GetMpPlayerData>();
             AddPacket<MpPlayerData>();
             AddPacket<MpNodePoseSyncStatePacket>();
