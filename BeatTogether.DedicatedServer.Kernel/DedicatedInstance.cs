@@ -2,12 +2,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
-using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
+using BeatTogether.DedicatedServer.Kernel.ENet;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
@@ -32,6 +32,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public const int SyncTimeDelay = 5000;
 
         public InstanceConfiguration _configuration { get; private set; }
+        public int LiteNetPort => _configuration.LiteNetPort;
+        public int ENetPort => _configuration.ENetPort;
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
@@ -59,6 +61,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         private CancellationTokenSource? _stopServerCts;
         private IPacketDispatcher _packetDispatcher = null!;
 
+        private ENetServer _eNetServer;
+
         public DedicatedInstance(
             InstanceConfiguration configuration,
             IHandshakeSessionRegistry handshakeSessionRegistry,
@@ -69,7 +73,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             IPacketLayer packetLayer,
             PacketEncryptionLayer packetEncryptionLayer)
             : base (
-                  new IPEndPoint(IPAddress.Any, configuration.Port),
+                  new IPEndPoint(IPAddress.Any, configuration.LiteNetPort),
                   liteNetConfiguration,
                   registry,
                   serviceProvider,
@@ -81,6 +85,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
             _packetEncryptionLayer = packetEncryptionLayer;
+
+            _eNetServer = new(this, configuration.ENetPort);
         }
 
         #region Public Methods
@@ -99,17 +105,17 @@ namespace BeatTogether.DedicatedServer.Kernel
             return _serviceProvider;
         }
 
-        public Task Start(CancellationToken cancellationToken = default)
+        public async Task Start(CancellationToken cancellationToken = default)
         {
             if (IsRunning)
-                return Task.CompletedTask;
+                return;
 
             _packetDispatcher = _serviceProvider.GetRequiredService<IPacketDispatcher>();
             _startTime = DateTime.UtcNow.Ticks;
 
             _logger.Information(
                 "Starting dedicated server " +
-                $"(Port={Port}," +
+                "(Endpoint={Endpoint}," +
                 $"ServerName='{_configuration.ServerName}', " +
                 $"Secret='{_configuration.Secret}', " +
                 $"ManagerId='{_configuration.ServerOwnerId}', " +
@@ -118,16 +124,19 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"InvitePolicy={_configuration.InvitePolicy}, " +
                 $"GameplayServerMode={_configuration.GameplayServerMode}, " +
                 $"SongSelectionMode={_configuration.SongSelectionMode}, " +
-                $"GameplayServerControlSettings={_configuration.GameplayServerControlSettings})."
+                $"GameplayServerControlSettings={_configuration.GameplayServerControlSettings})",
+                Endpoint
             );
             _stopServerCts = new CancellationTokenSource();
-
-
-
-            if (_configuration.DestroyInstanceTimeout != -1)
+            
+            if (_configuration.DestroyInstanceTimeout >= 0)
             {
                 _waitForPlayerCts = new CancellationTokenSource();
-                Task.Delay((WaitForPlayerTimeLimit + (int)(_configuration.DestroyInstanceTimeout * 1000)), _waitForPlayerCts.Token).ContinueWith(t =>
+                
+                var waitTimeLimit = (WaitForPlayerTimeLimit + (int)(_configuration.DestroyInstanceTimeout * 1000));
+                
+                _ = Task.Delay(waitTimeLimit, _waitForPlayerCts.Token)
+                    .ContinueWith(t =>
                 {
                     if (!t.IsCanceled)
                     {
@@ -141,17 +150,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }, cancellationToken);
             }
 
-            //StartEvent?.Invoke(this);
-
             base.Start();
-            Task.Run(() => SendSyncTime(_stopServerCts.Token), cancellationToken);
-            return Task.CompletedTask;
+            await _eNetServer.Start();
+            
+            _ = Task.Run(() => SendSyncTime(_stopServerCts.Token), cancellationToken);
         }
 
-        public Task Stop(CancellationToken cancellationToken = default)
+        public async Task Stop(CancellationToken cancellationToken = default)
         {
             if (!IsRunning)
-                return Task.CompletedTask;
+                return;
 
             _logger.Information(
                 "Stopping dedicated server " +
@@ -172,10 +180,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             }, DeliveryMethod.ReliableOrdered);
 
             _stopServerCts!.Cancel();
+            _waitForPlayerCts!.Cancel();
+            
             StopEvent?.Invoke(this);
 
             base.Stop();
-            return Task.CompletedTask;
+            await _eNetServer.Stop();
         }
 
         object SortIndexLock = new();

@@ -1,10 +1,10 @@
-﻿using BeatTogether.DedicatedServer.Interface.Models;
+﻿using System;
+using BeatTogether.DedicatedServer.Interface.Models;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 
 namespace BeatTogether.DedicatedServer.Node
 {
@@ -41,14 +41,17 @@ namespace BeatTogether.DedicatedServer.Node
             bool AllowNE
             )
         {
-            var port = _portAllocator.AcquirePort();
-            if (!port.HasValue)
+            var liteNetPort = _portAllocator.AcquirePort();
+            var eNetPort = _portAllocator.AcquirePort();
+            
+            if (!liteNetPort.HasValue || !eNetPort.HasValue)
                 return null;
 
             var scope = _serviceProvider.CreateScope();
 
             var instanceConfig = scope.ServiceProvider.GetRequiredService<InstanceConfiguration>();
-            instanceConfig.Port = (int)port!;
+            instanceConfig.LiteNetPort = (int)liteNetPort!;
+            instanceConfig.ENetPort = (int)eNetPort!;
             instanceConfig.Secret = secret;
             instanceConfig.ServerOwnerId = managerId;
             instanceConfig.MaxPlayerCount = Math.Min(config.MaxPlayerCount,250); //max size of 254, id 127 routes packets to all, max is 250, last 4 ID's will be reserved for future features
@@ -81,7 +84,8 @@ namespace BeatTogether.DedicatedServer.Node
         private void HandleStopEvent(IDedicatedInstance Instance)
         {
             _instanceRegistry.RemoveInstance(Instance);
-            _portAllocator.ReleasePort(Instance.Port);
+            _portAllocator.ReleasePort(Instance.LiteNetPort);
+            _portAllocator.ReleasePort(Instance.ENetPort);
         }
     }
 }

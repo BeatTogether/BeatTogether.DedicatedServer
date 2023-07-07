@@ -1,17 +1,17 @@
-﻿using Autobus;
+﻿using System;
+using System.Net;
+using System.Threading.Tasks;
+using Autobus;
 using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Interface.Events;
 using BeatTogether.DedicatedServer.Interface.Requests;
 using BeatTogether.DedicatedServer.Interface.Responses;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
+using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
-using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using Serilog;
-using System;
-using System.Threading.Tasks;
-using System.Net;
-using BeatTogether.DedicatedServer.Messaging.Models;
 
 namespace BeatTogether.DedicatedServer.Node
 {
@@ -80,9 +80,10 @@ namespace BeatTogether.DedicatedServer.Node
             await matchmakingServer.Start();
             return new CreateMatchmakingServerResponse(
                 CreateMatchmakingServerError.None,
-                $"{_configuration.HostName}:{matchmakingServer.Port}",
+                $"{_configuration.HostName}:{matchmakingServer.LiteNetPort}",
                 _packetEncryptionLayer.Random,
-                _packetEncryptionLayer.KeyPair.PublicKey
+                _packetEncryptionLayer.KeyPair.PublicKey,
+                $"{_configuration.HostName}:{matchmakingServer.ENetPort}"
             );
         }
 
