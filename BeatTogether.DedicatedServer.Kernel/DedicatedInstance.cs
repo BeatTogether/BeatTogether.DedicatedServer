@@ -64,7 +64,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public IPacketDispatcher PacketDispatcher { get; private set; }
         public ConnectedMessageSource ConnectedMessageSource { get; private set; }
 
-        private ENetServer _eNetServer;
+        public readonly ENetServer ENetServer;
 
         public DedicatedInstance(
             InstanceConfiguration configuration,
@@ -89,7 +89,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _serviceProvider = serviceProvider;
             _packetEncryptionLayer = packetEncryptionLayer;
 
-            _eNetServer = new(this, configuration.ENetPort);
+            ENetServer = new(this, configuration.ENetPort);
         }
 
         #region Public Methods
@@ -157,7 +157,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
 
             base.Start();
-            await _eNetServer.Start();
+            await ENetServer.Start();
             
             _ = Task.Run(() => SendSyncTime(_stopServerCts.Token), cancellationToken);
         }
@@ -180,10 +180,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"SongSelectionMode={_configuration.SongSelectionMode}, " +
                 $"GameplayServerControlSettings={_configuration.GameplayServerControlSettings})."
             );
+            
             PacketDispatcher.SendToNearbyPlayers(new KickPlayerPacket
             {
                 DisconnectedReason = DisconnectedReason.ServerTerminated
             }, DeliveryMethod.ReliableOrdered);
+
+            ENetServer.KickAllPeers();
 
             _stopServerCts!.Cancel();
             _waitForPlayerCts!.Cancel();
@@ -191,7 +194,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             StopEvent?.Invoke(this);
 
             base.Stop();
-            await _eNetServer.Stop();
+            await ENetServer.Stop();
         }
 
         object SortIndexLock = new();

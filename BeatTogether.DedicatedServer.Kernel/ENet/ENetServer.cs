@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using BeatTogether.DedicatedServer.Ignorance.ENet;
 using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Ignorance.Util;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.LiteNetLib.Enums;
 using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
@@ -158,7 +160,6 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 // Process actual payload
                 var deliveryMethod = e.Channel == 0 ? DeliveryMethod.ReliableOrdered : DeliveryMethod.Unreliable;
                 DedicatedInstance.ConnectedMessageSource.OnReceive(connection.EndPoint, ref bufferReader, deliveryMethod);
-                _logger.Verbose("TEST RECEIVE OK");
             }
         }
 
@@ -233,6 +234,54 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
             {
                 Type = IgnoranceCommandType.ServerKickPeer,
                 PeerId = peerId
+            });
+        }
+
+        public void KickAllPeers()
+        {
+            foreach (var connection in _connections.Values)
+                KickPeer(connection.NativePeerId, true);
+        }
+
+        #endregion
+
+        #region Send
+
+        public void Send(IPlayer player, ReadOnlySpan<byte> message, DeliveryMethod deliveryMethod)
+        {
+            if (!player.ENetPeerId.HasValue)
+                // Not an ENet peer
+                return;
+            
+            Send(player.ENetPeerId.Value, message, deliveryMethod);
+        }
+        
+        public void Send(uint peerId, ReadOnlySpan<byte> message, DeliveryMethod deliveryMethod)
+        {
+            if (!_connections.TryGetValue(peerId, out var connection))
+                // Invalid peer
+                return;
+            
+            Send(connection, message, deliveryMethod);
+        }
+
+        public void Send(ENetConnection connection, ReadOnlySpan<byte> message, DeliveryMethod deliveryMethod)
+        {
+            if (!IsAlive)
+                return;
+            
+            if (connection.State != ENetConnectionState.Accepted)
+                // Do not send if pending/disconnected
+                return;
+
+            var eNetPacket = default(Packet);
+            eNetPacket.Create(message.ToArray(), message.Length);
+            
+            _ignorance.Outgoing.Enqueue(new IgnoranceOutgoingPacket()
+            {
+                Channel = (byte)(deliveryMethod == DeliveryMethod.ReliableOrdered ? 0 : 1), // 1 = Unreliable
+                NativePeerId = connection.NativePeerId,
+                Payload = eNetPacket
             });
         }
 

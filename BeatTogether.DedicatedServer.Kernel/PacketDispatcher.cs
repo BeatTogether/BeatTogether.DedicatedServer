@@ -1,14 +1,12 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using System;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.Extensions;
-using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Dispatchers;
 using BeatTogether.LiteNetLib.Enums;
 using Krypton.Buffers;
 using Serilog;
-using System;
-using System.Net;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -20,21 +18,36 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private readonly IPacketRegistry _packetRegistry;
         private readonly IPlayerRegistry _playerRegistry;
+        private readonly DedicatedInstance _dedicatedInstance;
         private readonly ILogger _logger = Log.ForContext<PacketDispatcher>();
 
         public PacketDispatcher(
             IPacketRegistry packetRegistry,
             IPlayerRegistry playerRegistry,
             LiteNetConfiguration configuration,
-            LiteNetServer server)
+            DedicatedInstance dedicatedInstance)
             : base (
                   configuration,
-                  server)
+                  dedicatedInstance)
         {
             _packetRegistry = packetRegistry;
             _playerRegistry = playerRegistry;
+            _dedicatedInstance = dedicatedInstance;
         }
 
+        private void SendInternal(IPlayer player, ref SpanBufferWriter writer, DeliveryMethod deliveryMethod)
+        {
+            if (player.IsENetConnection)
+            {
+                // ENet send
+                _dedicatedInstance.ENetServer.Send(player.ENetPeerId!.Value, writer.Data, deliveryMethod);
+                return;
+            }
+            
+            // LiteNet send
+            Send(player.Endpoint, writer.Data, deliveryMethod);
+        }
+        
         public void SendToNearbyPlayers(INetSerializable packet, DeliveryMethod deliveryMethod)
         {
             _logger.Debug(
@@ -47,7 +60,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteOne(ref writer, packet);
             _logger.Verbose("Packet: " + packet.GetType().Name + " Was entered into the spanbuffer correctly, now sending once to each player");
             foreach (var player in _playerRegistry.Players)
-                    Send(player.Endpoint, writer.Data, deliveryMethod);
+                SendInternal(player, ref writer, deliveryMethod);
+                    
         }
         public void SendToNearbyPlayers(INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
@@ -61,7 +75,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteMany(ref writer, packets);
             _logger.Verbose("Packets were entered into the spanbuffer correctly, now sending once to each player");
             foreach (var player in _playerRegistry.Players)
-                Send(player.Endpoint, writer.Data, deliveryMethod);
+                SendInternal(player, ref writer, deliveryMethod);
         }
 
         public void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -77,7 +91,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             foreach (IPlayer player in _playerRegistry.Players)
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
-                    Send(player.Endpoint, writer.Data, deliveryMethod);
+                    SendInternal(player, ref writer, deliveryMethod);
         }
         public void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
@@ -92,34 +106,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             foreach (IPlayer player in _playerRegistry.Players)
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
-                    Send(player.Endpoint, writer.Data, deliveryMethod);
-        }
-
-        public void SendToEndpoint(EndPoint endpoint, INetSerializable packet, DeliveryMethod deliveryMethod)
-        {
-            _logger.Debug(
-                $"Sending packet of type '{packet.GetType().Name}' " +
-                $"(To endpoint ={endpoint})"
-            );
-
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
-            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteOne(ref writer, packet);
-
-            Send(endpoint, writer.Data, deliveryMethod);
-        }
-        public void SendToEndpoint(EndPoint endpoint, INetSerializable[] packets, DeliveryMethod deliveryMethod)
-        {
-            _logger.Debug(
-                $"Sending MultiPacket " +
-                $"(To endpoint ={endpoint})"
-            );
-
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
-            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteMany(ref writer, packets);
-
-            Send(endpoint, writer.Data, deliveryMethod);
+                    SendInternal(player, ref writer, deliveryMethod);
         }
 
         public void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -134,7 +121,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteOne(ref writer, packet);
 
             foreach (var player in _playerRegistry.Players)
-                Send(player.Endpoint, writer.Data, deliveryMethod);
+                SendInternal(player, ref writer, deliveryMethod);
 		}
         public void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
@@ -148,7 +135,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteMany(ref writer, packets);
 
             foreach (var player in _playerRegistry.Players)
-                Send(player.Endpoint, writer.Data, deliveryMethod);
+                SendInternal(player, ref writer, deliveryMethod);
         }
 
         public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -161,7 +148,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteOne(ref writer, packet);
-            Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
+            SendInternal(toPlayer, ref writer, deliveryMethod);
         }
 
         public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
@@ -174,7 +161,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteMany(ref writer, packets);
-            Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
+            SendInternal(toPlayer, ref writer, deliveryMethod);
         }
 
         public void SendToPlayer(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -187,7 +174,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteOne(ref writer, packet);
-            Send(player.Endpoint, writer, deliveryMethod);
+            SendInternal(player, ref writer, deliveryMethod);
         }
 
         public void SendToPlayer(IPlayer player, INetSerializable[] packets, DeliveryMethod deliveryMethod)
@@ -200,7 +187,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBufferWriter(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteMany(ref writer, packets);
-            Send(player.Endpoint, writer, deliveryMethod);
+            SendInternal(player, ref writer, deliveryMethod);
         }
 
         public void WriteOne(ref SpanBufferWriter writer, INetSerializable packet)
