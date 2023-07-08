@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Ignorance.Util;
+using BeatTogether.LiteNetLib.Enums;
 using BeatTogether.LiteNetLib.Extensions;
 using Krypton.Buffers;
 using Serilog;
@@ -78,6 +79,8 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
         {
             _runtimeCts.Cancel();
             _ignorance.Stop();
+            
+            ReturnReceiveBuffer();
         }
         
         #endregion
@@ -138,23 +141,24 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 // Read incoming into buffer
                 var receiveLength = e.Payload.Length;
                 EnsureReceiveBufferSize(receiveLength);
-                e.Payload.CopyTo(_receiveBuffer, 0);
+                e.Payload.CopyTo(_receiveBuffer!, 0);
                 e.Payload.Dispose();
                 
                 var bufferReader = new SpanBufferReader(_receiveBuffer.AsSpan(..receiveLength));
                 
-                // If pending, try to accept connection (IgnCon request)
+                // If pending: first packet should be connection request only (IgnCon)
                 if (connection.State == ENetConnectionState.Pending)
                 {
                     if (!TryAcceptConnection(connection, ref bufferReader))
-                    {
                         connection.Disconnect();
-                        return;
-                    }
+                    
+                    return;
                 }
-                
-                // Read actual payload...
-                // TODO
+
+                // Process actual payload
+                var deliveryMethod = e.Channel == 0 ? DeliveryMethod.ReliableOrdered : DeliveryMethod.Unreliable;
+                DedicatedInstance.ConnectedMessageSource.OnReceive(connection.EndPoint, ref bufferReader, deliveryMethod);
+                _logger.Verbose("TEST RECEIVE OK");
             }
         }
 
@@ -196,6 +200,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                     // Accept success
                     player.ENetPeerId = connection.NativePeerId;
                     connection.State = ENetConnectionState.Accepted;
+                    DedicatedInstance.OnConnect(connection.EndPoint);
                     return true;
                 }
             }
@@ -218,6 +223,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 connection.NativePeerId, connection.EndPoint);
 
             connection.State = ENetConnectionState.Disconnected;
+            DedicatedInstance.OnDisconnect(connection.EndPoint, DisconnectReason.DisconnectPeerCalled);
             
             if (!IsAlive || !sendKick)
                 // Can't or won't send kick
