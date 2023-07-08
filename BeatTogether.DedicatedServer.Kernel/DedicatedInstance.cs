@@ -242,19 +242,29 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         object AcceptConnectionLock = new();
 
+        /// <summary>
+        /// LiteNetServer call for filtering incoming connections. 
+        /// </summary>
         public override bool ShouldAcceptConnection(EndPoint endPoint, ref SpanBufferReader additionalData)
         {
+            var player = TryAcceptConnection(endPoint, ref additionalData);
 
-            if (ShouldDenyConnection(endPoint, ref additionalData))
+            if (player == null)
             {
                 PlayerDisconnectBeforeJoining?.Invoke(_configuration.Secret, endPoint, _playerRegistry.GetPlayerCount());
                 return false;
             }
+
             return true;
         }
-        public bool ShouldDenyConnection(EndPoint endPoint, ref SpanBufferReader additionalData)
+        
+        /// <summary>
+        /// Attempts to accept an incoming connection into a player, parsing a connection request from the game.
+        /// </summary>
+        public Player? TryAcceptConnection(EndPoint endPoint, ref SpanBufferReader additionalData)
         {
             var connectionRequestData = new ConnectionRequestData();
+            
             try
             {
                 connectionRequestData.ReadFrom(ref additionalData);
@@ -265,7 +275,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     "Failed to deserialize connection request data " +
                     $"(RemoteEndPoint='{endPoint}')."
                 );
-                return true;
+                return null;
             }
 
             _logger.Debug(
@@ -289,19 +299,21 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"UserName='{connectionRequestData.UserName}', " +
                     $"IsConnectionOwner={connectionRequestData.IsConnectionOwner})."
                 );
-                return true;
+                return null;
             }
+
+            Player player;
             
             lock (AcceptConnectionLock)
             {
                 if (_playerRegistry.GetPlayerCount() >= _configuration.MaxPlayerCount)
                 {
-                    return true;
+                    return null;
                 }
                 int sortIndex = GetNextSortIndex();
                 byte connectionId = GetNextConnectionId();
 
-                var player = new Player(
+                player = new Player(
                     endPoint,
                     this,
                     connectionId,
@@ -318,7 +330,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     ReleaseSortIndex(player.SortIndex);
                     ReleaseConnectionId(player.ConnectionId);
-                    return true;
+                    return null;
                 }
                 _logger.Information(
                     "Player joined dedicated server " +
@@ -347,7 +359,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
             }
             
-            return false;
+            return player;
         }
 
         public override void OnLatencyUpdate(EndPoint endPoint, int latency)

@@ -18,6 +18,13 @@ namespace BeatTogether.DedicatedServer.Kernel
         public string UserId { get; }
         public string UserName { get; }
         public string? PlayerSessionId { get; }
+        
+        public byte[]? Random { get; set; }
+        public byte[]? PublicEncryptionKey { get; set; }
+        
+        public uint? ENetPeerId { get; set; }
+        public bool IsENetConnection => ENetPeerId.HasValue;
+        
         public object LatencyLock { get; set; } = new();
         public RollingAverage Latency { get; } = new(30);
         public float SyncTime =>
@@ -25,8 +32,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                      Instance.RunTime);
         public object SortLock { get; set; } = new();
         public int SortIndex { get; set; }
-        public byte[]? Random { get; set; }
-        public byte[]? PublicEncryptionKey { get; set; }
         public object PlayerIdentityLock { get; set; } = new();
         public AvatarData Avatar { get; set; } = new();
         public object ReadyLock { get; set; } = new();

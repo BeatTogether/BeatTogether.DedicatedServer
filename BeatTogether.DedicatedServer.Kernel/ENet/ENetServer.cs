@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
@@ -24,7 +25,8 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
         private CancellationTokenSource _runtimeCts;
         private readonly Thread _workerThread;
         private readonly Dictionary<uint, ENetConnection> _connections;
-        private readonly byte[] _receiveBufferMemory;
+        
+        private byte[]? _receiveBuffer;
 
         public IPEndPoint EndPoint => new(IPAddress.Any, Port);
         public bool IsAlive => _ignorance.IsAlive;
@@ -39,7 +41,8 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
             _runtimeCts = new();
             _workerThread = new(ThreadWorker);
             _connections = new();
-            _receiveBufferMemory = GC.AllocateArray<byte>(length: _ignorance.IncomingOutgoingBufferSize, pinned: true);
+            
+            EnsureReceiveBufferSize(_ignorance.IncomingOutgoingBufferSize);
 
             IgnoranceDebug.Logger = _logger;
         }
@@ -134,10 +137,11 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 
                 // Read incoming into buffer
                 var receiveLength = e.Payload.Length;
-                e.Payload.CopyTo(_receiveBufferMemory, 0);
+                EnsureReceiveBufferSize(receiveLength);
+                e.Payload.CopyTo(_receiveBuffer, 0);
                 e.Payload.Dispose();
                 
-                var bufferReader = new SpanBufferReader(_receiveBufferMemory.AsSpan(..receiveLength));
+                var bufferReader = new SpanBufferReader(_receiveBuffer.AsSpan(..receiveLength));
                 
                 // If pending, try to accept connection (IgnCon request)
                 if (connection.State == ENetConnectionState.Pending)
@@ -145,7 +149,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                     if (!TryAcceptConnection(connection, ref bufferReader))
                     {
                         connection.Disconnect();
-                        continue;
+                        return;
                     }
                 }
                 
@@ -185,8 +189,12 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 }
 
                 // Continue with regular accept flow (remainder is regular GameLift connection request)
-                if (DedicatedInstance.ShouldAcceptConnection(connection.EndPoint, ref reader))
+                var player = DedicatedInstance.TryAcceptConnection(connection.EndPoint, ref reader);
+                
+                if (player != null)
                 {
+                    // Accept success
+                    player.ENetPeerId = connection.NativePeerId;
                     connection.State = ENetConnectionState.Accepted;
                     return true;
                 }
@@ -220,6 +228,32 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 Type = IgnoranceCommandType.ServerKickPeer,
                 PeerId = peerId
             });
+        }
+
+        #endregion
+
+        #region Buffer
+
+        private void EnsureReceiveBufferSize(int length)
+        {
+            if (length >= _ignorance.MaximumPacketSize)
+                throw new ArgumentException("Receive buffer size should never exceed MaximumPacketSize");
+
+            if (_receiveBuffer != null && _receiveBuffer.Length >= length)
+                // Buffer does not need adjusting
+                return;
+                
+            ReturnReceiveBuffer();
+            _receiveBuffer = ArrayPool<byte>.Shared.Rent(length);
+        }
+
+        private void ReturnReceiveBuffer()
+        {
+            if (_receiveBuffer != null)
+            {
+                ArrayPool<byte>.Shared.Return(_receiveBuffer);
+                _receiveBuffer = null;
+            }
         }
 
         #endregion

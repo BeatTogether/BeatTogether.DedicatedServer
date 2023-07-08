@@ -1,7 +1,7 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Types;
+﻿using System.Net;
+using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using System.Net;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
@@ -14,8 +14,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         string Secret { get; }
         string UserId { get; }
         string UserName { get; }
+        string? PlayerSessionId { get; }
+        
         byte[]? Random { get; set; }
         byte[]? PublicEncryptionKey { get; set; }
+        
+        uint? ENetPeerId { get; set; }
+        bool IsENetConnection => ENetPeerId.HasValue;
 
         object LatencyLock { get; set; }
         RollingAverage Latency { get; }
