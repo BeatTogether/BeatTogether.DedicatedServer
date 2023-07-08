@@ -174,7 +174,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
             var connection = new ENetConnection(this, e.NativePeerId, e.IP, e.Port);
             _connections[e.NativePeerId] = connection;
             
-            _logger.Information("Incoming ENet connection (PeerId={PeerId}, EndPoint={EndPoint})",
+            _logger.Verbose("Incoming ENet connection (PeerId={PeerId}, EndPoint={EndPoint})",
                 connection.NativePeerId, connection.EndPoint);
             
             return connection;
@@ -220,7 +220,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 // Connection not established
                 return;
             
-            _logger.Information("Closing ENet connection (PeerId={PeerId}, EndPoint={Port})",
+            _logger.Verbose("Closing ENet connection (PeerId={PeerId}, EndPoint={Port})",
                 connection.NativePeerId, connection.EndPoint);
 
             connection.State = ENetConnectionState.Disconnected;
