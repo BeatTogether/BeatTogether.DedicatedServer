@@ -2,12 +2,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
-using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
+using BeatTogether.DedicatedServer.Kernel.ENet;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
@@ -17,6 +17,7 @@ using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Enums;
+using BeatTogether.LiteNetLib.Sources;
 using Krypton.Buffers;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -32,6 +33,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public const int SyncTimeDelay = 5000;
 
         public InstanceConfiguration _configuration { get; private set; }
+        public int LiteNetPort => _configuration.LiteNetPort;
+        public int ENetPort => _configuration.ENetPort;
         public bool IsRunning => IsStarted;
         public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
@@ -57,7 +60,11 @@ namespace BeatTogether.DedicatedServer.Kernel
         private int _lastSortIndex = -1;
         private CancellationTokenSource? _waitForPlayerCts = null;
         private CancellationTokenSource? _stopServerCts;
-        private IPacketDispatcher _packetDispatcher = null!;
+        
+        public IPacketDispatcher PacketDispatcher { get; private set; }
+        public ConnectedMessageSource ConnectedMessageSource { get; private set; }
+
+        public readonly ENetServer ENetServer;
 
         public DedicatedInstance(
             InstanceConfiguration configuration,
@@ -69,7 +76,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             IPacketLayer packetLayer,
             PacketEncryptionLayer packetEncryptionLayer)
             : base (
-                  new IPEndPoint(IPAddress.Any, configuration.Port),
+                  new IPEndPoint(IPAddress.Any, configuration.LiteNetPort),
                   liteNetConfiguration,
                   registry,
                   serviceProvider,
@@ -81,6 +88,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
             _packetEncryptionLayer = packetEncryptionLayer;
+
+            ENetServer = new(this, configuration.ENetPort);
         }
 
         #region Public Methods
@@ -99,17 +108,19 @@ namespace BeatTogether.DedicatedServer.Kernel
             return _serviceProvider;
         }
 
-        public Task Start(CancellationToken cancellationToken = default)
+        public async Task Start(CancellationToken cancellationToken = default)
         {
             if (IsRunning)
-                return Task.CompletedTask;
+                return;
 
-            _packetDispatcher = _serviceProvider.GetRequiredService<IPacketDispatcher>();
+            PacketDispatcher = _serviceProvider.GetRequiredService<IPacketDispatcher>();
+            ConnectedMessageSource = _serviceProvider.GetRequiredService<ConnectedMessageSource>();
+            
             _startTime = DateTime.UtcNow.Ticks;
 
             _logger.Information(
                 "Starting dedicated server " +
-                $"(Port={Port}," +
+                "(Endpoint={Endpoint}," +
                 $"ServerName='{_configuration.ServerName}', " +
                 $"Secret='{_configuration.Secret}', " +
                 $"ManagerId='{_configuration.ServerOwnerId}', " +
@@ -118,20 +129,24 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"InvitePolicy={_configuration.InvitePolicy}, " +
                 $"GameplayServerMode={_configuration.GameplayServerMode}, " +
                 $"SongSelectionMode={_configuration.SongSelectionMode}, " +
-                $"GameplayServerControlSettings={_configuration.GameplayServerControlSettings})."
+                $"GameplayServerControlSettings={_configuration.GameplayServerControlSettings})",
+                Endpoint
             );
             _stopServerCts = new CancellationTokenSource();
-
-
-
-            if (_configuration.DestroyInstanceTimeout != -1)
+            
+            if (_configuration.DestroyInstanceTimeout >= 0)
             {
                 _waitForPlayerCts = new CancellationTokenSource();
-                Task.Delay((WaitForPlayerTimeLimit + (int)(_configuration.DestroyInstanceTimeout * 1000)), _waitForPlayerCts.Token).ContinueWith(t =>
+                
+                var waitTimeLimit = (WaitForPlayerTimeLimit + (int)(_configuration.DestroyInstanceTimeout * 1000));
+                
+                _ = Task.Delay(waitTimeLimit, _waitForPlayerCts.Token)
+                    .ContinueWith(t =>
                 {
                     if (!t.IsCanceled)
                     {
-                        _logger.Warning("Stopping instance: " + _configuration.ServerName);
+                        _logger.Warning("Stopping instance (no players joined timeout): {Instance}",
+                            _configuration.ServerName);
                         _ = Stop(CancellationToken.None);
                     }
                     else
@@ -141,17 +156,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }, cancellationToken);
             }
 
-            //StartEvent?.Invoke(this);
-
             base.Start();
-            Task.Run(() => SendSyncTime(_stopServerCts.Token), cancellationToken);
-            return Task.CompletedTask;
+            await ENetServer.Start();
+            
+            _ = Task.Run(() => SendSyncTime(_stopServerCts.Token), cancellationToken);
         }
 
-        public Task Stop(CancellationToken cancellationToken = default)
+        public async Task Stop(CancellationToken cancellationToken = default)
         {
             if (!IsRunning)
-                return Task.CompletedTask;
+                return;
 
             _logger.Information(
                 "Stopping dedicated server " +
@@ -166,16 +180,21 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"SongSelectionMode={_configuration.SongSelectionMode}, " +
                 $"GameplayServerControlSettings={_configuration.GameplayServerControlSettings})."
             );
-            _packetDispatcher.SendToNearbyPlayers(new KickPlayerPacket
+            
+            PacketDispatcher.SendToNearbyPlayers(new KickPlayerPacket
             {
                 DisconnectedReason = DisconnectedReason.ServerTerminated
             }, DeliveryMethod.ReliableOrdered);
 
+            ENetServer.KickAllPeers();
+
             _stopServerCts!.Cancel();
+            _waitForPlayerCts!.Cancel();
+            
             StopEvent?.Invoke(this);
 
             base.Stop();
-            return Task.CompletedTask;
+            await ENetServer.Stop();
         }
 
         object SortIndexLock = new();
@@ -219,7 +238,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public void SetState(MultiplayerGameState state)
         {
             State = state;
-            _packetDispatcher.SendToNearbyPlayers(new SetMultiplayerGameStatePacket()
+            PacketDispatcher.SendToNearbyPlayers(new SetMultiplayerGameStatePacket()
             {
                 State = state
             }, DeliveryMethod.ReliableOrdered);
@@ -232,19 +251,29 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         object AcceptConnectionLock = new();
 
+        /// <summary>
+        /// LiteNetServer call for filtering incoming connections. 
+        /// </summary>
         public override bool ShouldAcceptConnection(EndPoint endPoint, ref SpanBufferReader additionalData)
         {
+            var player = TryAcceptConnection(endPoint, ref additionalData);
 
-            if (ShouldDenyConnection(endPoint, ref additionalData))
+            if (player == null)
             {
                 PlayerDisconnectBeforeJoining?.Invoke(_configuration.Secret, endPoint, _playerRegistry.GetPlayerCount());
                 return false;
             }
+
             return true;
         }
-        public bool ShouldDenyConnection(EndPoint endPoint, ref SpanBufferReader additionalData)
+        
+        /// <summary>
+        /// Attempts to accept an incoming connection into a player, parsing a connection request from the game.
+        /// </summary>
+        public Player? TryAcceptConnection(EndPoint endPoint, ref SpanBufferReader additionalData)
         {
             var connectionRequestData = new ConnectionRequestData();
+            
             try
             {
                 connectionRequestData.ReadFrom(ref additionalData);
@@ -255,7 +284,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     "Failed to deserialize connection request data " +
                     $"(RemoteEndPoint='{endPoint}')."
                 );
-                return true;
+                return null;
             }
 
             _logger.Debug(
@@ -279,19 +308,21 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"UserName='{connectionRequestData.UserName}', " +
                     $"IsConnectionOwner={connectionRequestData.IsConnectionOwner})."
                 );
-                return true;
+                return null;
             }
+
+            Player player;
             
             lock (AcceptConnectionLock)
             {
                 if (_playerRegistry.GetPlayerCount() >= _configuration.MaxPlayerCount)
                 {
-                    return true;
+                    return null;
                 }
                 int sortIndex = GetNextSortIndex();
                 byte connectionId = GetNextConnectionId();
 
-                var player = new Player(
+                player = new Player(
                     endPoint,
                     this,
                     connectionId,
@@ -308,7 +339,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     ReleaseSortIndex(player.SortIndex);
                     ReleaseConnectionId(player.ConnectionId);
-                    return true;
+                    return null;
                 }
                 _logger.Information(
                     "Player joined dedicated server " +
@@ -337,7 +368,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
             }
             
-            return false;
+            return player;
         }
 
         public override void OnLatencyUpdate(EndPoint endPoint, int latency)
@@ -348,7 +379,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             lock (ConnectionLock)
             {
-                _logger.Information($"Endpoint connected (RemoteEndPoint='{endPoint}')");
+                _logger.Verbose($"Endpoint connected (RemoteEndPoint='{endPoint}')");
 
                 if (!_playerRegistry.TryGetPlayer(endPoint, out var player))
                 {
@@ -361,7 +392,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
 
                 //Send to existing players that a new player has joined
-                _packetDispatcher.SendExcludingPlayer(player, new INetSerializable[]
+                PacketDispatcher.SendExcludingPlayer(player, new INetSerializable[]
                     {
                     new SyncTimePacket
                         {
@@ -383,7 +414,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     ,DeliveryMethod.ReliableOrdered);
 
                 //Send new player their sort order and other data
-                _packetDispatcher.SendToPlayer(player, new INetSerializable[]
+                PacketDispatcher.SendToPlayer(player, new INetSerializable[]
                     {
                     new SyncTimePacket
                         {
@@ -414,7 +445,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     if (p.ConnectionId != player.ConnectionId)
                     {
                         // Send all player connection data packets to new player
-                        _packetDispatcher.SendToPlayer(player,new INetSerializable[]{
+                        PacketDispatcher.SendToPlayer(player,new INetSerializable[]{
                             new PlayerConnectedPacket
                             {
                                 RemoteConnectionId = p.ConnectionId,
@@ -430,7 +461,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         }, DeliveryMethod.ReliableOrdered);
 
                         // Send all player identity packets to new player
-                        _packetDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
+                        PacketDispatcher.SendFromPlayerToPlayer(p, player, new PlayerIdentityPacket
                         {
                             PlayerState = p.State,
                             PlayerAvatar = p.Avatar,
@@ -446,7 +477,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     _configuration.ServerOwnerId = player.UserId;
                 }
 
-                _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
+                PacketDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
                 {
                     PermissionConfiguration = new PlayersPermissionConfiguration
                     {
@@ -472,7 +503,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             lock (DisconnectplayerLock)
             {
                 if(_playerRegistry.TryGetPlayer(UserId, out var player))
-                    _packetDispatcher.SendToPlayer(player, new KickPlayerPacket
+                    PacketDispatcher.SendToPlayer(player, new KickPlayerPacket
                     {
                         DisconnectedReason = DisconnectedReason.Kicked
                     }, DeliveryMethod.ReliableOrdered);
@@ -500,7 +531,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 if (_playerRegistry.TryGetPlayer(endPoint, out var player))
                 {
-                    _packetDispatcher.SendFromPlayer(player, new PlayerDisconnectedPacket
+                    PacketDispatcher.SendFromPlayer(player, new PlayerDisconnectedPacket
                     {
                         DisconnectedReason = DisconnectedReason.ClientConnectionClosed
                     }, DeliveryMethod.ReliableOrdered);
@@ -526,7 +557,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                         {
                             if (!t.IsCanceled && _playerRegistry.GetPlayerCount() == 0)
                             {
-                                _logger.Information("No players joined within the closing timeout, stopping lobby now");
+                                _logger.Warning("Stopping instance (all players left timeout): {Instance}",
+                                    _configuration.ServerName);
                                 _ = Stop(CancellationToken.None);
                             }
                             else
@@ -546,13 +578,13 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                         // Disable start button if they are server owner without selected song
                         if (serverOwner.BeatmapIdentifier == null)
-                            _packetDispatcher.SendToPlayer(serverOwner, new SetIsStartButtonEnabledPacket
+                            PacketDispatcher.SendToPlayer(serverOwner, new SetIsStartButtonEnabledPacket
                             {
                                 Reason = CannotStartGameReason.NoSongSelected
                             }, DeliveryMethod.ReliableOrdered);
 
                         // Update permissions
-                        _packetDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
+                        PacketDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
                         {
                             PermissionConfiguration = new PlayersPermissionConfiguration
                             {
@@ -579,7 +611,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             foreach (IPlayer player in _playerRegistry.Players)
             {
-                _packetDispatcher.SendToPlayer(player, new SyncTimePacket()
+                PacketDispatcher.SendToPlayer(player, new SyncTimePacket()
                 {
                     SyncTime = player.SyncTime
                 }, DeliveryMethod.ReliableOrdered);

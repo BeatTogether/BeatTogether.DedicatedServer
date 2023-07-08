@@ -28,7 +28,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         InstanceConfiguration _configuration { get; }
         bool IsRunning { get; }
         float RunTime { get; }
-        int Port { get; }
+        public int LiteNetPort { get; }
+        public int ENetPort { get; }
         MultiplayerGameState State { get; }
 
         float NoPlayersTime { get; }

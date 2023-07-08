@@ -11,7 +11,8 @@
         CreateMatchmakingServerError Error,
         string? RemoteEndPoint = null,
         byte[]? Random = null,
-        byte[]? PublicKey = null)
+        byte[]? PublicKey = null,
+        string? RemoteEndPointENet = null)
     {
         public bool Success => Error == default;
     }
