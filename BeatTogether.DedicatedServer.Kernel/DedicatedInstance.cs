@@ -559,24 +559,25 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
 
             //Start of sending player avatars and states of other players to new player
-            INetSerializable[] SendToPlayerFromPlayers = new INetSerializable[3];
-            SendToPlayerFromPlayers[0] = new PlayerAvatarPacket();
-            SendToPlayerFromPlayers[1] = new PlayerStatePacket();
-            SendToPlayerFromPlayers[2] = new MpPlayerData();
+            INetSerializable[] SendToPlayerFromPlayers = new INetSerializable[2];
+            SendToPlayerFromPlayers[0] = new PlayerIdentityPacket();
+            SendToPlayerFromPlayers[1] = new MpPlayerData();
 
             foreach (IPlayer p in PlayersAtJoin)
             {
                 if (p.ConnectionId != player.ConnectionId)
                 {
-                    // Send all player connection data packets to new player
-                    //No need to await for players to have sent avatar data or state as the client will share it with them on connect anyway
+                    // Send player to player data to new player
                     await p.PlayerAccessSemaphore.WaitAsync();
-                    ((PlayerAvatarPacket)SendToPlayerFromPlayers[0]).PlayerAvatar = p.Avatar;
-                    ((PlayerStatePacket)SendToPlayerFromPlayers[1]).PlayerState = p.State;
+
+                    ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PlayerState = p.State;
+                    ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PlayerAvatar = p.Avatar;
+                    ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).Random = new ByteArray { Data = p.Random };
+                    ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey };
                     ((MpPlayerData)SendToPlayerFromPlayers[2]).PlatformID = p.PlatformUserId;
                     ((MpPlayerData)SendToPlayerFromPlayers[2]).Platform = (byte)p.Platform;
                     ((MpPlayerData)SendToPlayerFromPlayers[2]).ClientVersion = p.ClientVersion;
-                    p.PlayerAccessSemaphore.Release();
+
                     // Send all player avatars and states to just joined player
                     await Task.WhenAny(_packetDispatcher.SendFromPlayerToPlayerAndAwait(p, player, SendToPlayerFromPlayers, DeliveryMethod.ReliableOrdered), Task.Delay(50));
                     //Sends them one by one to avoid server lag
