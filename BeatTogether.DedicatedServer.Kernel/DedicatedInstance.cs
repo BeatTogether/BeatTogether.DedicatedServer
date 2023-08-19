@@ -577,7 +577,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                     ((MpPlayerData)SendToPlayerFromPlayers[2]).PlatformID = p.PlatformUserId;
                     ((MpPlayerData)SendToPlayerFromPlayers[2]).Platform = (byte)p.Platform;
                     ((MpPlayerData)SendToPlayerFromPlayers[2]).ClientVersion = p.ClientVersion;
-
+                    
+                    p.PlayerAccessSemaphore.Release();
+                    
                     // Send all player avatars and states to just joined player
                     await Task.WhenAny(_packetDispatcher.SendFromPlayerToPlayerAndAwait(p, player, SendToPlayerFromPlayers, DeliveryMethod.ReliableOrdered), Task.Delay(50));
                     //Sends them one by one to avoid server lag
