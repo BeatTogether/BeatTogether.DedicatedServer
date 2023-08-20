@@ -574,9 +574,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                     ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PlayerAvatar = p.Avatar;
                     ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).Random = new ByteArray { Data = p.Random };
                     ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey };
-                    ((MpPlayerData)SendToPlayerFromPlayers[2]).PlatformID = p.PlatformUserId;
-                    ((MpPlayerData)SendToPlayerFromPlayers[2]).Platform = (byte)p.Platform;
-                    ((MpPlayerData)SendToPlayerFromPlayers[2]).ClientVersion = p.ClientVersion;
+                    ((MpPlayerData)SendToPlayerFromPlayers[1]).PlatformID = p.PlatformUserId;
+                    ((MpPlayerData)SendToPlayerFromPlayers[1]).Platform = (byte)p.Platform;
+                    ((MpPlayerData)SendToPlayerFromPlayers[1]).ClientVersion = p.ClientVersion;
                     
                     p.PlayerAccessSemaphore.Release();
                     
