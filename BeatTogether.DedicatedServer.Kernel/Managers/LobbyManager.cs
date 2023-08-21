@@ -148,10 +148,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }, DeliveryMethod.ReliableOrdered);
                 }
             }
+	    _AllOwnMap = allPlayersOwnBeatmap;
             if (SelectedBeatmap != null)
             {
-                _AllOwnMap = allPlayersOwnBeatmap;
-
                 switch (_configuration.SongSelectionMode) //server modes
                 {
                     case SongSelectionMode.ServerOwnerPicks:
