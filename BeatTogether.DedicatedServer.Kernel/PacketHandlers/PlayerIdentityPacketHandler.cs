@@ -33,6 +33,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             if (!sender.PlayerInitialised.Task.IsCompleted)
                 sender.PlayerInitialised.SetResult();
             sender.PlayerAccessSemaphore.Release();
+            _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
         }
     }
 }
