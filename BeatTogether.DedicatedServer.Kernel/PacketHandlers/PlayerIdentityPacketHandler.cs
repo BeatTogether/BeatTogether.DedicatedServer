@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
+using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
