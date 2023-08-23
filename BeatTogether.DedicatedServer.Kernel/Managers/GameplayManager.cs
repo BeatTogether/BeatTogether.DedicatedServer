@@ -270,7 +270,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         }
 
         //will set players tasks as done if they leave gameplay due to disconnect or returning to the menu
-        public void HandlePlayerLeaveGameplay(IPlayer player, int Unused = 0)
+        public void HandlePlayerLeaveGameplay(IPlayer player)
         {
             LeaveGameplay(player.UserId);
         }

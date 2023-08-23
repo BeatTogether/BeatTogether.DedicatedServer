@@ -68,14 +68,10 @@ namespace BeatTogether.DedicatedServer.Node
 
             matchmakingServer.PlayerConnectedEvent += HandleUpdatePlayerEvent;
             matchmakingServer.PlayerDisconnectedEvent += HandlePlayerDisconnectEvent;
-            matchmakingServer.PlayerDisconnectBeforeJoining += HandlePlayerCountChange;//Updates master server player count
-            //matchmakingServer.StartEvent += HandleStartEvent;
+            matchmakingServer.PlayerDisconnectBeforeJoining += HandlePlayerLeaveBeforeJoining;
             matchmakingServer.StopEvent += HandleStopEvent;
             matchmakingServer.GameIsInLobby += HandleGameInLobbyEvent;
-            //matchmakingServer.StateChangedEvent += HandleStateChangedEvent; //For master server to check if a game is ongoing or not
-            //matchmakingServer.UpdateBeatmapEvent += HandleBeatmapChangedEvent;
-            //matchmakingServer.UpdateInstanceEvent += HandleConfigChangeEvent;
-            //matchmakingServer.LevelFinishedEvent += HandleLevelFinishedEvent;
+            matchmakingServer.UpdateInstanceEvent += HandleConfigChangeEvent;
 
             await matchmakingServer.Start();
             return new CreateMatchmakingServerResponse(
@@ -89,35 +85,11 @@ namespace BeatTogether.DedicatedServer.Node
 
 
         #region EventHandlers
-        /*
-        private void HandleLevelFinishedEvent(string secret, BeatmapIdentifier beatmap, List<(string, BeatmapDifficulty, LevelCompletionResults)> Results)
-        {
-            Interface.Models.BeatmapIdentifier beatmapIdentifier = new(beatmap.LevelId, beatmap.Characteristic, (Interface.Models.BeatmapDifficulty)beatmap.Difficulty);
-            List<(string, Interface.Models.BeatmapDifficulty, Interface.Models.LevelCompletionResults)> FinalResults = new();
-            foreach (var item in Results)
-            {
-                FinalResults.Add((item.Item1, (Interface.Models.BeatmapDifficulty)item.Item2, LevelCompletionCast(item.Item3)));
-            }
-            _autobus.Publish(new LevelCompletionResultsEvent(secret, beatmapIdentifier, FinalResults));
-        }
-        */
+
         private void HandleGameInLobbyEvent(string secret, bool state)
         {
-            //_autobus.Publish(new UpdateStatusEvent(secret, (Interface.Enums.CountdownState)countdownState, (Interface.Enums.MultiplayerGameState)gameState, (Interface.Enums.GameplayState)GameplayState));
-            _autobus.Publish(new ServerInGameplayEvent(secret, !state));
+            _autobus.Publish(new ServerInGameplayEvent(secret, !state, string.Empty));
         }
-        /*
-        private void HandleStateChangedEvent(string secret, CountdownState countdownState, MultiplayerGameState gameState, GameplayManagerState GameplayState)
-        {
-            //_autobus.Publish(new UpdateStatusEvent(secret, (Interface.Enums.CountdownState)countdownState, (Interface.Enums.MultiplayerGameState)gameState, (Interface.Enums.GameplayState)GameplayState));
-            _autobus.Publish(new ServerInGameplayEvent(secret, gameState == MultiplayerGameState.Game));
-        }
-        
-        private void HandleBeatmapChangedEvent(string secret, BeatmapIdentifier? beatmap, GameplayModifiers modifiers, bool IsGameplay, DateTime StartTime)
-        {
-            _autobus.Publish(new SelectedBeatmapEvent(secret, beatmap is not null ? beatmap.LevelId : string.Empty, beatmap is not null ? beatmap.Characteristic : string.Empty, beatmap is not null ? (uint)beatmap.Difficulty : uint.MinValue, IsGameplay, GameplayCast(modifiers), StartTime));
-        }
-        */
         public static Interface.Models.GameplayModifiers GameplayCast(GameplayModifiers v)
         {
             return new Interface.Models.GameplayModifiers((Interface.Models.EnergyType)v.Energy, v.NoFailOn0Energy, v.DemoNoFail, v.InstaFail, v.FailOnSaberClash, (Interface.Models.EnabledObstacleType)v.EnabledObstacle, v.DemoNoObstacles, v.FastNotes, v.StrictAngles, v.DisappearingArrows, v.GhostNotes, v.NoBombs, (Interface.Models.SongSpeed)v.Speed, v.NoArrows, v.ProMode, v.ZenMode, v.SmallCubes);
@@ -147,11 +119,12 @@ namespace BeatTogether.DedicatedServer.Node
                 v.MouthId);
         }
 
-        /*
+
         private void HandleConfigChangeEvent(IDedicatedInstance inst)
         {
-            _autobus.Publish(new UpdateServerEvent(
+            _autobus.Publish(new UpdateInstanceConfigEvent(
                 inst._configuration.Secret,
+                inst._configuration.ServerName,
                 new Interface.Models.GameplayServerConfiguration(
                     inst._configuration.MaxPlayerCount,
                     (Interface.Enums.DiscoveryPolicy)inst._configuration.DiscoveryPolicy,
@@ -159,47 +132,27 @@ namespace BeatTogether.DedicatedServer.Node
                     (Interface.Enums.GameplayServerMode)inst._configuration.GameplayServerMode,
                     (Interface.Enums.SongSelectionMode)inst._configuration.SongSelectionMode,
                     (Interface.Enums.GameplayServerControlSettings)inst._configuration.GameplayServerControlSettings
-                    ),
-                inst._configuration.Port,
-                inst._configuration.ManagerId,
-                inst._configuration.ServerId,
-                inst._configuration.ServerName,
-                inst._configuration.DestroyInstanceTimeout,
-                inst._configuration.SetConstantManagerFromUserId,
-                inst._configuration.AllowPerPlayerDifficulties,
-                inst._configuration.AllowPerPlayerModifiers,
-                inst._configuration.AllowChroma,
-                inst._configuration.AllowMappingExtensions,
-                inst._configuration.AllowNoodleExtensions,
-                inst._configuration.KickPlayersWithoutEntitlementTimeout,
-                inst._configuration.CountdownConfig.CountdownTimePlayersReady,
-                inst._configuration.CountdownConfig.BeatMapStartCountdownTime,
-                inst._configuration.CountdownConfig.ResultsScreenTime));
+                    )
+                ));
         }
 
-        private void HandleStartEvent(IDedicatedInstance inst)
-        {
-            HandleConfigChangeEvent(inst);
-        }
-        */
         private void HandleStopEvent(IDedicatedInstance inst)
         {
-            _autobus.Publish(new MatchmakingServerStoppedEvent(inst._configuration.Secret));//Tells the master server and api server that the server has stopped
+            _autobus.Publish(new MatchmakingServerStoppedEvent(inst._configuration.Secret));
         }
-        private void HandleUpdatePlayerEvent(IPlayer player, int PlayerCount)
+        private void HandleUpdatePlayerEvent(IPlayer player)
         {
-            _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, string.Empty, string.Empty, PlayerCount));
-            //_autobus.Publish(new PlayerJoinEvent(player.Secret, player.Endpoint.ToString()!, player.UserId, player.UserName, player.ConnectionId, player.SortIndex, AvatarCast(player.Avatar)));
+            _autobus.Publish(new PlayerJoinEvent(player.Secret, ((IPEndPoint)player.Endpoint).ToString(), player.UserId));
         }
-        private void HandlePlayerDisconnectEvent(IPlayer player, int count) //Updates master server player count And removes the players encryption data from the server
+        private void HandlePlayerDisconnectEvent(IPlayer player)
         {
             _packetEncryptionLayer.RemoveEncryptedEndPoint((IPEndPoint)player.Endpoint);
-            _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, player.UserId, ((IPEndPoint)player.Endpoint).ToString(), count));
+            _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, player.UserId, ((IPEndPoint)player.Endpoint).ToString()));
         }
-        private void HandlePlayerCountChange(string Secret, EndPoint endPoint, int count) //Updates master server player count
+        private void HandlePlayerLeaveBeforeJoining(string Secret, EndPoint endPoint, string[] Players)
         {
             _packetEncryptionLayer.RemoveEncryptedEndPoint((IPEndPoint)endPoint);
-            _autobus.Publish(new PlayerLeaveServerEvent(Secret,string.Empty, string.Empty, count));
+            _autobus.Publish(new UpdatePlayersEvent(Secret, Players));
         }
         #endregion
     }

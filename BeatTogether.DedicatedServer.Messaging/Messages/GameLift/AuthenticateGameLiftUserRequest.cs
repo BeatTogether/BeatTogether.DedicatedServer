@@ -1,6 +1,5 @@
 ﻿using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Extensions;
+using BeatTogether.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Messages.GameLift

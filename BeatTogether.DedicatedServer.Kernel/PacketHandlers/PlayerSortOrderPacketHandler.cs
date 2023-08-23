@@ -16,22 +16,23 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             _packetDispatcher = packetDispatcher;
         }
 
-        public override Task Handle(IPlayer sender, PlayerSortOrderPacket packet)
+        public override async Task Handle(IPlayer sender, PlayerSortOrderPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(PlayerSortOrderPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-
-            lock (sender.SortLock)
+            bool Send = false;
+            await sender.PlayerAccessSemaphore.WaitAsync();
+            if (sender.UserId == packet.UserId && sender.SortIndex != packet.SortIndex) //If they send themselves as being in the wrong place, correct them. Although this probably shouldnt have a handler
             {
-                if (sender.UserId == packet.UserId && sender.SortIndex != packet.SortIndex)
-                {
-                    sender.SortIndex = packet.SortIndex;
-                    _packetDispatcher.SendExcludingPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
-                }
+                packet.SortIndex = sender.SortIndex;
+                Send = true;
             }
-            return Task.CompletedTask;
+            sender.PlayerAccessSemaphore.Release();
+            if(Send)
+                _packetDispatcher.SendToPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
+            return;
         }
     }
 }

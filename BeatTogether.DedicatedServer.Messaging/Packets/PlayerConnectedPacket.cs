@@ -1,6 +1,6 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
@@ -11,7 +11,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         public string UserName { get; set; } = null!;
         public bool IsConnectionOwner { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             RemoteConnectionId = reader.ReadUInt8();
             UserId = reader.ReadString();
@@ -19,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
             IsConnectionOwner = reader.ReadBool();
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteUInt8(RemoteConnectionId);
             writer.WriteString(UserId);

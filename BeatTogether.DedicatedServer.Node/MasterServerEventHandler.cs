@@ -70,6 +70,9 @@ namespace BeatTogether.DedicatedServer.Node
             var publicKey = @event.PublicKey;
             var playerSessionId = @event.PlayerSessionId;
             var serverSecret = @event.Secret;
+            var PlayerClientVersion = @event.ClientVersion;
+            var PlayerPlatform = @event.Platform;
+            var PlayerPlatformUserId = @event.PlatformUserId;
 
             // Clients connecting via Graph API will connect directly to us to negotiate encryption parameters
             var hasEncryptionParams = random != null && publicKey != null && random.Length > 0 && publicKey.Length > 0;
@@ -79,10 +82,10 @@ namespace BeatTogether.DedicatedServer.Node
                 _logger.Verbose(
                     "Adding encrypted end point " +
                     $"(RemoteEndPoint='{remoteEndPoint}', " +
-                    $"Random='{BitConverter.ToString(random)}', " +
-                    $"PublicKey='{BitConverter.ToString(publicKey)}')."
+                    $"Random='{BitConverter.ToString(random!)}', " +
+                    $"PublicKey='{BitConverter.ToString(publicKey!)}')."
                 );
-                _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random, publicKey);
+                _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random!, publicKey!);
             }
             else
             {
@@ -91,10 +94,11 @@ namespace BeatTogether.DedicatedServer.Node
                     $"(RemoteEndPoint='{remoteEndPoint}', " +
                     $"PlayerSessionId='{playerSessionId}')."
                 );
-                
-                TryGetDedicatedInstance(serverSecret)?
-                    .GetHandshakeSessionRegistry()
-                    .AddPendingPlayerSessionId(playerSessionId);
+
+                var HandshakeRegistry = TryGetDedicatedInstance(serverSecret)?
+                    .GetHandshakeSessionRegistry();
+                HandshakeRegistry?.AddPendingPlayerSessionId(playerSessionId);
+                HandshakeRegistry?.AddExtraPlayerSessionData(playerSessionId, PlayerClientVersion, PlayerPlatform, PlayerPlatformUserId);
             }
 
             _autobus.Publish(new NodeReceivedPlayerEncryptionEvent(_configuration.HostName, @event.RemoteEndPoint));

@@ -1,7 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
@@ -10,7 +10,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         public string LevelId { get; set; } = null!;
         public EntitlementStatus Entitlement { get; set; }
 
-        public override void ReadFrom(ref SpanBufferReader reader)
+        public override void ReadFrom(ref SpanBuffer reader)
         {
             base.ReadFrom(ref reader);
             if (HasValue0)
@@ -19,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
                 Entitlement = (EntitlementStatus)reader.ReadVarInt();
         }
 
-        public override void WriteTo(ref SpanBufferWriter writer)
+        public override void WriteTo(ref SpanBuffer writer)
         {
             base.WriteTo(ref writer);
             writer.WriteString(LevelId);

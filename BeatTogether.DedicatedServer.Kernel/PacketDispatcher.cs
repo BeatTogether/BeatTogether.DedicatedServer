@@ -5,8 +5,11 @@ using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Dispatchers;
 using BeatTogether.LiteNetLib.Enums;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 using Serilog;
+using System.Net;
+using System.Numerics;
+using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -48,6 +51,9 @@ namespace BeatTogether.DedicatedServer.Kernel
             Send(player.Endpoint, writer.Data, deliveryMethod);
         }
         
+        }
+
+        #region Sends
         public void SendToNearbyPlayers(INetSerializable packet, DeliveryMethod deliveryMethod)
         {
             _logger.Debug(
@@ -55,7 +61,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={ServerId})"
             );
 
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteOne(ref writer, packet);
             _logger.Verbose("Packet: " + packet.GetType().Name + " Was entered into the spanbuffer correctly, now sending once to each player");
@@ -70,7 +76,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={ServerId})"
             );
 
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteMany(ref writer, packets);
             _logger.Verbose("Packets were entered into the spanbuffer correctly, now sending once to each player");
@@ -85,7 +91,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(ExcludedId={excludedPlayer.ConnectionId})"
             );
 
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteOne(ref writer, packet);
 
@@ -100,7 +106,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(ExcludedId={excludedPlayer.ConnectionId})"
             );
 
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteMany(ref writer, packets);
 
@@ -113,15 +119,19 @@ namespace BeatTogether.DedicatedServer.Kernel
 		{
 			_logger.Debug(
 			    $"Sending packet of type '{packet.GetType().Name}' " + 
+        public void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
+		{
+			_logger.Debug(
+			    $"Sending packet of type '{packet.GetType().Name}' " + 
                 $"(SenderId={fromPlayer.ConnectionId})"
             );
 
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteOne(ref writer, packet);
 
             foreach (var player in _playerRegistry.Players)
-                SendInternal(player, ref writer, deliveryMethod);
+                Send(player.Endpoint, writer.Data, deliveryMethod);
 		}
         public void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
@@ -130,12 +140,12 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={fromPlayer.ConnectionId})"
             );
 
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteMany(ref writer, packets);
 
             foreach (var player in _playerRegistry.Players)
-                SendInternal(player, ref writer, deliveryMethod);
+                Send(player.Endpoint, writer.Data, deliveryMethod);
         }
 
         public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -145,12 +155,11 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={LocalConnectionId})."
             );
 
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteOne(ref writer, packet);
-            SendInternal(toPlayer, ref writer, deliveryMethod);
+            Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
         }
-
         public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
             _logger.Debug(
@@ -158,10 +167,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={LocalConnectionId})."
             );
 
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteMany(ref writer, packets);
-            SendInternal(toPlayer, ref writer, deliveryMethod);
+            Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
         }
 
         public void SendToPlayer(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -171,12 +180,11 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={ServerId}, ReceiverId={LocalConnectionId})."
             );
 
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteOne(ref writer, packet);
-            SendInternal(player, ref writer, deliveryMethod);
+            Send(player.Endpoint, writer.Data, deliveryMethod);
         }
-
         public void SendToPlayer(IPlayer player, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
             _logger.Debug(
@@ -184,29 +192,222 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(SenderId={ServerId}, ReceiverId={LocalConnectionId})."
             );
 
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[1024]);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
+            WriteMany(ref writer, packets);
+            Send(player.Endpoint, writer.Data, deliveryMethod);
+        }
+        #endregion
+
+        #region AwaitableSends
+        //Sends with a task that completes when the packet/s have been rec
+        public Task SendToNearbyPlayersAndAwait(INetSerializable packet, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending packet of type '{packet.GetType().Name}' " +
+                $"(SenderId={ServerId})"
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[412]);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
+            WriteOne(ref writer, packet);
+            _logger.Verbose("Packet: " + packet.GetType().Name + " Was entered into the spanbuffer correctly, now sending once to each player");
+            var players = _playerRegistry.Players;
+            Task[] tasks = new Task[players.Length];
+            for (int i = 0; i < players.Length; i++)
+                tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+            return Task.WhenAll(tasks);
+        }
+        public Task SendToNearbyPlayersAndAwait(INetSerializable[] packets, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending MultiPacket " +
+                $"(SenderId={ServerId})"
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[1024]);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
+            WriteMany(ref writer, packets);
+            _logger.Verbose("Packets were entered into the spanbuffer correctly, now sending once to each player");
+            var players = _playerRegistry.Players;
+            Task[] tasks = new Task[players.Length];
+            for (int i = 0; i < players.Length; i++)
+                tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+            return Task.WhenAll(tasks);
+        }
+
+        public Task SendExcludingPlayerAndAwait(IPlayer excludedPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending packet of type '{packet.GetType().Name}' " +
+                $"(ExcludedId={excludedPlayer.ConnectionId})"
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[412]);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
+            WriteOne(ref writer, packet);
+
+            var players = _playerRegistry.Players;
+            Task[] tasks = new Task[players.Length - 1];
+            int i = 0;
+            foreach (var player in players)
+                if (player.ConnectionId != excludedPlayer.ConnectionId)
+                {
+                    tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
+                    i++;
+                }
+            return Task.WhenAll(tasks);
+        }
+        public Task SendExcludingPlayerAndAwait(IPlayer excludedPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending MultiPacket " +
+                $"(ExcludedId={excludedPlayer.ConnectionId})"
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[1024]);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
+            WriteMany(ref writer, packets);
+            var players = _playerRegistry.Players;
+            Task[] tasks = new Task[players.Length-1];
+            int i = 0;
+            foreach (var player in players)
+                if (player.ConnectionId != excludedPlayer.ConnectionId)
+                {
+                    tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
+                    i++;
+                }
+            return Task.WhenAll(tasks);
+
+
+        }
+
+        public Task SendFromPlayerAndAwait(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending packet of type '{packet.GetType().Name}' " +
+                $"(SenderId={fromPlayer.ConnectionId})"
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[412]);
+            writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            WriteOne(ref writer, packet);
+
+            foreach (var player in _playerRegistry.Players)
+                SendInternal(player, ref writer, deliveryMethod);
+		}
+        public void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
+            var players = _playerRegistry.Players;
+            Task[] tasks = new Task[players.Length];
+            for (int i = 0; i < players.Length; i++)
+                tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+            return Task.WhenAll(tasks);
+        }
+        public Task SendFromPlayerAndAwait(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending MultiPacket " +
+                $"(SenderId={fromPlayer.ConnectionId})"
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[1024]);
+            writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            WriteMany(ref writer, packets);
+
+            foreach (var player in _playerRegistry.Players)
+                SendInternal(player, ref writer, deliveryMethod);
+            var players = _playerRegistry.Players;
+            Task[] tasks = new Task[players.Length];
+            for (int i = 0; i < players.Length; i++)
+                tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+            return Task.WhenAll(tasks);
+        }
+
+        public Task SendFromPlayerToPlayerAndAwait(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending packet of type '{packet.GetType().Name}' " +
+                $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={LocalConnectionId})."
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[412]);
+            writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            WriteOne(ref writer, packet);
+            SendInternal(toPlayer, ref writer, deliveryMethod);
+            return Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
+        }
+        public Task SendFromPlayerToPlayerAndAwait(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending MultiPacket" +
+                $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={LocalConnectionId})."
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[1024]);
+            writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            WriteMany(ref writer, packets);
+            SendInternal(toPlayer, ref writer, deliveryMethod);
+            return Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
+        }
+
+        public Task SendToPlayerAndAwait(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending packet of type '{packet.GetType().Name}' " +
+                $"(SenderId={ServerId}, ReceiverId={LocalConnectionId})."
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[412]);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
+            WriteOne(ref writer, packet);
+            SendInternal(player, ref writer, deliveryMethod);
+            return Send(player.Endpoint, writer.Data, deliveryMethod);
+        }
+        public Task SendToPlayerAndAwait(IPlayer player, INetSerializable[] packets, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending MultiPacket " +
+                $"(SenderId={ServerId}, ReceiverId={LocalConnectionId})."
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteMany(ref writer, packets);
             SendInternal(player, ref writer, deliveryMethod);
+            return Send(player.Endpoint, writer.Data, deliveryMethod);
         }
+        #endregion
 
-        public void WriteOne(ref SpanBufferWriter writer, INetSerializable packet)
+        #region Writers
+        public void WriteOne(ref SpanBuffer writer, INetSerializable packet)
         {
             var type = packet.GetType();
-            if (!_packetRegistry.TryGetPacketIds(type, out var packetIds))
-                throw new Exception($"Failed to retrieve identifier for packet of type '{type.Name}'");
-            var packetWriter = new SpanBufferWriter(stackalloc byte[412]);
-            foreach (byte packetId in packetIds)
-                packetWriter.WriteUInt8(packetId);
+            var packetWriter = new SpanBuffer(stackalloc byte[412]);
+
+            if (_packetRegistry.TryGetPacketIds(type, out var packetIds))
+            {
+                foreach (byte packetId in packetIds)
+                    packetWriter.WriteUInt8(packetId);
+            }
+            else
+            {
+
+                packetWriter.WriteUInt8(7);
+                packetWriter.WriteUInt8(100);
+                packetWriter.WriteString(type.Name);
+                //Presume it is a mpcore packet and use the mpcore packet ID, would thow an exeption here if not
+                //throw new Exception($"Failed to retrieve identifier for packet of type '{type.Name}'");
+            }
             packet.WriteTo(ref packetWriter);
             writer.WriteVarUInt((uint)packetWriter.Size);
             writer.WriteBytes(packetWriter.Data.ToArray());
         }
-
-        public void WriteMany(ref SpanBufferWriter writer, INetSerializable[] packets)
+        public void WriteMany(ref SpanBuffer writer, INetSerializable[] packets)
         {
             for (int i = 0; i < packets.Length; i++)
                 WriteOne(ref writer, packets[i]);
         }
+
+        #endregion
     }
 }

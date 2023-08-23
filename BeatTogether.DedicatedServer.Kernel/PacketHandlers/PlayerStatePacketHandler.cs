@@ -9,18 +9,20 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
     {
         private readonly ILogger _logger = Log.ForContext<PlayerStatePacketHandler>();
 
-        public override Task Handle(IPlayer sender, PlayerStatePacket packet)
+        public override async Task Handle(IPlayer sender, PlayerStatePacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(PlayerStatePacket)}' " +
-                $"(SenderId={sender.ConnectionId}, IsPlayer={packet.PlayerState.Contains("player")}, IsModded={packet.PlayerState.Contains("modded")}, " + 
-                $"IsActive={packet.PlayerState.Contains("is_active")}, WantsToPlayNextLevel={packet.PlayerState.Contains("wants_to_play_next_level")})."
+                $"(SenderId={sender.ConnectionId}, IsPlayer={packet.PlayerState.Contains("player")}" + 
+                $"IsActive={packet.PlayerState.Contains("is_active")}, WantsToPlayNextLevel={packet.PlayerState.Contains("wants_to_play_next_level")}" +
+                $"IsSpectating={packet.PlayerState.Contains("spectating")}, InMenu={packet.PlayerState.Contains("in_menu")}" +
+                $"backgrounded={packet.PlayerState.Contains("backgrounded")}, in_gameplay={packet.PlayerState.Contains("in_gameplay")}" +
+                $"was_active_at_level_start={packet.PlayerState.Contains("was_active_at_level_start")}, finished_level={packet.PlayerState.Contains("finished_level")})."
             );
-            lock (sender.StateLock)
-            {
-                sender.State = packet.PlayerState;
-            }
-            return Task.CompletedTask;
+            await sender.PlayerAccessSemaphore.WaitAsync();
+            sender.State = packet.PlayerState;
+            sender.PlayerAccessSemaphore.Release();
+            return;
         }
     }
 }

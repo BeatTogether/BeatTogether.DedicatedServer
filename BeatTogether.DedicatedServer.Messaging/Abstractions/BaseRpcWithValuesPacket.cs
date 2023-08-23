@@ -1,4 +1,4 @@
-﻿using Krypton.Buffers;
+﻿using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Abstractions
 {
@@ -30,13 +30,24 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
             set => HasValues |= (byte) (value ? 8 : 0);
         }
 
-        public override void ReadFrom(ref SpanBufferReader reader)
+        public override void ReadFrom(ref SpanBuffer reader)
         {
             base.ReadFrom(ref reader);
             HasValues = reader.ReadUInt8();
         }
 
-        public override void WriteTo(ref SpanBufferWriter writer)
+        public override void WriteTo(ref SpanBuffer writer)
+        {
+            base.WriteTo(ref writer);
+            writer.WriteUInt8(HasValues);
+        }
+        public override void ReadFrom(ref MemoryBuffer reader)
+        {
+            base.ReadFrom(ref reader);
+            HasValues = reader.ReadUInt8();
+        }
+
+        public override void WriteTo(ref MemoryBuffer writer)
         {
             base.WriteTo(ref writer);
             writer.WriteUInt8(HasValues);

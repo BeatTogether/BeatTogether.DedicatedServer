@@ -20,21 +20,21 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             _instance = instance;
         }
 
-        public override Task Handle(IPlayer sender, PlayerIdentityPacket packet)
+        public override async Task Handle(IPlayer sender, PlayerIdentityPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(PlayerIdentityPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            lock (sender.PlayerIdentityLock)
-            {
-                sender.Avatar = packet.PlayerAvatar;
-                sender.State = packet.PlayerState;
-                sender.Random = packet.Random.Data ?? Array.Empty<byte>();
-                sender.PublicEncryptionKey = packet.PublicEncryptionKey.Data ?? Array.Empty<byte>();
-                _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
-            }
-            return Task.CompletedTask;
+            await sender.PlayerAccessSemaphore.WaitAsync();
+            sender.Avatar = packet.PlayerAvatar;
+            sender.State = packet.PlayerState;
+            sender.Random = packet.Random.Data ?? Array.Empty<byte>();
+            sender.PublicEncryptionKey = packet.PublicEncryptionKey.Data ?? Array.Empty<byte>();
+            if (!sender.PlayerInitialised.Task.IsCompleted)
+                sender.PlayerInitialised.SetResult();
+            sender.PlayerAccessSemaphore.Release();
+            _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
         }
     }
 }

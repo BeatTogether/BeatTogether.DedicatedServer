@@ -1,7 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
 {
@@ -11,7 +11,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
         public int TimeOffsetMs { get; set; }
         public StandardScoreSyncState Delta { get; set; } = new();
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             SyncStateId = reader.ReadUInt8();
             TimeOffsetMs = reader.ReadVarInt();
@@ -19,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
                 Delta.ReadFrom(ref reader);
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteUInt8(SyncStateId);
             writer.WriteVarInt(TimeOffsetMs);

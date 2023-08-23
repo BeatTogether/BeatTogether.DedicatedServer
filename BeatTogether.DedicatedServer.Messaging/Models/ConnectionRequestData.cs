@@ -1,7 +1,8 @@
 ﻿using System;
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
+using BinaryRecords.Exceptions;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -20,7 +21,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         // GameLiftClientConnectionRequestHandler
         public string? PlayerSessionId { get; set; } = null!;
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             Secret = null;
             PlayerSessionId = null;
@@ -35,15 +36,15 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
                 IsConnectionOwner = reader.ReadBool();
                 PlayerSessionId = reader.ReadString();
             }
-            catch (Exception ex) { }
+            catch (EndOfBufferException) { }
 
             if (PlayerSessionId != null && PlayerSessionId.StartsWith(SessionIdPrefix))
                 // Read OK, valid session identifier
                 return;
 
             // Rewind, try to read as basic request
-            reader.SkipBytes(initialOffset - reader.Offset);
-            
+            //reader.SkipBytes(initialOffset - reader.Offset);
+            reader.SetOffset(initialOffset);
             Secret = reader.ReadString();
             UserId = reader.ReadString();
             UserName = reader.ReadString();
@@ -51,7 +52,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             PlayerSessionId = null;
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             if (!string.IsNullOrEmpty(PlayerSessionId))
             {

@@ -1,12 +1,16 @@
 ﻿using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Handshake;
 using BeatTogether.DedicatedServer.Kernel.Managers;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MPChat;
+using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.DedicatedServer.Messaging.Registries.Unconnected;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
+using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Dispatchers;
 using BeatTogether.LiteNetLib.Extensions;
@@ -45,10 +49,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Extensions
                         .AddScoped<ILobbyManager, LobbyManager>()
                         .AddScoped<IGameplayManager, GameplayManager>()
                         .AddCoreMessaging()
+                        .AddSingleton<ITextCommandRepository, TextCommandRepository>()
                         .AddSingleton<IMessageRegistry, HandshakeMessageRegistry>()
                         .AddSingleton<IMessageRegistry, GameLiftMessageRegistry>()
                         .AddAllHandshakeMessageHandlersFromAssembly(typeof(UnconnectedSource).Assembly)
                         .AddAllPacketHandlersFromAssembly(typeof(PacketSource).Assembly)
+                        .AddAllCommandHandlersFromAssembly(typeof(MpcTextChatPacketHandler).Assembly)
                 );
     }
 }

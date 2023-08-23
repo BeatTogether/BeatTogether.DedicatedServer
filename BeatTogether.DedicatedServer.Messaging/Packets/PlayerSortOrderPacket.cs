@@ -1,6 +1,6 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
@@ -9,13 +9,13 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         public string UserId { get; set; } = null!;
         public int SortIndex { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             UserId = reader.ReadString();
             SortIndex = reader.ReadVarInt();
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteString(UserId);
             writer.WriteVarInt(SortIndex);

@@ -22,21 +22,22 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _packetDispatcher = packetDispatcher;
         }
 
-        public override Task Handle(IPlayer sender, RequestKickPlayerPacket packet)
+        public override async Task Handle(IPlayer sender, RequestKickPlayerPacket packet)
         {
-            _logger.Information(
+            _logger.Debug(
                 $"Handling packet of type '{nameof(RequestKickPlayerPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, KickedPlayerId={packet.KickedPlayerId})."
             );
-
-            if (sender.CanKickVote)
+            await sender.PlayerAccessSemaphore.WaitAsync();
+            bool CanKick = sender.CanKickVote;
+            sender.PlayerAccessSemaphore.Release();
+            if (CanKick)
                 if (_playerRegistry.TryGetPlayer(packet.KickedPlayerId, out var kickedPlayer))
                     _packetDispatcher.SendToPlayer(kickedPlayer, new KickPlayerPacket
                     {
                         DisconnectedReason = DisconnectedReason.Kicked
                     }, DeliveryMethod.ReliableOrdered);
 
-            return Task.CompletedTask;
         }
     }
 }

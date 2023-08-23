@@ -1,6 +1,6 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets
@@ -20,13 +20,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCo
 
         public Dictionary<uint, string[]> requirements = new();
 
-        public void WriteTo(ref SpanBufferWriter bufferWriter)
+        public void WriteTo(ref SpanBuffer bufferWriter)
         {
             throw new System.NotImplementedException();
         }
-
-
-        public void ReadFrom(ref SpanBufferReader bufferReader)
+        public void ReadFrom(ref SpanBuffer bufferReader)
         {
             levelHash = bufferReader.ReadString();
             songName = bufferReader.ReadString();
@@ -65,6 +63,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCo
                 bufferReader.ReadColor();
             }
         }
-
     }
 }

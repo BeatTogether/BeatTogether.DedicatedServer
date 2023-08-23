@@ -1,5 +1,5 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
@@ -7,14 +7,14 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 	{
 		public float CountdownTime { get; set; }
 
-		public override void ReadFrom(ref SpanBufferReader reader)
+		public override void ReadFrom(ref SpanBuffer reader)
         {
 			base.ReadFrom(ref reader);
 			if (HasValue0)
 				CountdownTime = reader.ReadFloat32();
 		}
 
-		public override void WriteTo(ref SpanBufferWriter writer)
+		public override void WriteTo(ref SpanBuffer writer)
         {
 			base.WriteTo(ref writer);
 			writer.WriteFloat32(CountdownTime);

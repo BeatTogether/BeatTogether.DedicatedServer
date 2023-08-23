@@ -1,6 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
@@ -10,7 +10,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         public GameplayModifiers Modifiers { get; set; } = new();
         public float StartTime { get; set; }
 
-        public override void ReadFrom(ref SpanBufferReader reader)
+        public override void ReadFrom(ref SpanBuffer reader)
         {
             base.ReadFrom(ref reader);
             if (HasValue0)
@@ -21,7 +21,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
                 StartTime = reader.ReadFloat32();
         }
 
-        public override void WriteTo(ref SpanBufferWriter writer)
+        public override void WriteTo(ref SpanBuffer writer)
         {
             base.WriteTo(ref writer);
             Beatmap.WriteTo(ref writer);

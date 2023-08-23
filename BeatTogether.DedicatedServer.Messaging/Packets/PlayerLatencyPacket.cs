@@ -1,5 +1,5 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
@@ -7,12 +7,12 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
     {
         public float Latency { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             Latency = reader.ReadFloat32();
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteFloat32(Latency);
         }

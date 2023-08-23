@@ -1,7 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -23,7 +23,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public float TimeToNextNote { get; set; }
         public Vector3 MoveVec { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             CutWasOk = reader.ReadUInt8();
             SaberSpeed = reader.ReadFloat32();
@@ -42,7 +42,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             MoveVec.ReadFrom(ref reader);
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteUInt8(CutWasOk);
             writer.WriteFloat32(SaberSpeed);

@@ -17,22 +17,21 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             _packetDispatcher = packetDispatcher;
         }
 
-        public override Task Handle(IPlayer sender, PlayerLatencyPacket packet)
+        public override async Task Handle(IPlayer sender, PlayerLatencyPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(SyncTimePacket)}' " +
                 $"(SenderId={sender.ConnectionId}, SyncTime={packet.Latency})."
             );
 
-            lock (sender.LatencyLock)
+            await sender.PlayerAccessSemaphore.WaitAsync();
+            sender.Latency.Update(packet.Latency);
+            sender.PlayerAccessSemaphore.Release();
+            _packetDispatcher.SendFromPlayer(sender, new PlayerLatencyPacket
             {
-                sender.Latency.Update(packet.Latency);
-                _packetDispatcher.SendFromPlayer(sender, new PlayerLatencyPacket
-                {
-                    Latency = sender.Latency.CurrentAverage
-                }, DeliveryMethod.ReliableOrdered);
-            }
-            return Task.CompletedTask;
+                Latency = sender.Latency.CurrentAverage
+            }, DeliveryMethod.ReliableOrdered);
+            return;
         }
     }
 }

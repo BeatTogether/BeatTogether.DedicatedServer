@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
@@ -8,50 +8,99 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class PlayerRegistry : IPlayerRegistry
     {
-        public IPlayer[] Players { get => _playersByUserId.Values.ToArray(); }
+        
+        public IPlayer[] Players { get => GetPlayers(); }
 
-        private readonly ConcurrentDictionary<EndPoint, IPlayer> _playersByRemoteEndPoint = new();
-        private readonly ConcurrentDictionary<byte, IPlayer> _playersByConnectionId = new();
-        private readonly ConcurrentDictionary<string, IPlayer> _playersByUserId = new();
+        private object PlayerDictionaries_Lock = new();
+        private readonly Dictionary<EndPoint, IPlayer> _playersByRemoteEndPoint = new();
+        private readonly Dictionary<byte, IPlayer> _playersByConnectionId = new();
+        private readonly Dictionary<string, IPlayer> _playersByUserId = new();
+
+        private int _PlayerCount = 0;
 
         public int GetPlayerCount()
         {
-            return _playersByUserId.Count;
+            lock(PlayerDictionaries_Lock)
+            {
+                return _PlayerCount;
+            }
         }
+
+        private IPlayer[] GetPlayers()
+        {
+            lock (PlayerDictionaries_Lock)
+            {
+                return _playersByUserId.Values.ToArray();
+            }
+        }
+
+
         public bool AddPlayer(IPlayer player)
         {
-            if(_playersByUserId.TryAdd(player.UserId, player))
+            lock (PlayerDictionaries_Lock)
             {
-                _playersByRemoteEndPoint.TryAdd(player.Endpoint, player);
-                _playersByConnectionId.TryAdd(player.ConnectionId, player);
-                return true;
+                if (_playersByUserId.TryAdd(player.UserId, player))
+                {
+                    _playersByRemoteEndPoint.TryAdd(player.Endpoint, player);
+                    _playersByConnectionId.TryAdd(player.ConnectionId, player);
+                    _PlayerCount++;
+                    lock (MillisBetweenSyncStatePackets_Lock)
+                    {
+                        MillisBetweenSyncStatePackets = (int)(0.84 * _PlayerCount + 15.789);
+                    }
+                    return true;
+                }
             }
             return false;
         }
 
         public void RemovePlayer(IPlayer player)
         {
-            _playersByRemoteEndPoint.TryRemove(player.Endpoint, out _);
-            _playersByUserId.TryRemove(player.UserId, out _);
-            _playersByConnectionId.TryRemove(player.ConnectionId, out _);
+            lock (PlayerDictionaries_Lock)
+            {
+                if (_playersByUserId.Remove(player.UserId, out _))
+                {
+                    _playersByRemoteEndPoint.Remove(player.Endpoint, out _);
+                    _playersByConnectionId.Remove(player.ConnectionId, out _);
+                    _PlayerCount--;
+                    lock (MillisBetweenSyncStatePackets_Lock)
+                    {
+                        MillisBetweenSyncStatePackets = (int)(0.84 * _PlayerCount + 15.789);
+                    }
+                }
+            }
         }
 
-        public IPlayer GetPlayer(EndPoint remoteEndPoint) =>
-            _playersByRemoteEndPoint[remoteEndPoint];
+        public bool TryGetPlayer(EndPoint remoteEndPoint, [MaybeNullWhen(false)] out IPlayer player)
+        {
+            lock (PlayerDictionaries_Lock)
+            {
+                return _playersByRemoteEndPoint.TryGetValue(remoteEndPoint, out player);
+            }
+        }
+        public bool TryGetPlayer(byte connectionId, [MaybeNullWhen(false)] out IPlayer player)
+        {
+            lock (PlayerDictionaries_Lock)
+            {
+                return _playersByConnectionId.TryGetValue(connectionId, out player);
+            }
+        }
+        public bool TryGetPlayer(string userId, [MaybeNullWhen(false)] out IPlayer player)
+        {
+            lock (PlayerDictionaries_Lock)
+            {
+                return _playersByUserId.TryGetValue(userId, out player);
+            }
+        }
 
-        public IPlayer GetPlayer(byte connectionId) =>
-            _playersByConnectionId[connectionId];
-
-        public IPlayer GetPlayer(string userId) =>
-            _playersByUserId[userId];
-
-        public bool TryGetPlayer(EndPoint remoteEndPoint, [MaybeNullWhen(false)] out IPlayer player) =>
-            _playersByRemoteEndPoint.TryGetValue(remoteEndPoint, out player);
-
-        public bool TryGetPlayer(byte connectionId, [MaybeNullWhen(false)] out IPlayer player) =>
-            _playersByConnectionId.TryGetValue(connectionId, out player);
-
-        public bool TryGetPlayer(string userId, [MaybeNullWhen(false)] out IPlayer player) =>
-            _playersByUserId.TryGetValue(userId, out player);
+        private readonly object MillisBetweenSyncStatePackets_Lock = new();
+        private int MillisBetweenSyncStatePackets = 0;
+        public int GetMillisBetweenSyncStatePackets()
+        {
+            lock (MillisBetweenSyncStatePackets_Lock)
+            {
+                return MillisBetweenSyncStatePackets;
+            }
+        }
     }
 }

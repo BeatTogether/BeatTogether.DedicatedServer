@@ -1,7 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -32,7 +32,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public int MaxCombo { get; set; }
         public float EndSongTime { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             GameplayModifiers.ReadFrom(ref reader);
             ModifiedScore = reader.ReadVarInt();
@@ -60,7 +60,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             EndSongTime = reader.ReadFloat32();
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             GameplayModifiers.WriteTo(ref writer);
             writer.WriteVarInt(ModifiedScore);

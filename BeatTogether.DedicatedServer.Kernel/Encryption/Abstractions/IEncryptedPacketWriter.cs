@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Security.Cryptography;
-using BinaryRecords;
 using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions

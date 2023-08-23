@@ -1,5 +1,6 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
+using BeatTogether.LiteNetLib.Util;
 using Krypton.Buffers;
 using System.Drawing;
 
@@ -24,7 +25,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public string EyesId { get; set; } = "Eyes1";
         public string MouthId { get; set; } = "Mouth8";
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             HeadTopId = reader.ReadString();
             HeadTopPrimaryColor = reader.ReadColor();
@@ -45,7 +46,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             SkinColorId = GlassesId;  // Don't ask
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteString(HeadTopId);
             writer.WriteColor(HeadTopPrimaryColor);

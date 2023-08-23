@@ -2,6 +2,8 @@
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
@@ -9,6 +11,7 @@ using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Enums;
 using BeatTogether.LiteNetLib.Sources;
+using BeatTogether.LiteNetLib.Util;
 using Krypton.Buffers;
 using Serilog;
 
@@ -45,7 +48,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _configuration = instconfiguration;
         }
 
-        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBufferReader reader, DeliveryMethod method)
+        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, DeliveryMethod method)
         {
             if (!reader.TryReadRoutingHeader(out var routingHeader))
             {
@@ -64,23 +67,21 @@ namespace BeatTogether.DedicatedServer.Kernel
                 );
                 return;
             }
+            SpanBuffer HandleRead = new(reader.RemainingData.ToArray());
 
-            //Is this packet meant to be routed?
-            if (routingHeader.ReceiverId != 0)
-                RoutePacket(sender, routingHeader, ref reader, method);
 
-            while (reader.RemainingSize > 0)
+            while (HandleRead.RemainingSize > 0)
             {
                 uint length;
-                try { length = reader.ReadVarUInt(); }
-                catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
-                if (reader.RemainingSize < length)
+                try { length = HandleRead.ReadVarUInt(); }
+                catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
+                if (HandleRead.RemainingSize < length)
                 {
-                    _logger.Warning($"Packet fragmented (RemainingSize={reader.RemainingSize}, Expected={length}).");
-                    return;
+                    _logger.Warning($"Packet fragmented (RemainingSize={HandleRead.RemainingSize}, Expected={length}).");
+                    goto RoutePacket;
                 }
 
-                int prevPosition = reader.Offset;
+                int prevPosition = HandleRead.Offset;
                 INetSerializable? packet;
                 IPacketRegistry packetRegistry = _packetRegistry;
                 while (true)
@@ -89,8 +90,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     {
                         byte packetId;
                         try
-                        { packetId = reader.ReadByte(); }
-                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                        { packetId = HandleRead.ReadByte(); }
+                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                         if (packetRegistry.TryCreatePacket(packetId, out packet))
                             break;
                         if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
@@ -103,23 +104,45 @@ namespace BeatTogether.DedicatedServer.Kernel
                     {
                         string MPCpacketId;
                         try
-                        { MPCpacketId = reader.ReadString(); }
-                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                        { MPCpacketId = HandleRead.ReadString(); }
+                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                         if (MPCoreRegistry.TryCreatePacket(MPCpacketId, out packet))
                             break;
                     }
                     break;
                 }
-
                 if (packet == null)
                 {
                     // skip any unprocessed bytes
-                    var processedBytes = reader.Offset - prevPosition;
-                    try { reader.SkipBytes((int)length - processedBytes); }
-                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                    var processedBytes = HandleRead.Offset - prevPosition;
+                    try { HandleRead.SkipBytes((int)length - processedBytes); }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                     continue;
                 }
-
+                if(packet is NoteSpawnPacket || packet is ObstacleSpawnPacket || packet is SliderSpawnPacket) //Note packet logic
+                {
+                    if (_configuration.DisableNotes || (_playerRegistry.GetPlayerCount() > 16) && !_configuration.ForceEnableNotes)
+                        return;
+                    method = DeliveryMethod.Unreliable;
+                    break;
+                }
+                if (packet is NodePoseSyncStatePacket)
+                {
+                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
+                    {
+                        return;
+                    }
+                    method = DeliveryMethod.Unreliable;
+                    sender.TicksAtLastSyncState = DateTime.UtcNow.Ticks;
+                }
+                if (packet is NodePoseSyncStateDeltaPacket)
+                {
+                    if((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
+                    {
+                        return;
+                    }
+                    sender.TicksAtLastSyncStateDelta = DateTime.UtcNow.Ticks;
+                }
                 var packetType = packet.GetType();
                 var packetHandlerType = typeof(Abstractions.IPacketHandler<>)
                     .MakeGenericType(packetType);
@@ -129,36 +152,41 @@ namespace BeatTogether.DedicatedServer.Kernel
                     _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
 
                     // skip any unprocessed bytes
-                    var processedBytes = reader.Offset - prevPosition;
-                    try { reader.SkipBytes((int)length - processedBytes); }
-                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); return; }
+                    var processedBytes = HandleRead.Offset - prevPosition;
+                    try { HandleRead.SkipBytes((int)length - processedBytes); }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                     continue;
                 }
 
                 try
                 {
-                    packet.ReadFrom(ref reader);
+                    packet.ReadFrom(ref HandleRead);
                 }
                 catch
                 {
                     // skip any unprocessed bytes
-                    var processedBytes = reader.Offset - prevPosition;
-                    reader.SkipBytes((int)length - processedBytes);
+                    var processedBytes = HandleRead.Offset - prevPosition;
+                    try { HandleRead.SkipBytes((int)length - processedBytes); }
+                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                     continue;
                 }
 
                 ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
             }
+            RoutePacket:
+            //Is this packet meant to be routed?
+            if (routingHeader.ReceiverId != 0)
+                RoutePacket(sender, routingHeader, ref reader, method);
         }
         
         #region Private Methods
 
         private void RoutePacket(IPlayer sender,
             (byte SenderId, byte ReceiverId) routingHeader,
-            ref SpanBufferReader reader, DeliveryMethod deliveryMethod)
+            ref SpanBuffer reader, DeliveryMethod deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
-            var writer = new SpanBufferWriter(stackalloc byte[412]);
+            var writer = new SpanBuffer(stackalloc byte[412]);
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
                 writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
@@ -170,7 +198,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 );
                 foreach (var player in _playerRegistry.Players)
                     if (player != sender)
-                        _packetDispatcher.Send(player.Endpoint, writer, deliveryMethod);
+                        _packetDispatcher.Send(player.Endpoint, writer.Data, deliveryMethod);
             }
             else
             {
@@ -189,7 +217,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
-                _packetDispatcher.Send(receiver.Endpoint, writer, deliveryMethod);
+                _packetDispatcher.Send(receiver.Endpoint, writer.Data, deliveryMethod);
             }
         }
 

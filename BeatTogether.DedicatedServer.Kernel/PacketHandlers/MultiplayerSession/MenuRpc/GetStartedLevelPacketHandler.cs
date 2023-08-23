@@ -54,10 +54,11 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             {
                 if (_lobbyManager.SelectedBeatmap != null)
                 {
-                    _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
-                    {
-                        LevelId = _lobbyManager.SelectedBeatmap.LevelId
-                    }, DeliveryMethod.ReliableOrdered);
+                    if(sender.GetEntitlement(_lobbyManager.SelectedBeatmap.LevelId) != EntitlementStatus.Ok)
+                        _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
+                        {
+                            LevelId = _lobbyManager.SelectedBeatmap.LevelId
+                        }, DeliveryMethod.ReliableOrdered);
 
                     if(_lobbyManager.CountDownState == CountdownState.WaitingForEntitlement || _lobbyManager.CountDownState == CountdownState.StartBeatmapCountdown)
                     {

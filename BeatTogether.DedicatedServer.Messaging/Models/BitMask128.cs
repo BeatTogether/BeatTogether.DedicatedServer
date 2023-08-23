@@ -1,5 +1,5 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
-using Krypton.Buffers;
+using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -31,13 +31,13 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 			return (ShiftRight(Top, num2) | ShiftRight(Bottom, offset)) & num;
 		}
 
-		public void ReadFrom(ref SpanBufferReader reader)
+		public void ReadFrom(ref SpanBuffer reader)
         {
             Top = reader.ReadUInt64();
             Bottom = reader.ReadUInt64();
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteUInt64(Top);
             writer.WriteUInt64(Bottom);

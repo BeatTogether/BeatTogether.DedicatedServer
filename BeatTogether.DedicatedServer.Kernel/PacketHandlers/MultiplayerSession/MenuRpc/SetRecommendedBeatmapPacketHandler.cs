@@ -24,28 +24,32 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _playerRegistry = playerRegistry;
         }
 
-        public override Task Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)
+        public override async Task Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)
 		{
 			_logger.Debug(
 				$"Handling packet of type '{nameof(SetRecommendedBeatmapPacket)}' " +
 				$"(SenderId={sender.ConnectionId}, LevelId={packet.BeatmapIdentifier.LevelId}, Difficulty={packet.BeatmapIdentifier.Difficulty})."
 			);
 
-            lock (sender.BeatmapLock)
-            {
-				if (sender.CanRecommendBeatmaps)
-				{
-					sender.BeatmapIdentifier = packet.BeatmapIdentifier;
-					if (sender.BeatmapIdentifier.LevelId != sender.MapHash)
-						sender.ResetRecommendedMapRequirements();
-					_packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
-					{
-						LevelId = packet.BeatmapIdentifier.LevelId
-					}, DeliveryMethod.ReliableOrdered);
-					sender.UpdateEntitlement = true;
-				}
+			bool GetEntitlementFromOtherPlayers = false;
+            await sender.PlayerAccessSemaphore.WaitAsync();
+            if (sender.CanRecommendBeatmaps)
+			{
+				sender.BeatmapIdentifier = packet.BeatmapIdentifier;
+				if (sender.BeatmapIdentifier.LevelId != sender.MapHash)
+					sender.ResetRecommendedMapRequirements();
+				GetEntitlementFromOtherPlayers = true;
+                sender.UpdateEntitlement = true;
 			}
-			return Task.CompletedTask;
+			sender.PlayerAccessSemaphore.Release();
+			if (GetEntitlementFromOtherPlayers)
+			{
+                _packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
+                {
+                    LevelId = packet.BeatmapIdentifier.LevelId
+                }, DeliveryMethod.ReliableOrdered);
+            }
+			return;
 		}
 	}
 }
