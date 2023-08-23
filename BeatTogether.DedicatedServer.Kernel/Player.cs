@@ -14,7 +14,6 @@ namespace BeatTogether.DedicatedServer.Kernel
     public sealed class Player : IPlayer
     {
         public SemaphoreSlim PlayerAccessSemaphore { get; set; } = new(1);
-        public TaskCompletionSource PlayerInitialised { get; set; } = new();
         public EndPoint Endpoint { get; }
         public IDedicatedInstance Instance { get; }
         public byte ConnectionId { get; }
@@ -62,7 +61,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool InMenu => State.Contains("in_menu"); //Should be true while in lobby
 
         private const float _syncTimeOffset = 0.06f;
-        private ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();
+        private readonly ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();
 
         public Player(EndPoint endPoint, IDedicatedInstance instance,
             byte connectionId, string secret, string userId, string userName, string? playerSessionId, AccessLevel accessLevel = AccessLevel.Player)

@@ -2,7 +2,6 @@
 using BeatTogether.DedicatedServer.Kernel.Commands;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers;
-using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using Serilog;
 using System;
 using System.Collections.Concurrent;

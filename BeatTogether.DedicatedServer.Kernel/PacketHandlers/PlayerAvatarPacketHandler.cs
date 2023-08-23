@@ -26,8 +26,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             );
             await sender.PlayerAccessSemaphore.WaitAsync();
             sender.Avatar = packet.PlayerAvatar;
-            if (!sender.PlayerInitialised.Task.IsCompleted)
-                sender.PlayerInitialised.SetResult();
             sender.PlayerAccessSemaphore.Release();
         }
     }

@@ -38,7 +38,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _dedicatedInstance = dedicatedInstance;
         }
 
-        private void SendInternal(IPlayer player, ref SpanBufferWriter writer, DeliveryMethod deliveryMethod)
+        private void SendInternal(IPlayer player, ref SpanBuffer writer, DeliveryMethod deliveryMethod)
         {
             if (player.IsENetConnection)
             {
@@ -51,8 +51,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             Send(player.Endpoint, writer.Data, deliveryMethod);
         }
         
-        }
-
         #region Sends
         public void SendToNearbyPlayers(INetSerializable packet, DeliveryMethod deliveryMethod)
         {
@@ -119,10 +117,6 @@ namespace BeatTogether.DedicatedServer.Kernel
 		{
 			_logger.Debug(
 			    $"Sending packet of type '{packet.GetType().Name}' " + 
-        public void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
-		{
-			_logger.Debug(
-			    $"Sending packet of type '{packet.GetType().Name}' " + 
                 $"(SenderId={fromPlayer.ConnectionId})"
             );
 
@@ -131,7 +125,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteOne(ref writer, packet);
 
             foreach (var player in _playerRegistry.Players)
-                Send(player.Endpoint, writer.Data, deliveryMethod);
+                SendInternal(player, ref writer, deliveryMethod);
 		}
         public void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
@@ -145,7 +139,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteMany(ref writer, packets);
 
             foreach (var player in _playerRegistry.Players)
-                Send(player.Endpoint, writer.Data, deliveryMethod);
+                SendInternal(player, ref writer, deliveryMethod);
         }
 
         public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -158,7 +152,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteOne(ref writer, packet);
-            Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
+            SendInternal(toPlayer, ref writer, deliveryMethod);
         }
         public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
@@ -170,7 +164,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteMany(ref writer, packets);
-            Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
+            SendInternal(toPlayer, ref writer, deliveryMethod);
         }
 
         public void SendToPlayer(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -183,7 +177,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteOne(ref writer, packet);
-            Send(player.Endpoint, writer.Data, deliveryMethod);
+            SendInternal(player, ref writer, deliveryMethod);
         }
         public void SendToPlayer(IPlayer player, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
@@ -215,7 +209,15 @@ namespace BeatTogether.DedicatedServer.Kernel
             var players = _playerRegistry.Players;
             Task[] tasks = new Task[players.Length];
             for (int i = 0; i < players.Length; i++)
+            {
+                if (players[i].IsENetConnection)
+                {
+                    tasks[i] = Task.CompletedTask;
+                    SendInternal(players[i], ref writer, deliveryMethod);
+                    continue;
+                }
                 tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+            }
             return Task.WhenAll(tasks);
         }
         public Task SendToNearbyPlayersAndAwait(INetSerializable[] packets, DeliveryMethod deliveryMethod)
@@ -232,7 +234,15 @@ namespace BeatTogether.DedicatedServer.Kernel
             var players = _playerRegistry.Players;
             Task[] tasks = new Task[players.Length];
             for (int i = 0; i < players.Length; i++)
+            {
+                if (players[i].IsENetConnection)
+                {
+                    tasks[i] = Task.CompletedTask;
+                    SendInternal(players[i], ref writer, deliveryMethod);
+                    continue;
+                }
                 tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+            }
             return Task.WhenAll(tasks);
         }
 
@@ -253,7 +263,15 @@ namespace BeatTogether.DedicatedServer.Kernel
             foreach (var player in players)
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
                 {
-                    tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
+                    if (!player.IsENetConnection)
+                    {
+                        tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
+                    }
+                    else
+                    {
+                        tasks[i] = Task.CompletedTask;
+                        SendInternal(player, ref writer, deliveryMethod);
+                    }
                     i++;
                 }
             return Task.WhenAll(tasks);
@@ -274,12 +292,18 @@ namespace BeatTogether.DedicatedServer.Kernel
             foreach (var player in players)
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
                 {
-                    tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
+                    if (!player.IsENetConnection)
+                    {
+                        tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
+                    }
+                    else
+                    {
+                        tasks[i] = Task.CompletedTask;
+                        SendInternal(player, ref writer, deliveryMethod);
+                    }
                     i++;
                 }
             return Task.WhenAll(tasks);
-
-
         }
 
         public Task SendFromPlayerAndAwait(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -292,15 +316,18 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteOne(ref writer, packet);
-
-            foreach (var player in _playerRegistry.Players)
-                SendInternal(player, ref writer, deliveryMethod);
-		}
-        public void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
             var players = _playerRegistry.Players;
             Task[] tasks = new Task[players.Length];
             for (int i = 0; i < players.Length; i++)
+            {
+                if (players[i].IsENetConnection)
+                {
+                    tasks[i] = Task.CompletedTask;
+                    SendInternal(players[i], ref writer, deliveryMethod);
+                    continue;
+                }
                 tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+            }
             return Task.WhenAll(tasks);
         }
         public Task SendFromPlayerAndAwait(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
@@ -319,7 +346,15 @@ namespace BeatTogether.DedicatedServer.Kernel
             var players = _playerRegistry.Players;
             Task[] tasks = new Task[players.Length];
             for (int i = 0; i < players.Length; i++)
+            {
+                if (players[i].IsENetConnection)
+                {
+                    tasks[i] = Task.CompletedTask;
+                    SendInternal(players[i], ref writer, deliveryMethod);
+                    continue;
+                }
                 tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+            }
             return Task.WhenAll(tasks);
         }
 
@@ -333,7 +368,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteOne(ref writer, packet);
-            SendInternal(toPlayer, ref writer, deliveryMethod);
+            if (toPlayer.IsENetConnection)
+            {
+                SendInternal(toPlayer, ref writer, deliveryMethod);
+                return Task.CompletedTask;
+            }
             return Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
         }
         public Task SendFromPlayerToPlayerAndAwait(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)

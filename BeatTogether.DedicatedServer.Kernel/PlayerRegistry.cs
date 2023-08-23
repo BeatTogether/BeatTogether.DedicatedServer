@@ -11,7 +11,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         
         public IPlayer[] Players { get => GetPlayers(); }
 
-        private object PlayerDictionaries_Lock = new();
+        private readonly object PlayerDictionaries_Lock = new();
         private readonly Dictionary<EndPoint, IPlayer> _playersByRemoteEndPoint = new();
         private readonly Dictionary<byte, IPlayer> _playersByConnectionId = new();
         private readonly Dictionary<string, IPlayer> _playersByUserId = new();

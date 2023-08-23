@@ -10,6 +10,7 @@ using BeatTogether.DedicatedServer.Ignorance.Util;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.LiteNetLib.Enums;
 using BeatTogether.LiteNetLib.Extensions;
+using BeatTogether.LiteNetLib.Util;
 using Krypton.Buffers;
 using Serilog;
 
@@ -146,7 +147,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 e.Payload.CopyTo(_receiveBuffer!, 0);
                 e.Payload.Dispose();
                 
-                var bufferReader = new SpanBufferReader(_receiveBuffer.AsSpan(..receiveLength));
+                var bufferReader = new SpanBuffer(_receiveBuffer.AsSpan(..receiveLength));
                 
                 // If pending: first packet should be connection request only (IgnCon)
                 if (connection.State == ENetConnectionState.Pending)
@@ -156,7 +157,6 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                     
                     return;
                 }
-
                 // Process actual payload
                 var deliveryMethod = e.Channel == 0 ? DeliveryMethod.ReliableOrdered : DeliveryMethod.Unreliable;
                 DedicatedInstance.ConnectedMessageSource.OnReceive(connection.EndPoint, ref bufferReader, deliveryMethod);
@@ -180,7 +180,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
             return connection;
         }
 
-        private bool TryAcceptConnection(ENetConnection connection, ref SpanBufferReader reader)
+        private bool TryAcceptConnection(ENetConnection connection, ref SpanBuffer reader)
         {
             try
             {
