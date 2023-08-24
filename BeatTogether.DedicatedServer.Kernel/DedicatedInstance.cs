@@ -619,7 +619,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return;
             }
             PlayerConnectedEvent?.Invoke(player);
-            await Task.Delay(50);
             //The player has already been sent to every other player in the should connect function.
 
             //Start of sending other players to player
