@@ -7,7 +7,7 @@ on:
       - dev-1.29
       - dev-1.29-Net6.0
       - dev-1.31.0
-      - dev-1.31.0-Merge-Faster-Changes
+      - dev-1.31.0-Merge-faster-changes
 
 jobs:
   nuget-1:
