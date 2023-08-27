@@ -105,6 +105,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             RegisterCommand<SetResultsTime>(AccessLevel.Manager);
             RegisterCommand<SetServerName>(AccessLevel.Manager);
             RegisterCommand<SetWelcomeMessage>(AccessLevel.Manager);
+            RegisterCommand<ForceStartCommand>(AccessLevel.Manager);
         }
     }
 }
