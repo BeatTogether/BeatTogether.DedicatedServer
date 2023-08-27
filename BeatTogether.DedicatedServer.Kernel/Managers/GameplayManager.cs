@@ -97,7 +97,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             State = GameplayManagerState.SceneLoad;
             foreach (var player in _playerRegistry.Players)//Array of players that are playing at the start
             {
-                if (!player.IsSpectating)
+                if (!player.IsSpectating && !player.ForceLateJoin)
                     PlayersAtStart.Add(player.UserId);
             }
 
@@ -171,6 +171,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 StartTime = _songStartTime
             }, DeliveryMethod.ReliableOrdered);
 
+            //Initiates the song start process for forced late joiners
+            foreach(IPlayer p in _playerRegistry.Players)
+            {
+                if (p.ForceLateJoin)
+                {
+                    _packetDispatcher.SendToPlayer(p, new Messaging.Packets.MultiplayerSession.MenuRpc.StartLevelPacket
+                    {
+                        Beatmap = CurrentBeatmap,
+                        Modifiers = CurrentModifiers,
+                        StartTime = _songStartTime
+                    }, DeliveryMethod.ReliableOrdered);
+                }
+            }
 
             await Task.WhenAll(_levelFinishedTcs.Values.Select(p => p.Task));
 

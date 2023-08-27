@@ -18,28 +18,23 @@ using Serilog;
 /*Lobby manager code
  * Contains the logic code for
  * - different game modes
- * - setting the beatmap
- * - setting the modifiers
+ * - managing the beatmap
+ * - managing the modifiers
  * - managing the countdown
- * - checking player entitlements
- * - when to start gameplay
+ * - managing player entitlements
+ * - managing when to start gameplay
  */
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
     public sealed class LobbyManager : ILobbyManager, IDisposable
     {
-        //TODO - todo list below
-        /* - Players who dont want to play next level should not block current players from being able to play (if spectating then dont beatmap check them)
-         * - Use per player semaphores instead of locks around handlers as there are locks around packet sends, which is probably causing a few issues
-         * - basicly re-write the lobby manager stuff and some gameplay manager things
-         * 
-         */
         public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel); //If all are ready or not playing
         public bool SomePlayersReady => _playerRegistry.Players.Any(p => p.IsReady); //If anyone is readied
         public bool NoPlayersReady => _playerRegistry.Players.All(p => !p.IsReady || !p.WantsToPlayNextLevel); //players not ready or are going to spectate
         public bool AllPlayersNotWantToPlayNextLevel => _playerRegistry.Players.All(p => !p.WantsToPlayNextLevel);//if all are going to be spectating
         public bool AllPlayersAreInLobby => _playerRegistry.Players.All(p => p.InMenu);//if all are going to be spectating
         public bool DoesEveryoneOwnBeatmap => SelectedBeatmap == null || !_playerRegistry.Players.Any(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown);
+        public bool SpectatingPlayersUpdated { get; set; } = false;
 
         public BeatmapIdentifier? SelectedBeatmap { get; private set; } = null;
         public GameplayModifiers SelectedModifiers { get; private set; } = new();
@@ -89,17 +84,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private async void UpdateLoop(CancellationToken cancellationToken)
         {
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(LoopTime, cancellationToken);
-                await _instance.ConnectDisconnectSemaphore.WaitAsync(cancellationToken);
-                Update();
-                _instance.ConnectDisconnectSemaphore.Release();
-                UpdateLoop(cancellationToken);
-            }
-            catch (TaskCanceledException){}
-            catch (OperationCanceledException){
-                _instance.ConnectDisconnectSemaphore.Release();
+                if (_instance.ConnectDisconnectSemaphore.CurrentCount > 0)
+                {
+                    _instance.ConnectDisconnectSemaphore.Wait();
+                    Update();
+                    _instance.ConnectDisconnectSemaphore.Release();
+                }
+                try
+                {
+                    await Task.Delay(LoopTime, cancellationToken);
+                }
+                catch (TaskCanceledException) { continue; }
+                catch (OperationCanceledException) { continue; }
             }
         }
 
@@ -121,21 +119,22 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             foreach (IPlayer player in _playerRegistry.Players)
             {
-                if (player.UpdateEntitlement)
+                if (player.UpdateEntitlement || SpectatingPlayersUpdated)
                 {
                     if (player.BeatmapIdentifier != null)
                     {
                         _packetDispatcher.SendToPlayer(player, new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
-                                .Where(p => p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown)
+                                .Where(p => (p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown) && !p.IsSpectating)
                                 .Select(p => p.UserId).ToArray()
                         }, DeliveryMethod.ReliableOrdered);
-                        _logger.Information("Sent missing entitlement packet");
+                        _logger.Debug("Sent missing entitlement packet");
                     }
                     player.UpdateEntitlement = false;
                 }
             }
+            SpectatingPlayersUpdated = false;
             bool allPlayersOwnBeatmap = DoesEveryoneOwnBeatmap;
 
             if (_configuration.SongSelectionMode == SongSelectionMode.ServerOwnerPicks)
@@ -201,7 +200,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         SetCountdown(CountdownState.WaitingForEntitlement);
                     }
-                    if (_playerRegistry.Players.All(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok))
+                    if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsSpectating || p.ForceLateJoin))
                     {
                         //starts beatmap
                         _gameplayManager.SetBeatmap(SelectedBeatmap!, SelectedModifiers);
@@ -210,15 +209,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         SetCountdown(CountdownState.NotCountingDown);
                         return;
                     }
-                    if (CountdownEndTime + _configuration.KickPlayersWithoutEntitlementTimeout <= _instance.RunTime)
+                    if (CountdownEndTime + _configuration.SendPlayersWithoutEntitlementToSpectateTimeout <= _instance.RunTime) //If takes too long to start then players are sent to spectate by telling them the beatmap already started
                     {
                         IPlayer[] MissingEntitlement = _playerRegistry.Players.Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is not EntitlementStatus.Ok).ToArray();
                         foreach (IPlayer p in MissingEntitlement)
                         {
-                            _packetDispatcher.SendToPlayer(p, new KickPlayerPacket()
-                            {
-                                DisconnectedReason = DisconnectedReason.Kicked,
-                            }, DeliveryMethod.ReliableOrdered);
+                            //Force the player to join late
+                            p.ForceLateJoin = true;
+                            _packetDispatcher.SendToPlayer(p, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+                            _packetDispatcher.SendToPlayer(p, new SetIsReadyPacket() { IsReady = false }, DeliveryMethod.ReliableOrdered);
+                            /*                      _packetDispatcher.SendToPlayer(p, new KickPlayerPacket()
+                                                    {
+                                                        DisconnectedReason = DisconnectedReason.Kicked,
+                                                    }, DeliveryMethod.ReliableOrdered);*/
                         }
                     }
                 }

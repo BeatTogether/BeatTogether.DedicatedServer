@@ -38,7 +38,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         BeatmapIdentifier? BeatmapIdentifier { get; set; }
         GameplayModifiers Modifiers { get; set; }
         PlayerStateHash State { get; set; }
-
+        public bool ForceLateJoin { get; set; }
         public bool IsServerOwner { get; }
         public bool CanRecommendBeatmaps { get; }
         public bool CanRecommendModifiers { get; }

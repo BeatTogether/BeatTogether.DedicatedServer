@@ -49,6 +49,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool CanKickVote => UserId == Instance._configuration.ServerOwnerId;
         public bool CanInvite =>
             Instance._configuration.DiscoveryPolicy is DiscoveryPolicy.WithCode or DiscoveryPolicy.Public;
+        public bool ForceLateJoin { get; set; } = false;
 
         public bool IsPlayer => State.Contains("player");
         public bool IsSpectating => State.Contains("spectating"); //True if spectating players in gameplay

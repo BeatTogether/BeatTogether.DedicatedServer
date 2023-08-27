@@ -28,7 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
         public bool DisableNotes { get; set; }
         public bool ForceEnableNotes { get; set; } = false;
         public bool ForceStartMode { get; set; } = false;
-        public float KickPlayersWithoutEntitlementTimeout { get; set; } = 30f;
+        public float SendPlayersWithoutEntitlementToSpectateTimeout { get; set; } = 30f;
         public int MaxLengthCommand { get; set; } = 200;
         public bool ApplyNoFailModifier { get; set; } = true;
     }
