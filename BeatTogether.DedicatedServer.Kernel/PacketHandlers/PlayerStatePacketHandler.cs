@@ -29,7 +29,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
 
             await sender.PlayerAccessSemaphore.WaitAsync();
             sender.State = packet.PlayerState;
-            if (packet.PlayerState.Contains("spectating") != sender.State.Contains("spectating"))
+            if (packet.PlayerState.Contains("spectating") != sender.State.Contains("spectating") || packet.PlayerState.Contains("wants_to_play_next_level") != sender.State.Contains("wants_to_play_next_level"))
                 _lobbyManager.SpectatingPlayersUpdated = true;
             sender.PlayerAccessSemaphore.Release();
             return;

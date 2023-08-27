@@ -112,7 +112,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         SetCountdown(CountdownState.WaitingForEntitlement);
                     }
-                    if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsSpectating || p.ForceLateJoin))
+                    if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsSpectating || !p.WantsToPlayNextLevel || p.ForceLateJoin))
                     {
                         //starts beatmap
                         _gameplayManager.SetBeatmap(SelectedBeatmap!, SelectedModifiers);
@@ -177,7 +177,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         _packetDispatcher.SendToPlayer(player, new SetPlayersMissingEntitlementsToLevelPacket
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
-                                .Where(p => (p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown) && !p.IsSpectating)
+                                .Where(p => (p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown) && !p.IsSpectating && p.WantsToPlayNextLevel)
                                 .Select(p => p.UserId).ToArray()
                         }, DeliveryMethod.ReliableOrdered);
                         _logger.Debug("Sent missing entitlement packet");
@@ -251,7 +251,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         SetCountdown(CountdownState.WaitingForEntitlement);
                     }
-                    if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsSpectating || p.ForceLateJoin))
+                    if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsSpectating || !p.WantsToPlayNextLevel || p.ForceLateJoin))
                     {
                         //starts beatmap
                         _gameplayManager.SetBeatmap(SelectedBeatmap!, SelectedModifiers);

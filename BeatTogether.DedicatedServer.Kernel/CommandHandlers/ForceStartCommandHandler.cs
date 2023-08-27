@@ -5,7 +5,7 @@ using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
 {
-    class ForceStartCommandHandler : BaseCommandHandler<SetBeatmapStartTime>
+    class ForceStartCommandHandler : BaseCommandHandler<ForceStartCommand>
     {
         private readonly ILogger _logger = Log.ForContext<ForceStartCommandHandler>();
         private readonly ILobbyManager _lobbyManager;
@@ -15,7 +15,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
             _lobbyManager = lobbyManager;
         }
 
-        public override void Handle(IPlayer player, SetBeatmapStartTime command)
+        public override void Handle(IPlayer player, ForceStartCommand command)
         {
             _logger.Information(player.UserName + "Has force started a beatmap");
             _lobbyManager.ForceStartSelectedBeatmap = true;
