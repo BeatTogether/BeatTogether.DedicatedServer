@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +9,6 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
@@ -35,6 +33,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public bool AllPlayersAreInLobby => _playerRegistry.Players.All(p => p.InMenu);//if all are going to be spectating
         public bool DoesEveryoneOwnBeatmap => SelectedBeatmap != null && !_playerRegistry.Players.Any(p => p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown);
         public bool SpectatingPlayersUpdated { get; set; } = false;
+        public bool ForceStartSelectedBeatmap { get; set; } = false;
 
         public BeatmapIdentifier? SelectedBeatmap { get; private set; } = null;
         public GameplayModifiers SelectedModifiers { get; private set; } = new();
@@ -101,6 +100,52 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
         }
 
+        public void ForceStartBeatmapUpdate()
+        {
+            if(SelectedBeatmap != null)
+            {
+                SetCountdown(CountdownState.StartBeatmapCountdown, _configuration.CountdownConfig.BeatMapStartCountdownTime);
+
+                if (CountdownEndTime <= _instance.RunTime)
+                {
+                    if (CountDownState != CountdownState.WaitingForEntitlement)
+                    {
+                        SetCountdown(CountdownState.WaitingForEntitlement);
+                    }
+                    if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsSpectating || p.ForceLateJoin))
+                    {
+                        //starts beatmap
+                        _gameplayManager.SetBeatmap(SelectedBeatmap!, SelectedModifiers);
+                        Task.Run(() => _gameplayManager.StartSong(CancellationToken.None));
+                        //stops countdown
+                        SetCountdown(CountdownState.NotCountingDown);
+                        ForceStartSelectedBeatmap = false;
+                        return;
+                    }
+                    else
+                    {
+                        foreach(IPlayer p in _playerRegistry.Players)
+                        {
+                            if(p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown)
+                            {
+                                p.ForceLateJoin = true;
+                            }
+                        }
+                    }
+                    if(CountdownEndTime + _configuration.SendPlayersWithoutEntitlementToSpectateTimeout <= _instance.RunTime)
+                    {
+                        foreach (IPlayer p in _playerRegistry.Players)
+                        {
+                            if (p.GetEntitlement(SelectedBeatmap.LevelId) is not EntitlementStatus.Ok)
+                            {
+                                p.ForceLateJoin = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         public void Update()
         {
             if (_instance.State != MultiplayerGameState.Lobby)
@@ -116,6 +161,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 {
                     Reason = CannotStartGameReason.None
                 }, DeliveryMethod.ReliableOrdered);
+
+            if (ForceStartSelectedBeatmap)
+            {
+                ForceStartBeatmapUpdate();
+                return;
+            }
 
             foreach (IPlayer player in _playerRegistry.Players)
             {

@@ -18,6 +18,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
         float CountdownEndTime { get; }
         GameplayModifiers EmptyModifiers {get; }
         public bool SpectatingPlayersUpdated { get; set; }
+        public bool ForceStartSelectedBeatmap { get; set; }
 
         void Update();
         BeatmapDifficulty[] GetSelectedBeatmapDifficulties();
