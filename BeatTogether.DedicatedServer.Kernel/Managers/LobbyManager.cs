@@ -114,6 +114,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsSpectating || !p.WantsToPlayNextLevel || p.ForceLateJoin))
                     {
+                        //The clients need to be sent that all the payers have OK entitlement
                         //starts beatmap
                         _gameplayManager.SetBeatmap(SelectedBeatmap!, SelectedModifiers);
                         Task.Run(() => _gameplayManager.StartSong(CancellationToken.None));
@@ -128,6 +129,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         {
                             if(p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown)
                             {
+                                _packetDispatcher.SendFromPlayer(p, new SetIsEntitledToLevelPacket()
+                                {
+                                    LevelId = SelectedBeatmap.LevelId,
+                                    Entitlement = EntitlementStatus.Ok
+                                }, DeliveryMethod.ReliableOrdered);
                                 p.ForceLateJoin = true;
                             }
                         }
@@ -138,6 +144,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         {
                             if (p.GetEntitlement(SelectedBeatmap.LevelId) is not EntitlementStatus.Ok)
                             {
+                                _packetDispatcher.SendFromPlayer(p, new SetIsEntitledToLevelPacket()
+                                {
+                                    LevelId = SelectedBeatmap.LevelId,
+                                    Entitlement = EntitlementStatus.Ok
+                                }, DeliveryMethod.ReliableOrdered);
                                 p.ForceLateJoin = true;
                             }
                         }
@@ -267,6 +278,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         {
                             //Force the player to join late
                             p.ForceLateJoin = true;
+                            _packetDispatcher.SendFromPlayer(p, new SetIsEntitledToLevelPacket()
+                            {
+                                LevelId = SelectedBeatmap!.LevelId,
+                                Entitlement = EntitlementStatus.Ok
+                            }, DeliveryMethod.ReliableOrdered);
                             _packetDispatcher.SendToPlayer(p, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
                             _packetDispatcher.SendToPlayer(p, new SetIsReadyPacket() { IsReady = false }, DeliveryMethod.ReliableOrdered);
                         }
