@@ -12,14 +12,14 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 
         public bool Contains(string value, int hashCount = 3, int hashBits = 8)
         {
-			uint num = MurmurHash2(value);
+			uint hash = MurmurHash2(value);
 			for (int i = 0; i < hashCount; i++)
 			{
-				if (GetBits((int)((ulong)num % (ulong)((long)BitCount)), 1) == 0UL)
+				if (GetBits((int)((ulong)hash % (ulong)((long)BitCount)), 1) == 0UL)
 				{
 					return false;
 				}
-				num >>= hashBits;
+                hash >>= hashBits;
 			}
 			return true;
 		}
