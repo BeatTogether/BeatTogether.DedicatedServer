@@ -197,7 +197,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
-                    $"PacketOption {routingHeader.packetOption} " +
+                    $"PacketOption='{routingHeader.packetOption}' " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 foreach (var player in _playerRegistry.Players)
@@ -219,7 +219,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
-                    $"PacketOption {routingHeader.packetOption} " +
+                    $"PacketOption='{routingHeader.packetOption}' " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 _packetDispatcher.Send(receiver.Endpoint, writer.Data, deliveryMethod);
