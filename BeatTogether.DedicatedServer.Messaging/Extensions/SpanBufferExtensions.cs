@@ -30,7 +30,7 @@ namespace BeatTogether.Extensions
 
 
 
-        public static void WriteRoutingHeader(this ref SpanBuffer writer, byte senderId, byte receiverId, byte packetOptions = 0)
+        public static void WriteRoutingHeader(this ref SpanBuffer writer, byte senderId, byte receiverId, byte packetOptions)
         {
             writer.WriteUInt8(senderId);
             writer.WriteUInt8(receiverId);

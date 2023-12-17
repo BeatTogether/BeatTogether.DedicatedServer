@@ -2,6 +2,7 @@
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
+using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Registries;
@@ -184,7 +185,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         #region Private Methods
 
         private void RoutePacket(IPlayer sender,
-            (byte SenderId, byte ReceiverId) routingHeader,
+            (byte SenderId, byte ReceiverId, PacketOption packetOption) routingHeader,
             ref SpanBuffer reader, DeliveryMethod deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
@@ -196,6 +197,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
+                    $"PacketOption {routingHeader.packetOption} " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 foreach (var player in _playerRegistry.Players)
@@ -217,6 +219,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
+                    $"PacketOption {routingHeader.packetOption} " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 _packetDispatcher.Send(receiver.Endpoint, writer.Data, deliveryMethod);
