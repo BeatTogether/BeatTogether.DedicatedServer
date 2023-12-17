@@ -4,6 +4,7 @@ using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
+using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib;
@@ -111,6 +112,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }
                     break;
                 }
+
                 if (packet == null)
                 {
                     // skip any unprocessed bytes
@@ -149,7 +151,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 var packetHandler = _serviceProvider.GetService(packetHandlerType);
                 if (packetHandler is null)
                 {
-                    _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
+                    if (!packetType.Name.StartsWith("NodePoseSyncState"))
+                        _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
 
                     // skip any unprocessed bytes
                     var processedBytes = HandleRead.Offset - prevPosition;

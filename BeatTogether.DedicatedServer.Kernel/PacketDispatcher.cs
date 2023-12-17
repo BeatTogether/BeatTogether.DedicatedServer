@@ -43,11 +43,13 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (player.IsENetConnection)
             {
                 // ENet send
+                _logger.Verbose($"Sending packet (SenderId={ServerId}) to player {player.ConnectionId} with UserId {player.UserId} via ENet");
                 _dedicatedInstance.ENetServer.Send(player.ENetPeerId!.Value, writer.Data, deliveryMethod);
                 return;
             }
             
             // LiteNet send
+            _logger.Verbose($"Sending packet (SenderId={ServerId}) to player {player.ConnectionId} with UserId {player.UserId} via LiteNet");
             Send(player.Endpoint, writer.Data, deliveryMethod);
         }
         
@@ -103,6 +105,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"Sending MultiPacket " +
                 $"(ExcludedId={excludedPlayer.ConnectionId})"
             );
+            if (_logger.IsEnabled(Serilog.Events.LogEventLevel.Verbose))
+                for (int i = 0; i < packets.Length; i++)
+                {
+                    _logger.Verbose(
+                        $"Packet {i} is of type '{packets[i].GetType().Name}' "
+                    );
+                }
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
