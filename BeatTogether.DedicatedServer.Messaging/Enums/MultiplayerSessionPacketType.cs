@@ -8,6 +8,7 @@
         ScoreSyncState = 3,
         NodePoseSyncStateDelta = 4,
         ScoreSyncStateDelta = 5,
+        OptionalAvatarData = 6,
         MultiplayerCore = 100
     }
 }
