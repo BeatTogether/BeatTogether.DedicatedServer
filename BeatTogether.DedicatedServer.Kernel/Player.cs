@@ -26,7 +26,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public uint? ENetPeerId { get; set; }
         public bool IsENetConnection => ENetPeerId.HasValue;
         public RollingAverage Latency { get; } = new(30);
-        public float SyncTime =>
+        public long SyncTime =>
             Math.Min(Instance.RunTime - Latency.CurrentAverage - _syncTimeOffset,
                      Instance.RunTime);
         public int SortIndex { get; set; }
@@ -61,7 +61,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool FinishedLevel => State.Contains("finished_level"); //If the player has finished the level
         public bool InMenu => State.Contains("in_menu"); //Should be true while in lobby
 
-        private const float _syncTimeOffset = 0.06f;
+        private const long _syncTimeOffset = 6L;
         private readonly ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();
 
         public Player(EndPoint endPoint, IDedicatedInstance instance,

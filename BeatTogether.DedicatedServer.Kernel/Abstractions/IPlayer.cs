@@ -30,7 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool IsENetConnection => ENetPeerId.HasValue;
 
         RollingAverage Latency { get; }
-        float SyncTime { get; }
+        long SyncTime { get; }
         int SortIndex { get; set; }
         AvatarData Avatar { get; set; }
         bool IsReady { get; set; }

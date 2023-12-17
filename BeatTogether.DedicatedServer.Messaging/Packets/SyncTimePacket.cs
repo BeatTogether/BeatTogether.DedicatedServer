@@ -5,16 +5,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
     public sealed class SyncTimePacket : INetSerializable
     {
-        public float SyncTime { get; set; }
+        public long SyncTime { get; set; }
 
         public void WriteTo(ref SpanBuffer writer)
         {
-            writer.WriteFloat32(SyncTime);
+            writer.WriteUInt64((ulong)SyncTime);
         }
 
         public void ReadFrom(ref SpanBuffer reader)
         {
-            SyncTime = reader.ReadFloat32();
+            SyncTime = (long)reader.ReadUInt64();
         }
     }
 }

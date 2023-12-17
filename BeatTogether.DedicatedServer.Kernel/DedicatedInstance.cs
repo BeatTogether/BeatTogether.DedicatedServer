@@ -38,7 +38,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public int LiteNetPort => _configuration.LiteNetPort;
         public int ENetPort => _configuration.ENetPort;
         public bool IsRunning => IsStarted;
-        public float RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000000.0f;
+        public long RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000L;
         public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
 
