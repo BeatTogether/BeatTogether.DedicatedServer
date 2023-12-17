@@ -8,10 +8,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
 {
     public sealed class EncryptedPacketWriter : IEncryptedPacketWriter
     {
-        private readonly RNGCryptoServiceProvider _rngCryptoServiceProvider;
+        private readonly RandomNumberGenerator _rngCryptoServiceProvider;
 
         public EncryptedPacketWriter(
-            RNGCryptoServiceProvider rngCryptoServiceProvider)
+            RandomNumberGenerator rngCryptoServiceProvider)
         {
             _rngCryptoServiceProvider = rngCryptoServiceProvider;
         }

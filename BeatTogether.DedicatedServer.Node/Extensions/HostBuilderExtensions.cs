@@ -27,7 +27,7 @@ namespace BeatTogether.DedicatedServer.Node.Extensions
                     services
                         .AddCoreSecurity()
                         .AddConfiguration<NodeConfiguration>("Node")
-                        .AddTransient<RNGCryptoServiceProvider>()
+                        .AddSingleton(RandomNumberGenerator.Create())
                         .AddSingleton<ICookieProvider, CookieProvider>()
                         .AddSingleton<IRandomProvider, RandomProvider>()
                         .AddSingleton<IEncryptedPacketReader, EncryptedPacketReader>()
