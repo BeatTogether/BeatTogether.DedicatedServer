@@ -33,7 +33,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Encryption
             IEncryptedPacketReader encryptedPacketReader,
             IEncryptedPacketWriter encryptedPacketWriter,
             IDiffieHellmanService diffieHellmanService,
-            RNGCryptoServiceProvider rngCryptoServiceProvider)
+            RandomNumberGenerator rngCryptoServiceProvider)
         {
             _encryptedPacketReader = encryptedPacketReader;
             _encryptedPacketWriter = encryptedPacketWriter;
