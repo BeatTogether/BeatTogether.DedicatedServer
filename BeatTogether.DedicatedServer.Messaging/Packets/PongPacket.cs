@@ -1,20 +1,21 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
+﻿using BeatTogether.Extensions;
+using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
     public sealed class PongPacket : INetSerializable
     {
-        public float PingTime { get; set; }
+        public long PingTime { get; set; }
 
         public void WriteTo(ref SpanBuffer writer)
         {
-            writer.WriteFloat32(PingTime);
+            writer.WriteVarULong((ulong)PingTime);
         }
 
         public void ReadFrom(ref SpanBuffer reader)
         {
-            PingTime = reader.ReadFloat32();
+            PingTime = (long)reader.ReadVarULong();
         }
     }
 }

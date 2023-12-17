@@ -1,4 +1,5 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
+﻿using BeatTogether.Extensions;
+using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets
@@ -9,12 +10,12 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
 
         public void WriteTo(ref SpanBuffer writer)
         {
-            writer.WriteUInt64((ulong)SyncTime);
+            writer.WriteVarULong((ulong)SyncTime);
         }
 
         public void ReadFrom(ref SpanBuffer reader)
         {
-            SyncTime = (long)reader.ReadUInt64();
+            SyncTime = (long)reader.ReadVarULong();
         }
     }
 }
