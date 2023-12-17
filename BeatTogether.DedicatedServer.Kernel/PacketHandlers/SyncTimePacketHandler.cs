@@ -27,6 +27,11 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             {
                 SyncTime = sender.SyncTime
             }, DeliveryMethod.ReliableOrdered);
+
+            _logger.Verbose(
+                $"Preparing '{nameof(SyncTimePacket)}' " +
+                $"(SenderId={sender.ConnectionId}, SyncTime={sender.SyncTime})."
+            );
             return Task.CompletedTask;
         }
     }

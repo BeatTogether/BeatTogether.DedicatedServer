@@ -20,8 +20,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
         public override async Task Handle(IPlayer sender, PlayerLatencyPacket packet)
         {
             _logger.Debug(
-                $"Handling packet of type '{nameof(SyncTimePacket)}' " +
-                $"(SenderId={sender.ConnectionId}, SyncTime={packet.Latency})."
+                $"Handling packet of type '{nameof(PlayerLatencyPacket)}' " +
+                $"(SenderId={sender.ConnectionId}, Latency={packet.Latency})."
             );
 
             await sender.PlayerAccessSemaphore.WaitAsync();
@@ -31,6 +31,11 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             {
                 Latency = sender.Latency.CurrentAverage
             }, DeliveryMethod.ReliableOrdered);
+
+            _logger.Verbose((
+                $"Preparing packet of type '{nameof(PlayerLatencyPacket)}' " +
+                $"(SenderId={sender.ConnectionId}, Latency={sender.Latency.CurrentAverage})."
+            );
             return;
         }
     }
