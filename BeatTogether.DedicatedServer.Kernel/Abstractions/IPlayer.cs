@@ -32,7 +32,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         RollingAverage Latency { get; }
         long SyncTime { get; }
         int SortIndex { get; set; }
-        AvatarData Avatar { get; set; }
+        MultiplayerAvatarsData Avatar { get; set; }
         bool IsReady { get; set; }
 
         BeatmapIdentifier? BeatmapIdentifier { get; set; }
