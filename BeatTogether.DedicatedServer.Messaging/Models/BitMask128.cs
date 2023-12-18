@@ -10,6 +10,14 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public ulong Top { get; set; }
         public ulong Bottom { get; set; }
 
+        public BitMask128(ulong top, ulong bottom)
+        {
+            Top = top;
+            Bottom = bottom;
+        }
+
+        public BitMask128() { }
+
         public bool Contains(string value, int hashCount = 3, int hashBits = 8)
         {
 			uint hash = MurmurHash2(value);
@@ -31,7 +39,14 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 			return (ShiftRight(Top, num2) | ShiftRight(Bottom, offset)) & num;
 		}
 
-		public void ReadFrom(ref SpanBuffer reader)
+        public BitMask128 SetBits(int offset, ulong bits)
+        {
+            ulong d = Top;
+            int num = offset - 64;
+            return new BitMask128(d | ShiftLeft(bits, num), Bottom | ShiftLeft(bits, offset));
+        }
+
+        public void ReadFrom(ref SpanBuffer reader)
         {
             Top = reader.ReadUInt64();
             Bottom = reader.ReadUInt64();
