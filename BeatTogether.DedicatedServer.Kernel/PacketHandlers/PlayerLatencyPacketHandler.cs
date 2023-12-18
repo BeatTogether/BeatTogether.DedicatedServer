@@ -32,7 +32,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 Latency = sender.Latency.CurrentAverage
             }, DeliveryMethod.ReliableOrdered);
 
-            _logger.Verbose((
+            _logger.Verbose(
                 $"Preparing packet of type '{nameof(PlayerLatencyPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, Latency={sender.Latency.CurrentAverage})."
             );
