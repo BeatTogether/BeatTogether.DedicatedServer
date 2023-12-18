@@ -185,19 +185,19 @@ namespace BeatTogether.DedicatedServer.Kernel
         #region Private Methods
 
         private void RoutePacket(IPlayer sender,
-            (byte SenderId, byte ReceiverId, PacketOption packetOption) routingHeader,
+            (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader,
             ref SpanBuffer reader, DeliveryMethod deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
             var writer = new SpanBuffer(stackalloc byte[412]);
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
-                writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
+                writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
                 writer.WriteBytes(reader.RemainingData);
 
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
-                    $"PacketOption='{routingHeader.packetOption}' " +
+                    $"PacketOption='{routingHeader.PacketOption}' " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 foreach (var player in _playerRegistry.Players)
@@ -206,7 +206,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             else
             {
-                writer.WriteRoutingHeader(routingHeader.SenderId, LocalConnectionId);
+                writer.WriteRoutingHeader(routingHeader.SenderId, LocalConnectionId, routingHeader.PacketOption);
                 writer.WriteBytes(reader.RemainingData);
 
                 if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
@@ -219,7 +219,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
-                    $"PacketOption='{routingHeader.packetOption}' " +
+                    $"PacketOption='{routingHeader.PacketOption}' " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 _packetDispatcher.Send(receiver.Endpoint, writer.Data, deliveryMethod);
