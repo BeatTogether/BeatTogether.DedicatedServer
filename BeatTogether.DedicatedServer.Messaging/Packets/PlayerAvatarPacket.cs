@@ -6,7 +6,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
     public sealed class PlayerAvatarPacket : INetSerializable
     {
-        public AvatarData PlayerAvatar { get; set; } = new();
+        public MultiplayerAvatarsData PlayerAvatar { get; set; } = new();
 
         public void ReadFrom(ref SpanBuffer reader)
         {
