@@ -38,7 +38,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public BeatmapIdentifier? SelectedBeatmap { get; private set; } = null;
         public GameplayModifiers SelectedModifiers { get; private set; } = new();
         public CountdownState CountDownState { get; private set; } = CountdownState.NotCountingDown;
-        public float CountdownEndTime { get; private set; } = 0;
+        public long CountdownEndTime { get; private set; } = 0;
 
         private BeatmapIdentifier? _lastBeatmap = null;
         private bool _lastSpectatorState;
@@ -352,9 +352,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
 
         // Sets countdown and beatmap how the client would expect it to
-        // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled, whereas SetCountdown will now
-        private void SetCountdown(CountdownState countdownState, float countdown = 0)
+        // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled, whereas SetCountdown will not
+        private void SetCountdown(CountdownState countdownState, long countdown = 0)
         {
+            _logger.Error($"CountdownEndTime currently is '{CountdownEndTime}' countdown is set to '{countdown}' state will be set to '{countdownState}'");
             CountDownState = countdownState;
             switch (CountDownState)
             {
@@ -365,7 +366,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     break;
                 case CountdownState.CountingDown:
                     if (countdown == 0)
-                        countdown = 30f;
+                        countdown = 30*2;
                     CountdownEndTime = _instance.RunTime + countdown;
                     _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
                     {
@@ -374,7 +375,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     break;
                 case CountdownState.StartBeatmapCountdown:
                     if (countdown == 0)
-                        countdown = 5f;
+                        countdown = 5*2;
                     CountdownEndTime = _instance.RunTime + countdown;
                     StartBeatmapPacket();
                     break;
@@ -382,6 +383,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     StartBeatmapPacket();
                     break;
             }
+            _logger.Error($"CountdownEndTime final set to '{CountdownEndTime}' CountdownState '{CountDownState}' countdown is '{countdown}' RunTime is '{_instance.RunTime}'");
         }
 
         //Checks the lobby settings and sends the player the correct beatmap
