@@ -35,8 +35,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
 
     public sealed class CountdownConfig
     {
-        public float CountdownTimePlayersReady { get; set; } = 30.0f;
-        public float BeatMapStartCountdownTime { get; set; } = 5.0f;
+        public long CountdownTimePlayersReady { get; set; } = 30;
+        public long BeatMapStartCountdownTime { get; set; } = 5;
         public float ResultsScreenTime { get; set; } = 20.0f;
     }
 }

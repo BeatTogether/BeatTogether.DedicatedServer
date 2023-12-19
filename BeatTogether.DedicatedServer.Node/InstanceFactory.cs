@@ -31,9 +31,9 @@ namespace BeatTogether.DedicatedServer.Node
             bool permanentManager,
             float instanceTimeout,
             string ServerName,
-            float resultScreenTime,
-            float BeatmapStartTime,
-            float PlayersReadyCountdownTime,
+            long resultScreenTime,
+            long BeatmapStartTime,
+            long PlayersReadyCountdownTime,
             bool AllowPerPlayerModifiers,
             bool AllowPerPlayerDifficulties,
             bool AllowChroma,
@@ -62,8 +62,8 @@ namespace BeatTogether.DedicatedServer.Node
             instanceConfig.GameplayServerControlSettings = (GameplayServerControlSettings)config.GameplayServerControlSettings;
             instanceConfig.DestroyInstanceTimeout = instanceTimeout;
             instanceConfig.ServerName = ServerName;
-            instanceConfig.CountdownConfig.BeatMapStartCountdownTime = Math.Max(BeatmapStartTime,0f);
-            instanceConfig.CountdownConfig.ResultsScreenTime = Math.Max(resultScreenTime,0f);
+            instanceConfig.CountdownConfig.BeatMapStartCountdownTime = Math.Max(BeatmapStartTime,0);
+            instanceConfig.CountdownConfig.ResultsScreenTime = Math.Max(resultScreenTime,0);
             instanceConfig.AllowChroma = AllowChroma;
             instanceConfig.AllowMappingExtensions = AllowME;
             instanceConfig.AllowNoodleExtensions = AllowNE;
@@ -71,9 +71,9 @@ namespace BeatTogether.DedicatedServer.Node
             instanceConfig.AllowPerPlayerModifiers = AllowPerPlayerModifiers;
             if (permanentManager)
                 instanceConfig.SetConstantManagerFromUserId = managerId;
-            instanceConfig.CountdownConfig.CountdownTimePlayersReady = Math.Max(PlayersReadyCountdownTime,0f);
+            instanceConfig.CountdownConfig.CountdownTimePlayersReady = Math.Max(PlayersReadyCountdownTime,0);
             if (instanceConfig.CountdownConfig.CountdownTimePlayersReady == 0f)
-                instanceConfig.CountdownConfig.CountdownTimePlayersReady = instanceConfig.GameplayServerMode == GameplayServerMode.Managed ? 15.0f : 30.0f;
+                instanceConfig.CountdownConfig.CountdownTimePlayersReady = instanceConfig.GameplayServerMode == GameplayServerMode.Managed ? 15 : 30;
             var instance = scope.ServiceProvider.GetRequiredService<IDedicatedInstance>();
             if (!_instanceRegistry.AddInstance(instance))
                 return null;
