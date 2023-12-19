@@ -5,6 +5,7 @@ using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.LiteNetLib.Enums;
+using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -28,11 +29,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public BeatmapIdentifier? CurrentBeatmap { get; private set; } = null;
         public GameplayModifiers CurrentModifiers { get; private set; } = new();
 
-        private const float SongStartDelay = 0.5f;
+        private const long SongStartDelay = 100;
         private const float SceneLoadTimeLimit = 15.0f;
         private const float SongLoadTimeLimit = 15.0f;
 
-        public float _songStartTime { get; private set; }
+        public long _songStartTime { get; private set; }
         List<string> PlayersAtStart = new();
 
         private CancellationTokenSource? _requestReturnToMenuCts;
@@ -55,6 +56,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private CancellationTokenSource? linkedSceneReadyCts = null;
         private CancellationTokenSource? songReadyCts = null;
         private CancellationTokenSource? linkedSongReadyCts = null;
+
+        private readonly ILogger _logger = Log.ForContext<GameplayManager>();
 
         public GameplayManager(
             IDedicatedInstance instance,
@@ -150,7 +153,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             songReadyCts.CancelAfter((int)((SongLoadTimeLimit + (PlayersAtStart.Count*0.3f)) * 1000));
             await Task.WhenAll(_songReadyTcs.Values.Select(p => p.Task));
 
-            float StartDelay = 0;
+            long StartDelay = 0;
             foreach (var UserId in PlayersAtStart)
             {
                 if (_playerRegistry.TryGetPlayer(UserId, out var p))
@@ -162,7 +165,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
 
             // Start song and wait for finish
-            _songStartTime = _instance.RunTime + SongStartDelay + (StartDelay * 2f);
+            _songStartTime = (_instance.RunTime + SongStartDelay + (StartDelay * 2))*2;
+            _logger.Verbose($"Song start time: {_songStartTime}");
 
             State = GameplayManagerState.Gameplay;
 

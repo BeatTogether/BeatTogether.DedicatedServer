@@ -1,23 +1,24 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
 	public sealed class SetStartGameTimePacket : BaseRpcWithValuesPacket
 	{
-		public float StartTime { get; set; }
+		public long StartTime { get; set; }
 
 		public override void ReadFrom(ref SpanBuffer reader)
         {
 			base.ReadFrom(ref reader);
 			if (HasValue0)
-				StartTime = reader.ReadFloat32();
+				StartTime = (long)reader.ReadVarULong();
 		}
 
 		public override void WriteTo(ref SpanBuffer writer)
         {
 			base.WriteTo(ref writer);
-			writer.WriteFloat32(StartTime);
+			writer.WriteVarULong((ulong)StartTime);
 		}
 	}
 }
