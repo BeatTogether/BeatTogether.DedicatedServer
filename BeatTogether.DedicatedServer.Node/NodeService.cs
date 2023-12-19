@@ -54,9 +54,9 @@ namespace BeatTogether.DedicatedServer.Node
                 request.PermanentManager,
                 request.Timeout,
                 request.ServerName,
-                request.resultScreenTime,
-                request.BeatmapStartTime,
-                request.PlayersReadyCountdownTime ,
+                (long)request.resultScreenTime,
+                (long)request.BeatmapStartTime,
+                (long)request.PlayersReadyCountdownTime ,
                 request.AllowPerPlayerModifiers,
                 request.AllowPerPlayerDifficulties,
                 request.AllowChroma,
@@ -98,27 +98,6 @@ namespace BeatTogether.DedicatedServer.Node
         {
             return new(GameplayCast(y.GameplayModifiers), y.ModifiedScore, y.MultipliedScore, (Interface.Models.Rank)y.Rank, y.FullCombo, y.LeftSaberMovementDistance, y.RightSaberMovementDistance, y.LeftHandMovementDistance, y.RightHandMovementDistance, (Interface.Models.LevelEndStateType)y.LevelEndStateType, (Interface.Models.LevelEndAction)y.LevelEndAction, y.Energy, y.GoodCutsCount, y.BadCutsCount, y.MissedCount, y.NotGoodCount, y.OkCount, y.MaxCutScore, y.TotalCutScore, y.GoodCutsCountForNotesWithFullScoreScoringType, y.AverageCenterDistanceCutScoreForNotesWithFullScoreScoringType, y.AverageCutScoreForNotesWithFullScoreScoringType, y.MaxCombo, y.EndSongTime);
         }
-        public static Interface.Models.AvatarData AvatarCast(AvatarData v)
-        {
-            return new(
-                v.HeadTopId,
-                v.HeadTopPrimaryColor,
-                v.HeadTopSecondaryColor,
-                v.GlassesId,
-                v.GlassesColor,
-                v.FacialHairId,
-                v.FacialHairColor,
-                v.HandsId,
-                v.HandsColor,
-                v.ClothesId,
-                v.ClothesPrimaryColor,
-                v.ClothesSecondaryColor,
-                v.ClothesDetailColor,
-                v.SkinColorId,
-                v.EyesId,
-                v.MouthId);
-        }
-
 
         private void HandleConfigChangeEvent(IDedicatedInstance inst)
         {
