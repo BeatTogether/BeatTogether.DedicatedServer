@@ -3,6 +3,7 @@ using BeatTogether.DedicatedServer.Messaging.Structs;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Util;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -51,8 +52,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             foreach (MultiplayerAvatarData multiplayerAvatarData in AvatarsData)
             {
                 writer.WriteVarUInt(multiplayerAvatarData.AvatarTypeIdentifierHash);
-                ByteArray byteArray = new ByteArray(); // TODO: Check if ByteArray is the correct equivalent to PutBytes()
-                byteArray.WriteTo(ref writer);
+                writer.WriteByteArray(multiplayerAvatarData.Data);
             }
         }
 
@@ -61,13 +61,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             AvatarsData = ReadFromAvatarsData(ref reader);
             SupportedAvatarTypeIdHashesBloomFilter.ReadFrom(ref reader);
         }
-        public static MultiplayerAvatarsData Deserialize(ref SpanBuffer reader)
-        {
-            List<MultiplayerAvatarData> list = MultiplayerAvatarsData.ReadFromAvatarsData(ref reader);
-            BitMask128 bitMask = new BitMask128();
-            bitMask.ReadFrom(ref reader);
-            return new MultiplayerAvatarsData(list, bitMask);
-        }
         public static List<MultiplayerAvatarData> ReadFromAvatarsData(ref SpanBuffer reader)
         {
             int @int = reader.ReadInt32();
@@ -75,9 +68,8 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             for (int i = 0; i < @int; i++)
             {
                 uint @uint = reader.ReadUInt32();
-                ByteArray byteArray = new ByteArray(); // TODO: Check if ByteArray is the correct equivalent to GetBytes()
-                byteArray.ReadFrom(ref reader);
-                list.Add(new MultiplayerAvatarData(@uint, byteArray.Data));
+                ReadOnlySpan<byte> byteArray = reader.ReadByteArray();
+                list.Add(new MultiplayerAvatarData(@uint, byteArray.ToArray()));
             }
             return list;
         }
