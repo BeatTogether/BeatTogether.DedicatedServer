@@ -110,6 +110,12 @@ namespace BeatTogether.Extensions
             return bufferReader.ReadBytes((int)count);
         }
 
+        public static ReadOnlySpan<byte> ReadByteArray(this ref SpanBuffer bufferReader)
+        {
+            ushort num = bufferReader.ReadUInt16();
+            return bufferReader.ReadBytes(num);
+        }
+
         public static string ReadString(this ref SpanBuffer bufferReader, int maxLength = 65535)
         {
             int num = bufferReader.ReadInt32();
@@ -167,6 +173,16 @@ namespace BeatTogether.Extensions
         {
             bufferWriter.WriteVarUInt((uint)bytes.Length);
             bufferWriter.WriteBytes(bytes);
+        }
+
+        public static void WriteByteArray(this ref SpanBuffer bufferWriter, byte[]? arr = null)
+        {
+            ushort num = (arr == null) ? (ushort)0 : ((ushort)arr.Length);
+            bufferWriter.WriteUInt16(num);
+            if (arr != null)
+            {
+                bufferWriter.WriteBytes(arr);
+            }
         }
 
         public static void WriteString(this ref SpanBuffer bufferWriter, string value)
