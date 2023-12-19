@@ -35,7 +35,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public string ClientVersion { get; set; } = "Pre-1.29";
         public Platform Platform { get; set; } = Platform.Test; //Unknown
         public string PlatformUserId { get; set; } = "";
-        public AvatarData Avatar { get; set; } = new();
+        public MultiplayerAvatarsData Avatar { get; set; } = new();
         public bool IsReady { get; set; }
         public bool InLobby { get; set; }
 
