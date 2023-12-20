@@ -43,7 +43,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public GameplayModifiers Modifiers { get; set; } = new();
         public PlayerStateHash State { get; set; } = new();
         public bool IsServerOwner => UserId == Instance._configuration.ServerOwnerId;
-        public bool CanRecommendBeatmaps => Instance._configuration.GameplayServerControlSettings is not GameplayServerControlSettings.None;
+        public bool CanRecommendBeatmaps => true;// This check is wrong as GameplayServerControlSettings is None in Quickplay to disable Modifier selection  //Instance._configuration.GameplayServerControlSettings is not GameplayServerControlSettings.None;
         public bool CanRecommendModifiers =>
             Instance._configuration.GameplayServerControlSettings is GameplayServerControlSettings.AllowModifierSelection or GameplayServerControlSettings.All;
         public bool CanKickVote => UserId == Instance._configuration.ServerOwnerId;
