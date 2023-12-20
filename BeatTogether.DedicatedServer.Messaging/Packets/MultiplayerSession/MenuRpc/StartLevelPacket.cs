@@ -19,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             if (HasValue1)
                 Modifiers.ReadFrom(ref reader);
             if (HasValue2)
-                StartTime = (long)reader.ReadVarULong();
+                StartTime = reader.ReadVarLong();
         }
 
         public override void WriteTo(ref SpanBuffer writer)
@@ -27,7 +27,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             base.WriteTo(ref writer);
             Beatmap.WriteTo(ref writer);
             Modifiers.WriteTo(ref writer);
-            writer.WriteVarULong((ulong)StartTime);
+            writer.WriteVarLong(StartTime);
         }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace BeatTogether.DedicatedServer.Messaging.Abstractions
 {
+    // WARNING do not cast to ulong for any packets that inherit this class
     public abstract class BaseRpcWithValuesPacket : BaseRpcPacket
     {
         public byte HasValues { get; set; } = (1 | 2 | 4 | 8);

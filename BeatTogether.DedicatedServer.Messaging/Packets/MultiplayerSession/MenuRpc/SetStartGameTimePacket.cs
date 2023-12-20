@@ -12,13 +12,13 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         {
 			base.ReadFrom(ref reader);
 			if (HasValue0)
-				StartTime = (long)reader.ReadVarULong();
+				StartTime = reader.ReadVarLong();
 		}
 
 		public override void WriteTo(ref SpanBuffer writer)
         {
 			base.WriteTo(ref writer);
-			writer.WriteVarULong((ulong)StartTime);
+			writer.WriteVarLong(StartTime);
 		}
 	}
 }
