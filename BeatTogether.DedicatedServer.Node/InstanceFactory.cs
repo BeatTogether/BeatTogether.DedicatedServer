@@ -71,9 +71,9 @@ namespace BeatTogether.DedicatedServer.Node
             instanceConfig.AllowPerPlayerModifiers = AllowPerPlayerModifiers;
             if (permanentManager)
                 instanceConfig.SetConstantManagerFromUserId = managerId;
-            instanceConfig.CountdownConfig.CountdownTimePlayersReady = Math.Max(PlayersReadyCountdownTime,0);
-            if (instanceConfig.CountdownConfig.CountdownTimePlayersReady == 0f)
-                instanceConfig.CountdownConfig.CountdownTimePlayersReady = instanceConfig.GameplayServerMode == GameplayServerMode.Managed ? 15 : 30;
+            instanceConfig.CountdownConfig.CountdownTimePlayersReady = Math.Max(PlayersReadyCountdownTime,0L);
+            if (instanceConfig.CountdownConfig.CountdownTimePlayersReady == 0L)
+                instanceConfig.CountdownConfig.CountdownTimePlayersReady = instanceConfig.GameplayServerMode == GameplayServerMode.Managed ? 15000L : 30000L;
             var instance = scope.ServiceProvider.GetRequiredService<IDedicatedInstance>();
             if (!_instanceRegistry.AddInstance(instance))
                 return null;

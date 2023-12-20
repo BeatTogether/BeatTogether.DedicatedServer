@@ -29,7 +29,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public BeatmapIdentifier? CurrentBeatmap { get; private set; } = null;
         public GameplayModifiers CurrentModifiers { get; private set; } = new();
 
-        private const long SongStartDelay = 100;
+        private const long SongStartDelay = 500L;
         private const float SceneLoadTimeLimit = 15.0f;
         private const float SongLoadTimeLimit = 15.0f;
 
@@ -165,8 +165,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
 
             // Start song and wait for finish
-            _songStartTime = (_instance.RunTime + SongStartDelay + (StartDelay * 2))*2;
-            _logger.Verbose($"Song start time: {_songStartTime}");
+            _songStartTime = (_instance.RunTime + SongStartDelay + (StartDelay * 2));
+            _logger.Verbose($"SongStartTime: {_songStartTime} RunTime: {_instance.RunTime}");
 
             State = GameplayManagerState.Gameplay;
 

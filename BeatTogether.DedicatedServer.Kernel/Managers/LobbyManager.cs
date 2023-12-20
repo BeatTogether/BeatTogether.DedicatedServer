@@ -248,6 +248,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private void CountingDown(bool isReady, bool NotStartable)
         {
+            _logger.Debug($"CountdownEndTime '{CountdownEndTime}' RunTime '{_instance.RunTime}' BeatMapStartCountdownTime '{_configuration.CountdownConfig.BeatMapStartCountdownTime}' CountdownTimePlayersReady '{_configuration.CountdownConfig.CountdownTimePlayersReady}'");  
             // If not already counting down
             if (CountDownState == CountdownState.NotCountingDown)
             {
@@ -261,8 +262,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // If counting down
             if (CountDownState != CountdownState.NotCountingDown)
             {
+                _logger.Debug($"CountdownEndTime '{CountdownEndTime}' RunTime '{_instance.RunTime}'");
                 if(CountdownEndTime <= _instance.RunTime)
                 {
+                    _logger.Debug($"Countdown finished, sending map");
                     // If countdown just finished, send map then pause lobby untill all players have map downloaded
                     if (CountDownState != CountdownState.WaitingForEntitlement)
                     {
@@ -281,6 +284,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 }, DeliveryMethod.ReliableOrdered);
                             }
                         }
+                        _logger.Debug($"All players have entitlement, starting map");
                         //starts beatmap
                         _gameplayManager.SetBeatmap(SelectedBeatmap!, SelectedModifiers);
                         Task.Run(() => _gameplayManager.StartSong(CancellationToken.None));
@@ -290,6 +294,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     if (CountdownEndTime + _configuration.SendPlayersWithoutEntitlementToSpectateTimeout <= _instance.RunTime) //If takes too long to start then players are sent to spectate by telling them the beatmap already started
                     {
+                        _logger.Debug($"Took too long to start, sending players to spectate");
                         IPlayer[] MissingEntitlement = _playerRegistry.Players.Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is not EntitlementStatus.Ok).ToArray();
                         foreach (IPlayer p in MissingEntitlement)
                         {
@@ -355,7 +360,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled, whereas SetCountdown will not
         private void SetCountdown(CountdownState countdownState, long countdown = 0)
         {
-            _logger.Error($"CountdownEndTime currently is '{CountdownEndTime}' countdown is set to '{countdown}' state will be set to '{countdownState}'");
+            _logger.Error($"CountdownEndTime currently is '{CountdownEndTime}' countdown is set to '{countdown}' state will be set to '{countdownState}' BeatmapStartTime is '{_configuration.CountdownConfig.BeatMapStartCountdownTime}'");
+            _logger.Error($"Check should start Beatmap {(CountdownEndTime - _instance.RunTime) < _configuration.CountdownConfig.BeatMapStartCountdownTime} EndTime '{CountdownEndTime - _instance.RunTime}' RunTime '{_instance.RunTime}'");
             CountDownState = countdownState;
             switch (CountDownState)
             {
@@ -366,7 +372,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     break;
                 case CountdownState.CountingDown:
                     if (countdown == 0)
-                        countdown = 30*2;
+                        countdown = 30000L;
                     CountdownEndTime = _instance.RunTime + countdown;
                     _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
                     {
@@ -375,7 +381,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     break;
                 case CountdownState.StartBeatmapCountdown:
                     if (countdown == 0)
-                        countdown = 5*2;
+                        countdown = 5000L;
                     CountdownEndTime = _instance.RunTime + countdown;
                     StartBeatmapPacket();
                     break;
@@ -383,7 +389,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     StartBeatmapPacket();
                     break;
             }
-            _logger.Error($"CountdownEndTime final set to '{CountdownEndTime}' CountdownState '{CountDownState}' countdown is '{countdown}' RunTime is '{_instance.RunTime}'");
+            _logger.Error($"CountdownEndTime final set to '{CountdownEndTime}' CountdownState '{CountDownState}' countdown is '{countdown}' RunTime is '{_instance.RunTime}' BeatmapStartTime is '{_configuration.CountdownConfig.BeatMapStartCountdownTime}'");
         }
 
         //Checks the lobby settings and sends the player the correct beatmap

@@ -25,7 +25,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(GetCountdownEndTimePacket)}' " +
-                $"(SenderId={sender.ConnectionId})."
+                $"(SenderId={sender.ConnectionId} CountdownTime={_lobbyManager.CountdownEndTime})."
             );
             if(_lobbyManager.CountDownState == Enums.CountdownState.CountingDown)
                 _packetDispatcher.SendToPlayer(sender, new SetCountdownEndTimePacket

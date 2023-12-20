@@ -28,15 +28,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
         public bool DisableNotes { get; set; }
         public bool ForceEnableNotes { get; set; } = false;
         public bool ForceStartMode { get; set; } = false;
-        public float SendPlayersWithoutEntitlementToSpectateTimeout { get; set; } = 30f;
+        public long SendPlayersWithoutEntitlementToSpectateTimeout { get; set; } = 30000L;
         public int MaxLengthCommand { get; set; } = 200;
         public bool ApplyNoFailModifier { get; set; } = true;
     }
 
     public sealed class CountdownConfig
     {
-        public long CountdownTimePlayersReady { get; set; } = 30;
-        public long BeatMapStartCountdownTime { get; set; } = 5;
+        public long CountdownTimePlayersReady { get; set; } = 30000L;
+        public long BeatMapStartCountdownTime { get; set; } = 5000L;
         public float ResultsScreenTime { get; set; } = 20.0f;
     }
 }
