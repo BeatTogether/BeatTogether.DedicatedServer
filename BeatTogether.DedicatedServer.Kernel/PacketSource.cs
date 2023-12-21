@@ -115,6 +115,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 if (packet == null)
                 {
+                    _logger.Debug($"Failed to create packet.");
                     // skip any unprocessed bytes
                     var processedBytes = HandleRead.Offset - prevPosition;
                     try { HandleRead.SkipBytes((int)length - processedBytes); }
@@ -132,6 +133,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
                     {
+                        _logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Secret}').");
                         return;
                     }
                     method = DeliveryMethod.Unreliable;
@@ -139,8 +141,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 if (packet is NodePoseSyncStateDeltaPacket)
                 {
-                    if((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
+                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
                     {
+                        _logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Secret}').");
                         return;
                     }
                     sender.TicksAtLastSyncStateDelta = DateTime.UtcNow.Ticks;
@@ -151,7 +154,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 var packetHandler = _serviceProvider.GetService(packetHandlerType);
                 if (packetHandler is null)
                 {
-                    if (!packetType.Name.StartsWith("NodePoseSyncState"))
+                    //if (!packetType.Name.StartsWith("NodePoseSyncState"))
                         _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
 
                     // skip any unprocessed bytes
@@ -168,6 +171,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 catch
                 {
                     // skip any unprocessed bytes
+                    _logger.Debug($"Failed to read packet of type '{packetType.Name}'.");
                     var processedBytes = HandleRead.Offset - prevPosition;
                     try { HandleRead.SkipBytes((int)length - processedBytes); }
                     catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
@@ -200,9 +204,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"PacketOption='{routingHeader.PacketOption}' " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
-                foreach (var player in _playerRegistry.Players)
-                    if (player != sender)
-                        _packetDispatcher.Send(player.Endpoint, writer.Data, deliveryMethod);
+                _packetDispatcher.RouteExcludingPlayer(sender, ref writer, deliveryMethod);
             }
             else
             {
@@ -222,7 +224,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"PacketOption='{routingHeader.PacketOption}' " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
-                _packetDispatcher.Send(receiver.Endpoint, writer.Data, deliveryMethod);
+                _packetDispatcher.RouteFromPlayerToPlayer(sender, receiver, ref writer, deliveryMethod);
             }
         }
 
