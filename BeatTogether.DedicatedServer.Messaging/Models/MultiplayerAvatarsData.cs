@@ -51,7 +51,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteInt32(AvatarsData.Count);
             foreach (MultiplayerAvatarData multiplayerAvatarData in AvatarsData)
             {
-                writer.WriteVarUInt(multiplayerAvatarData.AvatarTypeIdentifierHash);
+                writer.WriteUInt32(multiplayerAvatarData.AvatarTypeIdentifierHash);
                 writer.WriteByteArray(multiplayerAvatarData.Data);
             }
         }
