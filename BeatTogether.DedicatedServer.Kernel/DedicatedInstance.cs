@@ -9,6 +9,7 @@ using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Kernel.ENet;
 using BeatTogether.DedicatedServer.Kernel.Enums;
+using BeatTogether.DedicatedServer.Kernel.Extensions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets;
@@ -378,7 +379,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     _handshakeSessionRegistry.TryGetByPlayerSessionId(connectionRequestData.PlayerSessionId);
                 _handshakeSessionRegistry.RemoveExtraPlayerSessionData(connectionRequestData.PlayerSessionId, out var ClientVer, out var Platform, out var PlayerPlatformUserId);
                 player.ClientVersion = ClientVer;
-                player.Platform = (Platform)Platform;
+                player.Platform = (Enums.Platform)Platform;
                 player.PlatformUserId = PlayerPlatformUserId;
                 if (handshakeSession != null && handshakeSession.EncryptionParameters != null)
                 {
@@ -419,8 +420,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 },
             new MpNodePoseSyncStatePacket
                 {
-                    fullStateUpdateFrequency = 0.1f,
-                    deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets() * 0.001f
+                    fullStateUpdateFrequency = 100L,
+                    deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets()
                 },
             };
             player.PlayerAccessSemaphore.Release();
@@ -560,7 +561,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     _handshakeSessionRegistry.TryGetByPlayerSessionId(connectionRequestData.PlayerSessionId);
                 _handshakeSessionRegistry.RemoveExtraPlayerSessionData(connectionRequestData.PlayerSessionId, out var ClientVer, out var Platform, out var PlayerPlatformUserId);
                 player.ClientVersion = ClientVer;
-                player.Platform = (Platform)Platform;
+                player.Platform = (Enums.Platform)Platform;
                 player.PlatformUserId = PlayerPlatformUserId;
                 if (handshakeSession != null && handshakeSession.EncryptionParameters != null)
                 {
@@ -588,11 +589,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 },
             new MpNodePoseSyncStatePacket
                 {
-                    fullStateUpdateFrequency = 0.1f,
-                    deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets() * 0.001f
+                    fullStateUpdateFrequency = 100L,
+                    deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets()
                 },
             };
             player.PlayerAccessSemaphore.Release();
+
+            _logger.Debug($"MpNodePoseSyncStatePacket check deltaUpdateFrequency {_playerRegistry.GetMillisBetweenSyncStatePackets()}");
 
             PacketDispatcher.SendExcludingPlayer(player, SendToOtherPlayers, DeliveryMethod.ReliableOrdered);
 
@@ -650,8 +653,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     },
                 new MpNodePoseSyncStatePacket
                     {
-                        fullStateUpdateFrequency = 0.1f,
-                        deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets() * 0.001f
+                        fullStateUpdateFrequency = 100L,
+                        deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets()
                     },
                };
             player.PlayerAccessSemaphore.Release();
@@ -710,7 +713,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }, DeliveryMethod.ReliableOrdered);
             }
 
-            if (player.Platform == Platform.Test) //If the player is a bot, send permissions. Normal players request this in a packet when they join
+            if (player.Platform == Kernel.Enums.Platform.Test) //If the player is a bot, send permissions. Normal players request this in a packet when they join
             {
                 bool HasManager = (_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var ServerOwner) && !player.IsServerOwner);
                 PlayerPermissionConfiguration[] playerPermissionConfigurations = new PlayerPermissionConfiguration[HasManager ? 2 : 1];
@@ -759,7 +762,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).Random = new ByteArray { Data = p.Random };
                     ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey };
                     ((MpPlayerData)SendToPlayerFromPlayers[1]).PlatformID = p.PlatformUserId;
-                    ((MpPlayerData)SendToPlayerFromPlayers[1]).Platform = (byte)p.Platform;
+                    ((MpPlayerData)SendToPlayerFromPlayers[1]).Platform = p.Platform.Convert();
                     ((MpPlayerData)SendToPlayerFromPlayers[1]).ClientVersion = p.ClientVersion;
                     
                     p.PlayerAccessSemaphore.Release();
@@ -779,7 +782,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     PacketDispatcher.SendFromPlayerToPlayerAndAwait(player, p, new MpPlayerData
                     {
                         PlatformID = player.PlatformUserId!,
-                        Platform = (byte)player.Platform,
+                        Platform = player.Platform.Convert(),
                         ClientVersion = player.ClientVersion!
                     }, DeliveryMethod.ReliableOrdered),
                     Task.Delay(50));
@@ -879,8 +882,8 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             PacketDispatcher.SendToNearbyPlayers(new MpNodePoseSyncStatePacket
             {
-                fullStateUpdateFrequency = 0.1f,
-                deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets() * 0.001f
+                fullStateUpdateFrequency = 100L,
+                deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets()
             }, DeliveryMethod.ReliableOrdered);
 
             if (_playerRegistry.GetPlayerCount() == 0)

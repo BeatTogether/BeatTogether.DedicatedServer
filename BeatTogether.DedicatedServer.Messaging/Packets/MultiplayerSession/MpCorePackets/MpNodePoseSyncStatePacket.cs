@@ -1,22 +1,23 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
+﻿using BeatTogether.Extensions;
+using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets
 {
     public sealed class MpNodePoseSyncStatePacket : INetSerializable
     {
-        public float deltaUpdateFrequency;
-        public float fullStateUpdateFrequency;
+        public long deltaUpdateFrequency;
+        public long fullStateUpdateFrequency;
 
         public void WriteTo(ref SpanBuffer bufferWriter)
         {
-            bufferWriter.WriteFloat32(deltaUpdateFrequency);
-            bufferWriter.WriteFloat32(fullStateUpdateFrequency);
+            bufferWriter.WriteVarLong(deltaUpdateFrequency);
+            bufferWriter.WriteVarLong(fullStateUpdateFrequency);
         }
         public void ReadFrom(ref SpanBuffer bufferReader)
         {
-            deltaUpdateFrequency = bufferReader.ReadFloat32();
-            fullStateUpdateFrequency = bufferReader.ReadFloat32();
+            deltaUpdateFrequency = bufferReader.ReadVarLong();
+            fullStateUpdateFrequency = bufferReader.ReadVarLong();
         }
     }
 

@@ -1,4 +1,5 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.Extensions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 using BeatTogether.LiteNetLib.Enums;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 _PacketDispatcher.SendFromPlayerToPlayer(Player, sender, new MpPlayerData()
                 {
                     PlatformID = Player.PlatformUserId,
-                    Platform = (byte)Player.Platform,
+                    Platform = Player.Platform.Convert(),
                     ClientVersion = Player.ClientVersion
                 }, DeliveryMethod.ReliableOrdered);
             }
