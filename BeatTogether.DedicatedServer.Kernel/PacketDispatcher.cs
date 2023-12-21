@@ -50,7 +50,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             // LiteNet send
             Send(player.Endpoint, writer.Data, deliveryMethod);
         }
-        
+
         #region Sends
         public void SendToNearbyPlayers(INetSerializable packet, DeliveryMethod deliveryMethod)
         {
@@ -97,6 +97,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
                     SendInternal(player, ref writer, deliveryMethod);
         }
+
         public void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
             _logger.Debug(
@@ -112,6 +113,19 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
                     SendInternal(player, ref writer, deliveryMethod);
         }
+
+        public void RouteExcludingPlayer(IPlayer excludedPlayer, ref SpanBuffer writer, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending routed packet " +
+                $"(ExcludedId={excludedPlayer.ConnectionId})"
+            );
+
+            foreach (IPlayer player in _playerRegistry.Players)
+                if (player.ConnectionId != excludedPlayer.ConnectionId)
+                    SendInternal(player, ref writer, deliveryMethod);
+        }
+
 
         public void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
 		{
@@ -154,6 +168,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteOne(ref writer, packet);
             SendInternal(toPlayer, ref writer, deliveryMethod);
         }
+
         public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
             _logger.Debug(
@@ -164,6 +179,16 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             WriteMany(ref writer, packets);
+            SendInternal(toPlayer, ref writer, deliveryMethod);
+        }
+
+        public void RouteFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, ref SpanBuffer writer, DeliveryMethod deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending routed packet " +
+                $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={LocalConnectionId})."
+            );
+
             SendInternal(toPlayer, ref writer, deliveryMethod);
         }
 

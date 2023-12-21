@@ -137,7 +137,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 if (packet is NodePoseSyncStateDeltaPacket)
                 {
-                    if((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
+                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
                     {
                         return;
                     }
@@ -196,9 +196,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
-                foreach (var player in _playerRegistry.Players)
-                    if (player != sender)
-                        _packetDispatcher.Send(player.Endpoint, writer.Data, deliveryMethod);
+                _packetDispatcher.RouteExcludingPlayer(sender, ref writer, deliveryMethod);
             }
             else
             {
@@ -217,7 +215,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
-                _packetDispatcher.Send(receiver.Endpoint, writer.Data, deliveryMethod);
+                _packetDispatcher.RouteFromPlayerToPlayer(sender, receiver, ref writer, deliveryMethod);
             }
         }
 
