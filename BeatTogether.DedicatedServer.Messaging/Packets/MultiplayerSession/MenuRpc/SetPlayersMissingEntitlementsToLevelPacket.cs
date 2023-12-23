@@ -23,9 +23,34 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             }
         }
 
+        public override void ReadFrom(ref SpanBuffer reader, Version version)
+        {
+            base.ReadFrom(ref reader, version);
+
+            if (HasValue0)
+            {
+                PlayersWithoutEntitlements = new string[reader.ReadInt32()];
+                for (int i = 0; i < PlayersWithoutEntitlements.Length; i++)
+                {
+                    PlayersWithoutEntitlements[i] = reader.ReadString();
+                }
+            }
+        }
+
         public override void WriteTo(ref SpanBuffer writer)
         {
             base.WriteTo(ref writer);
+            
+            writer.WriteInt32(PlayersWithoutEntitlements.Length);
+            foreach (string player in PlayersWithoutEntitlements)
+            {
+                writer.WriteString(player);
+            }
+        }
+
+        public override void WriteTo(ref SpanBuffer writer, Version version)
+        {
+            base.WriteTo(ref writer, version);
             
             writer.WriteInt32(PlayersWithoutEntitlements.Length);
             foreach (string player in PlayersWithoutEntitlements)

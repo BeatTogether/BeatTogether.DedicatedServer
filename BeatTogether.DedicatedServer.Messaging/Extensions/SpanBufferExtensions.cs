@@ -13,7 +13,7 @@ namespace BeatTogether.Extensions
         public static (byte SenderId, byte ReceiverId, PacketOption packetOptions) ReadRoutingHeader(this ref SpanBuffer reader) =>
             (reader.ReadUInt8(), reader.ReadUInt8(), (PacketOption)reader.ReadUInt8());
 
-        public static bool TryReadRoutingHeader(this ref SpanBuffer reader, [MaybeNullWhen(false)] out (byte SenderId, byte ReceiverId, PacketOption packetOptions) routingHeader)
+        public static bool TryReadRoutingHeader(this ref SpanBuffer reader, bool isLegacyPlayer, [MaybeNullWhen(false)] out (byte SenderId, byte ReceiverId, PacketOption packetOptions) routingHeader)
         {
             if (reader.RemainingSize < 2)
             {
@@ -21,6 +21,11 @@ namespace BeatTogether.Extensions
                 return false;
             }
 
+            if (isLegacyPlayer)
+            {
+                routingHeader = (reader.ReadUInt8(), reader.ReadUInt8(), PacketOption.None); // TODO: Properly determine packet options, though maybe server doesn't care about them
+                return true;
+            }
             routingHeader = (reader.ReadUInt8(), reader.ReadUInt8(), (PacketOption)reader.ReadUInt8());
             return true;
         }
@@ -28,14 +33,19 @@ namespace BeatTogether.Extensions
         public static void WriteRoutingHeader(this ref SpanBuffer writer, byte senderId, byte receiverId, PacketOption packetOptions = PacketOption.None) =>
             writer.WriteRoutingHeader(senderId, receiverId, (byte)packetOptions);
 
-
-
         public static void WriteRoutingHeader(this ref SpanBuffer writer, byte senderId, byte receiverId, byte packetOptions)
         {
             writer.WriteUInt8(senderId);
             writer.WriteUInt8(receiverId);
             writer.WriteUInt8(packetOptions);
         }
+
+        public static void WriteLegacyRoutingHeader(this ref SpanBuffer writer, byte senderId, byte receiverId)
+        {
+            writer.WriteUInt8(senderId);
+            writer.WriteUInt8(receiverId);
+        }
+
 
         public static ulong ReadVarULong(this ref SpanBuffer bufferReader)
         {

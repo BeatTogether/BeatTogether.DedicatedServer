@@ -10,6 +10,7 @@ using Serilog;
 using System.Net;
 using System.Numerics;
 using System.Threading.Tasks;
+using BeatTogether.DedicatedServer.Messaging.Packets.Legacy;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -62,12 +63,17 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteOne(ref writer, packet);
+            legacyWriter.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            WriteOne(ref writer, packet, ClientVersions.NewPacketVersion);
+            WriteOne(ref legacyWriter, packet, ClientVersions.DefaultVersion);
             _logger.Verbose("Packet: " + packet.GetType().Name + " Was entered into the spanbuffer correctly, now sending once to each player");
             foreach (var player in _playerRegistry.Players)
-                SendInternal(player, ref writer, deliveryMethod);
-                    
+                if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                    SendInternal(player, ref legacyWriter, deliveryMethod);
+                else
+                    SendInternal(player, ref writer, deliveryMethod);
         }
         public void SendToNearbyPlayers(INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
@@ -77,11 +83,17 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteMany(ref writer, packets);
+            legacyWriter.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            WriteMany(ref writer, packets, ClientVersions.NewPacketVersion);
+            WriteMany(ref legacyWriter, packets, ClientVersions.DefaultVersion);
             _logger.Verbose("Packets were entered into the spanbuffer correctly, now sending once to each player");
             foreach (var player in _playerRegistry.Players)
-                SendInternal(player, ref writer, deliveryMethod);
+                if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                    SendInternal(player, ref legacyWriter, deliveryMethod);
+                else
+                    SendInternal(player, ref writer, deliveryMethod);
         }
 
         public void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -92,12 +104,18 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteOne(ref writer, packet);
+            legacyWriter.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            WriteOne(ref writer, packet, ClientVersions.NewPacketVersion);
+            WriteOne(ref legacyWriter, packet, ClientVersions.DefaultVersion);
 
             foreach (IPlayer player in _playerRegistry.Players)
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
-                    SendInternal(player, ref writer, deliveryMethod);
+                    if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                        SendInternal(player, ref legacyWriter, deliveryMethod);
+                    else
+                        SendInternal(player, ref writer, deliveryMethod);
         }
 
         public void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
@@ -115,12 +133,18 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteMany(ref writer, packets);
+            legacyWriter.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            WriteMany(ref writer, packets, ClientVersions.NewPacketVersion);
+            WriteMany(ref legacyWriter, packets, ClientVersions.DefaultVersion);
 
             foreach (IPlayer player in _playerRegistry.Players)
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
-                    SendInternal(player, ref writer, deliveryMethod);
+                    if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                        SendInternal(player, ref legacyWriter, deliveryMethod);
+                    else
+                        SendInternal(player, ref writer, deliveryMethod);
         }
 
         public void RouteExcludingPlayer(IPlayer excludedPlayer, ref SpanBuffer writer, DeliveryMethod deliveryMethod)
@@ -144,12 +168,18 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
-            WriteOne(ref writer, packet);
+            legacyWriter.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            WriteOne(ref writer, packet, ClientVersions.NewPacketVersion);
+            WriteOne(ref legacyWriter, packet, ClientVersions.DefaultVersion);
 
             foreach (var player in _playerRegistry.Players)
-                SendInternal(player, ref writer, deliveryMethod);
-		}
+                if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                    SendInternal(player, ref legacyWriter, deliveryMethod);
+                else
+                    SendInternal(player, ref writer, deliveryMethod);
+        }
         public void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
             _logger.Debug(
@@ -158,11 +188,17 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
-            WriteMany(ref writer, packets);
+            legacyWriter.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            WriteMany(ref writer, packets, ClientVersions.NewPacketVersion);
+            WriteMany(ref legacyWriter, packets, ClientVersions.DefaultVersion);
 
             foreach (var player in _playerRegistry.Players)
-                SendInternal(player, ref writer, deliveryMethod);
+                if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                    SendInternal(player, ref legacyWriter, deliveryMethod);
+                else
+                    SendInternal(player, ref writer, deliveryMethod);
         }
 
         public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -173,8 +209,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
-            writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
-            WriteOne(ref writer, packet);
+            Version clientVersion = ClientVersions.ParseGameVersion(toPlayer.ClientVersion);
+            if (clientVersion < ClientVersions.NewPacketVersion)
+                writer.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            else
+                writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            WriteOne(ref writer, packet, clientVersion);
             SendInternal(toPlayer, ref writer, deliveryMethod);
         }
 
@@ -186,8 +226,13 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
-            writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
-            WriteMany(ref writer, packets);
+            Version clientVersion = ClientVersions.ParseGameVersion(toPlayer.ClientVersion);
+            if (clientVersion < ClientVersions.NewPacketVersion)
+                writer.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            else
+                writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+
+            WriteMany(ref writer, packets, clientVersion);
             SendInternal(toPlayer, ref writer, deliveryMethod);
         }
 
@@ -209,8 +254,13 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
-            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteOne(ref writer, packet);
+            Version clientVersion = ClientVersions.ParseGameVersion(player.ClientVersion);
+            if (clientVersion < ClientVersions.NewPacketVersion)
+                writer.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            else
+                writer.WriteRoutingHeader(ServerId, LocalConnectionId);
+
+            WriteOne(ref writer, packet, clientVersion);
             SendInternal(player, ref writer, deliveryMethod);
         }
         public void SendToPlayer(IPlayer player, INetSerializable[] packets, DeliveryMethod deliveryMethod)
@@ -221,8 +271,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
-            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteMany(ref writer, packets);
+            Version clientVersion = ClientVersions.ParseGameVersion(player.ClientVersion);
+            if (clientVersion < ClientVersions.NewPacketVersion)
+                writer.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            else
+                writer.WriteRoutingHeader(ServerId, LocalConnectionId);
+            WriteMany(ref writer, packets, clientVersion);
             Send(player.Endpoint, writer.Data, deliveryMethod);
         }
         #endregion
@@ -237,8 +291,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteOne(ref writer, packet);
+            legacyWriter.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            WriteOne(ref writer, packet, ClientVersions.NewPacketVersion);
+            WriteOne(ref legacyWriter, packet, ClientVersions.DefaultVersion);
             _logger.Verbose("Packet: " + packet.GetType().Name + " Was entered into the spanbuffer correctly, now sending once to each player");
             var players = _playerRegistry.Players;
             Task[] tasks = new Task[players.Length];
@@ -247,10 +304,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (players[i].IsENetConnection)
                 {
                     tasks[i] = Task.CompletedTask;
-                    SendInternal(players[i], ref writer, deliveryMethod);
+                    if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                        SendInternal(players[i], ref legacyWriter, deliveryMethod);
+                    else
+                        SendInternal(players[i], ref writer, deliveryMethod);
                     continue;
                 }
-                tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+                if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                    tasks[i] = Send(players[i].Endpoint, legacyWriter.Data, deliveryMethod);
+                else
+                    tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
             }
             return Task.WhenAll(tasks);
         }
@@ -262,8 +325,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteMany(ref writer, packets);
+            legacyWriter.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            WriteMany(ref writer, packets, ClientVersions.NewPacketVersion);
+            WriteMany(ref legacyWriter, packets, ClientVersions.DefaultVersion);
             _logger.Verbose("Packets were entered into the spanbuffer correctly, now sending once to each player");
             var players = _playerRegistry.Players;
             Task[] tasks = new Task[players.Length];
@@ -272,10 +338,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (players[i].IsENetConnection)
                 {
                     tasks[i] = Task.CompletedTask;
-                    SendInternal(players[i], ref writer, deliveryMethod);
+                    if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                        SendInternal(players[i], ref legacyWriter, deliveryMethod);
+                    else
+                        SendInternal(players[i], ref writer, deliveryMethod);
                     continue;
                 }
-                tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+                if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                    tasks[i] = Send(players[i].Endpoint, legacyWriter.Data, deliveryMethod);
+                else
+                    tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
             }
             return Task.WhenAll(tasks);
         }
@@ -288,8 +360,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteOne(ref writer, packet);
+            legacyWriter.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            WriteOne(ref writer, packet, ClientVersions.NewPacketVersion);
+            WriteOne(ref legacyWriter, packet, ClientVersions.DefaultVersion);
 
             var players = _playerRegistry.Players;
             Task[] tasks = new Task[players.Length - 1];
@@ -299,12 +374,18 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if (!player.IsENetConnection)
                     {
-                        tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
+                        if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                            tasks[i] = Send(player.Endpoint, legacyWriter.Data, deliveryMethod);
+                        else
+                            tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
                     }
                     else
                     {
                         tasks[i] = Task.CompletedTask;
-                        SendInternal(player, ref writer, deliveryMethod);
+                        if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                            SendInternal(player, ref legacyWriter, deliveryMethod);
+                        else
+                            SendInternal(player, ref writer, deliveryMethod);
                     }
                     i++;
                 }
@@ -318,8 +399,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteMany(ref writer, packets);
+            legacyWriter.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            WriteMany(ref writer, packets, ClientVersions.NewPacketVersion);
+            WriteMany(ref legacyWriter, packets, ClientVersions.DefaultVersion);
             var players = _playerRegistry.Players;
             Task[] tasks = new Task[players.Length-1];
             int i = 0;
@@ -328,12 +412,18 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if (!player.IsENetConnection)
                     {
-                        tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
+                        if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                            tasks[i] = Send(player.Endpoint, legacyWriter.Data, deliveryMethod);
+                        else
+                            tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
                     }
                     else
                     {
                         tasks[i] = Task.CompletedTask;
-                        SendInternal(player, ref writer, deliveryMethod);
+                        if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                            SendInternal(player, ref legacyWriter, deliveryMethod);
+                        else
+                            SendInternal(player, ref writer, deliveryMethod);
                     }
                     i++;
                 }
@@ -348,8 +438,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
-            WriteOne(ref writer, packet);
+            legacyWriter.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            WriteOne(ref writer, packet, ClientVersions.NewPacketVersion);
+            WriteOne(ref legacyWriter, packet, ClientVersions.DefaultVersion);
             var players = _playerRegistry.Players;
             Task[] tasks = new Task[players.Length];
             for (int i = 0; i < players.Length; i++)
@@ -357,10 +450,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (players[i].IsENetConnection)
                 {
                     tasks[i] = Task.CompletedTask;
-                    SendInternal(players[i], ref writer, deliveryMethod);
+                    if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                        SendInternal(players[i], ref legacyWriter, deliveryMethod);
+                    else
+                        SendInternal(players[i], ref writer, deliveryMethod);
                     continue;
                 }
-                tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+                if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                    tasks[i] = Send(players[i].Endpoint, legacyWriter.Data, deliveryMethod);
+                else
+                    tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
             }
             return Task.WhenAll(tasks);
         }
@@ -372,11 +471,18 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
+            var legacyWriter = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
-            WriteMany(ref writer, packets);
+            legacyWriter.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            // TODO: We need a better implementation here, this doesn't work well with multiple versions
+            WriteMany(ref writer, packets, ClientVersions.NewPacketVersion);
+            WriteMany(ref legacyWriter, packets, ClientVersions.DefaultVersion);
 
-            foreach (var player in _playerRegistry.Players)
-                SendInternal(player, ref writer, deliveryMethod);
+            //foreach (var player in _playerRegistry.Players)
+            //    if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+            //        SendInternal(player, ref legacyWriter, deliveryMethod);
+            //    else
+            //        SendInternal(player, ref writer, deliveryMethod);
             var players = _playerRegistry.Players;
             Task[] tasks = new Task[players.Length];
             for (int i = 0; i < players.Length; i++)
@@ -384,10 +490,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (players[i].IsENetConnection)
                 {
                     tasks[i] = Task.CompletedTask;
-                    SendInternal(players[i], ref writer, deliveryMethod);
+                    if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                        SendInternal(players[i], ref legacyWriter, deliveryMethod);
+                    else
+                        SendInternal(players[i], ref writer, deliveryMethod);
                     continue;
                 }
-                tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
+                if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                    tasks[i] = Send(players[i].Endpoint, legacyWriter.Data, deliveryMethod);
+                else
+                    tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
             }
             return Task.WhenAll(tasks);
         }
@@ -400,8 +512,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
-            writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
-            WriteOne(ref writer, packet);
+            Version clientVersion = ClientVersions.ParseGameVersion(toPlayer.ClientVersion);
+            if (clientVersion < ClientVersions.NewPacketVersion)
+                writer.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            else
+                writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            WriteOne(ref writer, packet, clientVersion);
             if (toPlayer.IsENetConnection)
             {
                 SendInternal(toPlayer, ref writer, deliveryMethod);
@@ -417,8 +533,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
-            writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
-            WriteMany(ref writer, packets);
+            Version clientVersion = ClientVersions.ParseGameVersion(toPlayer.ClientVersion);
+            if (clientVersion < ClientVersions.NewPacketVersion)
+                writer.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            else
+                writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
+            WriteMany(ref writer, packets, clientVersion);
             SendInternal(toPlayer, ref writer, deliveryMethod);
             return Send(toPlayer.Endpoint, writer.Data, deliveryMethod);
         }
@@ -431,9 +551,18 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
+            Version clientVersion = ClientVersions.ParseGameVersion(player.ClientVersion);
+            if (clientVersion < ClientVersions.NewPacketVersion)
+                writer.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            else
+                writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteOne(ref writer, packet);
-            SendInternal(player, ref writer, deliveryMethod);
+            WriteOne(ref writer, packet, clientVersion);
+            if (player.IsENetConnection)
+            {
+                SendInternal(player, ref writer, deliveryMethod);
+                return Task.CompletedTask;
+            }
             return Send(player.Endpoint, writer.Data, deliveryMethod);
         }
         public Task SendToPlayerAndAwait(IPlayer player, INetSerializable[] packets, DeliveryMethod deliveryMethod)
@@ -444,15 +573,23 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
-            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteMany(ref writer, packets);
-            SendInternal(player, ref writer, deliveryMethod);
+            Version clientVersion = ClientVersions.ParseGameVersion(player.ClientVersion);
+            if (clientVersion < ClientVersions.NewPacketVersion)
+                writer.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
+            else
+                writer.WriteRoutingHeader(ServerId, LocalConnectionId);
+            WriteMany(ref writer, packets, clientVersion);
+            if (player.IsENetConnection)
+            {
+                SendInternal(player, ref writer, deliveryMethod);
+                return Task.CompletedTask;
+            }
             return Send(player.Endpoint, writer.Data, deliveryMethod);
         }
         #endregion
 
         #region Writers
-        public void WriteOne(ref SpanBuffer writer, INetSerializable packet)
+        public void WriteOne(ref SpanBuffer writer, INetSerializable packet, Version version)
         {
             var type = packet.GetType();
             var packetWriter = new SpanBuffer(stackalloc byte[412]);
@@ -464,21 +601,31 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             else
             {
-
+                _logger.Verbose($"Writing MpCore Packet {type.Name}");
                 packetWriter.WriteUInt8(7);
                 packetWriter.WriteUInt8(100);
                 packetWriter.WriteString(type.Name);
                 //Presume it is a mpcore packet and use the mpcore packet ID, would thow an exeption here if not
                 //throw new Exception($"Failed to retrieve identifier for packet of type '{type.Name}'");
             }
+            if (packet is IVersionedNetSerializable)
+            {
+                _logger.Verbose($"Packet {type.Name} is a versioned packet, writing with version {version}");
+                ((IVersionedNetSerializable)packet).WriteTo(ref packetWriter, version);
+            }
+            else
+            {
+                _logger.Verbose($"Packet {type.Name} is not a versioned packet, writing default version");
+                packet.WriteTo(ref packetWriter);
+            }
             packet.WriteTo(ref packetWriter);
             writer.WriteVarUInt((uint)packetWriter.Size);
             writer.WriteBytes(packetWriter.Data.ToArray());
         }
-        public void WriteMany(ref SpanBuffer writer, INetSerializable[] packets)
+        public void WriteMany(ref SpanBuffer writer, INetSerializable[] packets, Version version)
         {
             for (int i = 0; i < packets.Length; i++)
-                WriteOne(ref writer, packets[i]);
+                WriteOne(ref writer, packets[i], version);
         }
 
         #endregion

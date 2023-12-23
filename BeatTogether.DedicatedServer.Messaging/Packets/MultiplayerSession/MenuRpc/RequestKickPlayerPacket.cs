@@ -1,6 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
 using BeatTogether.LiteNetLib.Util;
+using System;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
@@ -15,10 +16,23 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 				KickedPlayerId = reader.ReadString();
 		}
 
-		public override void WriteTo(ref SpanBuffer writer)
+        public override void ReadFrom(ref SpanBuffer reader, Version version)
+        {
+            base.ReadFrom(ref reader, version);
+            if (HasValue0)
+                KickedPlayerId = reader.ReadString();
+        }
+
+        public override void WriteTo(ref SpanBuffer writer)
         {
 			base.WriteTo(ref writer);
 			writer.WriteString(KickedPlayerId);
 		}
-	}
+
+		public override void WriteTo(ref SpanBuffer writer, Version version)
+		{
+            base.WriteTo(ref writer, version);
+            writer.WriteString(KickedPlayerId);
+        }
+    }
 }

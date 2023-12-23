@@ -1,4 +1,5 @@
 ﻿using BeatTogether.LiteNetLib.Util;
+using System;
 
 namespace BeatTogether.DedicatedServer.Messaging.Abstractions
 {
@@ -37,11 +38,24 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
             HasValues = reader.ReadUInt8();
         }
 
+        public override void ReadFrom(ref SpanBuffer reader, Version version)
+        {
+            base.ReadFrom(ref reader, version);
+            HasValues = reader.ReadUInt8();
+        }
+
         public override void WriteTo(ref SpanBuffer writer)
         {
             base.WriteTo(ref writer);
             writer.WriteUInt8(HasValues);
         }
+
+        public override void WriteTo(ref SpanBuffer writer, Version version)
+        {
+            base.WriteTo(ref writer, version);
+            writer.WriteUInt8(HasValues);
+        }
+
         public override void ReadFrom(ref MemoryBuffer reader)
         {
             base.ReadFrom(ref reader);
