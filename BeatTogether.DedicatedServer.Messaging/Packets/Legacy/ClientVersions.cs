@@ -9,7 +9,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.Legacy
     public static class ClientVersions
     {
         public static Version DefaultVersion = new Version(1, 28, 0);
-        public static Version NewPacketVersion = /*new Version(1, 34, 0)*/new Version(2,0,0);
+        public static Version NewPacketVersion = new Version(1, 34, 0);
 
         public static Version ParseGameVersion(string versionText)
         {
