@@ -170,7 +170,22 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 else if (packetHandler is null && packet is IVersionedNetSerializable versionedPacket)
                 {
-                    versionedPacket.ReadFrom(ref HandleRead, clientVersion);
+                    try
+                    {
+                        _logger.Debug($"Reading versioned packet of type '{packetType.Name}' with version '{clientVersion}'.");
+                        versionedPacket.ReadFrom(ref HandleRead, clientVersion);
+                    }
+                    catch(Exception e)
+                    {
+                        _logger.Error($"Failed to read packet of type '{packetType.Name}' with version '{clientVersion}'.");
+                        _logger.Error(e.Message);
+                        _logger.Error(e.StackTrace);
+                        // skip any unprocessed bytes
+                        var processedBytes = HandleRead.Offset - prevPosition;
+                        try { HandleRead.SkipBytes((int)length - processedBytes); }
+                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
+                        continue;
+                    }
                     if (routingHeader.ReceiverId == AllConnectionIds)
                         _packetDispatcher.SendExcludingPlayer(sender, versionedPacket, method);
                     else
