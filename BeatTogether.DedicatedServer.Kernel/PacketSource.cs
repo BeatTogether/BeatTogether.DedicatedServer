@@ -137,8 +137,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                         //reader.SkipBytes(bytesToRead);
                         //RoutePacket(sender, routingHeader, ref readerSlice, method);
 
+                        // TODO: Check packet registry
+                        HandleRead.SkipBytes(-1); // Rewind by 1 byte so we can include packet id
                         var processedBytes = Math.Min(HandleRead.Offset - prevPosition, HandleRead.RemainingSize);
-                        var bytesToRead = Math.Min((int)length - 1, HandleRead.RemainingSize);
+                        var bytesToRead = Math.Min((int)length, HandleRead.RemainingSize);
                         _logger.Verbose(
                             $"Attempting to Route unhandled packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
                             $"PacketOption='{routingHeader.PacketOption}' " +
@@ -200,8 +202,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                         //var bytesToRead = Math.Min((int)length, HandleRead.RemainingSize);
                         //var remainingData = reader.RemainingData;
                         //var readerSlice = new SpanBuffer(HandleRead.Data.Slice(HandleRead.Offset, bytesToRead));
+                        // TODO: Check packet registry may not handle MpCore packets properly
+                        HandleRead.SkipBytes(-1); // Rewind by 1 byte so we can include packet id
                         var processedBytes = Math.Min(HandleRead.Offset - prevPosition, HandleRead.RemainingSize);
-                        var bytesToRead = Math.Min((int)length - 1, HandleRead.RemainingSize);
+                        var bytesToRead = Math.Min((int)length, HandleRead.RemainingSize);
                         _logger.Verbose(
                             $"Attempting to Route unhandled packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
                             $"PacketOption='{routingHeader.PacketOption}' " +
@@ -264,7 +268,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                         versionedPacket.ReadFrom(ref HandleRead, clientVersion);
                     }
                     else
+                    {
+                        _logger.Debug($"Reading unversioned packet of type '{packetType.Name}'.");
                         packet.ReadFrom(ref HandleRead);
+                    }
                 }
                 catch
                 {
@@ -283,7 +290,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             //Is this packet meant to be routed ?
             if (routingHeader.ReceiverId != 0)
             {
-                _logger.Verbose(
+                _logger.Warning(
                     $"Reached route packet function {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
                     $"PacketOption='{routingHeader.PacketOption}' " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={method}, RemainingSize={reader.RemainingSize})."
@@ -315,7 +322,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 _packetDispatcher.RouteExcludingPlayer(sender, ref writer, deliveryMethod, ClientVersions.NewPacketVersion);
-                _packetDispatcher.RouteExcludingPlayer(sender, ref legacyWriter, deliveryMethod, ClientVersions.DefaultVersion);
+                _packetDispatcher.RouteExcludingPlayer(sender, ref legacyWriter, deliveryMethod, ClientVersions.DefaultVersion, ClientVersions.NewPacketVersion);
             }
             else
             {

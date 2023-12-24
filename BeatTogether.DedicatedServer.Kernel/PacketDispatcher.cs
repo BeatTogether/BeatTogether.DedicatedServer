@@ -41,6 +41,8 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private void SendInternal(IPlayer player, ref SpanBuffer writer, DeliveryMethod deliveryMethod)
         {
+            _logger.Verbose($"Sending packet with following Data to player {player.UserName}|{player.UserId} with ConnectionId {player.ConnectionId}");
+            _logger.Verbose($"Data: {BitConverter.ToString(writer.Data.ToArray())}");
             if (player.IsENetConnection)
             {
                 // ENet send
@@ -147,16 +149,21 @@ namespace BeatTogether.DedicatedServer.Kernel
                         SendInternal(player, ref writer, deliveryMethod);
         }
 
-        public void RouteExcludingPlayer(IPlayer excludedPlayer, ref SpanBuffer writer, DeliveryMethod deliveryMethod, Version requiredVersion)
+        public void RouteExcludingPlayer(IPlayer excludedPlayer, ref SpanBuffer writer, DeliveryMethod deliveryMethod, Version lowerVersion, Version? upperVersion = null)
         {
             _logger.Debug(
                 $"Sending routed packet " +
-                $"(ExcludedId={excludedPlayer.ConnectionId}, RequiredVersion={requiredVersion})"
+                $"(ExcludedId={excludedPlayer.ConnectionId}, LowerVersion={lowerVersion}, UpperVersion={upperVersion})"
             );
 
             foreach (IPlayer player in _playerRegistry.Players)
-                if (player.ConnectionId != excludedPlayer.ConnectionId && player.ClientVersion >= requiredVersion)
+                if (player.ConnectionId != excludedPlayer.ConnectionId && player.ClientVersion >= lowerVersion && (upperVersion is null || player.ClientVersion < upperVersion))
+                {
+                    _logger.Verbose(
+                        $"Sending routed packet to player {player.ConnectionId} with UserId {player.UserId} passed check: {player.ClientVersion >= lowerVersion && (upperVersion is null || player.ClientVersion < upperVersion)}"
+                                                                  );
                     SendInternal(player, ref writer, deliveryMethod);
+                }
         }
 
 
@@ -177,9 +184,19 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             foreach (var player in _playerRegistry.Players)
                 if (player.ClientVersion < ClientVersions.NewPacketVersion)
+                {
+                    _logger.Verbose(
+                        $"Sending LegacyPacket for ClientVersion {ClientVersions.DefaultVersion} to player {player.UserName}|{player.UserId}"
+                    );
                     SendInternal(player, ref legacyWriter, deliveryMethod);
+                }
                 else
+                {
+                    _logger.Verbose(
+                        $"Sending Packet for ClientVersion {ClientVersions.NewPacketVersion} to player {player.UserName}|{player.UserId}"
+                    );
                     SendInternal(player, ref writer, deliveryMethod);
+                }
         }
         public void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
         {
