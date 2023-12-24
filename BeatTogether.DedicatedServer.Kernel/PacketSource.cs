@@ -156,7 +156,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 var packetHandlerType = typeof(Abstractions.IPacketHandler<>)
                     .MakeGenericType(packetType);
                 var packetHandler = _serviceProvider.GetService(packetHandlerType);
-                if (packetHandler is null)
+
+                if (packetHandler is null && packet is not IVersionedNetSerializable)
                 {
                     //if (!packetType.Name.StartsWith("NodePoseSyncState"))
                         _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
@@ -167,6 +168,26 @@ namespace BeatTogether.DedicatedServer.Kernel
                     catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                     continue;
                 }
+                else if (packetHandler is null && packet is IVersionedNetSerializable versionedPacket)
+                {
+                    versionedPacket.ReadFrom(ref HandleRead, clientVersion);
+                    if (routingHeader.ReceiverId == AllConnectionIds)
+                        _packetDispatcher.SendExcludingPlayer(sender, versionedPacket, method);
+                    else
+                    {
+                        if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
+                        {
+                            _logger.Warning(
+                                "Failed to retrieve receiver " +
+                                $"(IsLegacyPlayer='{isLegacyPlayer}', Secret='{sender.Secret}', ReceiverId={routingHeader.ReceiverId})."
+                            );
+                            return;
+                        }
+                        _packetDispatcher.SendFromPlayerToPlayer(sender, receiver, versionedPacket, method);
+                    }
+                    continue;
+                }
+
 
                 try
                 {
