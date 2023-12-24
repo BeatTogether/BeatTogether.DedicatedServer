@@ -43,6 +43,8 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         {
             if (version < ClientVersions.NewPacketVersion)
             {
+                if (PlayerAvatar.AvatarsData is null)
+                    PlayerAvatar.AvatarsData = new();
                 PlayerAvatar.AvatarsData.FirstOrDefault().CreateAvatarData().WriteTo(ref writer);
                 return;
             }

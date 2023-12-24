@@ -3,6 +3,7 @@ using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.Legacy;
 using BeatTogether.DedicatedServer.Messaging.Structs;
 using BeatTogether.LiteNetLib.Util;
+using Serilog;
 using System;
 using System.Linq;
 using System.Reflection.PortableExecutable;
@@ -15,8 +16,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         public ByteArray Random { get; set; } = new();
         public ByteArray PublicEncryptionKey { get; set; } = new();
 
+        private readonly ILogger _logger = Log.ForContext<PlayerIdentityPacket>();
+
         public void ReadFrom(ref SpanBuffer reader)
         {
+            _logger.Debug($"Reading packet using new version.");
             PlayerState.ReadFrom(ref reader);
             PlayerAvatar.ReadFrom(ref reader);
             Random.ReadFrom(ref reader);
@@ -25,19 +29,30 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
 
         public void ReadFrom(ref SpanBuffer reader, Version version)
         {
-            if (version < ClientVersions.NewPacketVersion)
+            try
             {
-                PlayerState.ReadFrom(ref reader);
-                AvatarData avatarData = new();
-                avatarData.ReadFrom(ref reader);
-                PlayerAvatar.AvatarsData.Add(avatarData.CreateMultiplayerAvatarsData());
-                Random.ReadFrom(ref reader);
-                PublicEncryptionKey.ReadFrom(ref reader);
-                return;
+                if (version < ClientVersions.NewPacketVersion)
+                {
+                    _logger.Debug($"Reading packet using old version {version}.");
+                    PlayerState.ReadFrom(ref reader);
+                    AvatarData avatarData = new();
+                    avatarData.ReadFrom(ref reader);
+                    if (PlayerAvatar.AvatarsData is null)
+                        PlayerAvatar.AvatarsData = new();
+                    PlayerAvatar.AvatarsData.Add(avatarData.CreateMultiplayerAvatarsData());
+                    Random.ReadFrom(ref reader);
+                    PublicEncryptionKey.ReadFrom(ref reader);
+                    return;
+                }
+                else
+                {
+                    ReadFrom(ref reader);
+                }
             }
-            else
+            catch(Exception ex)
             {
-                ReadFrom(ref reader);
+                _logger.Error(ex, $"Failed to read packet using version {version}.");
+                throw;
             }
         }
 
@@ -51,17 +66,27 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
 
         public void WriteTo(ref SpanBuffer writer, Version version)
         {
-            if (version < ClientVersions.NewPacketVersion)
+            try
             {
-                PlayerState.WriteTo(ref writer);
-                PlayerAvatar.AvatarsData.FirstOrDefault().CreateAvatarData().WriteTo(ref writer);
-                Random.WriteTo(ref writer);
-                PublicEncryptionKey.WriteTo(ref writer);
-                return;
+                if (version < ClientVersions.NewPacketVersion)
+                {
+                    PlayerState.WriteTo(ref writer);
+                    if (PlayerAvatar.AvatarsData is null)
+                        PlayerAvatar.AvatarsData = new();
+                    PlayerAvatar.AvatarsData.FirstOrDefault().CreateAvatarData().WriteTo(ref writer);
+                    Random.WriteTo(ref writer);
+                    PublicEncryptionKey.WriteTo(ref writer);
+                    return;
+                }
+                else
+                {
+                    WriteTo(ref writer);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                WriteTo(ref writer);
+                _logger.Error(ex, $"Failed to write packet using version {version}.");
+                throw;
             }
         }
     }
