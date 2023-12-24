@@ -12,17 +12,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
         public PlayerSpecificSettingsAtStart PlayersAtStart { get; set; } = new();
         public string SessionGameId { get; set; } = null!;
 
-        public override void ReadFrom(ref SpanBuffer reader)
-        {
-            base.ReadFrom(ref reader);
-            if (HasValue0)
-                UserId = reader.ReadString();
-            if (HasValue1)
-                PlayersAtStart.ReadFrom(ref reader);
-            if (HasValue2)
-                SessionGameId = reader.ReadString();
-        }
-
         public override void ReadFrom(ref SpanBuffer reader, Version version)
         {
             base.ReadFrom(ref reader, version);
@@ -32,14 +21,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
                 PlayersAtStart.ReadFrom(ref reader);
             if (HasValue2)
                 SessionGameId = reader.ReadString();
-        }
-
-        public override void WriteTo(ref SpanBuffer writer)
-        {
-            base.WriteTo(ref writer);
-            writer.WriteString(UserId);
-            PlayersAtStart.WriteTo(ref writer);
-            writer.WriteString(SessionGameId);
         }
 
         public override void WriteTo(ref SpanBuffer writer, Version version)

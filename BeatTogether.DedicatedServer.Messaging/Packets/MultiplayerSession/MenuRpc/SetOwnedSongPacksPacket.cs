@@ -10,13 +10,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
     {
         public SongPackMask SongPackMask { get; set; } = new();
 
-        public override void ReadFrom(ref SpanBuffer reader)
-        {
-            base.ReadFrom(ref reader);
-            if (HasValue0)
-                SongPackMask.ReadFrom(ref reader);
-        }
-
         public override void ReadFrom(ref SpanBuffer reader, Version version)
         {
             base.ReadFrom(ref reader, version);
@@ -32,13 +25,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             }
             if (HasValue0)
                 SongPackMask.ReadFrom(ref reader); // TODO: Convert to LegacySongPackMask
-        }
-
-        public override void WriteTo(ref SpanBuffer writer)
-        {
-            base.WriteTo(ref writer);
-            if (HasValue0)
-                SongPackMask.WriteTo(ref writer);
         }
 
         public override void WriteTo(ref SpanBuffer writer, Version version)

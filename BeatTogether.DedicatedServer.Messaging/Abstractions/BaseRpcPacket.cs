@@ -9,10 +9,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
     {
         public long SyncTime { get; set; }
 
-        public virtual void ReadFrom(ref SpanBuffer reader)
-        {
-            SyncTime = (long)reader.ReadVarULong();
-        }
+        //public virtual void ReadFrom(ref SpanBuffer reader)
+        //{
+        //    throw new NotImplementedException("For Versioned Packets only call the versioned ReadFrom function");
+        //    //SyncTime = (long)reader.ReadVarULong();
+        //}
 
         public virtual void ReadFrom(ref SpanBuffer reader, Version version)
         {
@@ -23,14 +24,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
             }
             else
             {
-                ReadFrom(ref reader);
+                SyncTime = (long)reader.ReadVarULong();
+                //ReadFrom(ref reader);
             }
         }
 
-        public virtual void WriteTo(ref SpanBuffer writer)
-        {
-            writer.WriteVarULong((ulong)SyncTime);
-        }
+        //public virtual void WriteTo(ref SpanBuffer writer)
+        //{
+        //    throw new NotImplementedException("For Versioned Packets only call the versioned WriteTo function");
+        //    //writer.WriteVarULong((ulong)SyncTime);
+        //}
 
         public virtual void WriteTo(ref SpanBuffer writer, Version version)
         {
@@ -41,17 +44,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
             }
             else
             {
-                WriteTo(ref writer);
+                writer.WriteVarULong((ulong)SyncTime);
+                //WriteTo(ref writer);
             }
-        }
-        public virtual void ReadFrom(ref MemoryBuffer reader)
-        {
-            SyncTime = (long)reader.ReadVarULong();
-        }
-
-        public virtual void WriteTo(ref MemoryBuffer writer)
-        {
-            writer.WriteVarULong((ulong)SyncTime);
         }
     }
 }

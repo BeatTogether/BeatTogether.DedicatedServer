@@ -1,5 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using BeatTogether.DedicatedServer.Messaging.Packets.Legacy;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib.Util;
 using System;
@@ -12,17 +13,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         public GameplayModifiers Modifiers { get; set; } = new();
         public long StartTime { get; set; }
 
-        public override void ReadFrom(ref SpanBuffer reader)
-        {
-            base.ReadFrom(ref reader);
-            if (HasValue0)
-                Beatmap.ReadFrom(ref reader);
-            if (HasValue1)
-                Modifiers.ReadFrom(ref reader);
-            if (HasValue2)
-                StartTime = reader.ReadVarLong();
-        }
-
         public override void ReadFrom(ref SpanBuffer reader, Version version)
         {
             base.ReadFrom(ref reader, version);
@@ -31,15 +21,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             if (HasValue1)
                 Modifiers.ReadFrom(ref reader);
             if (HasValue2)
-                StartTime = reader.ReadVarLong();
-        }
-
-        public override void WriteTo(ref SpanBuffer writer)
-        {
-            base.WriteTo(ref writer);
-            Beatmap.WriteTo(ref writer);
-            Modifiers.WriteTo(ref writer);
-            writer.WriteVarLong(StartTime);
+                if (version < ClientVersions.NewPacketVersion)
+                    StartTime = (long)(reader.ReadFloat32() * 1000f);
+                else
+                    StartTime = reader.ReadVarLong();
         }
 
         public override void WriteTo(ref SpanBuffer writer, Version version)
@@ -47,7 +32,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             base.WriteTo(ref writer, version);
             Beatmap.WriteTo(ref writer);
             Modifiers.WriteTo(ref writer);
-            writer.WriteVarLong(StartTime);
+            if (version < ClientVersions.NewPacketVersion)
+                writer.WriteFloat32(StartTime / 1000f);
+            else
+                writer.WriteVarLong(StartTime);
         }
     }
 }

@@ -11,15 +11,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         public string LevelId { get; set; } = null!;
         public EntitlementStatus Entitlement { get; set; }
 
-        public override void ReadFrom(ref SpanBuffer reader)
-        {
-            base.ReadFrom(ref reader);
-            if (HasValue0)
-                LevelId = reader.ReadString();
-            if (HasValue1)
-                Entitlement = (EntitlementStatus)reader.ReadVarInt();
-        }
-
         public override void ReadFrom(ref SpanBuffer reader, Version version)
         {
             base.ReadFrom(ref reader, version);
@@ -27,13 +18,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
                 LevelId = reader.ReadString();
             if (HasValue1)
                 Entitlement = (EntitlementStatus)reader.ReadVarInt();
-        }
-
-        public override void WriteTo(ref SpanBuffer writer)
-        {
-            base.WriteTo(ref writer);
-            writer.WriteString(LevelId);
-            writer.WriteVarInt((int)Entitlement);
         }
 
         public override void WriteTo(ref SpanBuffer writer, Version version)

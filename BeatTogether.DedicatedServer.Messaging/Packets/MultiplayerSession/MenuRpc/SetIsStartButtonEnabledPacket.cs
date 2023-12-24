@@ -10,25 +10,12 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 	{
 		public CannotStartGameReason Reason { get; set; }
 
-		public override void ReadFrom(ref SpanBuffer reader)
-        {
-			base.ReadFrom(ref reader);
-			if (HasValue0)
-				Reason = (CannotStartGameReason)reader.ReadVarInt();
-		}
-
         public override void ReadFrom(ref SpanBuffer reader, Version version)
 		{
             base.ReadFrom(ref reader, version);
             if (HasValue0)
                 Reason = (CannotStartGameReason)reader.ReadVarInt();
         }
-
-        public override void WriteTo(ref SpanBuffer writer)
-        {
-			base.WriteTo(ref writer);
-			writer.WriteVarInt((int)Reason);
-		}
 
 		public override void WriteTo(ref SpanBuffer writer, Version version)
 		{

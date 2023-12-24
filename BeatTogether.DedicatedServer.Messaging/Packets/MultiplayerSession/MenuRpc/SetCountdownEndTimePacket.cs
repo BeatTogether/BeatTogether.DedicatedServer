@@ -1,6 +1,8 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Packets.Legacy;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib.Util;
+using Serilog;
 using System;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
@@ -9,31 +11,32 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
 	{
 		public long CountdownTime { get; set; }
 
-		public override void ReadFrom(ref SpanBuffer reader)
-        {
-			base.ReadFrom(ref reader);
-			if (HasValue0)
-				CountdownTime = reader.ReadVarLong();
-		}
+		private readonly ILogger _logger = Log.ForContext<SetCountdownEndTimePacket>();
 
-        public override void ReadFrom(ref SpanBuffer reader, Version version)
+		public override void ReadFrom(ref SpanBuffer reader, Version version)
 		{
             base.ReadFrom(ref reader, version);
             if (HasValue0)
-                CountdownTime = reader.ReadVarLong();
+				if (version < ClientVersions.NewPacketVersion)
+					CountdownTime = (long)(reader.ReadFloat32() * 1000f);
+				else
+					CountdownTime = reader.ReadVarLong();
 
         }
 
-        public override void WriteTo(ref SpanBuffer writer)
-        {
-			base.WriteTo(ref writer);
-			writer.WriteVarLong(CountdownTime);
-		}
-
-		public override void WriteTo(ref SpanBuffer writer, Version version)
+        public override void WriteTo(ref SpanBuffer writer, Version version)
 		{
             base.WriteTo(ref writer, version);
-            writer.WriteVarLong(CountdownTime);
+			if (version < ClientVersions.NewPacketVersion)
+			{
+				float legacyValue = (CountdownTime / 1000f);
+				float rounded = (float)Math.Round(legacyValue, 4, MidpointRounding.AwayFromZero);
+				_logger.Debug($"CountdownTime: {CountdownTime} | LegacyValue: {legacyValue} LegacyRounded: {rounded}");
+				writer.WriteFloat32(CountdownTime / 1000f);
+				return;
+			}
+			else
+				writer.WriteVarLong(CountdownTime);
         }
 	}
 }

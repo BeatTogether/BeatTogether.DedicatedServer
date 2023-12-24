@@ -9,25 +9,12 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
     {
         public PlayerSpecificSettings PlayerSpecificSettings { get; set; } = new();
 
-        public override void ReadFrom(ref SpanBuffer reader)
-        {
-            base.ReadFrom(ref reader);
-            if (HasValue0)
-                PlayerSpecificSettings.ReadFrom(ref reader);
-        }
-
         public override void ReadFrom(ref SpanBuffer reader, Version version)
         {
             base.ReadFrom(ref reader, version);
             if (HasValue0)
                 PlayerSpecificSettings.ReadFrom(ref reader);
 
-        }
-
-        public override void WriteTo(ref SpanBuffer writer)
-        {
-            base.WriteTo(ref writer);
-            PlayerSpecificSettings.WriteTo(ref writer);
         }
 
         public override void WriteTo(ref SpanBuffer writer, Version version)

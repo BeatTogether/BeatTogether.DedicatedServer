@@ -9,9 +9,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
     {
         public MultiplayerLevelCompletionResults Results { get; set; } = new();
 
-        public override void ReadFrom(ref SpanBuffer reader)
+        public override void ReadFrom(ref SpanBuffer reader, Version version)
         {
-            base.ReadFrom(ref reader);
+            base.ReadFrom(ref reader, version);
             if (HasValue0)
                 Results.ReadFrom(ref reader);
         }
@@ -19,21 +19,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
         public override void WriteTo(ref SpanBuffer writer, Version version)
         {
             base.WriteTo(ref writer, version);
-            if (HasValue0)
-                Results.WriteTo(ref writer);
-        }
-
-        public override void WriteTo(ref SpanBuffer writer)
-        {
-            base.WriteTo(ref writer);
             Results.WriteTo(ref writer);
-        }
-
-        public override void ReadFrom(ref SpanBuffer reader, Version version)
-        {
-            base.ReadFrom(ref reader, version);
-            if (HasValue0)
-                Results.ReadFrom(ref reader);
         }
     }
 }

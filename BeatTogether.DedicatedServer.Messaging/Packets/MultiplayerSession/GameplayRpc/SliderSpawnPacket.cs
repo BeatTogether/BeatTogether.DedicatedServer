@@ -6,18 +6,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Game
 {
     public sealed class SliderSpawnPacket : BaseRpcWithValuesPacket
     {
-        public override void ReadFrom(ref SpanBuffer reader)
-        {
-            base.ReadFrom(ref reader);
-        }
-
         public override void ReadFrom(ref SpanBuffer reader, Version version)
         {
             base.ReadFrom(ref reader, version);
-        }
-        public override void WriteTo(ref SpanBuffer writer)
-        {
-            base.WriteTo(ref writer);
         }
 
         public override void WriteTo(ref SpanBuffer writer, Version version)
