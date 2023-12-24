@@ -61,10 +61,10 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return;
             }
 
-            Version clientVersion = TryParseGameVersion(sender.ClientVersion) ?? ClientVersions.DefaultVersion;
-            bool isLegacyPlayer = clientVersion < ClientVersions.NewPacketVersion;
+            Version clientVersion = sender.ClientVersion;
+            bool senderIsLegacyPlayer = clientVersion < ClientVersions.NewPacketVersion;
 
-            if (!reader.TryReadRoutingHeader(isLegacyPlayer, out var routingHeader))
+            if (!reader.TryReadRoutingHeader(senderIsLegacyPlayer, out var routingHeader))
             {
                 _logger.Warning(
                     "Failed to read routing header " +
@@ -194,7 +194,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         {
                             _logger.Warning(
                                 "Failed to retrieve receiver " +
-                                $"(IsLegacyPlayer='{isLegacyPlayer}', Secret='{sender.Secret}', ReceiverId={routingHeader.ReceiverId})."
+                                $"(SenderIsLegacyPlayer='{senderIsLegacyPlayer}', Secret='{sender.Secret}', ReceiverId={routingHeader.ReceiverId})."
                             );
                             return;
                         }
@@ -229,51 +229,58 @@ namespace BeatTogether.DedicatedServer.Kernel
             RoutePacket:
             //Is this packet meant to be routed?
             if (routingHeader.ReceiverId != 0)
-                RoutePacket(sender, routingHeader, isLegacyPlayer, ref reader, method);
+                RoutePacket(sender, routingHeader, ref reader, method);
         }
         
         #region Private Methods
 
         private void RoutePacket(IPlayer sender,
             (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader,
-            bool isLegacyPlayer, ref SpanBuffer reader, DeliveryMethod deliveryMethod)
+            ref SpanBuffer reader, DeliveryMethod deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
             var writer = new SpanBuffer(stackalloc byte[412]);
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
-                if (isLegacyPlayer)
-                    writer.WriteLegacyRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId);
-                else
-                    writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
-                writer.WriteBytes(reader.RemainingData);
+                //if (isLegacyPlayer)
+                //    writer.WriteLegacyRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
+                //else
+                var legacyWriter = new SpanBuffer(stackalloc byte[412]);
+                legacyWriter.WriteLegacyRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
+                writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
+                var remainingData = reader.RemainingData;
+                legacyWriter.WriteBytes(remainingData);
+                writer.WriteBytes(remainingData);
 
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
-                    $"IsLegacyPlayer='{isLegacyPlayer}' PacketOption='{routingHeader.PacketOption}' " +
+                    $"PacketOption='{routingHeader.PacketOption}' " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
-                _packetDispatcher.RouteExcludingPlayer(sender, ref writer, deliveryMethod);
+                _packetDispatcher.RouteExcludingPlayer(sender, ref writer, deliveryMethod, ClientVersions.NewPacketVersion);
+                _packetDispatcher.RouteExcludingPlayer(sender, ref legacyWriter, deliveryMethod, ClientVersions.DefaultVersion);
             }
             else
             {
-                if (isLegacyPlayer)
+                if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
+                {
+                    _logger.Warning(
+                        "Failed to retrieve receiver " +
+                        $"(Secret='{sender.Secret}', ReceiverId={routingHeader.ReceiverId})."
+                    );
+                    return;
+                }
+
+                if (receiver.ClientVersion < ClientVersions.NewPacketVersion)
                     writer.WriteLegacyRoutingHeader(routingHeader.SenderId, LocalConnectionId);
                 else
                     writer.WriteRoutingHeader(routingHeader.SenderId, LocalConnectionId, routingHeader.PacketOption);
                 writer.WriteBytes(reader.RemainingData);
 
-                if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
-                {
-                    _logger.Warning(
-                        "Failed to retrieve receiver " +
-                        $"(IsLegacyPlayer='{isLegacyPlayer}', Secret='{sender.Secret}', ReceiverId={routingHeader.ReceiverId})."
-                    );
-                    return;
-                }
+
                 _logger.Verbose(
-                    $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
-                    $"IsLegacyPlayer='{isLegacyPlayer}' PacketOption='{routingHeader.PacketOption}' " +
+                    $"Routing packet from {routingHeader.SenderId} ({sender.ClientVersionString}) -> {routingHeader.ReceiverId} ({receiver.ClientVersionString}) " +
+                    $"PacketOption='{routingHeader.PacketOption}' " +
                     $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 _packetDispatcher.RouteFromPlayerToPlayer(sender, receiver, ref writer, deliveryMethod);

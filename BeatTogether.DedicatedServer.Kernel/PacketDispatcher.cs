@@ -70,7 +70,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteOne(ref legacyWriter, packet, ClientVersions.DefaultVersion);
             _logger.Verbose("Packet: " + packet.GetType().Name + " Was entered into the spanbuffer correctly, now sending once to each player");
             foreach (var player in _playerRegistry.Players)
-                if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                if (player.ClientVersion < ClientVersions.NewPacketVersion)
                     SendInternal(player, ref legacyWriter, deliveryMethod);
                 else
                     SendInternal(player, ref writer, deliveryMethod);
@@ -90,7 +90,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteMany(ref legacyWriter, packets, ClientVersions.DefaultVersion);
             _logger.Verbose("Packets were entered into the spanbuffer correctly, now sending once to each player");
             foreach (var player in _playerRegistry.Players)
-                if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                if (player.ClientVersion < ClientVersions.NewPacketVersion)
                     SendInternal(player, ref legacyWriter, deliveryMethod);
                 else
                     SendInternal(player, ref writer, deliveryMethod);
@@ -112,7 +112,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             foreach (IPlayer player in _playerRegistry.Players)
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
-                    if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                    if (player.ClientVersion < ClientVersions.NewPacketVersion)
                         SendInternal(player, ref legacyWriter, deliveryMethod);
                     else
                         SendInternal(player, ref writer, deliveryMethod);
@@ -141,23 +141,24 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             foreach (IPlayer player in _playerRegistry.Players)
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
-                    if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                    if (player.ClientVersion < ClientVersions.NewPacketVersion)
                         SendInternal(player, ref legacyWriter, deliveryMethod);
                     else
                         SendInternal(player, ref writer, deliveryMethod);
         }
 
-        public void RouteExcludingPlayer(IPlayer excludedPlayer, ref SpanBuffer writer, DeliveryMethod deliveryMethod)
+        public void RouteExcludingPlayer(IPlayer excludedPlayer, ref SpanBuffer writer, DeliveryMethod deliveryMethod, Version requiredVersion)
         {
             _logger.Debug(
                 $"Sending routed packet " +
-                $"(ExcludedId={excludedPlayer.ConnectionId})"
+                $"(ExcludedId={excludedPlayer.ConnectionId}, RequiredVersion={requiredVersion})"
             );
 
             foreach (IPlayer player in _playerRegistry.Players)
-                if (player.ConnectionId != excludedPlayer.ConnectionId)
+                if (player.ConnectionId != excludedPlayer.ConnectionId || player.ClientVersion >= requiredVersion)
                     SendInternal(player, ref writer, deliveryMethod);
         }
+
 
 
         public void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
@@ -175,7 +176,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteOne(ref legacyWriter, packet, ClientVersions.DefaultVersion);
 
             foreach (var player in _playerRegistry.Players)
-                if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                if (player.ClientVersion < ClientVersions.NewPacketVersion)
                     SendInternal(player, ref legacyWriter, deliveryMethod);
                 else
                     SendInternal(player, ref writer, deliveryMethod);
@@ -195,7 +196,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteMany(ref legacyWriter, packets, ClientVersions.DefaultVersion);
 
             foreach (var player in _playerRegistry.Players)
-                if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                if (player.ClientVersion < ClientVersions.NewPacketVersion)
                     SendInternal(player, ref legacyWriter, deliveryMethod);
                 else
                     SendInternal(player, ref writer, deliveryMethod);
@@ -209,7 +210,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
-            Version clientVersion = ClientVersions.ParseGameVersion(toPlayer.ClientVersion);
+            Version clientVersion = toPlayer.ClientVersion;
             if (clientVersion < ClientVersions.NewPacketVersion)
                 writer.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             else
@@ -226,7 +227,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
-            Version clientVersion = ClientVersions.ParseGameVersion(toPlayer.ClientVersion);
+            Version clientVersion = toPlayer.ClientVersion;
             if (clientVersion < ClientVersions.NewPacketVersion)
                 writer.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             else
@@ -254,7 +255,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
-            Version clientVersion = ClientVersions.ParseGameVersion(player.ClientVersion);
+            Version clientVersion = player.ClientVersion;
             if (clientVersion < ClientVersions.NewPacketVersion)
                 writer.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
             else
@@ -271,7 +272,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
-            Version clientVersion = ClientVersions.ParseGameVersion(player.ClientVersion);
+            Version clientVersion = player.ClientVersion;
             if (clientVersion < ClientVersions.NewPacketVersion)
                 writer.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
             else
@@ -304,13 +305,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (players[i].IsENetConnection)
                 {
                     tasks[i] = Task.CompletedTask;
-                    if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                    if (players[i].ClientVersion < ClientVersions.NewPacketVersion)
                         SendInternal(players[i], ref legacyWriter, deliveryMethod);
                     else
                         SendInternal(players[i], ref writer, deliveryMethod);
                     continue;
                 }
-                if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                if (players[i].ClientVersion < ClientVersions.NewPacketVersion)
                     tasks[i] = Send(players[i].Endpoint, legacyWriter.Data, deliveryMethod);
                 else
                     tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
@@ -338,13 +339,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (players[i].IsENetConnection)
                 {
                     tasks[i] = Task.CompletedTask;
-                    if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                    if (players[i].ClientVersion < ClientVersions.NewPacketVersion)
                         SendInternal(players[i], ref legacyWriter, deliveryMethod);
                     else
                         SendInternal(players[i], ref writer, deliveryMethod);
                     continue;
                 }
-                if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                if (players[i].ClientVersion < ClientVersions.NewPacketVersion)
                     tasks[i] = Send(players[i].Endpoint, legacyWriter.Data, deliveryMethod);
                 else
                     tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
@@ -374,7 +375,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if (!player.IsENetConnection)
                     {
-                        if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                        if (player.ClientVersion < ClientVersions.NewPacketVersion)
                             tasks[i] = Send(player.Endpoint, legacyWriter.Data, deliveryMethod);
                         else
                             tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
@@ -382,7 +383,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     else
                     {
                         tasks[i] = Task.CompletedTask;
-                        if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                        if (player.ClientVersion < ClientVersions.NewPacketVersion)
                             SendInternal(player, ref legacyWriter, deliveryMethod);
                         else
                             SendInternal(player, ref writer, deliveryMethod);
@@ -412,7 +413,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if (!player.IsENetConnection)
                     {
-                        if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                        if (player.ClientVersion < ClientVersions.NewPacketVersion)
                             tasks[i] = Send(player.Endpoint, legacyWriter.Data, deliveryMethod);
                         else
                             tasks[i] = Send(player.Endpoint, writer.Data, deliveryMethod);
@@ -420,7 +421,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     else
                     {
                         tasks[i] = Task.CompletedTask;
-                        if (ClientVersions.ParseGameVersion(player.ClientVersion) < ClientVersions.NewPacketVersion)
+                        if (player.ClientVersion < ClientVersions.NewPacketVersion)
                             SendInternal(player, ref legacyWriter, deliveryMethod);
                         else
                             SendInternal(player, ref writer, deliveryMethod);
@@ -450,13 +451,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (players[i].IsENetConnection)
                 {
                     tasks[i] = Task.CompletedTask;
-                    if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                    if (players[i].ClientVersion < ClientVersions.NewPacketVersion)
                         SendInternal(players[i], ref legacyWriter, deliveryMethod);
                     else
                         SendInternal(players[i], ref writer, deliveryMethod);
                     continue;
                 }
-                if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                if (players[i].ClientVersion < ClientVersions.NewPacketVersion)
                     tasks[i] = Send(players[i].Endpoint, legacyWriter.Data, deliveryMethod);
                 else
                     tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
@@ -490,13 +491,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (players[i].IsENetConnection)
                 {
                     tasks[i] = Task.CompletedTask;
-                    if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                    if (players[i].ClientVersion < ClientVersions.NewPacketVersion)
                         SendInternal(players[i], ref legacyWriter, deliveryMethod);
                     else
                         SendInternal(players[i], ref writer, deliveryMethod);
                     continue;
                 }
-                if (ClientVersions.ParseGameVersion(players[i].ClientVersion) < ClientVersions.NewPacketVersion)
+                if (players[i].ClientVersion < ClientVersions.NewPacketVersion)
                     tasks[i] = Send(players[i].Endpoint, legacyWriter.Data, deliveryMethod);
                 else
                     tasks[i] = Send(players[i].Endpoint, writer.Data, deliveryMethod);
@@ -512,7 +513,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
-            Version clientVersion = ClientVersions.ParseGameVersion(toPlayer.ClientVersion);
+            Version clientVersion = toPlayer.ClientVersion;
             if (clientVersion < ClientVersions.NewPacketVersion)
                 writer.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             else
@@ -533,7 +534,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
-            Version clientVersion = ClientVersions.ParseGameVersion(toPlayer.ClientVersion);
+            Version clientVersion = toPlayer.ClientVersion;
             if (clientVersion < ClientVersions.NewPacketVersion)
                 writer.WriteLegacyRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
             else
@@ -551,7 +552,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[412]);
-            Version clientVersion = ClientVersions.ParseGameVersion(player.ClientVersion);
+            Version clientVersion = player.ClientVersion;
             if (clientVersion < ClientVersions.NewPacketVersion)
                 writer.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
             else
@@ -573,7 +574,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
-            Version clientVersion = ClientVersions.ParseGameVersion(player.ClientVersion);
+            Version clientVersion = player.ClientVersion;
             if (clientVersion < ClientVersions.NewPacketVersion)
                 writer.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
             else
