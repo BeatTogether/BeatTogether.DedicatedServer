@@ -22,6 +22,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             base.ReadFrom(ref reader, version);
             if (version < ClientVersions.NewPacketVersion)
             {
+                // TODO: Implement LegacySongPackMask and Convert
                 SongPackMask.D0 = ulong.MaxValue;
                 SongPackMask.D1 = ulong.MaxValue;
                 SongPackMask.D2 = ulong.MaxValue;
@@ -44,6 +45,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
         {
             if (version < ClientVersions.NewPacketVersion)
             {
+                // TODO: Implement LegacySongPackMask and Convert
                 writer.WriteUInt64(ulong.MaxValue);
                 writer.WriteUInt64(ulong.MaxValue);
                 return;
