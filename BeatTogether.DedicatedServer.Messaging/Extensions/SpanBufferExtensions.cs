@@ -10,7 +10,7 @@ namespace BeatTogether.Extensions
 {
     public static class SpanBufferExtensions
     {
-        public static bool TryReadRoutingHeader(this ref SpanBuffer reader, bool isLegacyPlayer, [MaybeNullWhen(false)] out (byte SenderId, byte ReceiverId, PacketOption packetOptions) routingHeader)
+        public static bool TryReadRoutingHeader(this ref SpanBuffer reader, bool isLegacyPlayer, [MaybeNullWhen(false)] out (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader)
         {
             if (reader.RemainingSize < 2)
             {
