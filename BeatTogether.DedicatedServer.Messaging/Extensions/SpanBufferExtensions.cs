@@ -10,9 +10,6 @@ namespace BeatTogether.Extensions
 {
     public static class SpanBufferExtensions
     {
-        public static (byte SenderId, byte ReceiverId, PacketOption packetOptions) ReadRoutingHeader(this ref SpanBuffer reader) =>
-            (reader.ReadUInt8(), reader.ReadUInt8(), (PacketOption)reader.ReadUInt8());
-
         public static bool TryReadRoutingHeader(this ref SpanBuffer reader, bool isLegacyPlayer, [MaybeNullWhen(false)] out (byte SenderId, byte ReceiverId, PacketOption packetOptions) routingHeader)
         {
             if (reader.RemainingSize < 2)
@@ -23,11 +20,22 @@ namespace BeatTogether.Extensions
 
             if (isLegacyPlayer)
             {
-                routingHeader = (reader.ReadUInt8(), reader.ReadUInt8(), PacketOption.None); // TODO: Properly determine packet options, though maybe server doesn't care about them
+                byte senderId = reader.ReadUInt8();
+                byte receiverId = reader.ReadUInt8();
+                PacketOption packetOptions = PacketOption.None;
+                if ((receiverId & 128) == 128)
+                {
+                    packetOptions = PacketOption.Encrypted;
+                    receiverId &= 127;
+                }
+                routingHeader = (senderId, receiverId, packetOptions);
                 return true;
             }
-            routingHeader = (reader.ReadUInt8(), reader.ReadUInt8(), (PacketOption)reader.ReadUInt8());
-            return true;
+            else
+            {
+                routingHeader = (reader.ReadUInt8(), reader.ReadUInt8(), (PacketOption)reader.ReadUInt8());
+                return true;
+            }
         }
 
         public static void WriteRoutingHeader(this ref SpanBuffer writer, byte senderId, byte receiverId, PacketOption packetOptions = PacketOption.None) =>
@@ -40,10 +48,10 @@ namespace BeatTogether.Extensions
             writer.WriteUInt8(packetOptions);
         }
 
-        public static void WriteLegacyRoutingHeader(this ref SpanBuffer writer, byte senderId, byte receiverId)
+        public static void WriteLegacyRoutingHeader(this ref SpanBuffer writer, byte senderId, byte receiverId, PacketOption packetOptions = PacketOption.None)
         {
             writer.WriteUInt8(senderId);
-            writer.WriteUInt8(receiverId);
+            writer.WriteUInt8((byte)(receiverId | (packetOptions == PacketOption.Encrypted ? 128 : 0)));
         }
 
 
