@@ -10,7 +10,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.Legacy
 {
     public interface IVersionedNetSerializable : INetSerializable
     {
-        public void ReadFrom(ref SpanBuffer reader, Version version);
-        public void WriteTo(ref SpanBuffer writer, Version version);
+        void ReadFrom(ref SpanBuffer reader, Version version);
+        void WriteTo(ref SpanBuffer writer, Version version);
     }
 }
