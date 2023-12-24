@@ -155,7 +155,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             foreach (IPlayer player in _playerRegistry.Players)
-                if (player.ConnectionId != excludedPlayer.ConnectionId || player.ClientVersion >= requiredVersion)
+                if (player.ConnectionId != excludedPlayer.ConnectionId && player.ClientVersion >= requiredVersion)
                     SendInternal(player, ref writer, deliveryMethod);
         }
 
@@ -272,12 +272,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             );
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
-            Version clientVersion = player.ClientVersion;
-            if (clientVersion < ClientVersions.NewPacketVersion)
+            if (player.ClientVersion < ClientVersions.NewPacketVersion)
                 writer.WriteLegacyRoutingHeader(ServerId, LocalConnectionId);
             else
                 writer.WriteRoutingHeader(ServerId, LocalConnectionId);
-            WriteMany(ref writer, packets, clientVersion);
+            WriteMany(ref writer, packets, player.ClientVersion);
             Send(player.Endpoint, writer.Data, deliveryMethod);
         }
         #endregion
