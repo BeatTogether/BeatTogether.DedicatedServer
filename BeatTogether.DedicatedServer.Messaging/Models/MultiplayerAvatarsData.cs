@@ -11,16 +11,14 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 {
     public sealed class MultiplayerAvatarsData : INetSerializable
     {
-        public List<MultiplayerAvatarData>? AvatarsData { get; set; }
+        public List<MultiplayerAvatarData>? AvatarsData { get; set; } = new();
         public BitMask128 SupportedAvatarTypeIdHashesBloomFilter { get; set; } = AddBloomFilterEntryHash(new BitMask128(), AvatarDataMultiplayerAvatarsDataConverter.BaseGameAvatarSystemTypeIdentifier.AvatarTypeIdentifierHash, 3, 8);
         
         public MultiplayerAvatarsData()
         {
             AvatarData defaultAvatar = new AvatarData();
-            AvatarsData = new List<MultiplayerAvatarData>
-            {
-                defaultAvatar.CreateMultiplayerAvatarsData()
-            };
+            AvatarsData.Clear();
+            AvatarsData.Add(defaultAvatar.CreateMultiplayerAvatarsData());
         }
 
         public MultiplayerAvatarsData(List<MultiplayerAvatarData> multiplayerAvatarsData, IEnumerable<uint> supportedAvatarTypeIdHashes)
@@ -29,7 +27,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             SupportedAvatarTypeIdHashesBloomFilter = ToBloomFilter(supportedAvatarTypeIdHashes, 3, 8);
         }
 
-        // Token: 0x060000A2 RID: 162 RVA: 0x00003D91 File Offset: 0x00001F91
         public MultiplayerAvatarsData(List<MultiplayerAvatarData> multiplayerAvatarsData, BitMask128 supportedAvatarTypeIdHashesBloomFilter)
         {
             AvatarsData = multiplayerAvatarsData;
