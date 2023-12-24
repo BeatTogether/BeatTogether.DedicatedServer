@@ -74,6 +74,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             SpanBuffer HandleRead = new(reader.RemainingData.ToArray());
 
+            _logger.Verbose(
+                $"Received packet from {routingHeader.SenderId} ({sender.ClientVersionString}) " +
+                $"-> {routingHeader.ReceiverId} " +
+                $"PacketOption='{routingHeader.PacketOption}' " +
+                $"(Secret='{sender.Secret}', DeliveryMethod={method})."
+            );
 
             while (HandleRead.RemainingSize > 0)
             {
@@ -120,10 +126,35 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (packet == null)
                 {
                     _logger.Debug($"Failed to create packet.");
-                    // skip any unprocessed bytes
-                    var processedBytes = HandleRead.Offset - prevPosition;
-                    try { HandleRead.SkipBytes((int)length - processedBytes); }
-                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
+
+                    //Is packet meant to be routed?
+                    if (routingHeader.ReceiverId != 0)
+                    {
+                        // Route packet to other players and skip read bytes
+                        //var processedBytes = HandleRead.Offset - prevPosition;
+                        //var bytesToRead = Math.Min((int)length - processedBytes, HandleRead.RemainingSize);
+                        //var readerSlice = new SpanBuffer(HandleRead.ReadBytes(bytesToRead));
+                        //reader.SkipBytes(bytesToRead);
+                        //RoutePacket(sender, routingHeader, ref readerSlice, method);
+
+                        var processedBytes = Math.Min(HandleRead.Offset - prevPosition, HandleRead.RemainingSize);
+                        var bytesToRead = Math.Min((int)length - 1, HandleRead.RemainingSize);
+                        _logger.Verbose(
+                            $"Attempting to Route unhandled packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
+                            $"PacketOption='{routingHeader.PacketOption}' " +
+                            $"ProcessedBytes='{processedBytes}' BytesToRead='{bytesToRead}' " +
+                            $"(Secret='{sender.Secret}', DeliveryMethod={method})."
+                        );
+                        var readerSlice = new SpanBuffer(HandleRead.ReadBytes(bytesToRead));
+                        RoutePacket(sender, routingHeader, ref readerSlice, method);
+                    }
+                    else
+                    {
+                        //skip any unprocessed bytes
+                        var processedBytes = HandleRead.Offset - prevPosition;
+                        try { HandleRead.SkipBytes((int)length - processedBytes); }
+                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
+                    }
                     continue;
                 }
                 if(packet is NoteSpawnPacket || packet is ObstacleSpawnPacket || packet is SliderSpawnPacket) //Note packet logic
@@ -162,10 +193,32 @@ namespace BeatTogether.DedicatedServer.Kernel
                     //if (!packetType.Name.StartsWith("NodePoseSyncState"))
                         _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
 
-                    // skip any unprocessed bytes
-                    var processedBytes = HandleRead.Offset - prevPosition;
-                    try { HandleRead.SkipBytes((int)length - processedBytes); }
-                    catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
+                    // Is packet meant to be routed?
+                    if (routingHeader.ReceiverId != 0)
+                    {
+                        // Route packet to other players and skip read bytes
+                        //var bytesToRead = Math.Min((int)length, HandleRead.RemainingSize);
+                        //var remainingData = reader.RemainingData;
+                        //var readerSlice = new SpanBuffer(HandleRead.Data.Slice(HandleRead.Offset, bytesToRead));
+                        var processedBytes = Math.Min(HandleRead.Offset - prevPosition, HandleRead.RemainingSize);
+                        var bytesToRead = Math.Min((int)length - 1, HandleRead.RemainingSize);
+                        _logger.Verbose(
+                            $"Attempting to Route unhandled packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
+                            $"PacketOption='{routingHeader.PacketOption}' " +
+                            $"ProcessedBytes='{processedBytes}' BytesToRead='{bytesToRead}' " +
+                            $"(Secret='{sender.Secret}', DeliveryMethod={method})."
+                        );
+                        var readerSlice = new SpanBuffer(HandleRead.ReadBytes(bytesToRead));
+                        //reader.SkipBytes(processedBytes);
+                        RoutePacket(sender, routingHeader, ref readerSlice, method);
+                    }
+                    else
+                    {
+                        //skip any unprocessed bytes
+                        var processedBytes = HandleRead.Offset - prevPosition;
+                        try { HandleRead.SkipBytes((int)length - processedBytes); }
+                        catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
+                    }
                     continue;
                 }
                 else if (packetHandler is null && packet is IVersionedNetSerializable versionedPacket)
@@ -175,7 +228,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         _logger.Debug($"Reading versioned packet of type '{packetType.Name}' with version '{clientVersion}'.");
                         versionedPacket.ReadFrom(ref HandleRead, clientVersion);
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         _logger.Error($"Failed to read packet of type '{packetType.Name}' with version '{clientVersion}'.");
                         _logger.Error(e.Message);
@@ -188,7 +241,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }
                     if (routingHeader.ReceiverId == AllConnectionIds)
                         _packetDispatcher.SendExcludingPlayer(sender, versionedPacket, method);
-                    else
+                    else if (routingHeader.ReceiverId != 0)
                     {
                         if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
                         {
@@ -202,7 +255,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }
                     continue;
                 }
-
 
                 try
                 {
@@ -226,10 +278,18 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
             }
+            return;
             RoutePacket:
-            //Is this packet meant to be routed?
+            //Is this packet meant to be routed ?
             if (routingHeader.ReceiverId != 0)
+            {
+                _logger.Verbose(
+                    $"Reached route packet function {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
+                    $"PacketOption='{routingHeader.PacketOption}' " +
+                    $"(Secret='{sender.Secret}', DeliveryMethod={method}, RemainingSize={reader.RemainingSize})."
+                );
                 RoutePacket(sender, routingHeader, ref reader, method);
+            }
         }
         
         #region Private Methods
@@ -242,9 +302,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBuffer(stackalloc byte[412]);
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
-                //if (isLegacyPlayer)
-                //    writer.WriteLegacyRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
-                //else
                 var legacyWriter = new SpanBuffer(stackalloc byte[412]);
                 legacyWriter.WriteLegacyRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
                 writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
@@ -272,7 +329,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
 
                 if (receiver.ClientVersion < ClientVersions.NewPacketVersion)
-                    writer.WriteLegacyRoutingHeader(routingHeader.SenderId, LocalConnectionId);
+                    writer.WriteLegacyRoutingHeader(routingHeader.SenderId, LocalConnectionId, routingHeader.PacketOption);
                 else
                     writer.WriteRoutingHeader(routingHeader.SenderId, LocalConnectionId, routingHeader.PacketOption);
                 writer.WriteBytes(reader.RemainingData);
