@@ -618,7 +618,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 _logger.Verbose($"Packet {type.Name} is not a versioned packet, writing default version");
                 packet.WriteTo(ref packetWriter);
             }
-            packet.WriteTo(ref packetWriter);
             writer.WriteVarUInt((uint)packetWriter.Size);
             writer.WriteBytes(packetWriter.Data.ToArray());
         }
