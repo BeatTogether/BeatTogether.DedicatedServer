@@ -28,7 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 {
                     PlatformID = Player.PlatformUserId,
                     Platform = Player.Platform.Convert(),
-                    ClientVersion = Player.ClientVersion
+                    ClientVersion = Player.ClientVersionString
                 }, DeliveryMethod.ReliableOrdered);
             }
             return Task.CompletedTask;

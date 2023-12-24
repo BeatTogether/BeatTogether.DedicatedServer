@@ -4,7 +4,7 @@ using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using System.Threading;
-using System.Threading.Tasks;
+using System;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
@@ -22,7 +22,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         
         byte[]? Random { get; set; }
         byte[]? PublicEncryptionKey { get; set; }
-        string ClientVersion { get; set; }
+        Version ClientVersion { get; set; }
+        string ClientVersionString { get; set; }
         Platform Platform { get; set; }
         string PlatformUserId { get; set; }
         

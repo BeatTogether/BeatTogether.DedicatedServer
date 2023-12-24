@@ -24,6 +24,7 @@ using BeatTogether.LiteNetLib.Util;
 using BeatTogether.LiteNetLib.Sources;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using BeatTogether.DedicatedServer.Messaging.Packets.Legacy;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -378,7 +379,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 var handshakeSession =
                     _handshakeSessionRegistry.TryGetByPlayerSessionId(connectionRequestData.PlayerSessionId);
                 _handshakeSessionRegistry.RemoveExtraPlayerSessionData(connectionRequestData.PlayerSessionId, out var ClientVer, out var Platform, out var PlayerPlatformUserId);
-                player.ClientVersion = ClientVer;
+                player.ClientVersionString = ClientVer;
+                player.ClientVersion = ClientVersions.ParseGameVersion(ClientVer);
                 player.Platform = (Enums.Platform)Platform;
                 player.PlatformUserId = PlayerPlatformUserId;
                 if (handshakeSession != null && handshakeSession.EncryptionParameters != null)
@@ -560,7 +562,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 var handshakeSession =
                     _handshakeSessionRegistry.TryGetByPlayerSessionId(connectionRequestData.PlayerSessionId);
                 _handshakeSessionRegistry.RemoveExtraPlayerSessionData(connectionRequestData.PlayerSessionId, out var ClientVer, out var Platform, out var PlayerPlatformUserId);
-                player.ClientVersion = ClientVer;
+                player.ClientVersionString = ClientVer;
+                player.ClientVersion = ClientVersions.ParseGameVersion(ClientVer);
                 player.Platform = (Enums.Platform)Platform;
                 player.PlatformUserId = PlayerPlatformUserId;
                 if (handshakeSession != null && handshakeSession.EncryptionParameters != null)
@@ -763,7 +766,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey };
                     ((MpPlayerData)SendToPlayerFromPlayers[1]).PlatformID = p.PlatformUserId;
                     ((MpPlayerData)SendToPlayerFromPlayers[1]).Platform = p.Platform.Convert();
-                    ((MpPlayerData)SendToPlayerFromPlayers[1]).ClientVersion = p.ClientVersion;
+                    ((MpPlayerData)SendToPlayerFromPlayers[1]).ClientVersion = p.ClientVersionString;
                     
                     p.PlayerAccessSemaphore.Release();
                     
@@ -783,7 +786,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     {
                         PlatformID = player.PlatformUserId!,
                         Platform = player.Platform.Convert(),
-                        ClientVersion = player.ClientVersion!
+                        ClientVersion = player.ClientVersionString!
                     }, DeliveryMethod.ReliableOrdered),
                     Task.Delay(50));
                 }

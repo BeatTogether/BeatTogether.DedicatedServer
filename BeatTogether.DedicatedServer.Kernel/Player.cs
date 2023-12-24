@@ -32,7 +32,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public int SortIndex { get; set; }
         public byte[]? Random { get; set; }
         public byte[]? PublicEncryptionKey { get; set; }
-        public string ClientVersion { get; set; } = "Pre-1.29";
+        public Version ClientVersion { get; set; } = new Version(1, 28 ,0);
+        public string ClientVersionString { get; set; } = "Pre-1.29";
         public Platform Platform { get; set; } = Platform.Test; //Unknown
         public string PlatformUserId { get; set; } = "";
         public MultiplayerAvatarsData Avatar { get; set; } = new();
