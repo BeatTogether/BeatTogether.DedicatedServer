@@ -21,9 +21,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
 
         public void ReadFrom(ref SpanBuffer reader, Version version)
         {
-            SyncStateId = reader.ReadUInt8();
             if (version < ClientVersions.NewPacketVersion)
             {
+                SyncStateId = reader.ReadUInt8();
                 Time = (long)reader.ReadFloat32() * 1000;
                 State.ReadFrom(ref reader);
                 return;
@@ -43,10 +43,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
 
         public void WriteTo(ref SpanBuffer writer, Version version)
         {
-            writer.WriteUInt8(SyncStateId);
             if (version < ClientVersions.NewPacketVersion)
             {
-                writer.WriteFloat32((float)Time / 1000);
+                writer.WriteUInt8(SyncStateId);
+                writer.WriteFloat32(Time / 1000f);
                 State.WriteTo(ref writer);
                 return;
             }
