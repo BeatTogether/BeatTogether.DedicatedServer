@@ -42,7 +42,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
             if (version < ClientVersions.NewPacketVersion)
             {
                 writer.WriteUInt8(SyncStateId);
-                writer.WriteFloat32((float)Time / 1000);
+                writer.WriteFloat32(Time / 1000f);
                 State.WriteTo(ref writer);
                 return;
             }

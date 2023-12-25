@@ -14,17 +14,21 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
         public void ReadFrom(ref SpanBuffer reader)
         {
             SyncStateId = reader.ReadUInt8();
+            bool flag = (SyncStateId & 128) > 0;
+            SyncStateId &= 127;
             TimeOffsetMs = reader.ReadVarInt();
 
-            if (!((SyncStateId & 128) > 0))
+            if (!flag)
                 Delta.ReadFrom(ref reader);
         }
 
         public void WriteTo(ref SpanBuffer writer)
         {
-            writer.WriteUInt8(SyncStateId);
+            bool flag = default(NodePoseSyncState).Equals(Delta);
+            writer.WriteUInt8((byte)(SyncStateId | (flag ? 128 : 0)));
             writer.WriteVarInt(TimeOffsetMs);
-            Delta.WriteTo(ref writer);
+            if (!flag)
+                Delta.WriteTo(ref writer);
         }
     }
 }

@@ -18,7 +18,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             base.ReadFrom(ref reader, version);
             if (HasValue0)
 				if (version < ClientVersions.NewPacketVersion)
-					CountdownTime = (long)(reader.ReadFloat32() * 1000f);
+				{
+					float originalValue = reader.ReadFloat32();
+                    CountdownTime = (long)(originalValue * 1000f);
+                    _logger.Debug($"CountdownTime Read: {CountdownTime} | LegacyValue: {originalValue}");
+				}
 				else
 					CountdownTime = reader.ReadVarLong();
 
@@ -29,9 +33,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             base.WriteTo(ref writer, version);
 			if (version < ClientVersions.NewPacketVersion)
 			{
-				float legacyValue = (CountdownTime / 1000f);
-				float rounded = (float)Math.Round(legacyValue, 4, MidpointRounding.AwayFromZero);
-				_logger.Debug($"CountdownTime: {CountdownTime} | LegacyValue: {legacyValue} LegacyRounded: {rounded}");
+				_logger.Debug($"CountdownTime Write: {CountdownTime} | LegacyValue: {CountdownTime / 1000f}");
 				writer.WriteFloat32(CountdownTime / 1000f);
 				return;
 			}
