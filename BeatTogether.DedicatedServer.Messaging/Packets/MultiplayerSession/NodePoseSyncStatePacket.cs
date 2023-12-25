@@ -21,7 +21,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
             {
                 SyncStateId = reader.ReadUInt8();
                 float readTime = reader.ReadFloat32();
-                long convertedTime = (long)(readTime * 1000);
+                long convertedTime = (long)(readTime * 1000f);
                 _logger.Verbose($"Converted time from {readTime} to {convertedTime}");
                 Time = convertedTime;
                 State.ReadFrom(ref reader);

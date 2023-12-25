@@ -17,7 +17,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
             if (version < ClientVersions.NewPacketVersion)
             {
                 float readTime = reader.ReadFloat32();
-                SyncTime = (long)readTime * 1000;
+                SyncTime = (long)(readTime * 1000f);
                 _logger.Debug($"Converted time from {readTime} to {SyncTime}");
                 return;
             }

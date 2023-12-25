@@ -18,7 +18,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         {
             if (version < ClientVersions.NewPacketVersion)
             {
-                writer.WriteFloat32((float)SyncTime / 1000);
+                writer.WriteFloat32(SyncTime / 1000f);
                 return;
             }
             else
@@ -36,7 +36,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         {
             if (version < ClientVersions.NewPacketVersion)
             {
-                SyncTime = (long)reader.ReadFloat32() * 1000;
+                SyncTime = (long)(reader.ReadFloat32() * 1000f);
                 return;
             }
             else
