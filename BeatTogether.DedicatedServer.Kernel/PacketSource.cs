@@ -154,10 +154,12 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                         // TODO: Check packet registry
                         var processedBytes = Math.Min(HandleRead.Offset - prevPosition, HandleRead.RemainingSize);
-                        var bytesToRead = Math.Min((int)length + 2, HandleRead.RemainingSize);
-                        QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, HandleRead.ReadBytes(bytesToRead), length + 2, packetId);
+                        int lengthToRead = (int)length + 2;
+                        var bytesToRead = Math.Min(lengthToRead, HandleRead.RemainingSize);
+                        var bytes = HandleRead.ReadBytes(bytesToRead);
+                        QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, bytes, lengthToRead, packetId);
                         _logger.Verbose(
-                            $"Attempting to Route unknown packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
+                            $"Attempting to Route unknown packet from {sender.ConnectionId} -> {(routingHeader.ReceiverId == AllConnectionIds ? "all players" : routingHeader.ReceiverId)} " +
                             $"PacketOption='{routingHeader.PacketOption}' " +
                             $"ProcessedBytes='{processedBytes}' BytesToRead='{bytesToRead}' " +
                             $"BytesRemainingSize='{HandleRead.RemainingSize}' " +
@@ -214,11 +216,12 @@ namespace BeatTogether.DedicatedServer.Kernel
                     if (routingHeader.ReceiverId != 0)
                     {
                         var processedBytes = Math.Min(HandleRead.Offset - prevPosition, HandleRead.RemainingSize);
-                        var bytesToRead = Math.Min((int)length + 2, HandleRead.RemainingSize);
+                        int lengthToRead = (int)length + 2;
+                        var bytesToRead = Math.Min(lengthToRead, HandleRead.RemainingSize);
                         var bytes = HandleRead.ReadBytes(bytesToRead);
-                        QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, bytes, length + 2, packetId);
+                        QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, bytes, lengthToRead, packetId);
                         _logger.Verbose(
-                            $"Attempting to Route unhandled packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
+                            $"Attempting to Route unhandled packet from {sender.ConnectionId} -> {(routingHeader.ReceiverId == AllConnectionIds ? "all players" : routingHeader.ReceiverId)} " +
                             $"PacketOption='{routingHeader.PacketOption}' " +
                             $"ProcessedBytes='{processedBytes}' BytesToRead='{bytesToRead}' " +
                             $"BytesRemainingSize='{HandleRead.RemainingSize}' " +
@@ -320,7 +323,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private void QueueRoutePacket(
             IPlayer sender, (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader,
-            ref SpanBuffer writer, ref SpanBuffer legacyWriter, Span<byte> data, uint length, Queue<(byte? basePacketId, string? mpCorePacketId)> packetIds)
+            ref SpanBuffer writer, ref SpanBuffer legacyWriter, Span<byte> data, int length, Queue<(byte? basePacketId, string? mpCorePacketId)> packetIds)
         {
             if (writer.Offset == 0 && legacyWriter.Offset == 0)
                 return;
@@ -366,15 +369,15 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"(Secret='{receiver.Secret}', DeliveryMethod={DeliveryMethod.ReliableOrdered}).");
             }
 
-            if(writer.Offset > 0) writer.WriteVarUInt(length);
-            if (legacyWriter.Offset > 0) legacyWriter.WriteVarUInt(length);
+            if(writer.Offset > 0) writer.WriteVarUInt((uint)length);
+            if (legacyWriter.Offset > 0) legacyWriter.WriteVarUInt((uint)length);
             while (packetIds.TryDequeue(out var packetId))
-                if (packetId.basePacketId != null)
+                if (packetId.basePacketId.HasValue)
                 {
                     if (writer.Offset > 0) writer.WriteUInt8(packetId.basePacketId.Value);
                     if (legacyWriter.Offset > 0) legacyWriter.WriteUInt8(packetId.basePacketId.Value);
                 }
-                else if (packetId.mpCorePacketId != null)
+                else if (!string.IsNullOrEmpty(packetId.mpCorePacketId))
                 {
                     if (writer.Offset > 0) writer.WriteString(packetId.mpCorePacketId);
                     if (legacyWriter.Offset > 0) legacyWriter.WriteString(packetId.mpCorePacketId);
