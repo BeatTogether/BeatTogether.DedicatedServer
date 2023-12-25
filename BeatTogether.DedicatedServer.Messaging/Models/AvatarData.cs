@@ -49,18 +49,18 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public void ReadFrom(ref SpanBuffer reader)
         {
             HeadTopId = reader.ReadString();
-            HeadTopPrimaryColor = reader.ReadColor();
-            HandsColor = reader.ReadColor();
+            HeadTopPrimaryColor.ReadFrom(ref reader);
+            HandsColor.ReadFrom(ref reader);
             ClothesId = reader.ReadString();
-            ClothesPrimaryColor = reader.ReadColor();
-            ClothesSecondaryColor = reader.ReadColor();
-            ClothesDetailColor = reader.ReadColor();
+            ClothesPrimaryColor.ReadFrom(ref reader);
+            ClothesSecondaryColor.ReadFrom(ref reader);
+            ClothesDetailColor.ReadFrom(ref reader);
             reader.SkipBytes(8);
             EyesId = reader.ReadString();
             MouthId = reader.ReadString();
-            GlassesColor = reader.ReadColor();
-            FacialHairColor = reader.ReadColor();
-            HeadTopSecondaryColor = reader.ReadColor();
+            GlassesColor.ReadFrom(ref reader);
+            FacialHairColor.ReadFrom(ref reader);
+            HeadTopSecondaryColor.ReadFrom(ref reader);
             GlassesId = reader.ReadString();
             FacialHairId = reader.ReadString();
             HandsId = reader.ReadString();
@@ -70,19 +70,19 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteString(HeadTopId);
-            writer.WriteColor(HeadTopPrimaryColor);
-            writer.WriteColor(HandsColor);
+            HeadTopPrimaryColor.WriteTo(ref writer);
+            HandsColor.WriteTo(ref writer);
             writer.WriteString(ClothesId);
-            writer.WriteColor(ClothesPrimaryColor);
-            writer.WriteColor(ClothesSecondaryColor);
-            writer.WriteColor(ClothesDetailColor);
+            ClothesPrimaryColor.WriteTo(ref writer);
+            ClothesSecondaryColor.WriteTo(ref writer);
+            ClothesDetailColor.WriteTo(ref writer);
             writer.WriteColor(new Color());
             writer.WriteColor(new Color());
             writer.WriteString(EyesId);
             writer.WriteString(MouthId);
-            writer.WriteColor(GlassesColor);
-            writer.WriteColor(FacialHairColor);
-            writer.WriteColor(HeadTopSecondaryColor);
+            GlassesColor.WriteTo(ref writer);
+            FacialHairColor.WriteTo(ref writer);
+            HeadTopSecondaryColor.WriteTo(ref writer);
             writer.WriteString(GlassesId);
             writer.WriteString(FacialHairId);
             writer.WriteString(HandsId);

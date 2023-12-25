@@ -2,38 +2,48 @@
 using BeatTogether.LiteNetLib.Util;
 using System.Drawing;
 using System;
+using Serilog;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
     public sealed class Color : INetSerializable
     {
-        public float r { get; set; }
-        public float g { get; set; }
-        public float b { get; set; }
-        public float a { get; set; }
+        public float R { get; set; }
+        public float G { get; set; }
+        public float B { get; set; }
+        public float A { get; set; }
+
+        private static readonly ILogger _logger = Log.ForContext<Color>();
 
         public Color(float r, float g, float b, float a) 
         {
-            this.r = r;
-            this.g = g;
-            this.b = b;
-            this.a = a;
+            _logger.Debug($"Creating color with R: {r} G: {g} B: {b} A: {a}");
+            R = r;
+            G = g;
+            B = b;
+            A = a;
         }
         public Color() { }
 
         public static implicit operator Color(System.Drawing.Color c)
         {
-            return new Color(Round(Clamp(c.R) * 255f), Round(Clamp(c.G) * 255f), Round(Clamp(c.B) * 255f), Round(Clamp(c.A) * 255f));
+            Color temp  = new Color(Clamp(c.R / 255f), Clamp(c.G / 255f), Clamp(c.B / 255f), Clamp(c.A / 255f));
+            _logger.Debug($"Converted Drawing.Color");
+            _logger.Debug($"Before convert {c.R} {c.G} {c.B} {c.A}");
+            _logger.Debug($"After conversion {Clamp(c.R / 255f)} {Clamp(c.G / 255f)} {Clamp(c.B / 255f)} {Clamp(c.A / 255f)}");
+            return temp;
         }
 
         public static implicit operator System.Drawing.Color(Color c)
         {
-            return System.Drawing.Color.FromArgb((int)(c.a / 255f), (int)(c.r / 255f), (int)(c.g / 255f), (int)(c.b / 255f));
+            _logger.Debug($"Converted A: {c.A} R: {c.R} G: {c.G} B: {c.B} to A: {Round(c.A * 255f)} R: {Round(c.R * 255f)} G: {Round(c.G * 255f)} B: {Round(c.B * 255f)}");
+            _logger.Debug($"Conversion without rounding A: {c.A * 255f} R: {c.R * 255f} G: {c.G * 255f} B: {c.B * 255f}");
+            return System.Drawing.Color.FromArgb(Round(c.A * 255f), Round(c.R * 255f), Round(c.G * 255f), Round(c.B * 255f));
         }
 
-        public static float Round(float f)
+        public static int Round(float f)
         {
-            return (float)Math.Round((double)f);
+            return (int)Math.Round((double)f);
         }
 
         public static float Clamp(float value)
@@ -60,18 +70,19 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         }
         public void ReadFrom(ref SpanBuffer reader)
         {
-            r = reader.ReadFloat32();
-            g = reader.ReadFloat32();
-            b = reader.ReadFloat32();
-            a = reader.ReadFloat32();
+            //Maybe cast to int?
+            R = Clamp(reader.ReadUInt8() / 255f);
+            G = Clamp(reader.ReadUInt8() / 255f);
+            B = Clamp(reader.ReadUInt8() / 255f);
+            A = Clamp(reader.ReadUInt8() / 255f);
         }
 
         public void WriteTo(ref SpanBuffer writer)
         {
-            writer.WriteFloat32(r);
-            writer.WriteFloat32(g);
-            writer.WriteFloat32(b);
-            writer.WriteFloat32(a);
+            writer.WriteUInt8((byte)Round(R * 255f));
+            writer.WriteUInt8((byte)Round(G * 255f));
+            writer.WriteUInt8((byte)Round(B * 255f));
+            writer.WriteUInt8((byte)Round(A * 255f));
         }
     }
 }

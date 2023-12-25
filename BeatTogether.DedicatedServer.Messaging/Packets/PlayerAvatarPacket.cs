@@ -14,11 +14,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
     {
         public MultiplayerAvatarsData PlayerAvatar { get; set; } = new();
 
-        public void ReadFrom(ref SpanBuffer reader)
-        {
-            PlayerAvatar.ReadFrom(ref reader);
-        }
-
         public void ReadFrom(ref SpanBuffer reader, Version version)
         {
             if (version < ClientVersions.NewPacketVersion)
@@ -30,27 +25,20 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
             }
             else
             {
-                ReadFrom(ref reader);
+                PlayerAvatar.ReadFrom(ref reader);
             }
-        }
-
-        public void WriteTo(ref SpanBuffer writer)
-        {
-            PlayerAvatar.WriteTo(ref writer);
         }
 
         public void WriteTo(ref SpanBuffer writer, Version version)
         {
             if (version < ClientVersions.NewPacketVersion)
             {
-                if (PlayerAvatar.AvatarsData is null)
-                    PlayerAvatar.AvatarsData = new();
-                PlayerAvatar.AvatarsData.FirstOrDefault().CreateAvatarData().WriteTo(ref writer);
+                PlayerAvatar.AvatarsData.LastOrDefault().CreateAvatarData().WriteTo(ref writer);
                 return;
             }
             else
             {
-                WriteTo(ref writer);
+                PlayerAvatar.WriteTo(ref writer);
             }
         }
     }
