@@ -11,7 +11,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 {
     public sealed class MultiplayerAvatarsData : INetSerializable
     {
-        public List<MultiplayerAvatarData>? AvatarsData { get; set; } = new();
+        public List<MultiplayerAvatarData> AvatarsData { get; set; } = new();
         public BitMask128 SupportedAvatarTypeIdHashesBloomFilter { get; set; } = AddBloomFilterEntryHash(new BitMask128(), AvatarDataMultiplayerAvatarsDataConverter.BaseGameAvatarSystemTypeIdentifier.AvatarTypeIdentifierHash, 3, 8);
         
         public MultiplayerAvatarsData()
