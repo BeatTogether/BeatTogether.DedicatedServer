@@ -207,7 +207,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteOne(ref legacyWriter, packet, ClientVersions.DefaultVersion);
 
             foreach (var player in _playerRegistry.Players)
-                //if (player.ConnectionId != fromPlayer.ConnectionId) // Don't send to the sender
+                if (player.ConnectionId != fromPlayer.ConnectionId) // Don't send to the sender
                     if (player.ClientVersion < ClientVersions.NewPacketVersion)
                     {
                         _logger.Verbose(
@@ -238,10 +238,11 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteMany(ref legacyWriter, packets, ClientVersions.DefaultVersion);
 
             foreach (var player in _playerRegistry.Players)
-                if (player.ClientVersion < ClientVersions.NewPacketVersion)
-                    SendInternal(player, ref legacyWriter, deliveryMethod);
-                else
-                    SendInternal(player, ref writer, deliveryMethod);
+                if (fromPlayer.ConnectionId != player.ConnectionId) // Don't send back to sender
+                    if (player.ClientVersion < ClientVersions.NewPacketVersion)
+                        SendInternal(player, ref legacyWriter, deliveryMethod);
+                    else
+                        SendInternal(player, ref writer, deliveryMethod);
         }
 
         public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
