@@ -1,6 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Packets.Legacy;
 using BeatTogether.Extensions;
 using BeatTogether.LiteNetLib.Util;
+using Serilog;
 using System;
 
 namespace BeatTogether.DedicatedServer.Messaging.Abstractions
@@ -9,43 +10,33 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
     {
         public long SyncTime { get; set; }
 
-        //public virtual void ReadFrom(ref SpanBuffer reader)
-        //{
-        //    throw new NotImplementedException("For Versioned Packets only call the versioned ReadFrom function");
-        //    //SyncTime = (long)reader.ReadVarULong();
-        //}
+        private readonly ILogger _logger = Log.ForContext<BaseRpcPacket>();
 
         public virtual void ReadFrom(ref SpanBuffer reader, Version version)
         {
             if (version < ClientVersions.NewPacketVersion)
             {
-                SyncTime = (long)reader.ReadFloat32() * 1000;
+                float readTime = reader.ReadFloat32();
+                SyncTime = (long)readTime * 1000;
+                _logger.Debug($"Converted time from {readTime} to {SyncTime}");
                 return;
             }
             else
             {
                 SyncTime = (long)reader.ReadVarULong();
-                //ReadFrom(ref reader);
             }
         }
-
-        //public virtual void WriteTo(ref SpanBuffer writer)
-        //{
-        //    throw new NotImplementedException("For Versioned Packets only call the versioned WriteTo function");
-        //    //writer.WriteVarULong((ulong)SyncTime);
-        //}
 
         public virtual void WriteTo(ref SpanBuffer writer, Version version)
         {
             if (version < ClientVersions.NewPacketVersion)
             {
-                writer.WriteFloat32((float)SyncTime / 1000);
+                writer.WriteFloat32(SyncTime / 1000f);
                 return;
             }
             else
             {
                 writer.WriteVarULong((ulong)SyncTime);
-                //WriteTo(ref writer);
             }
         }
     }
