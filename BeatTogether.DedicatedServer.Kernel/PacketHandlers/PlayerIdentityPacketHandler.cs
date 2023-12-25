@@ -32,7 +32,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             sender.Random = packet.Random.Data ?? Array.Empty<byte>();
             sender.PublicEncryptionKey = packet.PublicEncryptionKey.Data ?? Array.Empty<byte>();
             sender.PlayerAccessSemaphore.Release();
-            _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendExcludingPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
         }
     }
 }
