@@ -73,6 +73,15 @@ namespace BeatTogether.DedicatedServer.Kernel
                 );
                 return;
             }
+            if (routingHeader.PacketOption == PacketOption.OnlyFirstDegreeConnections)
+            {
+                _logger.Warning(
+                    "Received packet with PacketOption.OnlyFirstDegreeConnections, possibly indication of p2p or server meshing " +
+                    "Trying to handle packet normally " +
+                    $"(RemoteEndPoint='{remoteEndPoint}')."
+                );
+            }
+
             SpanBuffer HandleRead = new(reader.RemainingData.ToArray());
 
             _logger.Verbose(
@@ -330,6 +339,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             routingHeader.SenderId = sender.ConnectionId;
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
+                routingHeader.PacketOption = PacketOption.None;
                 if (writer.Offset == 0)
                 {
                     _logger.Verbose($"Starting Queue for new RoutedPacket");
@@ -387,6 +397,9 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             if (writer.Offset > 0) writer.WriteBytes(data);
             if (legacyWriter.Offset > 0) legacyWriter.WriteBytes(data);
+            if (legacyWriter.Offset == 0 && writer.Offset == 0)
+                _logger.Verbose($"No packets to send");
+
 
         }
 
