@@ -98,8 +98,16 @@ namespace BeatTogether.DedicatedServer.Kernel
             while (HandleRead.RemainingSize > 0)
             {
                 uint length;
-                try { length = HandleRead.ReadVarUInt(); }
+                try { length = HandleRead.ReadVarUInt(); _logger.Verbose($"HandleRead read length {length} cast {(int)length} available bytes {HandleRead.RemainingSize}"); }
                 catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
+                
+                _logger.Verbose($"BytesRead");
+
+                if (length < HandleRead.RemainingSize)
+                {
+                    _logger.Information($"Packet might be a MultiPacket length {length} remainingbytes {HandleRead.RemainingSize}");
+                }
+                
                 if (HandleRead.RemainingSize < length)
                 {
                     _logger.Warning($"Packet fragmented (RemainingSize={HandleRead.RemainingSize}, Expected={length}).");
@@ -161,10 +169,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                         //reader.SkipBytes(bytesToRead);
                         //RoutePacket(sender, routingHeader, ref readerSlice, method);
 
-                        // TODO: Check packet registry
                         var processedBytes = Math.Min(HandleRead.Offset - prevPosition, HandleRead.RemainingSize);
-                        int lengthToRead = (int)length + 2;
-                        var bytesToRead = Math.Min(lengthToRead, HandleRead.RemainingSize);
+                        int lengthToRead = (int)length;
+                        var bytesToRead = Math.Min(lengthToRead - processedBytes, HandleRead.RemainingSize);
                         var bytes = HandleRead.ReadBytes(bytesToRead);
                         QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, bytes, lengthToRead, packetId);
                         _logger.Verbose(
@@ -224,16 +231,17 @@ namespace BeatTogether.DedicatedServer.Kernel
                     // Is packet meant to be routed?
                     if (routingHeader.ReceiverId != 0)
                     {
-                        var processedBytes = Math.Min(HandleRead.Offset - prevPosition, HandleRead.RemainingSize);
-                        int lengthToRead = (int)length + 2;
-                        var bytesToRead = Math.Min(lengthToRead, HandleRead.RemainingSize);
+                        var processedBytes = HandleRead.Offset - prevPosition /*Math.Min(HandleRead.Offset - prevPosition, HandleRead.RemainingSize)*/;
+                        int lengthToRead = (int)length;
+                        var bytesToRead = lengthToRead - processedBytes /*Math.Min(lengthToRead - processedBytes, HandleRead.RemainingSize)*/;
                         var bytes = HandleRead.ReadBytes(bytesToRead);
                         QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, bytes, lengthToRead, packetId);
                         _logger.Verbose(
                             $"Attempting to Route unhandled packet from {sender.ConnectionId} -> {(routingHeader.ReceiverId == AllConnectionIds ? "all players" : routingHeader.ReceiverId)} " +
                             $"PacketOption='{routingHeader.PacketOption}' " +
-                            $"ProcessedBytes='{processedBytes}' BytesToRead='{bytesToRead}' " +
+                            $"Length='{length}' ProcessedBytes='{processedBytes}' BytesToRead='{bytesToRead}' " +
                             $"BytesRemainingSize='{HandleRead.RemainingSize}' " +
+                            $"lengthToRead - processedBytes = '{lengthToRead - processedBytes}' Offset - prevPosition = '{HandleRead.Offset - prevPosition}' " +
                             $"BytesRemainingData='{BitConverter.ToString(HandleRead.RemainingData.ToArray())}' " +
                             $"BytesRead='{BitConverter.ToString(bytes.ToArray())}' " +
                             $"(Secret='{sender.Secret}', DeliveryMethod={method})."
@@ -334,8 +342,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             IPlayer sender, (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader,
             ref SpanBuffer writer, ref SpanBuffer legacyWriter, Span<byte> data, int length, Queue<(byte? basePacketId, string? mpCorePacketId)> packetIds)
         {
-            if (writer.Offset == 0 && legacyWriter.Offset == 0)
-                return;
             routingHeader.SenderId = sender.ConnectionId;
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
@@ -405,6 +411,11 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private void SendQueue(IPlayer sender, (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader, ref SpanBuffer writer, ref SpanBuffer legacyWriter, DeliveryMethod deliveryMethod)
         {
+            if (writer.Offset == 0 && legacyWriter.Offset == 0)
+            {
+                _logger.Verbose($"No packets in SendQueue to send");
+                return;
+            }
             _logger.Verbose($"Sending Queue for RoutedPacket");
             if (routingHeader.ReceiverId == AllConnectionIds)
             {
