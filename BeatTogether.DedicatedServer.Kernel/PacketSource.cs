@@ -53,6 +53,11 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public override void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, DeliveryMethod method)
         {
+            _logger.Verbose(
+                $"Received packet from {remoteEndPoint} " +
+                $"(RawData='{BitConverter.ToString(reader.RemainingData.ToArray())}', DeliveryMethod={method})."
+            );
+
             if (!_playerRegistry.TryGetPlayer(remoteEndPoint, out var sender))
             {
                 _logger.Warning(
@@ -101,8 +106,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                 try { length = HandleRead.ReadVarUInt(); _logger.Verbose($"HandleRead read length {length} cast {(int)length} available bytes {HandleRead.RemainingSize}"); }
                 catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                 
-                _logger.Verbose($"BytesRead");
-
                 if (length < HandleRead.RemainingSize)
                 {
                     _logger.Information($"Packet might be a MultiPacket length {length} remainingbytes {HandleRead.RemainingSize}");
@@ -113,6 +116,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     _logger.Warning($"Packet fragmented (RemainingSize={HandleRead.RemainingSize}, Expected={length}).");
                     goto RoutePacket;
                 }
+
+                uint lengthToRoute = length;
 
                 int prevPosition = HandleRead.Offset;
                 INetSerializable? packet;
@@ -132,23 +137,27 @@ namespace BeatTogether.DedicatedServer.Kernel
                         if (packetRegistry.TryCreatePacket(checkPacketId.basePacketId, out packet))
                         {
                             packetId.Enqueue(checkPacketId);
+                            lengthToRoute--;
                             break;
                         }
                         if (packetRegistry.TryGetSubPacketRegistry(checkPacketId.basePacketId, out var subPacketRegistry))
                         {
                             packetRegistry = subPacketRegistry;
                             packetId.Enqueue(checkPacketId);
+                            lengthToRoute--;
                             continue;
                         }
                     }
                     else
                     {
+                        int posBeforeStringRead = HandleRead.Offset;
                         try
                         { checkPacketId.mpCorePacketId = HandleRead.ReadString(); }
                         catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                         if (MPCoreRegistry.TryCreatePacket(checkPacketId.mpCorePacketId, out packet))
                         {
                             packetId.Enqueue(checkPacketId);
+                            lengthToRoute -= (uint)(HandleRead.Offset - posBeforeStringRead);
                             break;
                         }
                     }
@@ -170,8 +179,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                         //RoutePacket(sender, routingHeader, ref readerSlice, method);
 
                         var processedBytes = Math.Min(HandleRead.Offset - prevPosition, HandleRead.RemainingSize);
-                        int lengthToRead = (int)length;
-                        var bytesToRead = Math.Min(lengthToRead - processedBytes, HandleRead.RemainingSize);
+                        int lengthToRead = (int)lengthToRoute;
+                        var bytesToRead = Math.Min(lengthToRead/* - processedBytes*/, HandleRead.RemainingSize);
                         var bytes = HandleRead.ReadBytes(bytesToRead);
                         QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, bytes, lengthToRead, packetId);
                         _logger.Verbose(
@@ -232,8 +241,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     if (routingHeader.ReceiverId != 0)
                     {
                         var processedBytes = HandleRead.Offset - prevPosition /*Math.Min(HandleRead.Offset - prevPosition, HandleRead.RemainingSize)*/;
-                        int lengthToRead = (int)length;
-                        var bytesToRead = lengthToRead - processedBytes /*Math.Min(lengthToRead - processedBytes, HandleRead.RemainingSize)*/;
+                        int lengthToRead = (int)lengthToRoute;
+                        var bytesToRead = lengthToRead/* - processedBytes*/ /*Math.Min(lengthToRead - processedBytes, HandleRead.RemainingSize)*/;
                         var bytes = HandleRead.ReadBytes(bytesToRead);
                         QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, bytes, lengthToRead, packetId);
                         _logger.Verbose(
