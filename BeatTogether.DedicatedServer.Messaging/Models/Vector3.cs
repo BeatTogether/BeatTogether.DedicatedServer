@@ -1,10 +1,12 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Extensions;
 using BeatTogether.LiteNetLib.Util;
+using Serilog;
+using System;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
-    public struct Vector3 : INetSerializable
+    public class Vector3 : INetSerializable
     {
         public int x;
         public int y;
@@ -22,6 +24,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteVarInt(x);
             writer.WriteVarInt(y);
             writer.WriteVarInt(z);
+        }
+
+        public override string ToString()
+        {
+            return $"(x: {x}, y: {y}, z: {z})";
         }
     }
 }

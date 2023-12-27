@@ -25,16 +25,15 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
                 _logger.Verbose($"Converted time from {readTime} to {convertedTime}");
                 Time = convertedTime;
                 State.ReadFrom(ref reader);
-                return;
             }
             else
             {
-                //ReadFrom(ref reader);
                 SyncStateId = reader.ReadUInt8();
                 Time = (long)reader.ReadVarULong();
                 _logger.Verbose($"Read time as {Time}");
                 State.ReadFrom(ref reader);
             }
+            _logger.Verbose($"State read {State}");
         }
 
         public void WriteTo(ref SpanBuffer writer, Version version)
@@ -42,6 +41,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
             if (version < ClientVersions.NewPacketVersion)
             {
                 writer.WriteUInt8(SyncStateId);
+                _logger.Verbose($"Writing time converted from {Time} to {Time / 1000f}");
                 writer.WriteFloat32(Time / 1000f);
                 State.WriteTo(ref writer);
                 return;
@@ -50,9 +50,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
             {
                 //WriteTo(ref writer);
                 writer.WriteUInt8(SyncStateId);
+                _logger.Verbose($"Writing time as {(ulong)Time}");
                 writer.WriteVarULong((ulong)Time);
                 State.WriteTo(ref writer);
             }
+            _logger.Verbose($"State written {State}");
         }
     }
 }

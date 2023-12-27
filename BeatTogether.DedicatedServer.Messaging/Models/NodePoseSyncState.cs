@@ -1,13 +1,15 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Util;
+using Serilog;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
     public sealed class NodePoseSyncState : INetSerializable
     {
-        public Pose Head { get; set; }
-        public Pose LeftController { get; set; }
-        public Pose RightController { get; set; }
+        public Pose Head { get; set; } = new();
+        public Pose LeftController { get; set; } = new();
+        public Pose RightController { get; set; } = new();
+
 
         public void ReadFrom(ref SpanBuffer reader)
         {
@@ -21,6 +23,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             Head.WriteTo(ref writer);
             LeftController.WriteTo(ref writer);
             RightController.WriteTo(ref writer);
+        }
+
+        public override string ToString()
+        {
+            return $"(Head: {Head}, LeftController: {LeftController}, RightController: {RightController})";
         }
     }
 }

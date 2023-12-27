@@ -4,7 +4,7 @@ using BeatTogether.LiteNetLib.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
-    public struct Quaternion : INetSerializable
+    public class Quaternion : INetSerializable
     {
         public int a;
         public int b;
@@ -22,6 +22,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteVarInt(a);
             writer.WriteVarInt(b);
             writer.WriteVarInt(c);
+        }
+
+        public override string ToString()
+        {
+            return $"(a: {a}, b: {b}, c: {c})";
         }
     }
 }
