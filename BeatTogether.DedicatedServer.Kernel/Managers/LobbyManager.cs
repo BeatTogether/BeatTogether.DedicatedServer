@@ -360,8 +360,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled, whereas SetCountdown will not
         private void SetCountdown(CountdownState countdownState, long countdown = 0)
         {
-            _logger.Error($"CountdownEndTime currently is '{CountdownEndTime}' countdown is set to '{countdown}' state will be set to '{countdownState}' BeatmapStartTime is '{_configuration.CountdownConfig.BeatMapStartCountdownTime}'");
-            _logger.Error($"Check should start Beatmap {(CountdownEndTime - _instance.RunTime) < _configuration.CountdownConfig.BeatMapStartCountdownTime} EndTime '{CountdownEndTime - _instance.RunTime}' RunTime '{_instance.RunTime}'");
+            _logger.Debug($"CountdownEndTime currently is '{CountdownEndTime}' countdown is set to '{countdown}' state will be set to '{countdownState}' BeatmapStartTime is '{_configuration.CountdownConfig.BeatMapStartCountdownTime}'");
+            _logger.Debug($"Check should start Beatmap {(CountdownEndTime - _instance.RunTime) < _configuration.CountdownConfig.BeatMapStartCountdownTime} EndTime '{CountdownEndTime - _instance.RunTime}' RunTime '{_instance.RunTime}'");
             CountDownState = countdownState;
             switch (CountDownState)
             {
@@ -389,7 +389,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     StartBeatmapPacket();
                     break;
             }
-            _logger.Error($"CountdownEndTime final set to '{CountdownEndTime}' CountdownState '{CountDownState}' countdown is '{countdown}' RunTime is '{_instance.RunTime}' BeatmapStartTime is '{_configuration.CountdownConfig.BeatMapStartCountdownTime}'");
+            _logger.Debug($"CountdownEndTime final set to '{CountdownEndTime}' CountdownState '{CountDownState}' countdown is '{countdown}' RunTime is '{_instance.RunTime}' BeatmapStartTime is '{_configuration.CountdownConfig.BeatMapStartCountdownTime}'");
         }
 
         //Checks the lobby settings and sends the player the correct beatmap
