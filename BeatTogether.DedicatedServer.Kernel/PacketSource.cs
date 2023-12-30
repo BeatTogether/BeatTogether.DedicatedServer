@@ -40,7 +40,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             InstanceConfiguration instconfiguration,
             LiteNetConfiguration configuration,
             LiteNetServer server)
-            : base (
+            : base(
                   configuration,
                   server)
         {
@@ -105,12 +105,12 @@ namespace BeatTogether.DedicatedServer.Kernel
                 uint length;
                 try { length = HandleRead.ReadVarUInt(); _logger.Verbose($"HandleRead read length {length} cast {(int)length} available bytes {HandleRead.RemainingSize}"); }
                 catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
-                
+
                 if (length < HandleRead.RemainingSize)
                 {
                     _logger.Information($"Packet might be a MultiPacket length {length} remainingbytes {HandleRead.RemainingSize}");
                 }
-                
+
                 if (HandleRead.RemainingSize < length)
                 {
                     _logger.Warning($"Packet fragmented (RemainingSize={HandleRead.RemainingSize}, Expected={length}).");
@@ -124,7 +124,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 IPacketRegistry packetRegistry = _packetRegistry;
 
                 // Initialize packetId
-                Queue<(byte? basePacketId, string? mpCorePacketId)> packetId = new();
+                Queue<(byte? basePacketId, string? mpCorePacketId)> packetIds = new();
 
                 while (true)
                 {
@@ -136,14 +136,14 @@ namespace BeatTogether.DedicatedServer.Kernel
                         catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                         if (packetRegistry.TryCreatePacket(checkPacketId.basePacketId, out packet))
                         {
-                            packetId.Enqueue(checkPacketId);
+                            packetIds.Enqueue(checkPacketId);
                             lengthToRoute--;
                             break;
                         }
                         if (packetRegistry.TryGetSubPacketRegistry(checkPacketId.basePacketId, out var subPacketRegistry))
                         {
                             packetRegistry = subPacketRegistry;
-                            packetId.Enqueue(checkPacketId);
+                            packetIds.Enqueue(checkPacketId);
                             lengthToRoute--;
                             continue;
                         }
@@ -156,7 +156,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                         if (MPCoreRegistry.TryCreatePacket(checkPacketId.mpCorePacketId, out packet))
                         {
-                            packetId.Enqueue(checkPacketId);
+                            packetIds.Enqueue(checkPacketId);
                             lengthToRoute -= (uint)(HandleRead.Offset - posBeforeStringRead);
                             break;
                         }
@@ -182,7 +182,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         int lengthToRead = (int)lengthToRoute;
                         var bytesToRead = Math.Min(lengthToRead/* - processedBytes*/, HandleRead.RemainingSize);
                         var bytes = HandleRead.ReadBytes(bytesToRead);
-                        QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, bytes, lengthToRead, packetId);
+                        QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, bytes, lengthToRead, packetIds);
                         _logger.Verbose(
                             $"Attempting to Route unknown packet from {sender.ConnectionId} -> {(routingHeader.ReceiverId == AllConnectionIds ? "all players" : routingHeader.ReceiverId)} " +
                             $"PacketOption='{routingHeader.PacketOption}' " +
@@ -201,7 +201,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }
                     continue;
                 }
-                if(packet is NoteSpawnPacket || packet is ObstacleSpawnPacket || packet is SliderSpawnPacket) //Note packet logic
+                if (packet is NoteSpawnPacket || packet is ObstacleSpawnPacket || packet is SliderSpawnPacket) //Note packet logic
                 {
                     if (_configuration.DisableNotes || (_playerRegistry.GetPlayerCount() > 16) && !_configuration.ForceEnableNotes)
                         return;
@@ -212,7 +212,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
                     {
-                        _logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Secret}').");
+                        //_logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Secret}').");
                         return;
                     }
                     method = DeliveryMethod.Unreliable;
@@ -222,7 +222,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
                     {
-                        _logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Secret}').");
+                        //_logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Secret}').");
                         return;
                     }
                     sender.TicksAtLastSyncStateDelta = DateTime.UtcNow.Ticks;
@@ -235,7 +235,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (packetHandler is null && packet is not IVersionedNetSerializable)
                 {
                     //if (!packetType.Name.StartsWith("NodePoseSyncState"))
-                        _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
+                    _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
 
                     // Is packet meant to be routed?
                     if (routingHeader.ReceiverId != 0)
@@ -244,7 +244,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         int lengthToRead = (int)lengthToRoute;
                         var bytesToRead = lengthToRead/* - processedBytes*/ /*Math.Min(lengthToRead - processedBytes, HandleRead.RemainingSize)*/;
                         var bytes = HandleRead.ReadBytes(bytesToRead);
-                        QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, bytes, lengthToRead, packetId);
+                        QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, bytes, lengthToRead, packetIds);
                         _logger.Verbose(
                             $"Attempting to Route unhandled packet from {sender.ConnectionId} -> {(routingHeader.ReceiverId == AllConnectionIds ? "all players" : routingHeader.ReceiverId)} " +
                             $"PacketOption='{routingHeader.PacketOption}' " +
@@ -284,24 +284,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                         continue;
                     }
                     // Is packet meant to be routed?
-                    (byte SenderId, byte ReceiverId, PacketOption PacketOption) patchedRoutingHeader = routingHeader;
-                    patchedRoutingHeader.SenderId = sender.ConnectionId;
-                    if (routingHeader.ReceiverId == AllConnectionIds)
-                    {
-                        _packetDispatcher.SendExcludingPlayer(sender, versionedPacket, method, patchedRoutingHeader);
-                    }
-                    else if (routingHeader.ReceiverId != 0)
-                    {
-                        if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
-                        {
-                            _logger.Warning(
-                                "Failed to retrieve receiver " +
-                                $"(SenderIsLegacyPlayer='{senderIsLegacyPlayer}', Secret='{sender.Secret}', ReceiverId={routingHeader.ReceiverId})."
-                            );
-                            return;
-                        }
-                        _packetDispatcher.SendFromPlayerToPlayer(sender, receiver, versionedPacket, method, patchedRoutingHeader);
-                    }
+                    if (routingHeader.ReceiverId != 0)
+                        QueueRoutePacket(sender, routingHeader, ref writer, ref legacyWriter, versionedPacket, (int)length, packetIds);
                     continue;
                 }
 
@@ -332,7 +316,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             if (routingHeader.ReceiverId != 0) SendQueue(sender, routingHeader, ref writer, ref legacyWriter, method);
             return;
-            RoutePacket:
+        RoutePacket:
             //Is this packet meant to be routed ?
             if (routingHeader.ReceiverId != 0)
             {
@@ -344,8 +328,102 @@ namespace BeatTogether.DedicatedServer.Kernel
                 RoutePacketUnhandled(sender, routingHeader, ref reader, method);
             }
         }
-        
+
         #region Private Methods
+
+        private void QueueRoutePacket(
+            IPlayer sender, (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader,
+            ref SpanBuffer writer, ref SpanBuffer legacyWriter, IVersionedNetSerializable packet, int length, Queue<(byte? basePacketId, string? mpCorePacketId)> packetIds)
+        {
+            routingHeader.SenderId = sender.ConnectionId;
+            if (routingHeader.ReceiverId == AllConnectionIds)
+            {
+                routingHeader.PacketOption = PacketOption.None;
+                if (writer.Offset == 0)
+                {
+                    _logger.Verbose($"Starting Queue for new RoutedPacket");
+                    legacyWriter.WriteLegacyRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
+                    writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
+                }
+
+                writer.WriteVarUInt((uint)length);
+                legacyWriter.WriteVarUInt((uint)length);
+                while (packetIds.TryDequeue(out var packetId))
+                    if (packetId.basePacketId.HasValue)
+                    {
+                        writer.WriteUInt8(packetId.basePacketId.Value);
+                        legacyWriter.WriteUInt8(packetId.basePacketId.Value);
+                    }
+                    else if (!string.IsNullOrEmpty(packetId.mpCorePacketId))
+                    {
+                        writer.WriteString(packetId.mpCorePacketId);
+                        legacyWriter.WriteString(packetId.mpCorePacketId);
+                    }
+                    else
+                        throw new ArgumentNullException("PacketId was null");
+
+                packet.WriteTo(ref writer, ClientVersions.NewPacketVersion);
+                packet.WriteTo(ref legacyWriter, ClientVersions.DefaultVersion);
+
+                _logger.Verbose(
+                    $"Queueing packet from {routingHeader.SenderId} -> all players " +
+                    $"PacketOption='{routingHeader.PacketOption}' " +
+                    $"(DeliveryMethod={DeliveryMethod.ReliableOrdered})."
+                );
+            }
+            else
+            {
+                if (!_playerRegistry.TryGetPlayer(routingHeader.ReceiverId, out var receiver))
+                {
+                    _logger.Warning(
+                        "QueueRoutePacket: Failed to retrieve receiver " +
+                        $"(Secret='{sender.Secret}', ReceiverId={routingHeader.ReceiverId})."
+                    );
+                    return;
+                }
+
+                if (writer.Offset == 0)
+                {
+                    _logger.Verbose($"Starting Queue for new RoutedPacket");
+                    if (receiver.ClientVersion < ClientVersions.NewPacketVersion)
+                        legacyWriter.WriteLegacyRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
+                    else
+                        writer.WriteRoutingHeader(routingHeader.SenderId, routingHeader.ReceiverId, routingHeader.PacketOption);
+                }
+
+                _logger.Verbose(
+                    $"Queueing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
+                    $"PacketOption='{routingHeader.PacketOption}' " +
+                    $"(Secret='{receiver.Secret}', DeliveryMethod={DeliveryMethod.ReliableOrdered}).");
+
+                if (receiver.ClientVersion < ClientVersions.NewPacketVersion)
+                    legacyWriter.WriteVarUInt((uint)length);
+                else
+                    writer.WriteVarUInt((uint)length);
+                while (packetIds.TryDequeue(out var packetId))
+                    if (packetId.basePacketId.HasValue)
+                    {
+                        if (receiver.ClientVersion < ClientVersions.NewPacketVersion)
+                            legacyWriter.WriteUInt8(packetId.basePacketId.Value);
+                        else
+                            writer.WriteUInt8(packetId.basePacketId.Value);
+                    }
+                    else if (!string.IsNullOrEmpty(packetId.mpCorePacketId))
+                    {
+                        if (receiver.ClientVersion < ClientVersions.NewPacketVersion)
+                            legacyWriter.WriteString(packetId.mpCorePacketId);
+                        else
+                            writer.WriteString(packetId.mpCorePacketId);
+                    }
+                    else
+                        throw new ArgumentNullException("PacketId was null");
+
+                if (receiver.ClientVersion < ClientVersions.NewPacketVersion)
+                    packet.WriteTo(ref legacyWriter, receiver.ClientVersion);
+                else
+                    packet.WriteTo(ref writer, receiver.ClientVersion);
+            }
+        }
 
         private void QueueRoutePacket(
             IPlayer sender, (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader,
@@ -414,8 +492,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (legacyWriter.Offset > 0) legacyWriter.WriteBytes(data);
             if (legacyWriter.Offset == 0 && writer.Offset == 0)
                 _logger.Verbose($"No packets to send");
-
-
         }
 
         private void SendQueue(IPlayer sender, (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader, ref SpanBuffer writer, ref SpanBuffer legacyWriter, DeliveryMethod deliveryMethod)
@@ -467,13 +543,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             writer.Dispose();
             legacyWriter.Dispose();
         }
-
-        //private void RoutePacketUnhandled(IPlayer sender,
-        //    (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader,
-        //    ref SpanBuffer writer, DeliveryMethod deliveryMethod, (byte? basePacketId, string? mpCorePacketId) packetId)
-        //{
-
-        //}
 
         private void RoutePacketUnhandled(IPlayer sender,
             (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader,
