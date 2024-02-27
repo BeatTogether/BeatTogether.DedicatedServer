@@ -189,6 +189,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 if (player.UpdateEntitlement || SpectatingPlayersUpdated)
                 {
+		    player.UpdateEntitlement = false;
                     if (player.BeatmapIdentifier != null)
                     {
                         _packetDispatcher.SendToPlayer(player, new SetPlayersMissingEntitlementsToLevelPacket
@@ -199,7 +200,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         }, DeliveryMethod.ReliableOrdered);
                         _logger.Debug("Sent missing entitlement packet");
                     }
-                    player.UpdateEntitlement = false;
                 }
             }
             SpectatingPlayersUpdated = false;
