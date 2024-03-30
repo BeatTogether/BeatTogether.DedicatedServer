@@ -2,7 +2,6 @@
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -20,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _packetDispatcher = packetDispatcher;
         }
 
-        public override Task Handle(IPlayer sender, GetMultiplayerGameStatePacket packet)
+        public override void Handle(IPlayer sender, GetMultiplayerGameStatePacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(GetMultiplayerGameStatePacket)}' " +
@@ -31,8 +30,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             {
                 State = _instance.State
             }, DeliveryMethod.ReliableOrdered);
-
-            return Task.CompletedTask;
         }
     }
 }

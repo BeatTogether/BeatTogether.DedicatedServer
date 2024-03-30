@@ -2,7 +2,6 @@
 using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
 {
@@ -16,7 +15,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             _packetDispatcher = packetDispatcher;
         }
 
-        public override Task Handle(IPlayer sender, SyncTimePacket packet)
+        public override void Handle(IPlayer sender, SyncTimePacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(SyncTimePacket)}' " +
@@ -27,12 +26,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             {
                 SyncTime = sender.SyncTime
             }, DeliveryMethod.ReliableOrdered);
-
-            _logger.Verbose(
-                $"Preparing '{nameof(SyncTimePacket)}' " +
-                $"(SenderId={sender.ConnectionId}, SyncTime={sender.SyncTime})."
-            );
-            return Task.CompletedTask;
         }
     }
 }

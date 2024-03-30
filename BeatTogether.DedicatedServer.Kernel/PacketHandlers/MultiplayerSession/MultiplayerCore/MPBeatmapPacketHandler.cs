@@ -5,7 +5,6 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePa
 using Serilog;
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -20,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _lobbyManager = lobbyManager;
         }
 
-        public override Task Handle(IPlayer sender, MpBeatmapPacket packet)
+        public override void Handle(IPlayer sender, MpBeatmapPacket packet)
         {
 
             _logger.Debug(
@@ -35,7 +34,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 sender.MappingExtensions = Requirements.Contains("Mapping Extensions");
             }
             sender.BeatmapDifficulties = packet.requirements.Keys.Select(b => (BeatmapDifficulty)b).ToArray();
-            return Task.CompletedTask;
         }
     }
 }

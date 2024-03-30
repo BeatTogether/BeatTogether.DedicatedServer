@@ -4,7 +4,6 @@ using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -25,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _playerRegistry = playerRegistry;
         }
 
-        public override Task Handle(IPlayer sender, GetPlayersPermissionConfigurationPacket packet)
+        public override void Handle(IPlayer sender, GetPlayersPermissionConfigurationPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(GetPlayersPermissionConfigurationPacket)}' " +
@@ -60,8 +59,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                     PlayersPermission = playerPermissionConfigurations
                 }
             }, DeliveryMethod.ReliableOrdered);
-
-            return Task.CompletedTask;
         }
     }
 }

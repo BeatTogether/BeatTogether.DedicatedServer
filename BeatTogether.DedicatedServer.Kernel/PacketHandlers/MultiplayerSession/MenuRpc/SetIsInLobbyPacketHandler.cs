@@ -4,10 +4,6 @@ using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System;
-using System.Linq;
-using System.Numerics;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -34,22 +30,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _lobbyManager = lobbyManager;
         }
 
-        public override async Task Handle(IPlayer sender, SetIsInLobbyPacket packet)
+        public override void Handle(IPlayer sender, SetIsInLobbyPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(SetIsInLobbyPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, InLobby={packet.IsInLobby})."
             );
-            await sender.PlayerAccessSemaphore.WaitAsync();
-            bool InLobby = sender.InLobby;
-            if (packet.IsInLobby == sender.InLobby)
-            {
-                sender.PlayerAccessSemaphore.Release();
-                return;
-            }
             sender.InLobby = packet.IsInLobby;
-            sender.PlayerAccessSemaphore.Release();
-            if (InLobby)
+            if (sender.InLobby)
             {
                 _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
                 {
@@ -72,7 +60,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                         Modifiers = _lobbyManager.SelectedModifiers
                     }, DeliveryMethod.ReliableOrdered);
             }
-            return;
         }
     }
 }

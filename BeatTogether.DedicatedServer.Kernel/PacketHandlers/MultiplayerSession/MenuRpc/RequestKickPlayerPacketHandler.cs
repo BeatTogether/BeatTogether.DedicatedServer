@@ -4,7 +4,6 @@ using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -22,16 +21,13 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _packetDispatcher = packetDispatcher;
         }
 
-        public override async Task Handle(IPlayer sender, RequestKickPlayerPacket packet)
+        public override void Handle(IPlayer sender, RequestKickPlayerPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(RequestKickPlayerPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, KickedPlayerId={packet.KickedPlayerId})."
             );
-            await sender.PlayerAccessSemaphore.WaitAsync();
-            bool CanKick = sender.CanKickVote;
-            sender.PlayerAccessSemaphore.Release();
-            if (CanKick)
+            if (sender.CanKickVote)
                 if (_playerRegistry.TryGetPlayer(packet.KickedPlayerId, out var kickedPlayer))
                     _packetDispatcher.SendToPlayer(kickedPlayer, new KickPlayerPacket
                     {

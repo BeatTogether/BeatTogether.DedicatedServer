@@ -8,8 +8,10 @@ using BeatTogether.DedicatedServer.Ignorance.ENet;
 using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Ignorance.Util;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Enums;
 using BeatTogether.LiteNetLib.Extensions;
+using BeatTogether.LiteNetLib.Sources;
 using BeatTogether.LiteNetLib.Util;
 using Krypton.Buffers;
 using Serilog;
@@ -21,9 +23,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
     /// </summary>
     public class ENetServer : IDisposable
     {
-        public readonly DedicatedInstance DedicatedInstance;
-        public readonly int Port;
-
+        private readonly int Port;
         private readonly IgnoranceServer _ignorance;
         private readonly ILogger _logger;
         private CancellationTokenSource _runtimeCts;
@@ -35,9 +35,8 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
         public IPEndPoint EndPoint => new(IPAddress.Any, Port);
         public bool IsAlive => _ignorance.IsAlive;
 
-        public ENetServer(DedicatedInstance dedicatedInstance, int port)
+        public ENetServer(int port)
         {
-            DedicatedInstance = dedicatedInstance;
             Port = port;
 
             _ignorance = new IgnoranceServer();
@@ -159,7 +158,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 }
                 // Process actual payload
                 var deliveryMethod = e.Channel == 0 ? DeliveryMethod.ReliableOrdered : DeliveryMethod.Unreliable;
-                DedicatedInstance.ConnectedMessageSource.OnReceive(connection.EndPoint, ref bufferReader, deliveryMethod);
+                OnReceive(connection.EndPoint, ref bufferReader, deliveryMethod);
             }
         }
 
@@ -194,14 +193,15 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 }
 
                 // Continue with regular accept flow (remainder is regular GameLift connection request)
-                var player = DedicatedInstance.TryAcceptConnection(connection.EndPoint, ref reader);
+                var player = TryAcceptConnection(connection.EndPoint, ref reader);
+
                 
                 if (player != null)
                 {
                     // Accept success
                     player.ENetPeerId = connection.NativePeerId;
                     connection.State = ENetConnectionState.Accepted;
-                    DedicatedInstance.OnConnect(connection.EndPoint);
+                    OnConnect(connection.EndPoint);
                     return true;
                 }
             }
@@ -224,7 +224,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 connection.NativePeerId, connection.EndPoint);
 
             connection.State = ENetConnectionState.Disconnected;
-            DedicatedInstance.OnDisconnect(connection.EndPoint, DisconnectReason.DisconnectPeerCalled);
+            OnDisconnect(connection.EndPoint, DisconnectReason.DisconnectPeerCalled);
             
             if (!IsAlive || !sendKick)
                 // Can't or won't send kick
@@ -310,6 +310,40 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 _receiveBuffer = null;
             }
         }
+
+        #endregion
+
+
+
+        #region Overrideables
+        public virtual IPlayer? TryAcceptConnection(IPEndPoint endPoint, ref SpanBuffer reader)
+        {
+            return null;
+        }
+
+        public virtual void OnConnect(EndPoint endPoint)
+        {
+        }
+
+        public virtual void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
+        {
+        }
+
+        public virtual void OnLatencyUpdate(EndPoint endPoint, int latency)
+        {
+        }
+
+        public virtual void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, DeliveryMethod method)
+        {
+        }
+
+/*        public virtual void SendAsync(EndPoint endPoint, INetSerializable packet)
+        {
+            Span<byte> buffer = stackalloc byte[412];
+            SpanBuffer bufferWriter = new SpanBuffer(buffer);
+            packet.WriteTo(ref bufferWriter);
+            SendAsync(endPoint, new Memory<byte>(bufferWriter.Data.ToArray()));
+        }*/
 
         #endregion
     }

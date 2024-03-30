@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.LiteNetLib.Enums;
@@ -20,18 +19,16 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             _instance = instance;
         }
 
-        public override async Task Handle(IPlayer sender, PlayerIdentityPacket packet)
+        public override void Handle(IPlayer sender, PlayerIdentityPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(PlayerIdentityPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            await sender.PlayerAccessSemaphore.WaitAsync();
             sender.Avatar = packet.PlayerAvatar;
             sender.State = packet.PlayerState;
             sender.Random = packet.Random.Data ?? Array.Empty<byte>();
             sender.PublicEncryptionKey = packet.PublicEncryptionKey.Data ?? Array.Empty<byte>();
-            sender.PlayerAccessSemaphore.Release();
             _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
         }
     }

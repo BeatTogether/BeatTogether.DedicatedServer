@@ -1,29 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
+﻿using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 
 namespace BeatTogether.DedicatedServer.Kernel.Extensions
 {
     public static class GamePlatformToMpCorePlatform
     {
-        public static Platform Convert(this Kernel.Enums.Platform gamePlatform)
+        public static Platform Convert(this Enums.Platform gamePlatform)
         {
             switch (gamePlatform)
             {
-                case Kernel.Enums.Platform.Test:
+                case Enums.Platform.Test:
                     return Platform.Unknown;
-                case Kernel.Enums.Platform.OculusRift:
+                case Enums.Platform.OculusRift:
                     return Platform.OculusPC;
-                case Kernel.Enums.Platform.OculusQuest:
+                case Enums.Platform.OculusQuest:
                     return Platform.OculusQuest;
-                case Kernel.Enums.Platform.Steam:
+                case Enums.Platform.Steam:
                     return Platform.Steam;
-                case Kernel.Enums.Platform.PS4:
-                case Kernel.Enums.Platform.PS4Dev:
-                case Kernel.Enums.Platform.PS4Cert:
+                case Enums.Platform.PS4:
+                case Enums.Platform.PS4Dev:
+                case Enums.Platform.PS4Cert:
                     return Platform.PS4;
                 default:
                     return 0;

@@ -1,6 +1,5 @@
 ﻿using BeatTogether.LiteNetLib.Abstractions;
 using BeatTogether.LiteNetLib.Enums;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
@@ -17,7 +16,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 		void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod);
 		void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod);
 
-
+        /*
         Task SendToNearbyPlayersAndAwait(INetSerializable packet, DeliveryMethod deliveryMethod);
         Task SendToNearbyPlayersAndAwait(INetSerializable[] packets, DeliveryMethod deliveryMethod);
         Task SendExcludingPlayerAndAwait(IPlayer excludedPlayer, INetSerializable packet, DeliveryMethod deliveryMethod);
@@ -28,5 +27,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         Task SendFromPlayerToPlayerAndAwait(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod);
         Task SendToPlayerAndAwait(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod);
         Task SendToPlayerAndAwait(IPlayer player, INetSerializable[] packets, DeliveryMethod deliveryMethod);
+        */
     }
 }

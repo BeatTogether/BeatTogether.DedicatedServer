@@ -24,32 +24,24 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _playerRegistry = playerRegistry;
         }
 
-        public override async Task Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)
+        public override void Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)
 		{
 			_logger.Debug(
 				$"Handling packet of type '{nameof(SetRecommendedBeatmapPacket)}' " +
 				$"(SenderId={sender.ConnectionId}, LevelId={packet.BeatmapIdentifier.LevelId}, Difficulty={packet.BeatmapIdentifier.Difficulty})."
 			);
 
-			bool GetEntitlementFromOtherPlayers = false;
-            await sender.PlayerAccessSemaphore.WaitAsync();
             if (sender.CanRecommendBeatmaps)
 			{
 				sender.BeatmapIdentifier = packet.BeatmapIdentifier;
 				if (sender.BeatmapIdentifier.LevelId != sender.MapHash)
 					sender.ResetRecommendedMapRequirements();
-				GetEntitlementFromOtherPlayers = true;
                 sender.UpdateEntitlement = true;
-			}
-			sender.PlayerAccessSemaphore.Release();
-			if (GetEntitlementFromOtherPlayers)
-			{
                 _packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
                 {
                     LevelId = packet.BeatmapIdentifier.LevelId
                 }, DeliveryMethod.ReliableOrdered);
             }
-			return;
-		}
+        }
 	}
 }

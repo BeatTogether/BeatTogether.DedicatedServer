@@ -2,7 +2,6 @@
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.GameplayRpc
 {
@@ -17,7 +16,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _gameplayManager = gameplayManager;
         }
 
-        public override Task Handle(IPlayer sender, LevelFinishedPacket packet)
+        public override void Handle(IPlayer sender, LevelFinishedPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(LevelFinishedPacket)}' " +
@@ -25,7 +24,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
 
             _gameplayManager.HandleLevelFinished(sender, packet);
-            return Task.CompletedTask;
         }
     }
 }

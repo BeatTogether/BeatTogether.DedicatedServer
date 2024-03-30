@@ -16,6 +16,40 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly Dictionary<byte, IPlayer> _playersByConnectionId = new();
         private readonly Dictionary<string, IPlayer> _playersByUserId = new();
 
+        private readonly object pendingPlayerSessionData_Lock = new();
+        private readonly Dictionary<string, (string, byte, string)> _pendingPlayerSessionData = new();
+
+
+
+        public void AddExtraPlayerSessionData(string playerSessionId, string ClientVersion, byte PlatformId, string PlayerPlatformUserId)
+        {
+            lock (pendingPlayerSessionData_Lock)
+            {
+                _pendingPlayerSessionData[playerSessionId] = (ClientVersion, PlatformId, PlayerPlatformUserId);
+            }
+        }
+
+        public bool RemoveExtraPlayerSessionData(string playerSessionId, out string ClientVersion, out byte Platform, out string PlayerPlatformUserId)
+        {
+            lock (pendingPlayerSessionData_Lock)
+            {
+                if (_pendingPlayerSessionData.Remove(playerSessionId, out var Values))
+                {
+                    ClientVersion = Values.Item1;
+                    Platform = Values.Item2;
+                    PlayerPlatformUserId = Values.Item3;
+                    return true;
+                }
+                ClientVersion = "ERROR";
+                Platform = 0;
+                PlayerPlatformUserId = "ERROR";
+                return false;
+            }
+        }
+
+
+
+
         private int _PlayerCount = 0;
 
         public int GetPlayerCount()

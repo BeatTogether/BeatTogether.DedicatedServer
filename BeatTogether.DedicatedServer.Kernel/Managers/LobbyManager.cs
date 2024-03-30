@@ -85,12 +85,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (_instance.ConnectDisconnectSemaphore.CurrentCount > 0)
-                {
-                    _instance.ConnectDisconnectSemaphore.Wait();
-                    Update();
-                    _instance.ConnectDisconnectSemaphore.Release();
-                }
+                Update();
                 try
                 {
                     await Task.Delay(LoopTime, cancellationToken);

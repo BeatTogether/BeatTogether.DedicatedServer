@@ -7,18 +7,15 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.Extensions;
-using BeatTogether.LiteNetLib;
 using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Configuration;
 using BeatTogether.LiteNetLib.Enums;
-using BeatTogether.LiteNetLib.Sources;
 using BeatTogether.LiteNetLib.Util;
 using Krypton.Buffers;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
-    public sealed class PacketSource : ConnectedMessageSource
+    public sealed class PacketSource
     {
         public const byte LocalConnectionId = 0;
         public const byte AllConnectionIds = 127;
@@ -35,12 +32,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             IPacketRegistry packetRegistry,
             IPlayerRegistry playerRegistry,
             PacketDispatcher packetDispatcher,
-            InstanceConfiguration instconfiguration,
-            LiteNetConfiguration configuration,
-            LiteNetServer server)
-            : base (
-                  configuration,
-                  server)
+            InstanceConfiguration instconfiguration)
         {
             _serviceProvider = serviceProvider;
             _packetRegistry = packetRegistry;
@@ -49,7 +41,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _configuration = instconfiguration;
         }
 
-        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, DeliveryMethod method)
+        public void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, DeliveryMethod method)
         {
             if (!reader.TryReadRoutingHeader(out var routingHeader))
             {
@@ -133,7 +125,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
                     {
-                        _logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Secret}').");
+                        _logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Instance._configuration.Secret}').");
                         return;
                     }
                     method = DeliveryMethod.Unreliable;
@@ -143,7 +135,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
                     {
-                        _logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Secret}').");
+                        _logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Instance._configuration.Secret}').");
                         return;
                     }
                     sender.TicksAtLastSyncStateDelta = DateTime.UtcNow.Ticks;
@@ -202,7 +194,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> all players " +
                     $"PacketOption='{routingHeader.PacketOption}' " +
-                    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
+                    $"(Secret='{sender.Instance._configuration.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 _packetDispatcher.RouteExcludingPlayer(sender, ref writer, deliveryMethod);
             }
@@ -215,14 +207,14 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     _logger.Warning(
                         "Failed to retrieve receiver " +
-                        $"(Secret='{sender.Secret}', ReceiverId={routingHeader.ReceiverId})."
+                        $"(Secret='{sender.Instance._configuration.Secret}', ReceiverId={routingHeader.ReceiverId})."
                     );
                     return;
                 }
                 _logger.Verbose(
                     $"Routing packet from {routingHeader.SenderId} -> {routingHeader.ReceiverId} " +
                     $"PacketOption='{routingHeader.PacketOption}' " +
-                    $"(Secret='{sender.Secret}', DeliveryMethod={deliveryMethod})."
+                    $"(Secret='{sender.Instance._configuration.Secret}', DeliveryMethod={deliveryMethod})."
                 );
                 _packetDispatcher.RouteFromPlayerToPlayer(sender, receiver, ref writer, deliveryMethod);
             }

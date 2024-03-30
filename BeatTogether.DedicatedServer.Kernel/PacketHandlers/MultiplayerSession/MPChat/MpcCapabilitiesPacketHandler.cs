@@ -3,8 +3,6 @@ using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPackets;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MPChat
 {
@@ -20,7 +18,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _instanceConfiguration = instanceConfiguration;
         }
 
-        public override Task Handle(IPlayer sender, MpcCapabilitiesPacket packet)
+        public override void Handle(IPlayer sender, MpcCapabilitiesPacket packet)
         {
             bool FirstJoin = !sender.CanTextChat && packet.CanTextChat;
             sender.CanReceiveVoiceChat = packet.CanReceiveVoiceChat;
@@ -39,7 +37,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                     }, DeliveryMethod.ReliableOrdered);
 
             }
-            return Task.CompletedTask;
         }
     }
 }

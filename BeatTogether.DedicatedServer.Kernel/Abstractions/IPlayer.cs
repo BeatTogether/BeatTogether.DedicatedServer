@@ -3,22 +3,18 @@ using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
     public interface IPlayer
     {
-        SemaphoreSlim PlayerAccessSemaphore { get; set; }
         EndPoint Endpoint { get; }
         IDedicatedInstance Instance { get; }
         byte ConnectionId { get; }
         byte RemoteConnectionId { get; }
-        string Secret { get; }
         string UserId { get; }
         string UserName { get; }
-        string? PlayerSessionId { get; }
+        string PlayerSessionId { get; }
         
         byte[]? Random { get; set; }
         byte[]? PublicEncryptionKey { get; set; }
@@ -27,7 +23,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         string PlatformUserId { get; set; }
         
         uint? ENetPeerId { get; set; }
-        bool IsENetConnection => ENetPeerId.HasValue;
+        bool IsENetConnection { get;}
 
         RollingAverage Latency { get; }
         long SyncTime { get; }

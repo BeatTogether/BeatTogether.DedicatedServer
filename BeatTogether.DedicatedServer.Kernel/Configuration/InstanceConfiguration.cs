@@ -4,8 +4,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
 {
     public sealed class InstanceConfiguration
     {
-        public int LiteNetPort { get; set; }
-        public int ENetPort { get; set; }
+        //public int LiteNetPort { get; set; }
+        public int Port { get; set; }
         public string Secret { get; set; } = string.Empty;
         public string ServerOwnerId { get; set; } = string.Empty;
         public string ServerId { get; set; } = "ziuMSceapEuNN7wRGQXrZg";

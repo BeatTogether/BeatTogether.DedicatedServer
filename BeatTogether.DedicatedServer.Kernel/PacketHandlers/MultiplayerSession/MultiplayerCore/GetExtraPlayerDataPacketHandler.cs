@@ -2,7 +2,6 @@
 using BeatTogether.DedicatedServer.Kernel.Extensions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 using BeatTogether.LiteNetLib.Enums;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -19,7 +18,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _PlayerRegistry = playerRegistry;
         }
 
-        public override Task Handle(IPlayer sender, MpPlayerData packet)
+        public override void Handle(IPlayer sender, MpPlayerData packet)
         {
 
             foreach (var Player in _PlayerRegistry.Players)
@@ -31,7 +30,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                     ClientVersion = Player.ClientVersion
                 }, DeliveryMethod.ReliableOrdered);
             }
-            return Task.CompletedTask;
         }
     }
 }

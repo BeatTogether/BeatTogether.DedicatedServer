@@ -2,8 +2,6 @@
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using Serilog;
-using System;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -21,17 +19,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 			_lobbyManager = lobbyManager;
 		}
 
-		public override async Task Handle(IPlayer sender, SetRecommendedModifiersPacket packet)
+		public override void Handle(IPlayer sender, SetRecommendedModifiersPacket packet)
 		{
 			_logger.Debug(
 				$"Handling packet of type '{nameof(SetRecommendedModifiersPacket)}' " +
 				$"(SenderId={sender.ConnectionId})."
 			);
-            await sender.PlayerAccessSemaphore.WaitAsync();
 			if (sender.CanRecommendModifiers)
 				sender.Modifiers = packet.Modifiers;
-			sender.PlayerAccessSemaphore.Release();
-			return;
-		}
+        }
 	}
 }

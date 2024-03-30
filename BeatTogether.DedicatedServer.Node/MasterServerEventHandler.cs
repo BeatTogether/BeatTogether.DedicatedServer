@@ -89,17 +89,18 @@ namespace BeatTogether.DedicatedServer.Node
             }
             else
             {
-                _logger.Verbose(
-                    "Master server notified us of connecting graph client " +
-                    $"(RemoteEndPoint='{remoteEndPoint}', " +
-                    $"PlayerSessionId='{playerSessionId}')."
-                );
+                //_logger.Verbose(
+                //    "Master server notified us of connecting graph client " +
+                //    $"(RemoteEndPoint='{remoteEndPoint}', " +
+                //    $"PlayerSessionId='{playerSessionId}')."
+                //);
 
-                var HandshakeRegistry = TryGetDedicatedInstance(serverSecret)?
-                    .GetHandshakeSessionRegistry();
-                HandshakeRegistry?.AddPendingPlayerSessionId(playerSessionId);
-                HandshakeRegistry?.AddExtraPlayerSessionData(playerSessionId, PlayerClientVersion, PlayerPlatform, PlayerPlatformUserId);
+                //var HandshakeRegistry = TryGetDedicatedInstance(serverSecret)?
+                //    .GetHandshakeSessionRegistry();
+                //HandshakeRegistry?.AddPendingPlayerSessionId(playerSessionId);
+                //HandshakeRegistry?.AddExtraPlayerSessionData(playerSessionId, PlayerClientVersion, PlayerPlatform, PlayerPlatformUserId);
             }
+            TryGetDedicatedInstance(serverSecret)?.GetPlayerRegistry().AddExtraPlayerSessionData(playerSessionId, PlayerClientVersion, PlayerPlatform, PlayerPlatformUserId);
 
             _autobus.Publish(new NodeReceivedPlayerEncryptionEvent(_configuration.HostName, @event.RemoteEndPoint));
             return Task.CompletedTask;

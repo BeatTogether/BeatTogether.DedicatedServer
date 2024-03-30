@@ -9,8 +9,6 @@ namespace BeatTogether.DedicatedServer.Node
     {
         private readonly NodeConfiguration _configuration;
 
-        private readonly object _lock = new();
-
         private readonly HashSet<int> _acquiredPorts = new();
         private readonly HashSet<int> _releasedPorts = new();
 
@@ -26,32 +24,27 @@ namespace BeatTogether.DedicatedServer.Node
 
         public int? AcquirePort()
         {
-            lock (_lock)
+            if (_acquiredPorts.Count >= _configuration.MaximumSlots)
+                return null;
+            int port;
+            if (_releasedPorts.Any())
             {
-                if (_acquiredPorts.Count >= _configuration.MaximumSlots)
-                    return null;
-                int port;
-                if (_releasedPorts.Any())
-                {
-                    port = _releasedPorts.First();
-                    _releasedPorts.Remove(port);
-                }
-                else
-                    port = ++_lastPort;
-                _acquiredPorts.Add(port);
-                return port;
+                port = _releasedPorts.First();
+                _releasedPorts.Remove(port);
             }
+            else
+                port = ++_lastPort;
+            _acquiredPorts.Add(port);
+            return port;
         }
 
         public bool ReleasePort(int port)
         {
-            lock (_lock)
-            {
-                if (!_acquiredPorts.Remove(port))
-                    return false;
-                _releasedPorts.Add(port);
-                return true;
-            }
+
+            if (!_acquiredPorts.Remove(port))
+                return false;
+            _releasedPorts.Add(port);
+            return true;
         }
     }
 }

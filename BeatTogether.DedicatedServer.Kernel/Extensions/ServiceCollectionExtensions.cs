@@ -41,7 +41,7 @@ namespace BeatTogether.Extensions
             return services;
         }
 
-        public static IServiceCollection AddAllHandshakeMessageHandlersFromAssembly(this IServiceCollection services, Assembly assembly)
+/*        public static IServiceCollection AddAllHandshakeMessageHandlersFromAssembly(this IServiceCollection services, Assembly assembly)
         {
             var genericInterface = typeof(IHandshakeMessageHandler<>);
             var eventHandlerTypes = assembly
@@ -53,6 +53,6 @@ namespace BeatTogether.Extensions
                         genericInterface.MakeGenericType(eventHandlerType.BaseType!.GetGenericArguments()),
                         eventHandlerType);
             return services;
-        }
+        }*/
     }
 }

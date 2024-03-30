@@ -2,7 +2,6 @@
 using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
 {
@@ -17,26 +16,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             _packetDispatcher = packetDispatcher;
         }
 
-        public override async Task Handle(IPlayer sender, PlayerLatencyPacket packet)
+        public override void Handle(IPlayer sender, PlayerLatencyPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(PlayerLatencyPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, Latency={packet.Latency})."
             );
 
-            await sender.PlayerAccessSemaphore.WaitAsync();
             sender.Latency.Update(packet.Latency);
-            sender.PlayerAccessSemaphore.Release();
             _packetDispatcher.SendFromPlayer(sender, new PlayerLatencyPacket
             {
                 Latency = sender.Latency.CurrentAverage
             }, DeliveryMethod.ReliableOrdered);
-
-            _logger.Verbose(
-                $"Preparing packet of type '{nameof(PlayerLatencyPacket)}' " +
-                $"(SenderId={sender.ConnectionId}, Latency={sender.Latency.CurrentAverage})."
-            );
-            return;
         }
     }
 }

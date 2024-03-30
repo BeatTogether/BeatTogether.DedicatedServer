@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Types;
@@ -13,18 +11,16 @@ namespace BeatTogether.DedicatedServer.Kernel
 {
     public sealed class Player : IPlayer
     {
-        public SemaphoreSlim PlayerAccessSemaphore { get; set; } = new(1);
         public EndPoint Endpoint { get; }
         public IDedicatedInstance Instance { get; }
         public byte ConnectionId { get; }
         public byte RemoteConnectionId => 0;
-        public string Secret { get; }
         public string UserId { get; }
         public string UserName { get; }
-        public string? PlayerSessionId { get; }
+        public string PlayerSessionId { get; }
 
         public uint? ENetPeerId { get; set; }
-        public bool IsENetConnection => ENetPeerId.HasValue;
+        public bool IsENetConnection => true; //ENetPeerId.HasValue;
         public RollingAverage Latency { get; } = new(30);
         public long SyncTime =>
             Math.Min(Instance.RunTime - Latency.CurrentAverage - _syncTimeOffset,
@@ -32,7 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public int SortIndex { get; set; }
         public byte[]? Random { get; set; }
         public byte[]? PublicEncryptionKey { get; set; }
-        public string ClientVersion { get; set; } = "Pre-1.29";
+        public string ClientVersion { get; set; } = "Unknown";
         public Platform Platform { get; set; } = Platform.Test; //Unknown
         public string PlatformUserId { get; set; } = "";
         public MultiplayerAvatarsData Avatar { get; set; } = new();
@@ -62,15 +58,14 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool InMenu => State.Contains("in_menu"); //Should be true while in lobby
 
         private const long _syncTimeOffset = 6L;
-        private readonly ConcurrentDictionary<string, EntitlementStatus> _entitlements = new();
+        private readonly ConcurrentDictionary<string, EntitlementStatus> _entitlements = new(); //Set a max amount of like 50 or something.
 
         public Player(EndPoint endPoint, IDedicatedInstance instance,
-            byte connectionId, string secret, string userId, string userName, string? playerSessionId, AccessLevel accessLevel = AccessLevel.Player)
+            byte connectionId, string userId, string userName, string? playerSessionId, AccessLevel accessLevel = AccessLevel.Player)
         {
             Endpoint = endPoint;
             Instance = instance;
             ConnectionId = connectionId;
-            Secret = secret;
             UserId = userId;
             UserName = userName;
             PlayerSessionId = playerSessionId;
@@ -114,7 +109,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public void ResetRecommendedMapRequirements()
         {
-            MapHash= string.Empty;
+            MapHash = string.Empty;
             Chroma  = false;
             NoodleExtensions  = false;
             MappingExtensions = false;

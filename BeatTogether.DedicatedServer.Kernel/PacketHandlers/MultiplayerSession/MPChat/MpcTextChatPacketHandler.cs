@@ -5,7 +5,6 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPa
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MPChat
 {
@@ -29,7 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _serviceProvider = serviceProvider;
         }
 
-        public override Task Handle(IPlayer sender, MpcTextChatPacket packet)
+        public override void Handle(IPlayer sender, MpcTextChatPacket packet)
         {
             if (packet.Text.Length < _instanceConfiguration.MaxLengthCommand && packet.Text.StartsWith("/")){
                 string[] CommandValues = packet.Text[1..].Split(' ');
@@ -41,14 +40,13 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                     var Command = _serviceProvider.GetService(packetHandlerType);
                     if (Command != null)
                         ((ICommandHandler)Command).Handle(sender, TextCommand);
-                    return Task.CompletedTask;
+                    return;
                 }
                 _packetDispatcher.SendToPlayer(sender, new MpcTextChatPacket
                 {
                     Text = "Command not found or too long"
                 }, DeliveryMethod.ReliableOrdered);
             }
-            return Task.CompletedTask;
         }
     }
 }

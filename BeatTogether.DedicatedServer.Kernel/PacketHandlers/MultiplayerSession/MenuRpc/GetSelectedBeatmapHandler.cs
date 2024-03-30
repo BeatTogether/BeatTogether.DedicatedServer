@@ -3,7 +3,6 @@ using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -27,7 +26,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _instance = instance;
         }
 
-        public override Task Handle(IPlayer sender, GetSelectedBeatmap packet)
+        public override void Handle(IPlayer sender, GetSelectedBeatmap packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(GetSelectedBeatmap)}' " +
@@ -39,7 +38,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 {
                     Beatmap = _lobbyManager.SelectedBeatmap
                 }, DeliveryMethod.ReliableOrdered);
-                return Task.CompletedTask;
+                return;
             }
             if (_instance.State == Messaging.Enums.MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null)
             {
@@ -47,10 +46,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 {
                     Beatmap = _gameplayManager.CurrentBeatmap
                 }, DeliveryMethod.ReliableOrdered);
-                return Task.CompletedTask;
+                return;
             }
             _packetDispatcher.SendToPlayer(sender, new ClearSelectedBeatmap(), DeliveryMethod.ReliableOrdered);
-            return Task.CompletedTask;
         }
     }
 }

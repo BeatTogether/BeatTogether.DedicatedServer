@@ -2,7 +2,6 @@
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
 {
@@ -16,7 +15,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             _lobbyManager = lobbyManager;
         }
 
-        public override async Task Handle(IPlayer sender, PlayerStatePacket packet)
+        public override void Handle(IPlayer sender, PlayerStatePacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(PlayerStatePacket)}' " +
@@ -27,12 +26,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 $"was_active_at_level_start={packet.PlayerState.Contains("was_active_at_level_start")}, finished_level={packet.PlayerState.Contains("finished_level")})."
             );
 
-            await sender.PlayerAccessSemaphore.WaitAsync();
             sender.State = packet.PlayerState;
             if (packet.PlayerState.Contains("spectating") != sender.State.Contains("spectating") || packet.PlayerState.Contains("wants_to_play_next_level") != sender.State.Contains("wants_to_play_next_level"))
                 _lobbyManager.SpectatingPlayersUpdated = true;
-            sender.PlayerAccessSemaphore.Release();
-            return;
         }
     }
 }

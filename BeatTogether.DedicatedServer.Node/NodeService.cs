@@ -76,10 +76,9 @@ namespace BeatTogether.DedicatedServer.Node
             await matchmakingServer.Start();
             return new CreateMatchmakingServerResponse(
                 CreateMatchmakingServerError.None,
-                $"{_configuration.HostName}:{matchmakingServer.LiteNetPort}",
+                $"{_configuration.HostName}:{matchmakingServer.Port}",
                 _packetEncryptionLayer.Random,
-                _packetEncryptionLayer.KeyPair.PublicKey,
-                $"{_configuration.HostName}:{matchmakingServer.ENetPort}"
+                _packetEncryptionLayer.KeyPair.PublicKey
             );
         }
 
@@ -121,12 +120,12 @@ namespace BeatTogether.DedicatedServer.Node
         }
         private void HandleUpdatePlayerEvent(IPlayer player)
         {
-            _autobus.Publish(new PlayerJoinEvent(player.Secret, ((IPEndPoint)player.Endpoint).ToString(), player.UserId));
+            _autobus.Publish(new PlayerJoinEvent(player.Instance._configuration.Secret, ((IPEndPoint)player.Endpoint).ToString(), player.UserId));
         }
         private void HandlePlayerDisconnectEvent(IPlayer player)
         {
             _packetEncryptionLayer.RemoveEncryptedEndPoint((IPEndPoint)player.Endpoint);
-            _autobus.Publish(new PlayerLeaveServerEvent(player.Secret, player.UserId, ((IPEndPoint)player.Endpoint).ToString()));
+            _autobus.Publish(new PlayerLeaveServerEvent(player.Instance._configuration.Secret, player.UserId, ((IPEndPoint)player.Endpoint).ToString()));
         }
         private void HandlePlayerLeaveBeforeJoining(string Secret, EndPoint endPoint, string[] Players)
         {
