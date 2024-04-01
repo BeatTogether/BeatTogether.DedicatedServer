@@ -17,17 +17,7 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPackets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 using BeatTogether.DedicatedServer.Messaging.Abstractions;
-
-//using BeatTogether.LiteNetLib.Sources;
 using BeatTogether.DedicatedServer.Messaging.Util;
-
-//using BeatTogether.LiteNetLib;
-//using BeatTogether.LiteNetLib.Abstractions;
-//using BeatTogether.LiteNetLib.Configuration;
-//using BeatTogether.LiteNetLib.Enums;
-//using BeatTogether.LiteNetLib.Util;
-//using BeatTogether.LiteNetLib.Sources;
-//using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 
@@ -42,7 +32,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         public const int SyncTimeDelay = 5000;
 
         public InstanceConfiguration _configuration { get; private set; }
-        //public int LiteNetPort => _configuration.LiteNetPort;
         public int Port => _configuration.Port;
         public bool IsRunning => IsAlive;
         public long RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000L;
@@ -56,14 +45,12 @@ namespace BeatTogether.DedicatedServer.Kernel
         public event Action<string, bool> GameIsInLobby = null!;
         public event Action<IDedicatedInstance> UpdateInstanceEvent = null!;
 
-        //private readonly IHandshakeSessionRegistry _handshakeSessionRegistry;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
         private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IPacketDispatcher PacketDispatcher;
         private readonly PacketSource ConnectedMessageSource;
 
-        //public SemaphoreSlim ConnectDisconnectSemaphore { get; } = new(1); //Stops lobby loop from running during player connection/disconnection, and stops disconnects and connects happening simultaneously
 
         private byte _connectionIdCount = 0;
         private int _lastSortIndex = -1;
@@ -74,21 +61,14 @@ namespace BeatTogether.DedicatedServer.Kernel
         private long _startTime;
         private CancellationTokenSource? _waitForPlayerCts = null;
         private CancellationTokenSource? _stopServerCts;
-        
 
-
-        //public readonly ENetServer ENetServer;
 
         public DedicatedInstance(
             InstanceConfiguration configuration,
-            //IHandshakeSessionRegistry handshakeSessionRegistry,
             IPlayerRegistry playerRegistry,
-            //LiteNetConfiguration liteNetConfiguration,
-            //LiteNetPacketRegistry registry,
             IPacketDispatcher packetDispatcher,
             PacketSource connectedMessageSource,
             IServiceProvider serviceProvider,
-            //IPacketLayer packetLayer,
             PacketEncryptionLayer packetEncryptionLayer)
             : base (configuration.Port)
         {
@@ -343,21 +323,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (_waitForPlayerCts != null)
                 _waitForPlayerCts.Cancel();
 
-            // Retrieve encryption params and platform data from handshake process by player session token, if provided
-            //if (!string.IsNullOrEmpty(connectionRequestData.PlayerSessionId))
-            //{
-                //var handshakeSession =
-                //    _handshakeSessionRegistry.TryGetByPlayerSessionId(connectionRequestData.PlayerSessionId);
-                //GetPlayerRegistry().RemoveExtraPlayerSessionData(connectionRequestData.PlayerSessionId, out var ClientVer, out var Platform, out var PlayerPlatformUserId);
-                //player.ClientVersion = ClientVer;
-                //player.Platform = (Enums.Platform)Platform;
-                //player.PlatformUserId = PlayerPlatformUserId;
-                //if (handshakeSession != null && handshakeSession.EncryptionParameters != null)
-                //{
-                //    _packetEncryptionLayer.AddEncryptedEndPoint((IPEndPoint)endPoint,
-                //        handshakeSession.EncryptionParameters, true);
-                //}
-            //}
             if (GetPlayerRegistry().RemoveExtraPlayerSessionData(connectionRequestData.PlayerSessionId, out var ClientVer, out var Platform, out var PlayerPlatformUserId))
             {
                 player.ClientVersion = ClientVer;
@@ -405,10 +370,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         }
 
         #endregion
-
-
-        public override void OnLatencyUpdate(EndPoint endPoint, int latency)
-            => _logger.Verbose($"Latency updated (RemoteEndPoint='{endPoint}', Latency={0.001f * latency}).");
 
         public override void OnConnect(EndPoint endPoint)
         {

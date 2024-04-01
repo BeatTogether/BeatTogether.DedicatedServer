@@ -2,7 +2,6 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Ignorance.ENet;
@@ -324,10 +323,6 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
         }
 
         public virtual void OnDisconnect(EndPoint endPoint)
-        {
-        }
-
-        public virtual void OnLatencyUpdate(EndPoint endPoint, int latency)
         {
         }
 
