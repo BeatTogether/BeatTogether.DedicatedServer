@@ -1,7 +1,7 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -37,7 +37,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 _packetDispatcher.SendToPlayer(sender, new SetSelectedGameplayModifiers
                 {
                     Modifiers = _lobbyManager.SelectedModifiers
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
                 return;
             }
             if (_instance.State == Messaging.Enums.MultiplayerGameState.Game)
@@ -45,10 +45,10 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 _packetDispatcher.SendToPlayer(sender, new SetSelectedGameplayModifiers
                 {
                     Modifiers = _gameplayManager.CurrentModifiers
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
                 return;
             }
-            _packetDispatcher.SendToPlayer(sender, new ClearSelectedGameplayModifiers(), DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToPlayer(sender, new ClearSelectedGameplayModifiers(), IgnoranceChannelTypes.Reliable);
         }
     }
 }

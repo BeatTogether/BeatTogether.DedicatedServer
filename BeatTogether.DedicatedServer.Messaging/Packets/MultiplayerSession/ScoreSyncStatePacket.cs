@@ -1,7 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.Extensions;
-using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Util;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession
 {

@@ -1,4 +1,4 @@
-﻿using BeatTogether.LiteNetLib.Util;
+﻿using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPackets
 {

@@ -1,8 +1,8 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -32,7 +32,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                     _packetDispatcher.SendToPlayer(kickedPlayer, new KickPlayerPacket
                     {
                         DisconnectedReason = DisconnectedReason.Kicked
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
 
         }
     }

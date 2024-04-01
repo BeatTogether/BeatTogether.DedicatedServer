@@ -1,8 +1,8 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Converter;
 using BeatTogether.DedicatedServer.Messaging.Structs;
 using BeatTogether.Extensions;
-using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Util;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;

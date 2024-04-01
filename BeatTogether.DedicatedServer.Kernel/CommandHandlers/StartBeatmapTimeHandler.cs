@@ -1,4 +1,5 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.CommandHandlers;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPackets;
@@ -22,7 +23,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
             _packetDisapatcher.SendToNearbyPlayers(new MpcTextChatPacket
             {
                 Text = "Beatmap start time is now: " + command.Countdown
-            }, LiteNetLib.Enums.DeliveryMethod.ReliableOrdered);
+            }, IgnoranceChannelTypes.Reliable);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPackets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
-using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;

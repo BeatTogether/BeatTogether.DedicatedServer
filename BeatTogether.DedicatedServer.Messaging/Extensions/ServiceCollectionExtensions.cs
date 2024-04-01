@@ -1,5 +1,5 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Registries;
-using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BeatTogether.Extensions

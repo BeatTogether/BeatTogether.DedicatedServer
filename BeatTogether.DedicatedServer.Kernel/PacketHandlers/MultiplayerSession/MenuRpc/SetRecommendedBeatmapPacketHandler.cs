@@ -1,9 +1,8 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -40,7 +39,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 _packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
                 {
                     LevelId = packet.BeatmapIdentifier.LevelId
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
             }
         }
 	}

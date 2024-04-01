@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using BeatTogether.DedicatedServer.Messaging.Models;
 
-namespace BeatTogether.DedicatedServer.Messaging.Extensions
+namespace BeatTogether.Extensions
 {
     public static class BinaryReadWriteExtension
     {

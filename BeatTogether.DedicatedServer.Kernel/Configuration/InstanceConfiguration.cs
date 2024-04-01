@@ -31,6 +31,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
         public long SendPlayersWithoutEntitlementToSpectateTimeout { get; set; } = 30000L;
         public int MaxLengthCommand { get; set; } = 200;
         public bool ApplyNoFailModifier { get; set; } = true;
+        public int DisableNotesPlayerCount { get; set; } = 16;
     }
 
     public sealed class CountdownConfig

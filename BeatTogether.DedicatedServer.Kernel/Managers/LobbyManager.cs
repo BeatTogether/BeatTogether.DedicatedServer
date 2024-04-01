@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Enums;
@@ -10,7 +11,6 @@ using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 /*Lobby manager code
@@ -117,7 +117,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 {
                                     LevelId = SelectedBeatmap.LevelId,
                                     Entitlement = EntitlementStatus.Ok
-                                }, DeliveryMethod.ReliableOrdered);
+                                }, IgnoranceChannelTypes.Reliable);
                             }
                         }
                         //The clients need to be sent that all the payers have OK entitlement
@@ -149,7 +149,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 {
                                     LevelId = SelectedBeatmap.LevelId,
                                     Entitlement = EntitlementStatus.Ok
-                                }, DeliveryMethod.ReliableOrdered);
+                                }, IgnoranceChannelTypes.Reliable);
                                 p.ForceLateJoin = true;
                             }
                         }
@@ -172,7 +172,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 _packetDispatcher.SendToPlayer(OldManager, new SetIsStartButtonEnabledPacket
                 {
                     Reason = CannotStartGameReason.None
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
 
             if (ForceStartSelectedBeatmap)
             {
@@ -192,7 +192,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             PlayersWithoutEntitlements = _playerRegistry.Players
                                 .Where(p => (p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown) && !p.IsSpectating && p.WantsToPlayNextLevel)
                                 .Select(p => p.UserId).ToArray()
-                        }, DeliveryMethod.ReliableOrdered);
+                        }, IgnoranceChannelTypes.Reliable);
                         _logger.Debug("Sent missing entitlement packet");
                     }
                 }
@@ -207,7 +207,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _packetDispatcher.SendToPlayer(serverOwner!, new SetIsStartButtonEnabledPacket
                     {
                         Reason = GetCannotStartGameReason(serverOwner!, allPlayersOwnBeatmap)
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
                 }
             }
 	        _AllOwnMap = allPlayersOwnBeatmap;
@@ -276,7 +276,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 {
                                     LevelId = SelectedBeatmap!.LevelId,
                                     Entitlement = EntitlementStatus.Ok
-                                }, DeliveryMethod.ReliableOrdered);
+                                }, IgnoranceChannelTypes.Reliable);
                             }
                         }
                         _logger.Debug($"All players have entitlement, starting map");
@@ -295,8 +295,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         {
                             //Force the player to join late
                             p.ForceLateJoin = true;
-                            _packetDispatcher.SendToPlayer(p, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
-                            _packetDispatcher.SendToPlayer(p, new SetIsReadyPacket() { IsReady = false }, DeliveryMethod.ReliableOrdered);
+                            _packetDispatcher.SendToPlayer(p, new CancelLevelStartPacket(), IgnoranceChannelTypes.Reliable);
+                            _packetDispatcher.SendToPlayer(p, new SetIsReadyPacket() { IsReady = false }, IgnoranceChannelTypes.Reliable);
                         }
                     }
                 }
@@ -317,9 +317,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _packetDispatcher.SendToNearbyPlayers(new SetSelectedBeatmap()
                     {
                         Beatmap = SelectedBeatmap
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
                 else
-                    _packetDispatcher.SendToNearbyPlayers(new ClearSelectedBeatmap(), DeliveryMethod.ReliableOrdered);
+                    _packetDispatcher.SendToNearbyPlayers(new ClearSelectedBeatmap(), IgnoranceChannelTypes.Reliable);
             }
             if (SelectedModifiers != modifiers)
             {
@@ -328,9 +328,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _packetDispatcher.SendToNearbyPlayers(new SetSelectedGameplayModifiers()
                     {
                         Modifiers = SelectedModifiers
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
                 else
-                    _packetDispatcher.SendToNearbyPlayers(new ClearSelectedGameplayModifiers(), DeliveryMethod.ReliableOrdered);
+                    _packetDispatcher.SendToNearbyPlayers(new ClearSelectedGameplayModifiers(), IgnoranceChannelTypes.Reliable);
             }
         }
 
@@ -372,7 +372,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _packetDispatcher.SendToNearbyPlayers(new SetCountdownEndTimePacket
                     {
                         CountdownTime = CountdownEndTime
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
                     break;
                 case CountdownState.StartBeatmapCountdown:
                     if (countdown == 0)
@@ -397,7 +397,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     Beatmap = SelectedBeatmap!,
                     Modifiers = SelectedModifiers,
                     StartTime = CountdownEndTime
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
                 return;
             }
             BeatmapDifficulty[] diff = GetSelectedBeatmapDifficulties();
@@ -411,7 +411,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     Beatmap = bm!,
                     Modifiers = _configuration.AllowPerPlayerModifiers ?  player.Modifiers : SelectedModifiers,
                     StartTime = CountdownEndTime
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
             }
         }
 
@@ -420,15 +420,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             switch (CountDownState)
             {
                 case CountdownState.CountingDown or CountdownState.NotCountingDown:
-                    _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), DeliveryMethod.ReliableOrdered);
+                    _packetDispatcher.SendToNearbyPlayers(new CancelCountdownPacket(), IgnoranceChannelTypes.Reliable);
                     break;
                 case CountdownState.StartBeatmapCountdown or CountdownState.WaitingForEntitlement:
                     foreach (IPlayer player in _playerRegistry.Players) //This stays because players dont send they are un-ready after the level is canceled causing bad client behaviour
                     {
                         player.IsReady = false;
                     }
-                    _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
-                    _packetDispatcher.SendToNearbyPlayers(new SetIsReadyPacket() { IsReady = false }, DeliveryMethod.ReliableOrdered);
+                    _packetDispatcher.SendToNearbyPlayers(new CancelLevelStartPacket(), IgnoranceChannelTypes.Reliable);
+                    _packetDispatcher.SendToNearbyPlayers(new SetIsReadyPacket() { IsReady = false }, IgnoranceChannelTypes.Reliable);
                     break;
                 default:
                     _logger.Warning("Canceling countdown when there is no countdown to cancel");

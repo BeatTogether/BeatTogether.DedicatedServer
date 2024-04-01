@@ -1,8 +1,8 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -42,23 +42,23 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
                 {
                     Reason = sender.IsServerOwner ? _lobbyManager.GetCannotStartGameReason(sender, _lobbyManager.DoesEveryoneOwnBeatmap) : CannotStartGameReason.None
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
 
                 if (_lobbyManager.SelectedBeatmap is null)
-                    _packetDispatcher.SendToPlayer(sender, new ClearSelectedBeatmap(), DeliveryMethod.ReliableOrdered);
+                    _packetDispatcher.SendToPlayer(sender, new ClearSelectedBeatmap(), IgnoranceChannelTypes.Reliable);
                 else
                     _packetDispatcher.SendToPlayer(sender, new SetSelectedBeatmap
                     {
                         Beatmap = _lobbyManager.SelectedBeatmap
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
 
                 if (_lobbyManager.SelectedModifiers == _lobbyManager.EmptyModifiers)
-                    _packetDispatcher.SendToPlayer(sender, new ClearSelectedGameplayModifiers(), DeliveryMethod.ReliableOrdered);
+                    _packetDispatcher.SendToPlayer(sender, new ClearSelectedGameplayModifiers(), IgnoranceChannelTypes.Reliable);
                 else
                     _packetDispatcher.SendToPlayer(sender, new SetSelectedGameplayModifiers
                     {
                         Modifiers = _lobbyManager.SelectedModifiers
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
             }
         }
     }

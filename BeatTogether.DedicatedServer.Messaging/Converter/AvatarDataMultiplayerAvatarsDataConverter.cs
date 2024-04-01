@@ -1,4 +1,4 @@
-﻿using BeatTogether.DedicatedServer.Messaging.Extensions;
+﻿using BeatTogether.Extensions;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Structs;
 using System.IO;

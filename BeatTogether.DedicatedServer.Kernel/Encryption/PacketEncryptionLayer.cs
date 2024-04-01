@@ -7,7 +7,7 @@ using System.Text;
 using BeatTogether.Core.Security.Abstractions;
 using BeatTogether.Core.Security.Models;
 using BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions;
-using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using Krypton.Buffers;
 using Serilog;
 

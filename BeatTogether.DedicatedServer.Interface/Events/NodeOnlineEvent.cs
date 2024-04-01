@@ -1,4 +1,4 @@
-﻿using System.Net;
+﻿using System;
 
 namespace BeatTogether.DedicatedServer.Interface.Events
 {

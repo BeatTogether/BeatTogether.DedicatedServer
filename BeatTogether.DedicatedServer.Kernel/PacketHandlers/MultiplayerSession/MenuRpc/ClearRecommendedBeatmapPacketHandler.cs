@@ -1,8 +1,8 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -32,7 +32,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
             {
                 Reason = sender.IsServerOwner ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
-            }, DeliveryMethod.ReliableOrdered);
+            }, IgnoranceChannelTypes.Reliable);
         }
     }
 }

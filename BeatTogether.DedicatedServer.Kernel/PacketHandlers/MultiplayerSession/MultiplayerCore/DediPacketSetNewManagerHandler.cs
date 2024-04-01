@@ -1,9 +1,9 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System.Linq;
 
@@ -51,7 +51,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                             HasInvitePermission = x.CanInvite
                         }).ToArray()
                     }
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
             }
         }
     }

@@ -42,8 +42,8 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Subscribe<CheckNodesEvent>(HandleCheckNode);
             _autobus.Subscribe<DisconnectPlayerFromMatchmakingServerEvent>(HandleDisconnectPlayer);
             _autobus.Subscribe<CloseServerInstanceEvent>(HandleCloseServer);
-            _autobus.Publish(new NodeStartedEvent(_configuration.HostName, _configuration.NodeVersion));
-            _logger.Information("Dedicated node version: " + _configuration.NodeVersion + " starting: " + _configuration.HostName);
+            _autobus.Publish(new NodeStartedEvent(_configuration.HostName, _configuration.NodeVersion.ToString()));
+            _logger.Information("Dedicated node version: " + _configuration.NodeVersion.ToString() + " starting: " + _configuration.HostName);
             return Task.CompletedTask;
         }
 
@@ -108,7 +108,7 @@ namespace BeatTogether.DedicatedServer.Node
 
         private Task HandleCheckNode(CheckNodesEvent checkNodesEvent)
         {
-            _autobus.Publish(new NodeOnlineEvent(_configuration.HostName, _configuration.NodeVersion));
+            _autobus.Publish(new NodeOnlineEvent(_configuration.HostName, _configuration.NodeVersion.ToString()));
             return Task.CompletedTask;
         }
 

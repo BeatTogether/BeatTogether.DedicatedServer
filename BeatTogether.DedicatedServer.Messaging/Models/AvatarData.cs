@@ -1,5 +1,5 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Util;
+﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 using System;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models

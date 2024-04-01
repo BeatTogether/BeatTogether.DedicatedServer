@@ -1,6 +1,6 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -26,7 +26,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _packetDispatcher.SendToPlayer(sender, new SetIsReadyPacket
             {
                 IsReady = sender.IsReady
-            }, DeliveryMethod.ReliableOrdered);
+            }, IgnoranceChannelTypes.Reliable);
         }
     }
 }

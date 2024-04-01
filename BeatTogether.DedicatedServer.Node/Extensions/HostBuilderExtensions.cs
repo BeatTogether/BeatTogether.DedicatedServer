@@ -9,7 +9,7 @@ using BeatTogether.DedicatedServer.Kernel.Providers;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
 using BeatTogether.Extensions;
-using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 

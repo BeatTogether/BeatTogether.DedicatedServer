@@ -1,7 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Extensions;
-using BeatTogether.LiteNetLib.Util;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {

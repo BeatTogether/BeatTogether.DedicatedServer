@@ -2,17 +2,15 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Ignorance.ENet;
 using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Ignorance.Util;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Enums;
-using BeatTogether.LiteNetLib.Extensions;
-using BeatTogether.LiteNetLib.Sources;
-using BeatTogether.LiteNetLib.Util;
+using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 using Krypton.Buffers;
 using Serilog;
 
@@ -157,7 +155,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                     return;
                 }
                 // Process actual payload
-                var deliveryMethod = e.Channel == 0 ? DeliveryMethod.ReliableOrdered : DeliveryMethod.Unreliable;
+                var deliveryMethod = e.Channel == 0 ? IgnoranceChannelTypes.Reliable : IgnoranceChannelTypes.Unreliable;
                 OnReceive(connection.EndPoint, ref bufferReader, deliveryMethod);
             }
         }
@@ -224,7 +222,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 connection.NativePeerId, connection.EndPoint);
 
             connection.State = ENetConnectionState.Disconnected;
-            OnDisconnect(connection.EndPoint, DisconnectReason.DisconnectPeerCalled);
+            OnDisconnect(connection.EndPoint);
             
             if (!IsAlive || !sendKick)
                 // Can't or won't send kick
@@ -247,7 +245,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
 
         #region Send
 
-        public void Send(IPlayer player, ReadOnlySpan<byte> message, DeliveryMethod deliveryMethod)
+        public void Send(IPlayer player, ReadOnlySpan<byte> message, IgnoranceChannelTypes deliveryMethod)
         {
             if (!player.ENetPeerId.HasValue)
                 // Not an ENet peer
@@ -256,7 +254,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
             Send(player.ENetPeerId.Value, message, deliveryMethod);
         }
         
-        public void Send(uint peerId, ReadOnlySpan<byte> message, DeliveryMethod deliveryMethod)
+        public void Send(uint peerId, ReadOnlySpan<byte> message, IgnoranceChannelTypes deliveryMethod)
         {
             if (!_connections.TryGetValue(peerId, out var connection))
                 // Invalid peer
@@ -265,7 +263,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
             Send(connection, message, deliveryMethod);
         }
 
-        public void Send(ENetConnection connection, ReadOnlySpan<byte> message, DeliveryMethod deliveryMethod)
+        public void Send(ENetConnection connection, ReadOnlySpan<byte> message, IgnoranceChannelTypes deliveryMethod)
         {
             if (!IsAlive)
                 return;
@@ -275,11 +273,11 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 return;
 
             var eNetPacket = default(Packet);
-            eNetPacket.Create(message.ToArray(), message.Length);
-            
+            eNetPacket.Create(message.ToArray(), message.Length, (PacketFlags)deliveryMethod);
+
             _ignorance.Outgoing.Enqueue(new IgnoranceOutgoingPacket()
             {
-                Channel = (byte)(deliveryMethod == DeliveryMethod.ReliableOrdered ? 0 : 1), // 1 = Unreliable
+                Channel = (byte)(deliveryMethod == IgnoranceChannelTypes.Reliable ? 0 : 1), // 1 = Unreliable, 0 = reliable
                 NativePeerId = connection.NativePeerId,
                 Payload = eNetPacket
             });
@@ -325,7 +323,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
         {
         }
 
-        public virtual void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
+        public virtual void OnDisconnect(EndPoint endPoint)
         {
         }
 
@@ -333,17 +331,9 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
         {
         }
 
-        public virtual void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, DeliveryMethod method)
+        public virtual void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, IgnoranceChannelTypes method)
         {
         }
-
-/*        public virtual void SendAsync(EndPoint endPoint, INetSerializable packet)
-        {
-            Span<byte> buffer = stackalloc byte[412];
-            SpanBuffer bufferWriter = new SpanBuffer(buffer);
-            packet.WriteTo(ref bufferWriter);
-            SendAsync(endPoint, new Memory<byte>(bufferWriter.Data.ToArray()));
-        }*/
 
         #endregion
     }

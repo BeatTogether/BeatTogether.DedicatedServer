@@ -1,6 +1,5 @@
 ﻿using BeatTogether.Extensions;
-using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Util;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Abstractions
 {
@@ -14,15 +13,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         }
 
         public virtual void WriteTo(ref SpanBuffer writer)
-        {
-            writer.WriteVarULong((ulong)SyncTime);
-        }
-        public virtual void ReadFrom(ref MemoryBuffer reader)
-        {
-            SyncTime = (long)reader.ReadVarULong();
-        }
-
-        public virtual void WriteTo(ref MemoryBuffer writer)
         {
             writer.WriteVarULong((ulong)SyncTime);
         }

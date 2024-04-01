@@ -1,7 +1,7 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPackets;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MPChat
@@ -29,12 +29,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 _packetDispatcher.SendToPlayer(sender, new MpcTextChatPacket
                 {
                     Text = "Welcome to " + _instanceConfiguration.ServerName + " Type /help to get a list of commands!"
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
                 if (_instanceConfiguration.WelcomeMessage != string.Empty)
                     _packetDispatcher.SendToPlayer(sender, new MpcTextChatPacket
                     {
                         Text = _instanceConfiguration.WelcomeMessage
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
 
             }
         }

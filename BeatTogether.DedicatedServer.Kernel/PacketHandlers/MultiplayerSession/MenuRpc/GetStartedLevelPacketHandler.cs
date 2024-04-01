@@ -1,11 +1,11 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System.Linq;
 
@@ -47,7 +47,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                     Beatmap = _gameplayManager.CurrentBeatmap,
                     Modifiers = _gameplayManager.CurrentModifiers,
                     StartTime = _instance.RunTime
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
             }
             else
             {
@@ -57,7 +57,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                         _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
                         {
                             LevelId = _lobbyManager.SelectedBeatmap.LevelId
-                        }, DeliveryMethod.ReliableOrdered);
+                        }, IgnoranceChannelTypes.Reliable);
 
                     if(_lobbyManager.CountDownState == CountdownState.WaitingForEntitlement || _lobbyManager.CountDownState == CountdownState.StartBeatmapCountdown)
                     {
@@ -76,11 +76,11 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                             Beatmap = Beatmap,
                             Modifiers = Modifiers,
                             StartTime = _lobbyManager.CountdownEndTime
-                        }, DeliveryMethod.ReliableOrdered);
+                        }, IgnoranceChannelTypes.Reliable);
                     }
                 }
                 else
-                    _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+                    _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), IgnoranceChannelTypes.Reliable);
             }
         }
     }

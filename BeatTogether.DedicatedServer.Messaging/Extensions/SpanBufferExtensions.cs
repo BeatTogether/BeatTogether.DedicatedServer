@@ -1,8 +1,8 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.LiteNetLib.Util;
-using Krypton.Buffers;
+using BeatTogether.DedicatedServer.Messaging.Util;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.Net;
 using System.Text;
 
@@ -138,6 +138,16 @@ namespace BeatTogether.Extensions
             int port = bufferReader.ReadInt32();
             return new IPEndPoint(address, port);
         }
+
+        public static Color ReadColor(this ref SpanBuffer reader)
+        {
+            var r = reader.ReadByte();
+            var g = reader.ReadByte();
+            var b = reader.ReadByte();
+            var a = reader.ReadByte();
+            return Color.FromArgb(a, r, g, b);
+        }
+
         public static void WriteVarULong(this ref SpanBuffer bufferWriter, ulong value)
         {
             do
@@ -195,6 +205,14 @@ namespace BeatTogether.Extensions
         {
             bufferWriter.WriteString(ipEndPoint.Address.ToString());
             bufferWriter.WriteInt32(ipEndPoint.Port);
+        }
+
+        public static void WriteColor(this ref SpanBuffer writer, Color value)
+        {
+            writer.WriteUInt8(value.R);
+            writer.WriteUInt8(value.G);
+            writer.WriteUInt8(value.B);
+            writer.WriteUInt8(value.A);
         }
     }
 }

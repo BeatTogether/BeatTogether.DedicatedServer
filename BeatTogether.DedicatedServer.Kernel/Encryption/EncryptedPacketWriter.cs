@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography;
 using BeatTogether.DedicatedServer.Kernel.Encryption.Abstractions;
-using BeatTogether.LiteNetLib.Util;
+using BeatTogether.DedicatedServer.Messaging.Util;
 using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Kernel.Encryption

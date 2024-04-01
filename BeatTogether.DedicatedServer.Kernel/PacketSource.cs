@@ -7,11 +7,11 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using BeatTogether.DedicatedServer.Messaging.Registries;
 using BeatTogether.Extensions;
-using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Enums;
-using BeatTogether.LiteNetLib.Util;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 using Krypton.Buffers;
 using Serilog;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -41,7 +41,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _configuration = instconfiguration;
         }
 
-        public void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, DeliveryMethod method)
+        public void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, IgnoranceChannelTypes method)
         {
             if (!reader.TryReadRoutingHeader(out var routingHeader))
             {
@@ -116,22 +116,22 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 if(packet is NoteSpawnPacket || packet is ObstacleSpawnPacket || packet is SliderSpawnPacket) //Note packet logic
                 {
-                    if (_configuration.DisableNotes || (_playerRegistry.GetPlayerCount() > 16) && !_configuration.ForceEnableNotes)
+                    if (_configuration.DisableNotes || (_playerRegistry.GetPlayerCount() >= _configuration.DisableNotesPlayerCount) && !_configuration.ForceEnableNotes)
                         return;
-                    method = DeliveryMethod.Unreliable;
+                    method = IgnoranceChannelTypes.Unthrottled;
                     break;
                 }
-                if (packet is NodePoseSyncStatePacket)
+                else if (packet is NodePoseSyncStatePacket)
                 {
                     if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
                     {
                         _logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Instance._configuration.Secret}').");
                         return;
                     }
-                    method = DeliveryMethod.Unreliable;
+                    method = IgnoranceChannelTypes.Unthrottled;
                     sender.TicksAtLastSyncState = DateTime.UtcNow.Ticks;
                 }
-                if (packet is NodePoseSyncStateDeltaPacket)
+                else if (packet is NodePoseSyncStateDeltaPacket)
                 {
                     if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
                     {
@@ -146,8 +146,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 var packetHandler = _serviceProvider.GetService(packetHandlerType);
                 if (packetHandler is null)
                 {
-                    //if (!packetType.Name.StartsWith("NodePoseSyncState"))
-                        _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
+                    _logger.Verbose($"No handler exists for packet of type '{packetType.Name}'.");
 
                     // skip any unprocessed bytes
                     var processedBytes = HandleRead.Offset - prevPosition;
@@ -182,7 +181,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private void RoutePacket(IPlayer sender,
             (byte SenderId, byte ReceiverId, PacketOption PacketOption) routingHeader,
-            ref SpanBuffer reader, DeliveryMethod deliveryMethod)
+            ref SpanBuffer reader, IgnoranceChannelTypes deliveryMethod)
         {
             routingHeader.SenderId = sender.ConnectionId;
             var writer = new SpanBuffer(stackalloc byte[412]);

@@ -1,14 +1,14 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.Extensions;
-using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Enums;
-using BeatTogether.LiteNetLib.Util;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 using Serilog;
 using BeatTogether.DedicatedServer.Kernel.ENet;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
-    public sealed class PacketDispatcher : /*ConnectedMessageDispatcher,*/ IPacketDispatcher
+    public sealed class PacketDispatcher : IPacketDispatcher
     {
         public const byte LocalConnectionId = 0;
         public const byte ServerId = 0;
@@ -29,14 +29,14 @@ namespace BeatTogether.DedicatedServer.Kernel
             _serverInstance = serverInstance;
         }
 
-        private void SendInternal(IPlayer player, ref SpanBuffer writer, DeliveryMethod deliveryMethod)
+        private void SendInternal(IPlayer player, ref SpanBuffer writer, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Verbose($"Sending packet (SenderId={ServerId}) to player {player.ConnectionId} with UserId {player.UserId}");
             _serverInstance.Send(player, writer.Data, deliveryMethod);
         }
 
         #region Sends
-        public void SendToNearbyPlayers(INetSerializable packet, DeliveryMethod deliveryMethod)
+        public void SendToNearbyPlayers(INetSerializable packet, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
@@ -51,7 +51,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SendInternal(player, ref writer, deliveryMethod);
                     
         }
-        public void SendToNearbyPlayers(INetSerializable[] packets, DeliveryMethod deliveryMethod)
+        public void SendToNearbyPlayers(INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Debug(
                 $"Sending MultiPacket " +
@@ -66,7 +66,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SendInternal(player, ref writer, deliveryMethod);
         }
 
-        public void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
+        public void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable packet, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
@@ -82,7 +82,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     SendInternal(player, ref writer, deliveryMethod);
         }
 
-        public void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
+        public void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Debug(
                 $"Sending MultiPacket " +
@@ -105,7 +105,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     SendInternal(player, ref writer, deliveryMethod);
         }
 
-        public void RouteExcludingPlayer(IPlayer excludedPlayer, ref SpanBuffer writer, DeliveryMethod deliveryMethod)
+        public void RouteExcludingPlayer(IPlayer excludedPlayer, ref SpanBuffer writer, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Debug(
                 $"Sending routed packet " +
@@ -118,7 +118,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         }
 
 
-        public void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
+        public void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, IgnoranceChannelTypes deliveryMethod)
 		{
 			_logger.Debug(
 			    $"Sending packet of type '{packet.GetType().Name}' " + 
@@ -132,7 +132,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             foreach (var player in _playerRegistry.Players)
                 SendInternal(player, ref writer, deliveryMethod);
 		}
-        public void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
+        public void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Debug(
                 $"Sending MultiPacket " +
@@ -147,7 +147,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 SendInternal(player, ref writer, deliveryMethod);
         }
 
-        public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, DeliveryMethod deliveryMethod)
+        public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
@@ -160,7 +160,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             SendInternal(toPlayer, ref writer, deliveryMethod);
         }
 
-        public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod)
+        public void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Debug(
                 $"Sending MultiPacket" +
@@ -173,7 +173,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             SendInternal(toPlayer, ref writer, deliveryMethod);
         }
 
-        public void RouteFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, ref SpanBuffer writer, DeliveryMethod deliveryMethod)
+        public void RouteFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, ref SpanBuffer writer, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Debug(
                 $"Sending routed packet " +
@@ -183,7 +183,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             SendInternal(toPlayer, ref writer, deliveryMethod);
         }
 
-        public void SendToPlayer(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod)
+        public void SendToPlayer(IPlayer player, INetSerializable packet, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
@@ -195,7 +195,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             WriteOne(ref writer, packet);
             SendInternal(player, ref writer, deliveryMethod);
         }
-        public void SendToPlayer(IPlayer player, INetSerializable[] packets, DeliveryMethod deliveryMethod)
+        public void SendToPlayer(IPlayer player, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod)
         {
             _logger.Debug(
                 $"Sending MultiPacket " +

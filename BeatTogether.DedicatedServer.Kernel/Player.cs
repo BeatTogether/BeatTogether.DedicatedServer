@@ -61,7 +61,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly ConcurrentDictionary<string, EntitlementStatus> _entitlements = new(); //Set a max amount of like 50 or something.
 
         public Player(EndPoint endPoint, IDedicatedInstance instance,
-            byte connectionId, string userId, string userName, string? playerSessionId, AccessLevel accessLevel = AccessLevel.Player)
+            byte connectionId, string userId, string userName, string playerSessionId, AccessLevel accessLevel = AccessLevel.Player)
         {
             Endpoint = endPoint;
             Instance = instance;

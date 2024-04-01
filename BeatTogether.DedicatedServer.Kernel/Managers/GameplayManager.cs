@@ -1,10 +1,11 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
-using BeatTogether.LiteNetLib.Enums;
+//using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
@@ -132,7 +133,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             });
 
             // Wait for scene ready
-            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySceneReadyPacket(), IgnoranceChannelTypes.Reliable);
             sceneReadyCts.CancelAfter((int)((SceneLoadTimeLimit + (PlayersAtStart.Count * 0.3f)) * 1000));
             await Task.WhenAll(_sceneReadyTcs.Values.Select(p => p.Task));
 
@@ -143,13 +144,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 {
                     ActivePlayerSpecificSettingsAtStart = _playerSpecificSettings.Values.ToArray()
                 }
-            }, DeliveryMethod.ReliableOrdered);
+            }, IgnoranceChannelTypes.Reliable);
 
             // Set scene sync finished
             State = GameplayManagerState.SongLoad;
 
             //Wait for players to have the song ready
-            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers(new GetGameplaySongReadyPacket(), IgnoranceChannelTypes.Reliable);
             songReadyCts.CancelAfter((int)((SongLoadTimeLimit + (PlayersAtStart.Count*0.3f)) * 1000));
             await Task.WhenAll(_songReadyTcs.Values.Select(p => p.Task));
 
@@ -173,7 +174,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
                 StartTime = _songStartTime
-            }, DeliveryMethod.ReliableOrdered);
+            }, IgnoranceChannelTypes.Reliable);
 
             //Initiates the song start process for forced late joiners
             foreach(IPlayer p in _playerRegistry.Players)
@@ -185,7 +186,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         Beatmap = CurrentBeatmap,
                         Modifiers = CurrentModifiers,
                         StartTime = _songStartTime
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
                 }
             }
 
@@ -200,7 +201,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             SetBeatmap(null, new());
             ResetValues();
             _instance.SetState(MultiplayerGameState.Lobby);
-            _packetDispatcher.SendToNearbyPlayers( new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendToNearbyPlayers( new ReturnToMenuPacket(), IgnoranceChannelTypes.Reliable);
         }
 
         private void ResetValues()
@@ -227,7 +228,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             if (_instance.State != MultiplayerGameState.Game || State == GameplayManagerState.Results || State == GameplayManagerState.None) //Returns player to lobby
             {
-                _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
+                _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), IgnoranceChannelTypes.Reliable);
                 LeaveGameplay(player.UserId);
                 return;
             }
@@ -242,8 +243,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         ActivePlayerSpecificSettingsAtStart = _playerSpecificSettings.Values.ToArray()
                     },
                     SessionGameId = SessionGameId
-                }, DeliveryMethod.ReliableOrdered);
-                _packetDispatcher.SendToPlayer(player, new GetGameplaySongReadyPacket(), DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
+                _packetDispatcher.SendToPlayer(player, new GetGameplaySongReadyPacket(), IgnoranceChannelTypes.Reliable);
             } 
         }
 
@@ -256,7 +257,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
             if (_instance.State != MultiplayerGameState.Game || State == GameplayManagerState.Results || State == GameplayManagerState.None) //Player is sent back to lobby
             {
-                _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), DeliveryMethod.ReliableOrdered);
+                _packetDispatcher.SendToPlayer(player, new ReturnToMenuPacket(), IgnoranceChannelTypes.Reliable);
                 HandlePlayerLeaveGameplay(player);
                 return;
             }
@@ -265,7 +266,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _packetDispatcher.SendToPlayer(player, new SetSongStartTimePacket
                     {
                         StartTime = _songStartTime
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
         }
 
         public void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet)

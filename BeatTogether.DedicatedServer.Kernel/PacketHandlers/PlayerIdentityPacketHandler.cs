@@ -1,7 +1,7 @@
 ﻿using System;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
@@ -29,7 +29,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             sender.State = packet.PlayerState;
             sender.Random = packet.Random.Data ?? Array.Empty<byte>();
             sender.PublicEncryptionKey = packet.PublicEncryptionKey.Data ?? Array.Empty<byte>();
-            _packetDispatcher.SendFromPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
+            _packetDispatcher.SendFromPlayer(sender, packet, IgnoranceChannelTypes.Reliable);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.CommandHandlers;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPackets;
 using System.Text;
@@ -25,12 +26,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
                     _packetDisapatcher.SendToPlayer(player, new MpcTextChatPacket
                     {
                         Text = "Command you searched help for does not exist or is above your access level"
-                    }, LiteNetLib.Enums.DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
                 }
                 _packetDisapatcher.SendToPlayer(player, new MpcTextChatPacket
                 {
                     Text = textCommand.CommandName + "  :  " + textCommand.Description + "  :  ShortHand: " + textCommand.ShortHandName
-                }, LiteNetLib.Enums.DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
                 return;
             }
             string[] CommandList = _commandRepository.GetTextCommandNames(player.GetAccessLevel());
@@ -43,7 +44,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
             _packetDisapatcher.SendToPlayer(player, new MpcTextChatPacket
             {
                 Text = Response.ToString()
-            }, LiteNetLib.Enums.DeliveryMethod.ReliableOrdered);
+            }, IgnoranceChannelTypes.Reliable);
         }
     }
 }

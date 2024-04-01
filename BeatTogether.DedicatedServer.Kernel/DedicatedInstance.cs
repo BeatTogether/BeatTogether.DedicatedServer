@@ -16,10 +16,10 @@ using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPackets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
-using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Enums;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
+
 //using BeatTogether.LiteNetLib.Sources;
-using BeatTogether.LiteNetLib.Util;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 //using BeatTogether.LiteNetLib;
 //using BeatTogether.LiteNetLib.Abstractions;
@@ -29,10 +29,11 @@ using BeatTogether.LiteNetLib.Util;
 //using BeatTogether.LiteNetLib.Sources;
 //using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
-    public sealed class DedicatedInstance : ENetServer, /*LiteNetServer,*/ IDedicatedInstance
+    public sealed class DedicatedInstance : ENetServer, IDedicatedInstance
     {
         // Milliseconds instance will wait for a player to connect.
         public const int WaitForPlayerTimeLimit = 10000;
@@ -185,7 +186,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             PacketDispatcher.SendToNearbyPlayers(new KickPlayerPacket
             {
                 DisconnectedReason = DisconnectedReason.ServerTerminated
-            }, DeliveryMethod.ReliableOrdered);
+            }, IgnoranceChannelTypes.Reliable);
 
             KickAllPeers();
 
@@ -240,7 +241,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             PacketDispatcher.SendToNearbyPlayers(new SetMultiplayerGameStatePacket()
             {
                 State = state
-            }, DeliveryMethod.ReliableOrdered);
+            }, IgnoranceChannelTypes.Reliable);
             GameIsInLobby?.Invoke(_configuration.Secret, state == MultiplayerGameState.Lobby);
         }
 
@@ -383,7 +384,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     fullStateUpdateFrequency = 100L,
                     deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets()
                 },
-            }, DeliveryMethod.ReliableOrdered);
+            }, IgnoranceChannelTypes.Reliable);
 
             return player;
 
@@ -398,7 +399,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             return null;
         }
 
-        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, DeliveryMethod method)
+        public override void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, IgnoranceChannelTypes method)
         {
             ConnectedMessageSource.OnReceive(remoteEndPoint, ref reader, method);
         }
@@ -459,7 +460,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     },
                };
 
-            PacketDispatcher.SendToPlayer(player, Player_ConnectPacket, DeliveryMethod.ReliableOrdered);
+            PacketDispatcher.SendToPlayer(player, Player_ConnectPacket, IgnoranceChannelTypes.Reliable);
 
             List<INetSerializable> MakeBigPacketToSendToPlayer = new();
             foreach (IPlayer p in PlayersAtJoin)
@@ -482,7 +483,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             foreach (var SubPacket in MakeBigPacketToSendToPlayer.Chunk(20))
             {
-                PacketDispatcher.SendToPlayer(player, SubPacket.ToArray(), DeliveryMethod.ReliableOrdered);
+                PacketDispatcher.SendToPlayer(player, SubPacket.ToArray(), IgnoranceChannelTypes.Reliable);
             }
             //End of sending other players to player
 
@@ -508,7 +509,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                             }
                         }
                     }
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
             }
 
             if (player.Platform == Enums.Platform.Test) //If the player is a bot, send permissions. Normal players request this in a packet when they join
@@ -540,7 +541,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     {
                         PlayersPermission = playerPermissionConfigurations
                     }
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
             }
 
             //Start of sending player avatars and states of other players to new player
@@ -564,7 +565,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     
                     
                     // Send all player avatars and states to just joined player
-                   PacketDispatcher.SendFromPlayerToPlayer(p, player, SendToPlayerFromPlayers, DeliveryMethod.ReliableOrdered);
+                   PacketDispatcher.SendFromPlayerToPlayer(p, player, SendToPlayerFromPlayers, IgnoranceChannelTypes.Reliable);
                     //Sends them one by one to avoid server lag
                 }
             }
@@ -579,7 +580,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         PlatformID = player.PlatformUserId!,
                         Platform = player.Platform.Convert(),
                         ClientVersion = player.ClientVersion!
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
                 }
             }
 
@@ -588,7 +589,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 if (p.CanTextChat)
                 {
-                    PacketDispatcher.SendToPlayer(p, packet, DeliveryMethod.ReliableOrdered);
+                    PacketDispatcher.SendToPlayer(p, packet, IgnoranceChannelTypes.Reliable);
                 }
             }
         }
@@ -600,23 +601,17 @@ namespace BeatTogether.DedicatedServer.Kernel
                 PacketDispatcher.SendToPlayer(player, new KickPlayerPacket
                 {
                     DisconnectedReason = DisconnectedReason.Kicked
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
         }
 
-        public override void OnDisconnect(EndPoint endPoint, DisconnectReason reason)
+        public override void OnDisconnect(EndPoint endPoint)
         {
             _logger.Information(
                 "Endpoint disconnected " +
-                $"(RemoteEndPoint='{endPoint}', DisconnectReason={reason})."
+                $"(RemoteEndPoint='{endPoint}')."
             );
 
-            if (reason == DisconnectReason.Reconnect || reason == DisconnectReason.PeerToPeerConnection)
-            {
-                _logger.Information(
-                    "Endpoint reconnecting or is peer to peer."
-                );
-                return;
-            }
+
             if (_playerRegistry.TryGetPlayer(endPoint, out var player))
             {
                 //Sends to all players that they have disconnected
@@ -624,7 +619,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 PacketDispatcher.SendFromPlayer(player, new PlayerDisconnectedPacket
                 {
                     DisconnectedReason = DisconnectedReason.ClientConnectionClosed
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
 
                 if (_configuration.ServerOwnerId == player.UserId)
                     _configuration.ServerOwnerId = "";
@@ -659,14 +654,14 @@ namespace BeatTogether.DedicatedServer.Kernel
                             }
                         }
                     }
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
 
                 // Disable start button if they are server owner without selected song
                 if (serverOwner.BeatmapIdentifier == null)
                     PacketDispatcher.SendToPlayer(serverOwner, new SetIsStartButtonEnabledPacket
                     {
                         Reason = CannotStartGameReason.NoSongSelected
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
             }
 
 
@@ -674,7 +669,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 fullStateUpdateFrequency = 100L,
                 deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets()
-            }, DeliveryMethod.ReliableOrdered);
+            }, IgnoranceChannelTypes.Reliable);
 
             if (_playerRegistry.GetPlayerCount() == 0)
             {
@@ -709,7 +704,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     PacketDispatcher.SendToPlayer(player, new SyncTimePacket()
                     {
                         SyncTime = player.SyncTime
-                    }, DeliveryMethod.ReliableOrdered);
+                    }, IgnoranceChannelTypes.Reliable);
                 }
                 try
                 {

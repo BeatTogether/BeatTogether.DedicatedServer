@@ -1,6 +1,6 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
@@ -24,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             if (sender.UserId == packet.UserId && sender.SortIndex != packet.SortIndex) //If they send themselves as being in the wrong place, correct them. Although this probably shouldnt have a handler
             {
                 packet.SortIndex = sender.SortIndex;
-                _packetDispatcher.SendToPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
+                _packetDispatcher.SendToPlayer(sender, packet, IgnoranceChannelTypes.Reliable);
             }
                 
         }
