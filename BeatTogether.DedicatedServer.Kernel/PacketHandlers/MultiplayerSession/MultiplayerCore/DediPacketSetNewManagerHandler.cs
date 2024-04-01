@@ -11,9 +11,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     class DediPacketSetNewManagerPacketHandler : BasePacketHandler<DediPacketSetNewManagerPacket>
     {
-        public InstanceConfiguration _configuration;
-        public readonly IPacketDispatcher _packetDispatcher;
-        public readonly IPlayerRegistry _playerRegistry;
+        private InstanceConfiguration _configuration;
+        private readonly IPacketDispatcher _packetDispatcher;
+        private readonly IPlayerRegistry _playerRegistry;
         private readonly ILogger _logger = Log.ForContext<DediPacketSetNewManagerPacketHandler>();
 
         public DediPacketSetNewManagerPacketHandler(

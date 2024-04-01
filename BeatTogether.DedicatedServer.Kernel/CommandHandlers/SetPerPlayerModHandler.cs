@@ -3,6 +3,8 @@ using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.CommandHandlers;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPackets;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
+using Microsoft.Extensions.Configuration;
 
 namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
 {
@@ -23,6 +25,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
             _packetDisapatcher.SendToNearbyPlayers(new MpcTextChatPacket
             {
                 Text = "Per player modifiers: " + command.Enabled
+            }, IgnoranceChannelTypes.Reliable);
+            _packetDisapatcher.SendToNearbyPlayers(new PerPlayer()
+            {
+                PPDEnabled = _Configuration.AllowPerPlayerDifficulties,
+                PPMEnabled = _Configuration.AllowPerPlayerModifiers,
             }, IgnoranceChannelTypes.Reliable);
         }
     }
