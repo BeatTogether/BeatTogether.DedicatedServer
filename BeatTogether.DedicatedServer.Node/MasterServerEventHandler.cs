@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Autobus;
 using BeatTogether.DedicatedServer.Interface.Events;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
 using BeatTogether.MasterServer.Interface.Events;
@@ -17,19 +16,16 @@ namespace BeatTogether.DedicatedServer.Node
     public sealed class MasterServerEventHandler : IHostedService
     {
         private readonly IAutobus _autobus;
-        private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly ILogger _logger = Log.ForContext<MasterServerEventHandler>();
         private readonly NodeConfiguration _configuration;
         private readonly IInstanceRegistry _instanceRegistry;
 
         public MasterServerEventHandler(
             IAutobus autobus,
-            PacketEncryptionLayer packetEncryptionLayer,
             NodeConfiguration nodeConfiguration,
             IInstanceRegistry instanceRegistry)
         {
             _autobus = autobus;
-            _packetEncryptionLayer = packetEncryptionLayer;
             _configuration = nodeConfiguration;
             _instanceRegistry = instanceRegistry;
         }
@@ -65,41 +61,14 @@ namespace BeatTogether.DedicatedServer.Node
             if (@event.NodeEndpoint != _configuration.HostName)
                 return Task.CompletedTask;
 
-            var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
-            var random = @event.Random;
-            var publicKey = @event.PublicKey;
+            //var remoteEndPoint = IPEndPoint.Parse(@event.RemoteEndPoint);
             var playerSessionId = @event.PlayerSessionId;
             var serverSecret = @event.Secret;
             var PlayerClientVersion = @event.ClientVersion;
             var PlayerPlatform = @event.Platform;
             var PlayerPlatformUserId = @event.PlatformUserId;
 
-            // Clients connecting via Graph API will connect directly to us to negotiate encryption parameters
-            var hasEncryptionParams = random != null && publicKey != null && random.Length > 0 && publicKey.Length > 0;
 
-            if (hasEncryptionParams)
-            {
-                _logger.Verbose(
-                    "Adding encrypted end point " +
-                    $"(RemoteEndPoint='{remoteEndPoint}', " +
-                    $"Random='{BitConverter.ToString(random!)}', " +
-                    $"PublicKey='{BitConverter.ToString(publicKey!)}')."
-                );
-                _packetEncryptionLayer.AddEncryptedEndPoint(remoteEndPoint, random!, publicKey!);
-            }
-            else
-            {
-                //_logger.Verbose(
-                //    "Master server notified us of connecting graph client " +
-                //    $"(RemoteEndPoint='{remoteEndPoint}', " +
-                //    $"PlayerSessionId='{playerSessionId}')."
-                //);
-
-                //var HandshakeRegistry = TryGetDedicatedInstance(serverSecret)?
-                //    .GetHandshakeSessionRegistry();
-                //HandshakeRegistry?.AddPendingPlayerSessionId(playerSessionId);
-                //HandshakeRegistry?.AddExtraPlayerSessionData(playerSessionId, PlayerClientVersion, PlayerPlatform, PlayerPlatformUserId);
-            }
             TryGetDedicatedInstance(serverSecret)?.GetPlayerRegistry().AddExtraPlayerSessionData(playerSessionId, PlayerClientVersion, PlayerPlatform, PlayerPlatformUserId);
 
             _autobus.Publish(new NodeReceivedPlayerEncryptionEvent(_configuration.HostName, @event.RemoteEndPoint));
@@ -115,9 +84,6 @@ namespace BeatTogether.DedicatedServer.Node
         private Task HandleDisconnectPlayer(DisconnectPlayerFromMatchmakingServerEvent disconnectEvent)
         {
             TryGetDedicatedInstance(disconnectEvent.Secret)?.DisconnectPlayer(disconnectEvent.UserId);
-            
-            if (!string.IsNullOrEmpty(disconnectEvent.UserEndPoint))
-                _packetEncryptionLayer.RemoveEncryptedEndPoint(IPEndPoint.Parse(disconnectEvent.UserEndPoint));
             
             return Task.CompletedTask;
         }

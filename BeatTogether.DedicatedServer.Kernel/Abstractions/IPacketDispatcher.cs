@@ -15,18 +15,5 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 		void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
 		void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
 		void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
-
-        /*
-        Task SendToNearbyPlayersAndAwait(INetSerializable packet, DeliveryMethod deliveryMethod);
-        Task SendToNearbyPlayersAndAwait(INetSerializable[] packets, DeliveryMethod deliveryMethod);
-        Task SendExcludingPlayerAndAwait(IPlayer excludedPlayer, INetSerializable packet, DeliveryMethod deliveryMethod);
-        Task SendExcludingPlayerAndAwait(IPlayer excludedPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod);
-        Task SendFromPlayerAndAwait(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod);
-        Task SendFromPlayerAndAwait(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod);
-        Task SendFromPlayerToPlayerAndAwait(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, DeliveryMethod deliveryMethod);
-        Task SendFromPlayerToPlayerAndAwait(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod);
-        Task SendToPlayerAndAwait(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod);
-        Task SendToPlayerAndAwait(IPlayer player, INetSerializable[] packets, DeliveryMethod deliveryMethod);
-        */
     }
 }

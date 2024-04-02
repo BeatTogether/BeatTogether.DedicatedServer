@@ -7,7 +7,6 @@ using BeatTogether.DedicatedServer.Interface.Events;
 using BeatTogether.DedicatedServer.Interface.Requests;
 using BeatTogether.DedicatedServer.Interface.Responses;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
@@ -19,19 +18,16 @@ namespace BeatTogether.DedicatedServer.Node
     {
         private readonly NodeConfiguration _configuration;
         private readonly IInstanceFactory _instanceFactory;
-        private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IAutobus _autobus;
         private readonly ILogger _logger = Log.ForContext<NodeService>();
 
         public NodeService(
             NodeConfiguration configuration,
             IInstanceFactory instanceFactory,
-            PacketEncryptionLayer packetEncryptionLayer,
             IAutobus autobus)
         {
             _configuration = configuration;
             _instanceFactory = instanceFactory;
-            _packetEncryptionLayer = packetEncryptionLayer;
             _autobus = autobus;
         }
 
@@ -76,9 +72,7 @@ namespace BeatTogether.DedicatedServer.Node
             await matchmakingServer.Start();
             return new CreateMatchmakingServerResponse(
                 CreateMatchmakingServerError.None,
-                $"{_configuration.HostName}:{matchmakingServer.Port}",
-                _packetEncryptionLayer.Random,
-                _packetEncryptionLayer.KeyPair.PublicKey
+                $"{_configuration.HostName}:{matchmakingServer.Port}"
             );
         }
 
@@ -124,12 +118,10 @@ namespace BeatTogether.DedicatedServer.Node
         }
         private void HandlePlayerDisconnectEvent(IPlayer player)
         {
-            _packetEncryptionLayer.RemoveEncryptedEndPoint((IPEndPoint)player.Endpoint);
             _autobus.Publish(new PlayerLeaveServerEvent(player.Instance._configuration.Secret, player.UserId, ((IPEndPoint)player.Endpoint).ToString()));
         }
         private void HandlePlayerLeaveBeforeJoining(string Secret, EndPoint endPoint, string[] Players)
         {
-            _packetEncryptionLayer.RemoveEncryptedEndPoint((IPEndPoint)endPoint);
             _autobus.Publish(new UpdatePlayersEvent(Secret, Players));
         }
         #endregion

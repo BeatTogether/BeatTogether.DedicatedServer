@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
-using BeatTogether.DedicatedServer.Kernel.Encryption;
 using BeatTogether.DedicatedServer.Kernel.ENet;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Extensions;
@@ -47,7 +46,6 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
-        private readonly PacketEncryptionLayer _packetEncryptionLayer;
         private readonly IPacketDispatcher PacketDispatcher;
         private readonly PacketSource ConnectedMessageSource;
 
@@ -68,14 +66,12 @@ namespace BeatTogether.DedicatedServer.Kernel
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
             PacketSource connectedMessageSource,
-            IServiceProvider serviceProvider,
-            PacketEncryptionLayer packetEncryptionLayer)
+            IServiceProvider serviceProvider)
             : base (configuration.Port)
         {
             _configuration = configuration;
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
-            _packetEncryptionLayer = packetEncryptionLayer;
             PacketDispatcher = packetDispatcher;
             ConnectedMessageSource = connectedMessageSource;
         }
