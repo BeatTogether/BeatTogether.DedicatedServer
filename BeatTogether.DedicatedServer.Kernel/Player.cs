@@ -20,7 +20,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public string PlayerSessionId { get; }
 
         public uint? ENetPeerId { get; set; }
-        public bool IsENetConnection => true; //ENetPeerId.HasValue;
+
         public RollingAverage Latency { get; } = new(30);
         public long SyncTime =>
             Math.Min(Instance.RunTime - Latency.CurrentAverage - _syncTimeOffset,
