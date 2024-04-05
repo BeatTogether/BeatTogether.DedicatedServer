@@ -272,7 +272,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
                 return;
 
             var eNetPacket = default(Packet);
-            eNetPacket.Create(message.ToArray(), message.Length, (PacketFlags)deliveryMethod);
+            eNetPacket.Create(message.ToArray(), message.Length/*, (PacketFlags)deliveryMethod*/);
 
             _ignorance.Outgoing.Enqueue(new IgnoranceOutgoingPacket()
             {
