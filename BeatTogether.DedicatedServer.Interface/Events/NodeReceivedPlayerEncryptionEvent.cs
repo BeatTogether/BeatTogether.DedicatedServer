@@ -1,4 +1,4 @@
 ﻿namespace BeatTogether.DedicatedServer.Interface.Events
 {
-    public sealed record NodeReceivedPlayerEncryptionEvent(string endPoint, string PlayerEndPoint);
+    public sealed record NodeReceivedPlayerEncryptionEvent(string EndPoint, string PlayerEndPoint);
 }

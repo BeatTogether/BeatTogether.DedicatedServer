@@ -6,23 +6,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Extensions
     {
         public static Platform Convert(this Enums.Platform gamePlatform)
         {
-            switch (gamePlatform)
+            return gamePlatform switch
             {
-                case Enums.Platform.Test:
-                    return Platform.Unknown;
-                case Enums.Platform.OculusRift:
-                    return Platform.OculusPC;
-                case Enums.Platform.OculusQuest:
-                    return Platform.OculusQuest;
-                case Enums.Platform.Steam:
-                    return Platform.Steam;
-                case Enums.Platform.PS4:
-                case Enums.Platform.PS4Dev:
-                case Enums.Platform.PS4Cert:
-                    return Platform.PS4;
-                default:
-                    return 0;
-            }
+                Enums.Platform.Test => Platform.Unknown,
+                Enums.Platform.OculusRift => Platform.OculusPC,
+                Enums.Platform.OculusQuest => Platform.OculusQuest,
+                Enums.Platform.Steam => Platform.Steam,
+                Enums.Platform.PS4 or Enums.Platform.PS4Dev or Enums.Platform.PS4Cert => Platform.PS4,
+                _ => 0,
+            };
         }
     }
 }

@@ -9,7 +9,7 @@ namespace BeatTogether.DedicatedServer.Interface.Requests
         bool PermanentManager = true,
         float Timeout = 10f,
         string ServerName = "",
-        float resultScreenTime = 20.0f,
+        float ResultScreenTime = 20.0f,
         float BeatmapStartTime = 5.0f,
         float PlayersReadyCountdownTime = 0f,
         bool AllowPerPlayerModifiers = false,

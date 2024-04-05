@@ -50,7 +50,7 @@ namespace BeatTogether.DedicatedServer.Node
                 request.PermanentManager,
                 request.Timeout,
                 request.ServerName,
-                (long)request.resultScreenTime,
+                (long)request.ResultScreenTime,
                 ((long)request.BeatmapStartTime) * 1000,
                 ((long)request.PlayersReadyCountdownTime) * 1000,
                 request.AllowPerPlayerModifiers,

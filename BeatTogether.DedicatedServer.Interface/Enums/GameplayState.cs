@@ -4,8 +4,8 @@
     {
         None = 0,
         SceneLoad = 1,
-        SongLoad = 1,
-        Gameplay = 2,
-        Results = 3
+        SongLoad = 2,
+        Gameplay = 3,
+        Results = 4
     }
 }

@@ -10,7 +10,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
     {
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly InstanceConfiguration _instanceConfiguration;
-        private readonly ILogger _logger = Log.ForContext<MpcCapabilitiesPacketHandler>();
+        //private readonly ILogger _logger = Log.ForContext<MpcCapabilitiesPacketHandler>();
         public MpcCapabilitiesPacketHandler(IPacketDispatcher packetDispatcher,
             InstanceConfiguration instanceConfiguration)
         {

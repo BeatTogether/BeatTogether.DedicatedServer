@@ -8,7 +8,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     class GetPerPlayerHandler : BasePacketHandler<GetPerPlayer>
     {
-        private InstanceConfiguration _configuration;
+        private readonly InstanceConfiguration _configuration;
         private readonly IPacketDispatcher _PacketDispatcher;
         private readonly ILogger _logger = Log.ForContext<GetPerPlayerHandler>();
 

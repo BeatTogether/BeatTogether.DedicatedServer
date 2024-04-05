@@ -14,7 +14,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         private readonly InstanceConfiguration _instanceConfiguration;
         private readonly ITextCommandRepository _CommandRepository;
         private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger _logger = Log.ForContext<MpcTextChatPacketHandler>();
+        //private readonly ILogger _logger = Log.ForContext<MpcTextChatPacketHandler>();
 
 
         public MpcTextChatPacketHandler(IPacketDispatcher packetDispatcher,

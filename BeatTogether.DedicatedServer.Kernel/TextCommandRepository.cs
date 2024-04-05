@@ -1,7 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Commands;
 using BeatTogether.DedicatedServer.Kernel.Enums;
-using BeatTogether.DedicatedServer.Kernel.Managers;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
@@ -15,7 +14,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private readonly ConcurrentDictionary<AccessLevel, ConcurrentDictionary<string, CommandFactory>> _Commands = new();
         private readonly ConcurrentDictionary<AccessLevel, ConcurrentDictionary<string, CommandFactory>> _SHCommands = new();
-        private readonly ILogger _logger = Log.ForContext<LobbyManager>();
+        //private readonly ILogger _logger = Log.ForContext<LobbyManager>();
         public TextCommandRepository()
         {
             RegisterCommands();

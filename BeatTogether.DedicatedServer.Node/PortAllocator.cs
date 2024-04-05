@@ -9,7 +9,7 @@ namespace BeatTogether.DedicatedServer.Node
     {
         private readonly NodeConfiguration _configuration;
 
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
 
         private readonly HashSet<int> _acquiredPorts = new();
         private readonly HashSet<int> _releasedPorts = new();

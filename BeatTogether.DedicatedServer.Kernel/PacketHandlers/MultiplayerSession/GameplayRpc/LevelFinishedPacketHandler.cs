@@ -7,8 +7,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 {
     public sealed class LevelFinishedPacketHandler : BasePacketHandler<LevelFinishedPacket>
     {
-        private IGameplayManager _gameplayManager;
-        private ILogger _logger = Log.ForContext<LevelFinishedPacketHandler>();
+        private readonly IGameplayManager _gameplayManager;
+        private readonly ILogger _logger = Log.ForContext<LevelFinishedPacketHandler>();
 
         public LevelFinishedPacketHandler(
             IGameplayManager gameplayManager)

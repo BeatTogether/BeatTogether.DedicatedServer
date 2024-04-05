@@ -10,13 +10,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
     {
         private readonly IPacketDispatcher _packetDisapatcher;
         private readonly InstanceConfiguration _Configuration;
-        private readonly IDedicatedInstance _instance;
 
-        public SetWelcomeMessageHandler(IPacketDispatcher packetDisapatcher, InstanceConfiguration instanceConfiguration, IDedicatedInstance instance)
+        public SetWelcomeMessageHandler(IPacketDispatcher packetDisapatcher, InstanceConfiguration instanceConfiguration)
         {
             _packetDisapatcher = packetDisapatcher;
             _Configuration = instanceConfiguration;
-            _instance = instance;
         }
 
         public override void Handle(IPlayer player, SetWelcomeMessage command)

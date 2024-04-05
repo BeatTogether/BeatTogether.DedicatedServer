@@ -34,8 +34,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private const float SceneLoadTimeLimit = 15.0f;
         private const float SongLoadTimeLimit = 15.0f;
 
-        public long _songStartTime { get; private set; }
-        List<string> PlayersAtStart = new();
+        private long SongStartTime { get; set; }
+
+        private readonly List<string> PlayersAtStart = new();
 
         private CancellationTokenSource? _requestReturnToMenuCts;
 
@@ -166,14 +167,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
 
             // Start song and wait for finish
-            _songStartTime = (_instance.RunTime + SongStartDelay + (StartDelay * 2));
-            _logger.Verbose($"SongStartTime: {_songStartTime} RunTime: {_instance.RunTime}");
+            SongStartTime = (_instance.RunTime + SongStartDelay + (StartDelay * 2));
+            _logger.Verbose($"SongStartTime: {SongStartTime} RunTime: {_instance.RunTime}");
 
             State = GameplayManagerState.Gameplay;
 
             _packetDispatcher.SendToNearbyPlayers(new SetSongStartTimePacket
             {
-                StartTime = _songStartTime
+                StartTime = SongStartTime
             }, IgnoranceChannelTypes.Reliable);
 
             //Initiates the song start process for forced late joiners
@@ -185,7 +186,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         Beatmap = CurrentBeatmap,
                         Modifiers = CurrentModifiers,
-                        StartTime = _songStartTime
+                        StartTime = SongStartTime
                     }, IgnoranceChannelTypes.Reliable);
                 }
             }
@@ -210,7 +211,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _levelFinishedTcs.Clear();
             _sceneReadyTcs.Clear();
             _songReadyTcs.Clear();
-            _songStartTime = 0;
+            SongStartTime = 0;
             _playerSpecificSettings.Clear();
             _levelCompletionResults.Clear();
             PlayersAtStart.Clear();
@@ -262,10 +263,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 return;
             }
             if (State != GameplayManagerState.SceneLoad) //Late joiners get sent start time
-                if(_songStartTime != 0)
+                if(SongStartTime != 0)
                     _packetDispatcher.SendToPlayer(player, new SetSongStartTimePacket
                     {
-                        StartTime = _songStartTime
+                        StartTime = SongStartTime
                     }, IgnoranceChannelTypes.Reliable);
         }
 
@@ -277,14 +278,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             PlayerFinishLevel(player.UserId);
         }
 
-        object RequestReturnLock = new();
         public void SignalRequestReturnToMenu()
         {
-            lock (RequestReturnLock)
-            {
-                if (_requestReturnToMenuCts != null && !_requestReturnToMenuCts.IsCancellationRequested)
-                    _requestReturnToMenuCts.Cancel();
-            }
+            if (_requestReturnToMenuCts != null && !_requestReturnToMenuCts.IsCancellationRequested)
+                _requestReturnToMenuCts.Cancel();
         }
 
         //will set players tasks as done if they leave gameplay due to disconnect or returning to the menu
