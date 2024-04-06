@@ -108,7 +108,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         SetCountdown(CountdownState.WaitingForEntitlement);
                     }
-                    if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsSpectating || !p.WantsToPlayNextLevel || p.ForceLateJoin))
+                    if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsBackgrounded || !p.WantsToPlayNextLevel || p.ForceLateJoin))
                     {
 /*                        foreach (IPlayer p in _playerRegistry.Players)
                         {

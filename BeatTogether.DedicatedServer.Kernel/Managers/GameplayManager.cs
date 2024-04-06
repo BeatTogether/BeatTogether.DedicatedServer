@@ -102,7 +102,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             State = GameplayManagerState.SceneLoad;
             foreach (var player in _playerRegistry.Players)//Array of players that are playing at the start
             {
-                if (!player.IsSpectating && !player.ForceLateJoin)
+                if (!player.IsSpectating && !player.ForceLateJoin && !player.IsBackgrounded)
                     PlayersAtStart.Add(player.UserId);
             }
 
