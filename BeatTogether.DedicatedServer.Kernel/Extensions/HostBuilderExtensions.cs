@@ -35,7 +35,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Extensions
                         .AddDedicatedServerMessaging()
                         .AddScoped<DedicatedInstance>()
                         .AddExisting<IDedicatedInstance, DedicatedInstance>()
-                        .AddExisting<ENetServer, DedicatedInstance>()
+                        .AddExisting<ENetServer, DedicatedInstance>() //Used to be like this for lnl
                         //.AddScoped<IHandshakeSessionRegistry, HandshakeSessionRegistry>()
                         .AddScoped<IPlayerRegistry, PlayerRegistry>()
                         //.AddScoped<UnconnectedMessageSource, UnconnectedSource>()

@@ -19,6 +19,7 @@ using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Util;
 using Serilog;
 using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -46,8 +47,8 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IPacketDispatcher PacketDispatcher;
-        private readonly PacketSource ConnectedMessageSource;
+        private IPacketDispatcher PacketDispatcher;
+        private PacketSource ConnectedMessageSource;
 
 
         private byte _connectionIdCount = 0;
@@ -64,16 +65,12 @@ namespace BeatTogether.DedicatedServer.Kernel
         public DedicatedInstance(
             InstanceConfiguration configuration,
             IPlayerRegistry playerRegistry,
-            IPacketDispatcher packetDispatcher,
-            PacketSource connectedMessageSource,
             IServiceProvider serviceProvider)
             : base (configuration.Port)
         {
             _configuration = configuration;
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
-            PacketDispatcher = packetDispatcher;
-            ConnectedMessageSource = connectedMessageSource;
         }
 
         #region Public Methods
@@ -93,8 +90,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (IsRunning)
                 return;
 
-            //PacketDispatcher = _serviceProvider.GetRequiredService<IPacketDispatcher>();
-            //ConnectedMessageSource = _serviceProvider.GetRequiredService<PacketSource>();
+            PacketDispatcher = _serviceProvider.GetRequiredService<IPacketDispatcher>();
+            ConnectedMessageSource = _serviceProvider.GetRequiredService<PacketSource>();
             
             _startTime = DateTime.UtcNow.Ticks;
 

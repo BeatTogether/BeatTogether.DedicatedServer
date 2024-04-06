@@ -12,4 +12,8 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
   </ItemGroup>
 
+    <ItemGroup>
+	    <ProjectReference Include="..\BeatTogether.DedicatedServer.Ignorance\BeatTogether.DedicatedServer.Ignorance.csproj" />
+    </ItemGroup>
+
 </Project>

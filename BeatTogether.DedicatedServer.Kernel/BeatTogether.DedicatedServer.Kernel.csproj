@@ -21,7 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BeatTogether.DedicatedServer.Ignorance\BeatTogether.DedicatedServer.Ignorance.csproj" />
     <ProjectReference Include="..\BeatTogether.DedicatedServer.Messaging\BeatTogether.DedicatedServer.Messaging.csproj" />
   </ItemGroup>
 

@@ -16,7 +16,7 @@ using Serilog;
 namespace BeatTogether.DedicatedServer.Kernel.ENet
 {
     /// <summary>
-    /// Temporary secondary server/socket for ENet (1.31+) connectivity.
+    /// Server/socket for ENet (1.31+) connectivity.
     /// </summary>
     public class ENetServer : IDisposable
     {

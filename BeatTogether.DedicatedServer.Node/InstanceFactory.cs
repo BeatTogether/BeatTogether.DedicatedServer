@@ -49,7 +49,6 @@ namespace BeatTogether.DedicatedServer.Node
             var scope = _serviceProvider.CreateScope();
 
             var instanceConfig = scope.ServiceProvider.GetRequiredService<InstanceConfiguration>();
-            //instanceConfig.LiteNetPort = (int)liteNetPort!;
             instanceConfig.Port = (int)Port!;
             instanceConfig.Secret = secret;
             instanceConfig.ServerOwnerId = managerId;

@@ -72,7 +72,9 @@ namespace BeatTogether.DedicatedServer.Node
             await matchmakingServer.Start();
             return new CreateMatchmakingServerResponse(
                 CreateMatchmakingServerError.None,
-                $"{_configuration.HostName}:{matchmakingServer.Port}"
+                $"{_configuration.HostName}:{matchmakingServer.Port}",
+                 Array.Empty<byte>(),
+                 Array.Empty<byte>()
             );
         }
 
