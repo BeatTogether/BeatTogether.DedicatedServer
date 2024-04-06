@@ -10,6 +10,7 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using Serilog;
 
@@ -109,7 +110,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsSpectating || !p.WantsToPlayNextLevel || p.ForceLateJoin))
                     {
-                        foreach (IPlayer p in _playerRegistry.Players)
+/*                        foreach (IPlayer p in _playerRegistry.Players)
                         {
                             if (p.GetEntitlement(SelectedBeatmap.LevelId) is not EntitlementStatus.Ok || p.IsSpectating || !p.WantsToPlayNextLevel || p.ForceLateJoin)
                             {
@@ -119,7 +120,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                     Entitlement = EntitlementStatus.Ok
                                 }, IgnoranceChannelTypes.Reliable);
                             }
-                        }
+                        }*/
                         //The clients need to be sent that all the payers have OK entitlement
                         //starts beatmap
                         _gameplayManager.SetBeatmap(SelectedBeatmap!, SelectedModifiers);
@@ -145,10 +146,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         {
                             if (p.GetEntitlement(SelectedBeatmap.LevelId) is not EntitlementStatus.Ok)
                             {
-                                _packetDispatcher.SendFromPlayer(p, new SetIsEntitledToLevelPacket()
+                                //TODO This needs changing? we just kick the player for now, but really we want to send them to spectator
+                                _packetDispatcher.SendToPlayer(p, new KickPlayerPacket
                                 {
-                                    LevelId = SelectedBeatmap.LevelId,
-                                    Entitlement = EntitlementStatus.Ok
+                                    DisconnectedReason = DisconnectedReason.Kicked
                                 }, IgnoranceChannelTypes.Reliable);
                                 p.ForceLateJoin = true;
                             }
@@ -193,7 +194,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                                 .Where(p => (p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown) && !p.IsSpectating && p.WantsToPlayNextLevel)
                                 .Select(p => p.UserId).ToArray()
                         }, IgnoranceChannelTypes.Reliable);
-                        _logger.Debug("Sent missing entitlement packet");
+                        //_logger.Debug("Sent missing entitlement packet");
                     }
                 }
             }
@@ -243,7 +244,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private void CountingDown(bool isReady, bool NotStartable)
         {
-            _logger.Debug($"CountdownEndTime '{CountdownEndTime}' RunTime '{_instance.RunTime}' BeatMapStartCountdownTime '{_configuration.CountdownConfig.BeatMapStartCountdownTime}' CountdownTimePlayersReady '{_configuration.CountdownConfig.CountdownTimePlayersReady}'");  
+            //_logger.Debug($"CountdownEndTime '{CountdownEndTime}' RunTime '{_instance.RunTime}' BeatMapStartCountdownTime '{_configuration.CountdownConfig.BeatMapStartCountdownTime}' CountdownTimePlayersReady '{_configuration.CountdownConfig.CountdownTimePlayersReady}'");  
             // If not already counting down
             if (CountDownState == CountdownState.NotCountingDown)
             {
@@ -257,7 +258,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             // If counting down
             if (CountDownState != CountdownState.NotCountingDown)
             {
-                _logger.Debug($"CountdownEndTime '{CountdownEndTime}' RunTime '{_instance.RunTime}'");
+                //_logger.Debug($"CountdownEndTime '{CountdownEndTime}' RunTime '{_instance.RunTime}'");
                 if(CountdownEndTime <= _instance.RunTime)
                 {
                     _logger.Debug($"Countdown finished, sending map");
@@ -268,17 +269,19 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsSpectating || !p.WantsToPlayNextLevel || p.ForceLateJoin))
                     {
-                        foreach(IPlayer p in _playerRegistry.Players)
+                        //Dont do this as we dont want clients to store incorrect info on players entitlements
+/*                        foreach(IPlayer p in _playerRegistry.Players)
                         {
                             if (p.IsSpectating || !p.WantsToPlayNextLevel || p.ForceLateJoin)
                             {
+                                //Force send to everyone that those players have the map. 
                                 _packetDispatcher.SendFromPlayer(p, new SetIsEntitledToLevelPacket()
                                 {
                                     LevelId = SelectedBeatmap!.LevelId,
                                     Entitlement = EntitlementStatus.Ok
                                 }, IgnoranceChannelTypes.Reliable);
                             }
-                        }
+                        }*/
                         _logger.Debug($"All players have entitlement, starting map");
                         //starts beatmap
                         _gameplayManager.SetBeatmap(SelectedBeatmap!, SelectedModifiers);
@@ -355,8 +358,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         // If you want to cancel the countdown use CancelCountdown(), Not SetCountdown as CancelCountdown() ALSO informs the clients it has been canceled, whereas SetCountdown will not
         private void SetCountdown(CountdownState countdownState, long countdown = 0)
         {
-            _logger.Error($"CountdownEndTime currently is '{CountdownEndTime}' countdown is set to '{countdown}' state will be set to '{countdownState}' BeatmapStartTime is '{_configuration.CountdownConfig.BeatMapStartCountdownTime}'");
-            _logger.Error($"Check should start Beatmap {(CountdownEndTime - _instance.RunTime) < _configuration.CountdownConfig.BeatMapStartCountdownTime} EndTime '{CountdownEndTime - _instance.RunTime}' RunTime '{_instance.RunTime}'");
+            //_logger.Error($"CountdownEndTime currently is '{CountdownEndTime}' countdown is set to '{countdown}' state will be set to '{countdownState}' BeatmapStartTime is '{_configuration.CountdownConfig.BeatMapStartCountdownTime}'");
+            //_logger.Error($"Check should start Beatmap {(CountdownEndTime - _instance.RunTime) < _configuration.CountdownConfig.BeatMapStartCountdownTime} EndTime '{CountdownEndTime - _instance.RunTime}' RunTime '{_instance.RunTime}'");
             CountDownState = countdownState;
             switch (CountDownState)
             {
@@ -384,7 +387,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     StartBeatmapPacket();
                     break;
             }
-            _logger.Error($"CountdownEndTime final set to '{CountdownEndTime}' CountdownState '{CountDownState}' countdown is '{countdown}' RunTime is '{_instance.RunTime}' BeatmapStartTime is '{_configuration.CountdownConfig.BeatMapStartCountdownTime}'");
+            //_logger.Error($"CountdownEndTime final set to '{CountdownEndTime}' CountdownState '{CountDownState}' countdown is '{countdown}' RunTime is '{_instance.RunTime}' BeatmapStartTime is '{_configuration.CountdownConfig.BeatMapStartCountdownTime}'");
         }
 
         //Checks the lobby settings and sends the player the correct beatmap
