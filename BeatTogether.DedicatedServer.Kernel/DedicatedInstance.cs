@@ -358,8 +358,6 @@ namespace BeatTogether.DedicatedServer.Kernel
                     "Failed to retrieve player " +
                     $"(RemoteEndPoint='{endPoint}')."
                 );
-                //Disconnect(endPoint);
-                //TODO impliment for enet, enet peers cannot be located at this point as a peer ID is required to kick them
                 return;
             }
             PlayerConnectedEvent?.Invoke(player);
@@ -526,14 +524,13 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         }
 
-        public void DisconnectPlayer(string UserId) //Used by master servers kick player event
+        public void DisconnectPlayer(IPlayer player)
         {
-
-            if(_playerRegistry.TryGetPlayer(UserId, out var player))
-                PacketDispatcher.SendToPlayer(player, new KickPlayerPacket
-                {
-                    DisconnectedReason = DisconnectedReason.Kicked
-                }, IgnoranceChannelTypes.Reliable);
+            PacketDispatcher.SendToPlayer(player, new KickPlayerPacket
+            {
+                DisconnectedReason = DisconnectedReason.Kicked
+            }, IgnoranceChannelTypes.Reliable);
+            KickPeer(player.ENetPeerId);
         }
 
         public override void OnDisconnect(EndPoint endPoint)

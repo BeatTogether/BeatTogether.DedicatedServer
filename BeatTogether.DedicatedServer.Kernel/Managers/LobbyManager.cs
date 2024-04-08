@@ -235,14 +235,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     }
                     if (CountdownEndTime + _configuration.SendPlayersWithoutEntitlementToSpectateTimeout <= _instance.RunTime) //If takes too long to start then players are sent to spectate by telling them the beatmap already started
                     {
-                        _logger.Debug($"Took too long to start, sending problem players to spectate");
+                        _logger.Debug($"Took too long to start, kicking problem players");
                         IPlayer[] MissingEntitlement = _playerRegistry.Players.Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) is not EntitlementStatus.Ok &&  !p.IsSpectating && p.WantsToPlayNextLevel && !p.IsBackgrounded).ToArray();
                         foreach (IPlayer p in MissingEntitlement)
                         {
-                            //Force the player to join late
+                            /* //Force the player to join late
                             p.ForceLateJoin = true;
                             _packetDispatcher.SendToPlayer(p, new CancelLevelStartPacket(), IgnoranceChannelTypes.Reliable);
-                            _packetDispatcher.SendToPlayer(p, new SetIsReadyPacket() { IsReady = false }, IgnoranceChannelTypes.Reliable);
+                            _packetDispatcher.SendToPlayer(p, new SetIsReadyPacket() { IsReady = false }, IgnoranceChannelTypes.Reliable);*/
+                            _instance.DisconnectPlayer(p);
                         }
                     }
                 }

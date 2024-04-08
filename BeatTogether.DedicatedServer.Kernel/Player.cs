@@ -19,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public string UserName { get; }
         public string PlayerSessionId { get; }
 
-        public uint? ENetPeerId { get; set; }
+        public uint ENetPeerId { get; set; }
 
         public RollingAverage Latency { get; } = new(30);
         public long SyncTime =>

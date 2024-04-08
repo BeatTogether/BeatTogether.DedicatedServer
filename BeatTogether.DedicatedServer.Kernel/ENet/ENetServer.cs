@@ -246,11 +246,7 @@ namespace BeatTogether.DedicatedServer.Kernel.ENet
 
         public void Send(IPlayer player, ReadOnlySpan<byte> message, IgnoranceChannelTypes deliveryMethod)
         {
-            if (!player.ENetPeerId.HasValue)
-                // Not an ENet peer
-                return;
-            
-            Send(player.ENetPeerId.Value, message, deliveryMethod);
+            Send(player.ENetPeerId, message, deliveryMethod);
         }
         
         public void Send(uint peerId, ReadOnlySpan<byte> message, IgnoranceChannelTypes deliveryMethod)

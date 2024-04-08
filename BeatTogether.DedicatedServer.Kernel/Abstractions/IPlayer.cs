@@ -22,7 +22,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         Platform Platform { get; set; }
         string PlatformUserId { get; set; }
         
-        uint? ENetPeerId { get; set; }
+        uint ENetPeerId { get; set; }
 
         RollingAverage Latency { get; }
         long SyncTime { get; }

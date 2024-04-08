@@ -21,7 +21,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         InstanceConfiguration _configuration { get; }
         bool IsRunning { get; }
         long RunTime { get; }
-        //public int LiteNetPort { get; }
         public int Port { get; }
         MultiplayerGameState State { get; }
 
@@ -35,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         Task Stop(CancellationToken cancellationToken = default);
 
 
-        void DisconnectPlayer(string UserId);
+        void DisconnectPlayer(IPlayer player);
         int GetNextSortIndex();
         void ReleaseSortIndex(int sortIndex);
         byte GetNextConnectionId();
