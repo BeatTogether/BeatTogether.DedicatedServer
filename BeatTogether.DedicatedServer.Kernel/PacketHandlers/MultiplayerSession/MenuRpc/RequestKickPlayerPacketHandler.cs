@@ -1,7 +1,4 @@
-﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
-using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.DedicatedServer.Messaging.Packets;
+﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using Serilog;
 
@@ -11,14 +8,17 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 	{
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
+        private readonly IDedicatedInstance _instance;
         private readonly ILogger _logger = Log.ForContext<RequestKickPlayerPacketHandler>();
 
         public RequestKickPlayerPacketHandler(
             IPlayerRegistry playerRegistry,
-            IPacketDispatcher packetDispatcher)
+            IPacketDispatcher packetDispatcher,
+            IDedicatedInstance dedicatedInstance)
         {
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
+            _instance = dedicatedInstance;
         }
 
         public override void Handle(IPlayer sender, RequestKickPlayerPacket packet)
@@ -29,10 +29,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
             if (sender.CanKickVote)
                 if (_playerRegistry.TryGetPlayer(packet.KickedPlayerId, out var kickedPlayer))
-                    _packetDispatcher.SendToPlayer(kickedPlayer, new KickPlayerPacket
-                    {
-                        DisconnectedReason = DisconnectedReason.Kicked
-                    }, IgnoranceChannelTypes.Reliable);
+                    _instance.DisconnectPlayer(kickedPlayer);
 
         }
     }
