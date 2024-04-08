@@ -41,7 +41,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             {
                 _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
                 {
-                    Reason = sender.IsServerOwner ? _lobbyManager.GetCannotStartGameReason(sender, _lobbyManager.DoesEveryoneOwnBeatmap) : CannotStartGameReason.None
+                    Reason = sender.IsServerOwner ? _lobbyManager.GetCannotStartGameReason(sender, _lobbyManager.CanEveryonePlayBeatmap) : CannotStartGameReason.None
                 }, IgnoranceChannelTypes.Reliable);
 
                 if (_lobbyManager.SelectedBeatmap is null)

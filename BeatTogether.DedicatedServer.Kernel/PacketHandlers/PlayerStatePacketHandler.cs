@@ -27,8 +27,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             );
 
             sender.State = packet.PlayerState;
-            if (packet.PlayerState.Contains("spectating") != sender.State.Contains("spectating") || packet.PlayerState.Contains("wants_to_play_next_level") != sender.State.Contains("wants_to_play_next_level"))
-                _lobbyManager.SpectatingPlayersUpdated = true;
+            if ( packet.PlayerState.Contains("wants_to_play_next_level") != sender.State.Contains("wants_to_play_next_level") || packet.PlayerState.Contains("backgrounded") != sender.State.Contains("backgrounded"))
+                _lobbyManager.UpdateSpectatingPlayers = true;
         }
     }
 }

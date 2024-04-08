@@ -45,15 +45,15 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool CanKickVote => UserId == Instance._configuration.ServerOwnerId;
         public bool CanInvite =>
             Instance._configuration.DiscoveryPolicy is DiscoveryPolicy.WithCode or DiscoveryPolicy.Public;
-        public bool ForceLateJoin { get; set; } = false;
+        public bool ForceLateJoin { get; set; } = false; //Used to force trouble players to late join a mp game/tell them to spectate
 
-        public bool IsPlayer => State.Contains("player");
-        public bool IsSpectating => State.Contains("spectating"); //True if spectating players in gameplay
-        public bool WantsToPlayNextLevel => State.Contains("wants_to_play_next_level"); //True if spectating is toggled in menu
-        public bool IsBackgrounded => State.Contains("backgrounded"); //No idea
-        public bool InGameplay => State.Contains("in_gameplay"); //True while in gameplay
-        public bool WasActiveAtLevelStart => State.Contains("was_active_at_level_start"); //True if the player was active at the level start - need to check if it means they are a spectator or not
-        public bool IsActive => State.Contains("is_active"); //No idea, i suppose its the opposite of IsBackgrounded
+        public bool IsPlayer => State.Contains("player"); //If the user is a player
+        public bool IsSpectating => State.Contains("spectating"); //True if player is spectating (special case that is not applicable to normal game clients)
+        public bool WantsToPlayNextLevel => State.Contains("wants_to_play_next_level"); //True if player wants to spectate
+        public bool IsBackgrounded => State.Contains("backgrounded"); //If user has gone AFK
+        public bool InGameplay => State.Contains("in_gameplay"); //True while user in gameplay
+        public bool WasActiveAtLevelStart => State.Contains("was_active_at_level_start"); //True if the player was active at the beatmap level start - playing the level
+        public bool IsActive => State.Contains("is_active"); //If player is activly playing the beatmap
         public bool FinishedLevel => State.Contains("finished_level"); //If the player has finished the level
         public bool InMenu => State.Contains("in_menu"); //Should be true while in lobby
 

@@ -8,16 +8,16 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
     public interface ILobbyManager
     {
         bool AllPlayersReady { get; }
-        bool SomePlayersReady { get; }
+        bool AnyPlayersReady { get; }
         bool NoPlayersReady { get; }
 		bool AllPlayersNotWantToPlayNextLevel { get; }
-        bool DoesEveryoneOwnBeatmap { get; }
+        bool CanEveryonePlayBeatmap { get; }
         BeatmapIdentifier? SelectedBeatmap { get; }
         GameplayModifiers SelectedModifiers { get; }
         CountdownState CountDownState { get; }
         long CountdownEndTime { get; }
         GameplayModifiers EmptyModifiers {get; }
-        public bool SpectatingPlayersUpdated { get; set; }
+        public bool UpdateSpectatingPlayers { get; set; }
         public bool ForceStartSelectedBeatmap { get; set; }
 
         void Update();

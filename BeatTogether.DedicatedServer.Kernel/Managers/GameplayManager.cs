@@ -101,8 +101,12 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             State = GameplayManagerState.SceneLoad;
             foreach (var player in _playerRegistry.Players)//Array of players that are playing at the start
             {
-                if (!player.IsSpectating && !player.ForceLateJoin && !player.IsBackgrounded)
+                if (player.WantsToPlayNextLevel && !player.IsSpectating && !player.IsBackgrounded && !player.ForceLateJoin)
+                {
                     PlayersAtStart.Add(player.UserId);
+                }
+                //if (!player.IsSpectating && !player.ForceLateJoin && !player.IsBackgrounded)
+                //    PlayersAtStart.Add(player.UserId);
             }
 
             // Create level finished tasks (players may send these at any time during gameplay)
@@ -159,7 +163,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 if (_playerRegistry.TryGetPlayer(UserId, out var p))
                 {
-                    if (!p.InGameplay || p.InLobby)
+                    if (!p.InGameplay || !p.IsActive)
                         HandlePlayerLeaveGameplay(p);
                     StartDelay = Math.Max(StartDelay, p.Latency.CurrentAverage);
                 }
@@ -176,7 +180,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 StartTime = SongStartTime
             }, IgnoranceChannelTypes.Reliable);
 
-            //Initiates the song start process for forced late joiners
+            //Initiates the song start process for forced late joiners - try force them to spectate if they were causing issues in countdown
             foreach(IPlayer p in _playerRegistry.Players)
             {
                 if (p.ForceLateJoin)
