@@ -23,7 +23,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 			uint hash = MurmurHash2(value);
 			for (int i = 0; i < hashCount; i++)
 			{
-				if (GetBits((int)((ulong)hash % (ulong)((long)BitCount)), 1) == 0UL)
+				if (GetBits((int)(hash % (ulong)((long)BitCount)), 1) == 0UL)
 				{
 					return false;
 				}
@@ -31,6 +31,16 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 			}
 			return true;
 		}
+
+		public void WriteToBitMask(string value, int hashCount = 3, int hashBits = 8)
+        {
+			ulong hash = MurmurHash2(value);
+			for(int i = 0; i < hashCount; i++)
+            {
+				SetBits((int)(hash % (ulong)((long)BitCount)), 1UL);
+				hash >>= hashBits;
+			}
+        }
 
 		public ulong GetBits(int offset, int count)
 		{

@@ -78,10 +78,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     _playersByRemoteEndPoint.TryAdd(player.Endpoint, player);
                     _playersByConnectionId.TryAdd(player.ConnectionId, player);
                     _PlayerCount++;
-                    lock (MillisBetweenSyncStatePackets_Lock)
-                    {
-                        MillisBetweenSyncStatePackets = (int)(0.84 * _PlayerCount + 15.789);
-                    }
+                     MillisBetweenSyncStatePackets = (int)(0.84 * _PlayerCount + 15.789);
                     return true;
                 }
             }
@@ -97,10 +94,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     _playersByRemoteEndPoint.Remove(player.Endpoint, out _);
                     _playersByConnectionId.Remove(player.ConnectionId, out _);
                     _PlayerCount--;
-                    lock (MillisBetweenSyncStatePackets_Lock)
-                    {
-                        MillisBetweenSyncStatePackets = (int)(0.84 * _PlayerCount + 15.789);
-                    }
+                    MillisBetweenSyncStatePackets = (int)(0.84 * _PlayerCount + 15.789);
                 }
             }
         }
@@ -127,14 +121,10 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
         }
 
-        private readonly object MillisBetweenSyncStatePackets_Lock = new();
         private int MillisBetweenSyncStatePackets = 0;
         public int GetMillisBetweenSyncStatePackets()
         {
-            lock (MillisBetweenSyncStatePackets_Lock)
-            {
-                return MillisBetweenSyncStatePackets;
-            }
+            return MillisBetweenSyncStatePackets;
         }
     }
 }

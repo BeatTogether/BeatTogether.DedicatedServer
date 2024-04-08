@@ -34,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public bool AllPlayersAreInLobby => _playerRegistry.Players.All(p => p.InMenu);//if all are going to be spectating
         public bool DoesEveryoneOwnBeatmap => SelectedBeatmap != null && !_playerRegistry.Players.Any(p => (p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned or EntitlementStatus.Unknown) && !p.IsSpectating && p.WantsToPlayNextLevel);
         public bool SpectatingPlayersUpdated { get; set; } = false;
-        public bool ForceStartSelectedBeatmap { get; set; } = false;
+        public bool ForceStartSelectedBeatmap { get; set; } = false; //For future server-side things
 
         public BeatmapIdentifier? SelectedBeatmap { get; private set; } = null;
         public GameplayModifiers SelectedModifiers { get; private set; } = new();
