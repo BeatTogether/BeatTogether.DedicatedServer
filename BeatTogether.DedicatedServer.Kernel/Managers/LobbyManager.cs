@@ -10,7 +10,6 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using Serilog;
 
@@ -309,20 +308,21 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             UpdateSpectatingPlayers = false;
         }
 
-        public BeatmapDifficulty[] GetSelectedBeatmapDifficulties()
+        //TODO do something better than iterating, probs gonna be storing this server side anyway at some point soon
+        public Dictionary<uint, string[]>? GetSelectedBeatmapDifficultiesRequirements()
         {
             if (!SelectedBeatmap!.LevelId.StartsWith("custom_level_"))
             {
-                return Array.Empty<BeatmapDifficulty>();
+                return null;
             }
             foreach (var player in _playerRegistry.Players)
             {
                 if(SelectedBeatmap!.LevelId == player.MapHash)
                 {
-                    return player.BeatmapDifficulties;
+                    return player.BeatmapDifficultiesRequirements;
                 }
             }
-            return Array.Empty<BeatmapDifficulty>();
+            return null;
         }
 
 
@@ -374,11 +374,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }, IgnoranceChannelTypes.Reliable);
                 return;
             }
-            BeatmapDifficulty[] diff = GetSelectedBeatmapDifficulties();
+            var diff = GetSelectedBeatmapDifficultiesRequirements();
             BeatmapIdentifier bm = SelectedBeatmap!;
             foreach (var player in _playerRegistry.Players)
             {
-                if (_configuration.AllowPerPlayerDifficulties && player.BeatmapIdentifier != null && diff.Contains(player.BeatmapIdentifier.Difficulty))
+                if (_configuration.AllowPerPlayerDifficulties && player.BeatmapIdentifier != null && diff != null && diff.ContainsKey((uint)player.BeatmapIdentifier.Difficulty))
                     bm.Difficulty = player.BeatmapIdentifier.Difficulty;
                 _packetDispatcher.SendToPlayer(player, new StartLevelPacket
                 {
@@ -411,24 +411,32 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             SetCountdown(CountdownState.NotCountingDown);
         }
 
+        private bool PlayerMapCheck(IPlayer p)
+        {
+            //If no map hash then treat as base game map for compat reasons and while waiting for a packet
+            var Passed = string.IsNullOrEmpty(p.MapHash);
+            //If not passed, then we have difficulties, and if we have the diff we are looking for, then we can check it for requirements.
+            if (!Passed && p.BeatmapDifficultiesRequirements.TryGetValue((uint)p.BeatmapIdentifier!.Difficulty, out string[]? Requirements))
+                Passed = !(!_configuration.AllowChroma && Requirements.Contains("Chroma")) || !(!_configuration.AllowMappingExtensions && Requirements.Contains("Mapping Extensions")) || !(!_configuration.AllowNoodleExtensions && Requirements.Contains("Noodle Extensions"));
+            return Passed;
+        }
+
         private BeatmapIdentifier? GetSelectedBeatmap()
         {
             switch(_configuration.SongSelectionMode)
             {
                 case SongSelectionMode.ServerOwnerPicks:
                     {
-                        if(_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var p))
-                            if(p.BeatmapIdentifier != null)
-                            {
-                                bool passed = ((!(p.Chroma && !_configuration.AllowChroma) || !(p.MappingExtensions && !_configuration.AllowMappingExtensions) || !(p.NoodleExtensions && !_configuration.AllowNoodleExtensions)) && p.MapHash == p.BeatmapIdentifier!.LevelId) || p.MapHash != p.BeatmapIdentifier!.LevelId;
-                                if (passed)
-                                    return p.BeatmapIdentifier;
-                            }
+                        if (_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var p) && p.BeatmapIdentifier != null)
+                        {
+                            if (PlayerMapCheck(p))
+                                return p.BeatmapIdentifier;
+                        }
                         return null;
                     }
                 case SongSelectionMode.Vote:
                     Dictionary<BeatmapIdentifier, int> voteDictionary = new();
-                    foreach (IPlayer player in _playerRegistry.Players.Where(p => p.BeatmapIdentifier != null&& (((!(p.Chroma && !_configuration.AllowChroma) || !(p.MappingExtensions && !_configuration.AllowMappingExtensions) || !(p.NoodleExtensions && !_configuration.AllowNoodleExtensions)) && p.MapHash == p.BeatmapIdentifier!.LevelId) || p.MapHash != p.BeatmapIdentifier!.LevelId)))
+                    foreach (IPlayer player in _playerRegistry.Players.Where(p => PlayerMapCheck(p)))
                     {
                         if (voteDictionary.ContainsKey(player.BeatmapIdentifier!))
                             voteDictionary[player.BeatmapIdentifier!]++;
@@ -456,7 +464,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         Random rand = new();
                         int selectedPlayer = rand.Next(_playerRegistry.GetPlayerCount() - 1);
                         RandomlyPickedPlayer = _playerRegistry.Players[selectedPlayer].UserId;
-                        return _playerRegistry.Players[selectedPlayer].BeatmapIdentifier;
+                        return PlayerMapCheck(_playerRegistry.Players[selectedPlayer]) ? _playerRegistry.Players[selectedPlayer].BeatmapIdentifier : null;
                     }
                     return SelectedBeatmap;
 

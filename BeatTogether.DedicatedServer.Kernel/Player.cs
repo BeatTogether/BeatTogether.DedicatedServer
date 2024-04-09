@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Enums;
@@ -102,19 +103,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool UpdateEntitlement { get; set; } = false;
 
         public string MapHash { get; set; } = string.Empty;
-        public bool Chroma { get; set; } = false;
-        public bool NoodleExtensions { get; set; } = false;
-        public bool MappingExtensions { get; set; } = false;
-        public BeatmapDifficulty[] BeatmapDifficulties { get; set; } = Array.Empty<BeatmapDifficulty>();
-
-        public void ResetRecommendedMapRequirements()
-        {
-            MapHash = string.Empty;
-            Chroma  = false;
-            NoodleExtensions  = false;
-            MappingExtensions = false;
-            BeatmapDifficulties = Array.Empty<BeatmapDifficulty>();
-        }
+        public Dictionary<uint, string[]> BeatmapDifficultiesRequirements { get; set; }
 
         public long TicksAtLastSyncStateDelta { get; set; } = 0; //33ms gaps for 30/sec, 66ms gap for 15/sec
         public long TicksAtLastSyncState { get; set; } = 0;

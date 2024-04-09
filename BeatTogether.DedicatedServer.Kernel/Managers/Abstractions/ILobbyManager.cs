@@ -2,6 +2,7 @@
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
 {
@@ -21,7 +22,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
         public bool ForceStartSelectedBeatmap { get; set; }
 
         void Update();
-        BeatmapDifficulty[] GetSelectedBeatmapDifficulties();
+        Dictionary<uint, string[]>? GetSelectedBeatmapDifficultiesRequirements();
         CannotStartGameReason GetCannotStartGameReason(IPlayer player, bool DoesEveryoneOwnBeatmap);
     }
 }

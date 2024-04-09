@@ -3,6 +3,7 @@ using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using Serilog;
+using System.Linq;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -32,11 +33,15 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 
             if (sender.CanRecommendBeatmaps)
 			{
+                if(sender.BeatmapIdentifier != null && sender.BeatmapIdentifier.LevelId != packet.BeatmapIdentifier.LevelId)
+                {
+                    sender.BeatmapDifficultiesRequirements.Clear();
+                    sender.MapHash = string.Empty;
+                }
 				sender.BeatmapIdentifier = packet.BeatmapIdentifier;
-				if (sender.BeatmapIdentifier.LevelId != sender.MapHash)
-					sender.ResetRecommendedMapRequirements();
                 sender.UpdateEntitlement = true;
-                _packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
+                //TODO apply this logic to all entitlement checks, and check it works well. Might need to send everyones entitlements to a player when they select a map
+                _packetDispatcher.SendToPlayers(_playerRegistry.Players.Where(p => p.GetEntitlement(sender.BeatmapIdentifier.LevelId) == Messaging.Enums.EntitlementStatus.Unknown).ToArray(), new GetIsEntitledToLevelPacket
                 {
                     LevelId = packet.BeatmapIdentifier.LevelId
                 }, IgnoranceChannelTypes.Reliable);

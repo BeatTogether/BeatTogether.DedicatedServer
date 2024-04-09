@@ -67,8 +67,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                             Modifiers = sender.Modifiers;
                         if (_configuration.AllowPerPlayerDifficulties)
                         {
-                            BeatmapDifficulty[] diff = _lobbyManager.GetSelectedBeatmapDifficulties();
-                            if (sender.BeatmapIdentifier != null && diff.Contains(sender.BeatmapIdentifier.Difficulty))
+                            var diff = _lobbyManager.GetSelectedBeatmapDifficultiesRequirements();
+                            if (sender.BeatmapIdentifier != null && diff != null && diff.ContainsKey((uint)sender.BeatmapIdentifier.Difficulty))
                                 Beatmap.Difficulty = sender.BeatmapIdentifier.Difficulty;
                         }
                         _packetDispatcher.SendToPlayer(sender, new StartLevelPacket

@@ -3,6 +3,7 @@ using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
@@ -15,13 +16,13 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         string UserId { get; }
         string UserName { get; }
         string PlayerSessionId { get; }
-        
+
         byte[]? Random { get; set; }
         byte[]? PublicEncryptionKey { get; set; }
         string ClientVersion { get; set; }
         Platform Platform { get; set; }
         string PlatformUserId { get; set; }
-        
+
         uint ENetPeerId { get; set; }
 
         RollingAverage Latency { get; }
@@ -59,12 +60,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         EntitlementStatus GetEntitlement(string levelId);
         void SetEntitlement(string levelId, EntitlementStatus entitlement);
         bool UpdateEntitlement { get; set; }
+
         public string MapHash { get; set; }
-        public bool Chroma { get; set; }
-        public bool NoodleExtensions { get; set; }
-        public bool MappingExtensions { get; set; }
-        public BeatmapDifficulty[] BeatmapDifficulties { get; set; }
-        void ResetRecommendedMapRequirements();
+        public Dictionary<uint, string[]> BeatmapDifficultiesRequirements{ get; set; }
         long TicksAtLastSyncStateDelta { get; set; }
         long TicksAtLastSyncState { get; set; }
     }

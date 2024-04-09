@@ -26,14 +26,16 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(MpBeatmapPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            sender.MapHash = "custom_level_" + packet.levelHash;
-            if(packet.requirements.TryGetValue(packet.difficulty, out string[]? Requirements))
-            {
-                sender.Chroma = Requirements.Contains("Chroma");
-                sender.NoodleExtensions = Requirements.Contains("Noodle Extensions");
-                sender.MappingExtensions = Requirements.Contains("Mapping Extensions");
-            }
-            sender.BeatmapDifficulties = packet.requirements.Keys.Select(b => (BeatmapDifficulty)b).ToArray();
+            sender.MapHash = packet.levelHash;
+
+            if(sender.BeatmapIdentifier == null)
+                sender.BeatmapIdentifier = new BeatmapIdentifier();
+            sender.BeatmapIdentifier.LevelId = "custom_level_" + packet.levelHash;
+            sender.BeatmapIdentifier.Characteristic = packet.characteristic;
+            sender.BeatmapIdentifier.Difficulty = (BeatmapDifficulty)packet.difficulty;
+            sender.BeatmapDifficultiesRequirements = packet.requirements;
+
+            sender.UpdateEntitlement = true;
         }
     }
 }
