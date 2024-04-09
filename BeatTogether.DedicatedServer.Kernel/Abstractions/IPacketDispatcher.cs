@@ -11,7 +11,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
         void SendToNearbyPlayers(INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
         void SendToNearbyPlayers(INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
-		void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
+        void SendToPlayers(IPlayer[] Players, INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
+        void SendToPlayers(IPlayer[] Players, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
+        void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
 		void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
 		void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
 		void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);

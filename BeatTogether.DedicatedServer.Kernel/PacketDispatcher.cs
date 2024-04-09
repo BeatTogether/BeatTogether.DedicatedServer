@@ -46,7 +46,6 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteOne(ref writer, packet);
-            _logger.Verbose("Packet: " + packet.GetType().Name + " Was entered into the spanbuffer correctly, now sending once to each player");
             foreach (var player in _playerRegistry.Players)
                 SendInternal(player, ref writer, deliveryMethod);
                     
@@ -61,8 +60,34 @@ namespace BeatTogether.DedicatedServer.Kernel
             var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteMany(ref writer, packets);
-            _logger.Verbose("Packets were entered into the spanbuffer correctly, now sending once to each player");
             foreach (var player in _playerRegistry.Players)
+                SendInternal(player, ref writer, deliveryMethod);
+        }
+        public void SendToPlayers(IPlayer[] players, INetSerializable packet, IgnoranceChannelTypes deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending packet of type '{packet.GetType().Name}' to specific players" +
+                $"(SenderId={ServerId})"
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[412]);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
+            WriteOne(ref writer, packet);
+            foreach (var player in players)
+                SendInternal(player, ref writer, deliveryMethod);
+                    
+        }
+        public void SendToPlayers(IPlayer[] players, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod)
+        {
+            _logger.Debug(
+                $"Sending MultiPacket to specific players" +
+                $"(SenderId={ServerId})"
+            );
+
+            var writer = new SpanBuffer(stackalloc byte[1024]);
+            writer.WriteRoutingHeader(ServerId, LocalConnectionId);
+            WriteMany(ref writer, packets);
+            foreach (var player in players)
                 SendInternal(player, ref writer, deliveryMethod);
         }
 
