@@ -85,14 +85,6 @@ namespace BeatTogether.DedicatedServer.Node
         {
             _autobus.Publish(new ServerInGameplayEvent(secret, !state, string.Empty));
         }
-        public static Interface.Models.GameplayModifiers GameplayCast(GameplayModifiers v)
-        {
-            return new Interface.Models.GameplayModifiers((Interface.Models.EnergyType)v.Energy, v.NoFailOn0Energy, v.DemoNoFail, v.InstaFail, v.FailOnSaberClash, (Interface.Models.EnabledObstacleType)v.EnabledObstacle, v.DemoNoObstacles, v.FastNotes, v.StrictAngles, v.DisappearingArrows, v.GhostNotes, v.NoBombs, (Interface.Models.SongSpeed)v.Speed, v.NoArrows, v.ProMode, v.ZenMode, v.SmallCubes);
-        }
-        public static Interface.Models.LevelCompletionResults LevelCompletionCast(LevelCompletionResults y)
-        {
-            return new(GameplayCast(y.GameplayModifiers), y.ModifiedScore, y.MultipliedScore, (Interface.Models.Rank)y.Rank, y.FullCombo, y.LeftSaberMovementDistance, y.RightSaberMovementDistance, y.LeftHandMovementDistance, y.RightHandMovementDistance, (Interface.Models.LevelEndStateType)y.LevelEndStateType, (Interface.Models.LevelEndAction)y.LevelEndAction, y.Energy, y.GoodCutsCount, y.BadCutsCount, y.MissedCount, y.NotGoodCount, y.OkCount, y.MaxCutScore, y.TotalCutScore, y.GoodCutsCountForNotesWithFullScoreScoringType, y.AverageCenterDistanceCutScoreForNotesWithFullScoreScoringType, y.AverageCutScoreForNotesWithFullScoreScoringType, y.MaxCombo, y.EndSongTime);
-        }
 
         private void HandleConfigChangeEvent(IDedicatedInstance inst)
         {

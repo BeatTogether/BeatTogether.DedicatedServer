@@ -26,7 +26,6 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 
         float NoPlayersTime { get; }
 
-        //IHandshakeSessionRegistry GetHandshakeSessionRegistry();
         IPlayerRegistry GetPlayerRegistry();
         IServiceProvider GetServiceProvider();
 
