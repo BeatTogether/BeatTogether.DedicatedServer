@@ -32,12 +32,16 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetSelectedBeatmap)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            if(_instance.State == Messaging.Enums.MultiplayerGameState.Lobby && _lobbyManager.SelectedBeatmap != null)
+            if (_instance.State == Messaging.Enums.MultiplayerGameState.Lobby && _lobbyManager.SelectedBeatmap != null)
             {
                 _packetDispatcher.SendToPlayer(sender, new SetSelectedBeatmap
                 {
                     Beatmap = _lobbyManager.SelectedBeatmap
                 }, IgnoranceChannelTypes.Reliable);
+                if(_lobbyManager.SelectedBeatmapExtraData != null)
+                {
+                    _packetDispatcher.SendToPlayer(sender, _lobbyManager.SelectedBeatmapExtraData, IgnoranceChannelTypes.Reliable);
+                }
                 return;
             }
             if (_instance.State == Messaging.Enums.MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null)

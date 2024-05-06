@@ -3,8 +3,6 @@ using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 using Serilog;
-using System;
-using System.Linq;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -26,14 +24,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(MpBeatmapPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            sender.MapHash = packet.levelHash;
 
             if(sender.BeatmapIdentifier == null)
                 sender.BeatmapIdentifier = new BeatmapIdentifier();
             sender.BeatmapIdentifier.LevelId = "custom_level_" + packet.levelHash;
             sender.BeatmapIdentifier.Characteristic = packet.characteristic;
             sender.BeatmapIdentifier.Difficulty = (BeatmapDifficulty)packet.difficulty;
-            sender.BeatmapDifficultiesRequirements = packet.requirements;
+
+            sender.SelectedBeatmapPacket = packet;
 
             sender.UpdateEntitlement = true;
         }

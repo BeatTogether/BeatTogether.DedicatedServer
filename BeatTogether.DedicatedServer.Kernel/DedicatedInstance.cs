@@ -503,6 +503,37 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }, IgnoranceChannelTypes.Reliable);
             }
 
+
+            //send player avatars and states of other players in server to new player
+            List<INetSerializable> SendToPlayerFromPlayersOptional = new();
+            foreach (IPlayer p in _playerRegistry.Players)
+            {
+                if (p.ConnectionId != player.ConnectionId)
+                {
+                    if(p.BeatmapIdentifier != null)
+                    {
+                        SendToPlayerFromPlayersOptional.Add(new SetRecommendedBeatmapPacket()
+                        {
+                            BeatmapIdentifier = p.BeatmapIdentifier
+                        });
+                    }
+                    if(p.Modifiers != null)
+                    {
+                        SendToPlayerFromPlayersOptional.Add(new SetRecommendedModifiersPacket()
+                        {
+                            Modifiers = p.Modifiers
+                        });
+                    }
+                    if(p.SelectedBeatmapPacket != null)
+                    {
+                        SendToPlayerFromPlayersOptional.Add(p.SelectedBeatmapPacket);
+                    }
+                    // Send all player avatars and states to just joined player
+                    PacketDispatcher.SendFromPlayerToPlayer(p, player, SendToPlayerFromPlayersOptional.ToArray(), IgnoranceChannelTypes.Reliable);
+                    SendToPlayerFromPlayersOptional.Clear();
+                }
+            }
+
             //Send joining players mpcore data to everyone else
             foreach (IPlayer p in _playerRegistry.Players)
             {

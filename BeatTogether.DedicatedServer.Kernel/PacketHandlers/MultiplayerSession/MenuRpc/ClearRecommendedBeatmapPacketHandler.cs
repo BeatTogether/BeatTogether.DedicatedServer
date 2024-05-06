@@ -28,8 +28,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"(SenderId={sender.ConnectionId})."
             );
             sender.BeatmapIdentifier = null;
-            sender.MapHash = string.Empty;
-            sender.BeatmapDifficultiesRequirements.Clear();
+            sender.SelectedBeatmapPacket = null;
             _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
             {
                 Reason = sender.IsServerOwner ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None

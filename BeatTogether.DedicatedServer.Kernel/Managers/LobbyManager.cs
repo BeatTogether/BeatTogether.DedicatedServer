@@ -11,6 +11,7 @@ using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 using Serilog;
 
 /*Lobby manager code
@@ -36,6 +37,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         public bool ForceStartSelectedBeatmap { get; set; } = false; //For future server-side things
 
         public BeatmapIdentifier? SelectedBeatmap { get; private set; } = null;
+        public MpBeatmapPacket? SelectedBeatmapExtraData { get; private set; } = null;
         public GameplayModifiers SelectedModifiers { get; private set; } = new();
         public CountdownState CountDownState { get; private set; } = CountdownState.NotCountingDown;
         public long CountdownEndTime { get; private set; } = 0;
@@ -153,8 +155,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
             if (!_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var serverOwner) && _configuration.SongSelectionMode == SongSelectionMode.ServerOwnerPicks)
                 return;
-            
-            UpdateBeatmap(GetSelectedBeatmap(), GetSelectedModifiers());
+
+            var BeatmapData = GetSelectedBeatmap();
+            UpdateBeatmap(BeatmapData.Item1, GetSelectedModifiers(), BeatmapData.Item2);
 
             UpdatePlayersMissingEntitlementsMessages();
 
@@ -253,16 +256,23 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
         }
 
-        private void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers)
+        private void UpdateBeatmap(BeatmapIdentifier? beatmap, GameplayModifiers modifiers, MpBeatmapPacket? ExtraData = null)
         {
             if (SelectedBeatmap != beatmap)
             {
                 SelectedBeatmap = beatmap;
+                SelectedBeatmapExtraData = ExtraData;
                 if (SelectedBeatmap != null)
+                {
                     _packetDispatcher.SendToNearbyPlayers(new SetSelectedBeatmap()
                     {
                         Beatmap = SelectedBeatmap
                     }, IgnoranceChannelTypes.Reliable);
+                    if(ExtraData != null)
+                    {
+                        _packetDispatcher.SendToNearbyPlayers(ExtraData, IgnoranceChannelTypes.Reliable);
+                    }
+                }
                 else
                     _packetDispatcher.SendToNearbyPlayers(new ClearSelectedBeatmap(), IgnoranceChannelTypes.Reliable);
             }
@@ -308,19 +318,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             UpdateSpectatingPlayers = false;
         }
 
-        //TODO do something better than iterating, probs gonna be storing this server side anyway at some point soon
         public Dictionary<uint, string[]>? GetSelectedBeatmapDifficultiesRequirements()
         {
             if (!SelectedBeatmap!.LevelId.StartsWith("custom_level_"))
             {
                 return null;
             }
-            foreach (var player in _playerRegistry.Players)
-            {
-                if(SelectedBeatmap!.LevelId == player.MapHash)
-                {
-                    return player.BeatmapDifficultiesRequirements;
-                }
+            if(SelectedBeatmapExtraData != null){
+                return SelectedBeatmapExtraData.requirements;
             }
             return null;
         }
@@ -414,14 +419,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private bool PlayerMapCheck(IPlayer p)
         {
             //If no map hash then treat as base game map for compat reasons and while waiting for a packet
-            var Passed = string.IsNullOrEmpty(p.MapHash);
+            var Passed = p.SelectedBeatmapPacket != null && string.IsNullOrEmpty(p.SelectedBeatmapPacket.levelHash);
             //If not passed, then we have difficulties, and if we have the diff we are looking for, then we can check it for requirements.
-            if (!Passed && p.BeatmapDifficultiesRequirements.TryGetValue((uint)p.BeatmapIdentifier!.Difficulty, out string[]? Requirements))
+            if (!Passed && p.SelectedBeatmapPacket!.requirements.TryGetValue((uint)p.BeatmapIdentifier!.Difficulty, out string[]? Requirements))
                 Passed = !(!_configuration.AllowChroma && Requirements.Contains("Chroma")) || !(!_configuration.AllowMappingExtensions && Requirements.Contains("Mapping Extensions")) || !(!_configuration.AllowNoodleExtensions && Requirements.Contains("Noodle Extensions"));
             return Passed;
         }
 
-        private BeatmapIdentifier? GetSelectedBeatmap()
+        private (BeatmapIdentifier?, MpBeatmapPacket?) GetSelectedBeatmap()
         {
             switch(_configuration.SongSelectionMode)
             {
@@ -430,48 +435,54 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         if (_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var p) && p.BeatmapIdentifier != null)
                         {
                             if (PlayerMapCheck(p))
-                                return p.BeatmapIdentifier;
+                                return (p.BeatmapIdentifier, p.SelectedBeatmapPacket);
                         }
-                        return null;
+                        return (null,null);
                     }
                 case SongSelectionMode.Vote:
                     Dictionary<BeatmapIdentifier, int> voteDictionary = new();
+                    Dictionary<BeatmapIdentifier, MpBeatmapPacket?> BeatmapToExtrasDict = new();
                     foreach (IPlayer player in _playerRegistry.Players.Where(p => PlayerMapCheck(p)))
                     {
                         if (voteDictionary.ContainsKey(player.BeatmapIdentifier!))
                             voteDictionary[player.BeatmapIdentifier!]++;
                         else
+                        {
                             voteDictionary.Add(player.BeatmapIdentifier!, 1);
+                            BeatmapToExtrasDict.Add(player.BeatmapIdentifier!, player.SelectedBeatmapPacket);
+                        }
                     }
                     if (!voteDictionary.Any())
                     {
-                        return null;
+                        return (null, null);
                     }
                     BeatmapIdentifier? Selected = null;
+                    MpBeatmapPacket? SelectedExtra = null;
                     int Votes = 0;
                     foreach (var item in voteDictionary)
                     {
                         if (item.Value > Votes)
                         {
                             Selected = item.Key;
+                            SelectedExtra = BeatmapToExtrasDict[item.Key];
                             Votes = item.Value;
                         }
                     }
-                    return Selected;
+                    return (Selected, SelectedExtra);
                 case SongSelectionMode.RandomPlayerPicks:
                     if (CountDownState == CountdownState.CountingDown || CountDownState == CountdownState.NotCountingDown)
                     {
                         Random rand = new();
                         int selectedPlayer = rand.Next(_playerRegistry.GetPlayerCount() - 1);
                         RandomlyPickedPlayer = _playerRegistry.Players[selectedPlayer].UserId;
-                        return PlayerMapCheck(_playerRegistry.Players[selectedPlayer]) ? _playerRegistry.Players[selectedPlayer].BeatmapIdentifier : null;
+                        return PlayerMapCheck(_playerRegistry.Players[selectedPlayer]) ? (_playerRegistry.Players[selectedPlayer].BeatmapIdentifier, _playerRegistry.Players[selectedPlayer].SelectedBeatmapPacket) : (null,null);
                     }
-                    return SelectedBeatmap;
+                    return (SelectedBeatmap, SelectedBeatmapExtraData);
 
                 case SongSelectionMode.ServerPicks:
-                    return SelectedBeatmap!;
+                    return (SelectedBeatmap, SelectedBeatmapExtraData);
             };
-            return null;
+            return (null,null);
         }
 
         string RandomlyPickedPlayer = string.Empty;

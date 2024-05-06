@@ -35,8 +35,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 			{
                 if(sender.BeatmapIdentifier != null && sender.BeatmapIdentifier.LevelId != packet.BeatmapIdentifier.LevelId)
                 {
-                    sender.BeatmapDifficultiesRequirements.Clear();
-                    sender.MapHash = string.Empty;
+                    sender.SelectedBeatmapPacket = null;
                 }
 				sender.BeatmapIdentifier = packet.BeatmapIdentifier;
                 sender.UpdateEntitlement = true;

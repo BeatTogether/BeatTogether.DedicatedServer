@@ -7,6 +7,7 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -30,7 +31,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public byte[]? Random { get; set; }
         public byte[]? PublicEncryptionKey { get; set; }
         public string ClientVersion { get; set; } = "Unknown";
-        public Platform Platform { get; set; } = Platform.Test; //Unknown
+        public Enums.Platform Platform { get; set; } = Enums.Platform.Test; //Unknown
         public string PlatformUserId { get; set; } = "";
         public MultiplayerAvatarsData Avatar { get; set; } = new();
         public bool IsReady { get; set; }
@@ -102,8 +103,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public bool UpdateEntitlement { get; set; } = false;
 
-        public string MapHash { get; set; } = string.Empty;
-        public Dictionary<uint, string[]> BeatmapDifficultiesRequirements { get; set; }
+        public MpBeatmapPacket? SelectedBeatmapPacket { get; set; } = null;
 
         public long TicksAtLastSyncStateDelta { get; set; } = 0; //33ms gaps for 30/sec, 66ms gap for 15/sec
         public long TicksAtLastSyncState { get; set; } = 0;

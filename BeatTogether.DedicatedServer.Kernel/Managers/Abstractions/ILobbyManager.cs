@@ -2,6 +2,7 @@
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
@@ -14,6 +15,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
 		bool AllPlayersNotWantToPlayNextLevel { get; }
         bool CanEveryonePlayBeatmap { get; }
         BeatmapIdentifier? SelectedBeatmap { get; }
+        MpBeatmapPacket? SelectedBeatmapExtraData { get; }
         GameplayModifiers SelectedModifiers { get; }
         CountdownState CountDownState { get; }
         long CountdownEndTime { get; }

@@ -3,7 +3,7 @@ using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
-using System.Collections.Generic;
+using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
@@ -20,7 +20,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         byte[]? Random { get; set; }
         byte[]? PublicEncryptionKey { get; set; }
         string ClientVersion { get; set; }
-        Platform Platform { get; set; }
+        Enums.Platform Platform { get; set; }
         string PlatformUserId { get; set; }
 
         uint ENetPeerId { get; set; }
@@ -61,8 +61,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         void SetEntitlement(string levelId, EntitlementStatus entitlement);
         bool UpdateEntitlement { get; set; }
 
-        public string MapHash { get; set; }
-        public Dictionary<uint, string[]> BeatmapDifficultiesRequirements{ get; set; }
+        //public string MapHash { get; set; }
+        //public Dictionary<uint, string[]> BeatmapDifficultiesRequirements{ get; set; }
+        public MpBeatmapPacket? SelectedBeatmapPacket { get; set; }
         long TicksAtLastSyncStateDelta { get; set; }
         long TicksAtLastSyncState { get; set; }
     }
