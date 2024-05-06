@@ -1,4 +1,7 @@
-﻿namespace BeatTogether.DedicatedServer.Interface.Events
+﻿
+namespace BeatTogether.DedicatedServer.Interface.Events
 {
-    public sealed record PlayerJoinEvent(string Secret, string EndPoint, string UserId);
+    public sealed record PlayerJoinEvent(
+        string Secret,
+        string HashedUserId);
 }

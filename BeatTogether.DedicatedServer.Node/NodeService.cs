@@ -1,123 +1,49 @@
-﻿using System;
-using System.Net;
-using System.Threading.Tasks;
-using Autobus;
+﻿using System.Threading.Tasks;
+using BeatTogether.Core.Abstractions;
 using BeatTogether.DedicatedServer.Interface;
-using BeatTogether.DedicatedServer.Interface.Events;
 using BeatTogether.DedicatedServer.Interface.Requests;
 using BeatTogether.DedicatedServer.Interface.Responses;
-using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Models;
-using BeatTogether.DedicatedServer.Node.Abstractions;
-using BeatTogether.DedicatedServer.Node.Configuration;
+using BeatTogether.DedicatedServer.Node.Models;
 using Serilog;
 
 namespace BeatTogether.DedicatedServer.Node
 {
-    public sealed class NodeService : IMatchmakingService
+    public sealed class NodeMatchmakingService : IMatchmakingService
     {
-        private readonly NodeConfiguration _configuration;
-        private readonly IInstanceFactory _instanceFactory;
-        private readonly IAutobus _autobus;
-        private readonly ILogger _logger = Log.ForContext<NodeService>();
+        private readonly ILayer2 _Layer2;
+        private readonly ILogger _logger = Log.ForContext<NodeMatchmakingService>();
 
-        public NodeService(
-            NodeConfiguration configuration,
-            IInstanceFactory instanceFactory,
-            IAutobus autobus)
+        public NodeMatchmakingService(
+            ILayer2 layer2)
         {
-            _configuration = configuration;
-            _instanceFactory = instanceFactory;
-            _autobus = autobus;
+            _Layer2 = layer2;
         }
 
         public async Task<CreateMatchmakingServerResponse> CreateMatchmakingServer(CreateMatchmakingServerRequest request)
         {
-            _logger.Debug($"Received request to create matchmaking server. " +
-                $"(Secret={request.Secret}, " +
-                $"ManagerId={request.ManagerId}, " +
-                $"MaxPlayerCount={request.Configuration.MaxPlayerCount}, " +
-                $"DiscoveryPolicy={request.Configuration.DiscoveryPolicy}, " +
-                $"InvitePolicy={request.Configuration.InvitePolicy}, " +
-                $"GameplayServerMode={request.Configuration.GameplayServerMode}, " +
-                $"SongSelectionMode={request.Configuration.SongSelectionMode}, " +
-                $"GameplayServerControlSettings={request.Configuration.GameplayServerControlSettings})");
+            _logger.Debug($"Received request to create matchmaking server from node messaging. " +
+                $"(Secret={request.Server.Secret}, " +
+                $"Code={request.Server.Code}, " +
+                $"ManagerId={request.Server.ManagerId}, " +
+                $"MaxPlayerCount={request.Server.GameplayServerConfiguration.MaxPlayerCount}, " +
+                $"DiscoveryPolicy={request.Server.GameplayServerConfiguration.DiscoveryPolicy}, " +
+                $"InvitePolicy={request.Server.GameplayServerConfiguration.InvitePolicy}, " +
+                $"GameplayServerMode={request.Server.GameplayServerConfiguration.GameplayServerMode}, " +
+                $"SongSelectionMode={request.Server.GameplayServerConfiguration.SongSelectionMode}, " +
+                $"GameplayServerControlSettings={request.Server.GameplayServerConfiguration.GameplayServerControlSettings})");
 
-            var matchmakingServer = _instanceFactory.CreateInstance(
-                request.Secret,
-                request.ManagerId,
-                request.Configuration,
-                request.PermanentManager,
-                request.Timeout,
-                request.ServerName,
-                (long)request.ResultScreenTime,
-                ((long)request.BeatmapStartTime) * 1000,
-                ((long)request.PlayersReadyCountdownTime) * 1000,
-                request.AllowPerPlayerModifiers,
-                request.AllowPerPlayerDifficulties,
-                request.AllowChroma,
-                request.AllowME,
-                request.AllowNE
-                );
-            if (matchmakingServer is null)
-                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.NoAvailableSlots, string.Empty, Array.Empty<byte>(), Array.Empty<byte>());
+            IServerInstance serverInstance = new ServerFromMessage(request.Server);
 
-            matchmakingServer.PlayerConnectedEvent += HandleUpdatePlayerEvent;
-            matchmakingServer.PlayerDisconnectedEvent += HandlePlayerDisconnectEvent;
-            matchmakingServer.PlayerDisconnectBeforeJoining += HandlePlayerLeaveBeforeJoining;
-            matchmakingServer.StopEvent += HandleStopEvent;
-            matchmakingServer.GameIsInLobby += HandleGameInLobbyEvent;
-            matchmakingServer.UpdateInstanceEvent += HandleConfigChangeEvent;
 
-            await matchmakingServer.Start();
+            var result = await _Layer2.CreateInstance(serverInstance);
+
+            if(!result)
+                return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.NoAvailableSlots, string.Empty);
+
             return new CreateMatchmakingServerResponse(
                 CreateMatchmakingServerError.None,
-                $"{_configuration.HostName}:{matchmakingServer.Port}",
-                 Array.Empty<byte>(),
-                 Array.Empty<byte>()
+                $"{serverInstance.InstanceEndPoint}"
             );
         }
-
-
-        #region EventHandlers
-
-        private void HandleGameInLobbyEvent(string secret, bool state)
-        {
-            _autobus.Publish(new ServerInGameplayEvent(secret, !state, string.Empty));
-        }
-
-        private void HandleConfigChangeEvent(IDedicatedInstance inst)
-        {
-            _autobus.Publish(new UpdateInstanceConfigEvent(
-                inst._configuration.Secret,
-                inst._configuration.ServerName,
-                new Interface.Models.GameplayServerConfiguration(
-                    inst._configuration.MaxPlayerCount,
-                    (Interface.Enums.DiscoveryPolicy)inst._configuration.DiscoveryPolicy,
-                    (Interface.Enums.InvitePolicy)inst._configuration.InvitePolicy,
-                    (Interface.Enums.GameplayServerMode)inst._configuration.GameplayServerMode,
-                    (Interface.Enums.SongSelectionMode)inst._configuration.SongSelectionMode,
-                    (Interface.Enums.GameplayServerControlSettings)inst._configuration.GameplayServerControlSettings
-                    )
-                ));
-        }
-
-        private void HandleStopEvent(IDedicatedInstance inst)
-        {
-            _autobus.Publish(new MatchmakingServerStoppedEvent(inst._configuration.Secret));
-        }
-        private void HandleUpdatePlayerEvent(IPlayer player)
-        {
-            _autobus.Publish(new PlayerJoinEvent(player.Instance._configuration.Secret, ((IPEndPoint)player.Endpoint).ToString(), player.UserId));
-        }
-        private void HandlePlayerDisconnectEvent(IPlayer player)
-        {
-            _autobus.Publish(new PlayerLeaveServerEvent(player.Instance._configuration.Secret, player.UserId, ((IPEndPoint)player.Endpoint).ToString()));
-        }
-        private void HandlePlayerLeaveBeforeJoining(string Secret, EndPoint endPoint, string[] Players)
-        {
-            _autobus.Publish(new UpdatePlayersEvent(Secret, Players));
-        }
-        #endregion
     }
 }

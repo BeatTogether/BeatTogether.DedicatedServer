@@ -14,7 +14,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool TryGetPlayer(string userId, [MaybeNullWhen(false)] out IPlayer player);
         int GetMillisBetweenSyncStatePackets();
 
-        public void AddExtraPlayerSessionData(string playerSessionId, string ClientVersion, byte PlatformId, string PlayerPlatformUserId);
-        public bool RemoveExtraPlayerSessionData(string playerSessionId, out string ClientVersion, out byte Platform, out string PlayerPlatformUserId);
+        public void AddExtraPlayerSessionData(Core.Abstractions.IPlayer playerSessionData);
+        public bool RemoveExtraPlayerSessionDataAndApply(Core.Abstractions.IPlayer playerSessionData/*out string ClientVersion, out byte Platform, out string PlayerPlatformUserId*/);
+        public bool RemoveExtraPlayerSessionData(string playerSessionId/*out string ClientVersion, out byte Platform, out string PlayerPlatformUserId*/);
     }
 }

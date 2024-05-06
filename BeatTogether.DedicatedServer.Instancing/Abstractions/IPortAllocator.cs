@@ -1,4 +1,4 @@
-﻿namespace BeatTogether.DedicatedServer.Node.Abstractions
+﻿namespace BeatTogether.DedicatedServer.Instancing.Abstractions
 {
     public interface IPortAllocator
     {

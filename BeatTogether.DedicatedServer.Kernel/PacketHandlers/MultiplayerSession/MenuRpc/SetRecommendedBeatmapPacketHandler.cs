@@ -40,6 +40,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 }
 				sender.BeatmapIdentifier = packet.BeatmapIdentifier;
                 sender.UpdateEntitlement = true;
+                //Our custom mpbeatmap packet stuff gets sent anyway
                 //TODO apply this logic to all entitlement checks, and check it works well. Might need to send everyones entitlements to a player when they select a map
                 _packetDispatcher.SendToPlayers(_playerRegistry.Players.Where(p => p.GetEntitlement(sender.BeatmapIdentifier.LevelId) == Messaging.Enums.EntitlementStatus.Unknown).ToArray(), new GetIsEntitledToLevelPacket
                 {

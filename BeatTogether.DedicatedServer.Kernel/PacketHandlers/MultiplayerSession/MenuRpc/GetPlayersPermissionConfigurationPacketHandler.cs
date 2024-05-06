@@ -35,7 +35,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             PlayerPermissionConfiguration[] playerPermissionConfigurations = new PlayerPermissionConfiguration[HasManager ? 2 : 1];
             playerPermissionConfigurations[0] = new PlayerPermissionConfiguration
             {
-                UserId = sender.UserId,
+                UserId = sender.HashedUserId,
                 IsServerOwner = sender.IsServerOwner,
                 HasRecommendBeatmapsPermission = sender.CanRecommendBeatmaps,
                 HasRecommendGameplayModifiersPermission = sender.CanRecommendModifiers,
@@ -45,7 +45,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             if (HasManager)
                 playerPermissionConfigurations[1] = new PlayerPermissionConfiguration
                 {
-                    UserId = ServerOwner!.UserId,
+                    UserId = ServerOwner!.HashedUserId,
                     IsServerOwner = ServerOwner!.IsServerOwner,
                     HasRecommendBeatmapsPermission = ServerOwner!.CanRecommendBeatmaps,
                     HasRecommendGameplayModifiersPermission = ServerOwner!.CanRecommendModifiers,

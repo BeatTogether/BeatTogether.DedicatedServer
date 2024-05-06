@@ -4,15 +4,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Extensions
 {
     public static class GamePlatformToMpCorePlatform
     {
-        public static Platform Convert(this Enums.Platform gamePlatform)
+        public static Platform Convert(this Core.Enums.Platform gamePlatform)
         {
             return gamePlatform switch
             {
-                Enums.Platform.Test => Platform.Unknown,
-                Enums.Platform.OculusRift => Platform.OculusPC,
-                Enums.Platform.OculusQuest => Platform.OculusQuest,
-                Enums.Platform.Steam => Platform.Steam,
-                Enums.Platform.PS4 or Enums.Platform.PS4Dev or Enums.Platform.PS4Cert => Platform.PS4,
+                Core.Enums.Platform.Test => Platform.Unknown,
+                Core.Enums.Platform.OculusRift => Platform.OculusPC,
+                Core.Enums.Platform.OculusQuest => Platform.OculusQuest,
+                Core.Enums.Platform.Steam => Platform.Steam,
+                Core.Enums.Platform.PS4 or Core.Enums.Platform.PS4Dev or Core.Enums.Platform.PS4Cert => Platform.PS4,
                 _ => 0,
             };
         }

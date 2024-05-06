@@ -1,4 +1,5 @@
-﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+﻿using BeatTogether.Core.Enums;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
@@ -32,7 +33,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetSelectedGameplayModifiers)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            if(_instance.State == Messaging.Enums.MultiplayerGameState.Lobby && _lobbyManager.SelectedModifiers != _lobbyManager.EmptyModifiers)
+            if(_instance.State != MultiplayerGameState.Game && _lobbyManager.SelectedModifiers != _lobbyManager.EmptyModifiers)
             {
                 _packetDispatcher.SendToPlayer(sender, new SetSelectedGameplayModifiers
                 {
@@ -40,7 +41,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 }, IgnoranceChannelTypes.Reliable);
                 return;
             }
-            if (_instance.State == Messaging.Enums.MultiplayerGameState.Game)
+            if (_instance.State == MultiplayerGameState.Game)
             {
                 _packetDispatcher.SendToPlayer(sender, new SetSelectedGameplayModifiers
                 {

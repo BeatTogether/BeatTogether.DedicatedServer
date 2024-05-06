@@ -16,38 +16,36 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly Dictionary<byte, IPlayer> _playersByConnectionId = new();
         private readonly Dictionary<string, IPlayer> _playersByUserId = new();
 
-        private readonly object pendingPlayerSessionData_Lock = new();
-        private readonly Dictionary<string, (string, byte, string)> _pendingPlayerSessionData = new();
+        private readonly Dictionary<string, Core.Abstractions.IPlayer> _pendingPlayerSessionData = new();
 
 
 
-        public void AddExtraPlayerSessionData(string playerSessionId, string ClientVersion, byte PlatformId, string PlayerPlatformUserId)
+        public void AddExtraPlayerSessionData(Core.Abstractions.IPlayer playerSessionData)
         {
-            lock (pendingPlayerSessionData_Lock)
-            {
-                _pendingPlayerSessionData[playerSessionId] = (ClientVersion, PlatformId, PlayerPlatformUserId);
-            }
+            _pendingPlayerSessionData[playerSessionData.PlayerSessionId] = playerSessionData;
         }
 
-        public bool RemoveExtraPlayerSessionData(string playerSessionId, out string ClientVersion, out byte Platform, out string PlayerPlatformUserId)
+        public bool RemoveExtraPlayerSessionDataAndApply(Core.Abstractions.IPlayer playerSessionData)
         {
-            lock (pendingPlayerSessionData_Lock)
+
+            if (_pendingPlayerSessionData.Remove(playerSessionData.PlayerSessionId, out var Value))
             {
-                if (_pendingPlayerSessionData.Remove(playerSessionId, out var Values))
-                {
-                    ClientVersion = Values.Item1;
-                    Platform = Values.Item2;
-                    PlayerPlatformUserId = Values.Item3;
-                    return true;
-                }
-                ClientVersion = "ERROR";
-                Platform = 0;
-                PlayerPlatformUserId = "ERROR";
-                return false;
+                playerSessionData.PlayerClientVersion = Value.PlayerClientVersion;
+                playerSessionData.PlayerPlatform = Value.PlayerPlatform;
+                playerSessionData.PlatformUserId = Value.PlatformUserId;
+                return true;
             }
+            playerSessionData.PlayerClientVersion = new System.Version("1.0.0");
+            playerSessionData.PlayerPlatform = Core.Enums.Platform.Test;
+            playerSessionData.PlatformUserId = "ERROR";
+            return false;
         }
 
 
+        public bool RemoveExtraPlayerSessionData(string playerSessionId)
+        {
+            return _pendingPlayerSessionData.Remove(playerSessionId, out _);
+        }
 
 
         private int _PlayerCount = 0;
@@ -73,7 +71,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             lock (PlayerDictionaries_Lock)
             {
-                if (_playersByUserId.TryAdd(player.UserId, player))
+                if (_playersByUserId.TryAdd(player.HashedUserId, player))
                 {
                     _playersByRemoteEndPoint.TryAdd(player.Endpoint, player);
                     _playersByConnectionId.TryAdd(player.ConnectionId, player);
@@ -89,7 +87,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             lock (PlayerDictionaries_Lock)
             {
-                if (_playersByUserId.Remove(player.UserId, out _))
+                if (_playersByUserId.Remove(player.HashedUserId, out _))
                 {
                     _playersByRemoteEndPoint.Remove(player.Endpoint, out _);
                     _playersByConnectionId.Remove(player.ConnectionId, out _);

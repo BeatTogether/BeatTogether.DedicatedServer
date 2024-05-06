@@ -31,7 +31,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private void SendInternal(IPlayer player, ref SpanBuffer writer, IgnoranceChannelTypes deliveryMethod)
         {
-            _logger.Verbose($"Sending packet (SenderId={ServerId}) to player {player.ConnectionId} with UserId {player.UserId}");
+            _logger.Verbose($"Sending packet (SenderId={ServerId}) to player {player.ConnectionId} with UserId {player.HashedUserId}");
             _serverInstance.Send(player, writer.Data, deliveryMethod);
         }
 

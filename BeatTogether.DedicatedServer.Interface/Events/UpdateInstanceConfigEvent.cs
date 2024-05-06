@@ -1,9 +1,7 @@
-﻿using BeatTogether.DedicatedServer.Interface.Models;
+﻿using BeatTogether.Core.ServerMessaging.Models;
 
 namespace BeatTogether.DedicatedServer.Interface.Events
 {
     public sealed record UpdateInstanceConfigEvent(
-        string Secret, //Cannot change the secret
-        string ServerName,
-        GameplayServerConfiguration Configuration);
+        Server ServerInsance);
 }

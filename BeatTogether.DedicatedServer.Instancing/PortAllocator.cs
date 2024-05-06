@@ -1,13 +1,13 @@
-﻿using BeatTogether.DedicatedServer.Node.Abstractions;
-using BeatTogether.DedicatedServer.Node.Configuration;
+﻿using BeatTogether.DedicatedServer.Instancing.Abstractions;
+using BeatTogether.DedicatedServer.Instancing.Configuration;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BeatTogether.DedicatedServer.Node
+namespace BeatTogether.DedicatedServer.Instancing
 {
     public sealed class PortAllocator : IPortAllocator
     {
-        private readonly NodeConfiguration _configuration;
+        private readonly InstancingConfiguration _configuration;
 
         private readonly object _lock = new();
 
@@ -17,7 +17,7 @@ namespace BeatTogether.DedicatedServer.Node
         private int _lastPort;
 
         public PortAllocator(
-            NodeConfiguration configuration)
+            InstancingConfiguration configuration)
         {
             _configuration = configuration;
 

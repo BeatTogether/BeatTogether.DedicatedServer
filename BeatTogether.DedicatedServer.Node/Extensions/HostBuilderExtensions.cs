@@ -1,10 +1,6 @@
-using System.Security.Cryptography;
 using Autobus;
+using BeatTogether.Core.ServerMessaging;
 using BeatTogether.DedicatedServer.Interface;
-using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Kernel.Extensions;
-using BeatTogether.DedicatedServer.Kernel.Providers;
-using BeatTogether.DedicatedServer.Node.Abstractions;
 using BeatTogether.DedicatedServer.Node.Configuration;
 using BeatTogether.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,19 +15,12 @@ namespace BeatTogether.DedicatedServer.Node.Extensions
                 .ConfigureAppConfiguration()
                 .UseSerilog()
                 .UseAutobus()
-                .UseDedicatedInstances()
                 .ConfigureServices((hostBuilderContext, services) =>
                     services
-                        .AddCoreSecurity()
                         .AddConfiguration<NodeConfiguration>("Node")
-                        .AddSingleton(RandomNumberGenerator.Create())
-                        .AddSingleton<ICookieProvider, CookieProvider>()
-                        .AddSingleton<IRandomProvider, RandomProvider>()
-                        .AddSingleton<IPortAllocator, PortAllocator>()
-                        .AddSingleton<IInstanceRegistry, InstanceRegistry>()
-                        .AddSingleton<IInstanceFactory, InstanceFactory>()
-                        .AddServiceKernel<IMatchmakingService, NodeService>()
-                        .AddHostedService<MasterServerEventHandler>()
+                        .AddServiceKernel<IMatchmakingService, NodeMatchmakingService>()
+                        .AddSingleton<ILayer1, ForwardServerEventsLayer>()
+                        .AddHostedService<NodeMessageEventHandler>()
                 );
     }
 }

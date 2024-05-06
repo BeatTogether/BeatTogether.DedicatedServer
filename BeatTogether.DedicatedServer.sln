@@ -13,7 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServer.Node", "BeatTogether.DedicatedServer.Node\BeatTogether.DedicatedServer.Node.csproj", "{D2B3DC3B-FECD-4E06-8B20-7A60A0BE3C2E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeatTogether.DedicatedServer.Ignorance", "BeatTogether.DedicatedServer.Ignorance\BeatTogether.DedicatedServer.Ignorance.csproj", "{775C10CC-FE88-41DD-A9E3-7F66CBA87470}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServer.Ignorance", "BeatTogether.DedicatedServer.Ignorance\BeatTogether.DedicatedServer.Ignorance.csproj", "{775C10CC-FE88-41DD-A9E3-7F66CBA87470}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.DedicatedServer.Instancing", "BeatTogether.DedicatedServer.Instancing\BeatTogether.DedicatedServer.Instancing.csproj", "{2C9A5AAD-D817-4410-BBF2-2EA765C31C1B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{775C10CC-FE88-41DD-A9E3-7F66CBA87470}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{775C10CC-FE88-41DD-A9E3-7F66CBA87470}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{775C10CC-FE88-41DD-A9E3-7F66CBA87470}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C9A5AAD-D817-4410-BBF2-2EA765C31C1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C9A5AAD-D817-4410-BBF2-2EA765C31C1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C9A5AAD-D817-4410-BBF2-2EA765C31C1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C9A5AAD-D817-4410-BBF2-2EA765C31C1B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
+using BeatTogether.Core.Enums;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Types;
@@ -16,9 +17,9 @@ namespace BeatTogether.DedicatedServer.Kernel
         public IDedicatedInstance Instance { get; }
         public byte ConnectionId { get; }
         public byte RemoteConnectionId => 0;
-        public string UserId { get; }
+        public string HashedUserId { get; set; }
         public string UserName { get; }
-        public string PlayerSessionId { get; }
+        public string PlayerSessionId { get; set; }
 
         public uint ENetPeerId { get; set; }
 
@@ -29,8 +30,8 @@ namespace BeatTogether.DedicatedServer.Kernel
         public int SortIndex { get; set; }
         public byte[]? Random { get; set; }
         public byte[]? PublicEncryptionKey { get; set; }
-        public string ClientVersion { get; set; } = "Unknown";
-        public Platform Platform { get; set; } = Platform.Test; //Unknown
+        public Version PlayerClientVersion { get; set; } = new();
+        public Platform PlayerPlatform { get; set; } = Platform.Test; //Unknown
         public string PlatformUserId { get; set; } = "";
         public MultiplayerAvatarsData Avatar { get; set; } = new();
         public bool IsReady { get; set; }
@@ -39,13 +40,13 @@ namespace BeatTogether.DedicatedServer.Kernel
         public BeatmapIdentifier? BeatmapIdentifier { get; set; } = null;
         public GameplayModifiers Modifiers { get; set; } = new();
         public PlayerStateHash State { get; set; } = new();
-        public bool IsServerOwner => UserId == Instance._configuration.ServerOwnerId;
+        public bool IsServerOwner => HashedUserId == Instance._configuration.ServerOwnerId;
         public bool CanRecommendBeatmaps => true;// This check is wrong as GameplayServerControlSettings is None in Quickplay to disable Modifier selection  //Instance._configuration.GameplayServerControlSettings is not GameplayServerControlSettings.None;
         public bool CanRecommendModifiers =>
-            Instance._configuration.GameplayServerControlSettings is GameplayServerControlSettings.AllowModifierSelection or GameplayServerControlSettings.All;
-        public bool CanKickVote => UserId == Instance._configuration.ServerOwnerId;
+            Instance._configuration.GameplayServerConfiguration.GameplayServerControlSettings is GameplayServerControlSettings.AllowModifierSelection or GameplayServerControlSettings.All;
+        public bool CanKickVote => HashedUserId == Instance._configuration.ServerOwnerId;
         public bool CanInvite =>
-            Instance._configuration.DiscoveryPolicy is DiscoveryPolicy.WithCode or DiscoveryPolicy.Public;
+            Instance._configuration.GameplayServerConfiguration.DiscoveryPolicy is DiscoveryPolicy.WithCode or DiscoveryPolicy.Public;
         public bool ForceLateJoin { get; set; } = false; //Used to force trouble players to late join a mp game/tell them to spectate
 
         public bool IsPlayer => State.Contains("player"); //If the user is a player
@@ -67,7 +68,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             Endpoint = endPoint;
             Instance = instance;
             ConnectionId = connectionId;
-            UserId = userId;
+            HashedUserId = userId;
             UserName = userName;
             PlayerSessionId = playerSessionId;
             _AccessLevel = accessLevel;
@@ -103,7 +104,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool UpdateEntitlement { get; set; } = false;
 
         public string MapHash { get; set; } = string.Empty;
-        public Dictionary<uint, string[]> BeatmapDifficultiesRequirements { get; set; }
+        public Dictionary<uint, string[]> BeatmapDifficultiesRequirements { get; set; } = new();
 
         public long TicksAtLastSyncStateDelta { get; set; } = 0; //33ms gaps for 30/sec, 66ms gap for 15/sec
         public long TicksAtLastSyncState { get; set; } = 0;

@@ -1,7 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.Extensions;
 using BeatTogether.DedicatedServer.Messaging.Util;
+using BeatTogether.Core.Enums;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {

@@ -19,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
 
         public override void Handle(IPlayer player, SetBeatmapStartTime command)
         {
-            _Configuration.CountdownConfig.BeatMapStartCountdownTime = command.Countdown;
+            _Configuration.CountdownConfig.BeatMapStartCountdownTime = command.Countdown*1000;
             _packetDisapatcher.SendToNearbyPlayers(new MpcTextChatPacket
             {
                 Text = "Beatmap start time is now: " + command.Countdown

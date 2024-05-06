@@ -22,8 +22,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetRecommendedBeatmapPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-
-            if(sender.BeatmapIdentifier != null)
+            //TODO send custom packet details
+            if (sender.BeatmapIdentifier != null)
                 _packetDispatcher.SendToPlayer(sender, new SetRecommendedBeatmapPacket
                 {
                     BeatmapIdentifier = sender.BeatmapIdentifier

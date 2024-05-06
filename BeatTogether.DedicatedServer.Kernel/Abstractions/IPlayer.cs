@@ -7,21 +7,21 @@ using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
-    public interface IPlayer
+    public interface IPlayer : Core.Abstractions.IPlayer
     {
         EndPoint Endpoint { get; }
         IDedicatedInstance Instance { get; }
         byte ConnectionId { get; }
         byte RemoteConnectionId { get; }
-        string UserId { get; }
+        //string UserId { get; }
         string UserName { get; }
-        string PlayerSessionId { get; }
+        //string PlayerSessionId { get; }
 
         byte[]? Random { get; set; }
         byte[]? PublicEncryptionKey { get; set; }
-        string ClientVersion { get; set; }
-        Platform Platform { get; set; }
-        string PlatformUserId { get; set; }
+        //string ClientVersion { get; set; }
+        //Platform Platform { get; set; }
+        //string PlatformUserId { get; set; }
 
         uint ENetPeerId { get; set; }
 
@@ -62,7 +62,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool UpdateEntitlement { get; set; }
 
         public string MapHash { get; set; }
-        public Dictionary<uint, string[]> BeatmapDifficultiesRequirements{ get; set; }
+        public Dictionary<uint, string[]> BeatmapDifficultiesRequirements { get; set; }
         long TicksAtLastSyncStateDelta { get; set; }
         long TicksAtLastSyncState { get; set; }
     }

@@ -19,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
 
         public override void Handle(IPlayer player, SetResultsTime command)
         {
-            _Configuration.CountdownConfig.ResultsScreenTime = command.Countdown;
+            _Configuration.CountdownConfig.ResultsScreenTime = command.Countdown*1000;
             _packetDisapatcher.SendToNearbyPlayers(new MpcTextChatPacket
             {
                 Text = "Results screen time is now: " + command.Countdown

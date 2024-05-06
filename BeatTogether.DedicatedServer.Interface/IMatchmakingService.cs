@@ -21,7 +21,7 @@ namespace BeatTogether.DedicatedServer.Interface
                     .AddEvent<UpdatePlayersEvent>()
                     .AddEvent<NodeStartedEvent>()
                     .AddEvent<NodeOnlineEvent>()
-                    .AddEvent<NodeReceivedPlayerEncryptionEvent>()
+                    .AddEvent<NodeReceivedPlayerSessionDataEvent>()
                     .AddEvent<MatchmakingServerStoppedEvent>()
                     .AddEvent<UpdateInstanceConfigEvent>() 
                     .AddEvent<ServerInGameplayEvent>();

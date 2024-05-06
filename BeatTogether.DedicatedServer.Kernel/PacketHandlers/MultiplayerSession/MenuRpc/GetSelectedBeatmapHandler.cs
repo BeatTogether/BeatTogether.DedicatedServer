@@ -1,4 +1,5 @@
-﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+﻿using BeatTogether.Core.Enums;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
@@ -32,7 +33,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetSelectedBeatmap)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            if(_instance.State == Messaging.Enums.MultiplayerGameState.Lobby && _lobbyManager.SelectedBeatmap != null)
+            //TODO send custom packet details
+            if (_instance.State != MultiplayerGameState.Game && _lobbyManager.SelectedBeatmap != null)
             {
                 _packetDispatcher.SendToPlayer(sender, new SetSelectedBeatmap
                 {
@@ -40,7 +42,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 }, IgnoranceChannelTypes.Reliable);
                 return;
             }
-            if (_instance.State == Messaging.Enums.MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null)
+            if (_instance.State == MultiplayerGameState.Game && _gameplayManager.CurrentBeatmap != null)
             {
                 _packetDispatcher.SendToPlayer(sender, new SetSelectedBeatmap
                 {

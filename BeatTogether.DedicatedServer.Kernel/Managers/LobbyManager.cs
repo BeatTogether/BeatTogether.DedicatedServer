@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BeatTogether.Core.Enums;
 using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
-using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
@@ -43,7 +43,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private BeatmapIdentifier? _lastBeatmap = null;
         private bool _lastSpectatorState;
         private bool _LastCanEveryonePlayBeatmap;
-        private string _lastManagerId = null!;
+        //private string _lastManagerId = null!;
         private readonly CancellationTokenSource _stopCts = new();
         private const int LoopTime = 100;
         public GameplayModifiers EmptyModifiers { get; } = new();
@@ -151,14 +151,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             if (_instance.State != MultiplayerGameState.Lobby)
                 return;
 
-            if (!_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var serverOwner) && _configuration.SongSelectionMode == SongSelectionMode.ServerOwnerPicks)
+            if (!_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var serverOwner) && _configuration.GameplayServerConfiguration.SongSelectionMode == SongSelectionMode.ManagerPicks)
                 return;
             
             UpdateBeatmap(GetSelectedBeatmap(), GetSelectedModifiers());
 
             UpdatePlayersMissingEntitlementsMessages();
 
-            if (_configuration.SongSelectionMode == SongSelectionMode.ServerOwnerPicks)
+            if (_configuration.GameplayServerConfiguration.SongSelectionMode == SongSelectionMode.ManagerPicks)
             {
                 if (_lastBeatmap != SelectedBeatmap || _LastCanEveryonePlayBeatmap != CanEveryonePlayBeatmap || _lastSpectatorState != AllPlayersNotWantToPlayNextLevel)
                 {
@@ -169,9 +169,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 }
             }
 
-            switch (_configuration.SongSelectionMode) //server modes
+            switch (_configuration.GameplayServerConfiguration.SongSelectionMode) //server modes
             {
-                case SongSelectionMode.ServerOwnerPicks:
+                case SongSelectionMode.ManagerPicks:
                     CountingDown(serverOwner!.IsReady, !serverOwner.IsReady || AllPlayersNotWantToPlayNextLevel || !CanEveryonePlayBeatmap);
                     break;
                 case SongSelectionMode.Vote:
@@ -186,7 +186,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             }
 
             _LastCanEveryonePlayBeatmap = CanEveryonePlayBeatmap;
-            _lastManagerId = _configuration.ServerOwnerId;
+            //_lastManagerId = _configuration.ServerOwnerId;
             _lastSpectatorState = AllPlayersNotWantToPlayNextLevel;
             _lastBeatmap = SelectedBeatmap;
         }
@@ -262,7 +262,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     _packetDispatcher.SendToNearbyPlayers(new SetSelectedBeatmap()
                     {
                         Beatmap = SelectedBeatmap
-                    }, IgnoranceChannelTypes.Reliable);
+                    }, IgnoranceChannelTypes.Reliable); //TODO send custom mp packet details
                 else
                     _packetDispatcher.SendToNearbyPlayers(new ClearSelectedBeatmap(), IgnoranceChannelTypes.Reliable);
             }
@@ -292,7 +292,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                         {
                             PlayersWithoutEntitlements = _playerRegistry.Players
                                 .Where(p => (p.GetEntitlement(player.BeatmapIdentifier.LevelId) is EntitlementStatus.NotOwned) && !p.IsSpectating && p.WantsToPlayNextLevel && !p.IsBackgrounded)
-                                .Select(p => p.UserId).ToArray()
+                                .Select(p => p.HashedUserId).ToArray()
                         }, IgnoranceChannelTypes.Reliable);
                         //_logger.Debug("Sent missing entitlement packet");
                     }
@@ -413,6 +413,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private bool PlayerMapCheck(IPlayer p)
         {
+            if(p.BeatmapIdentifier == null) return false;
             //If no map hash then treat as base game map for compat reasons and while waiting for a packet
             var Passed = string.IsNullOrEmpty(p.MapHash);
             //If not passed, then we have difficulties, and if we have the diff we are looking for, then we can check it for requirements.
@@ -423,9 +424,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private BeatmapIdentifier? GetSelectedBeatmap()
         {
-            switch(_configuration.SongSelectionMode)
+            switch(_configuration.GameplayServerConfiguration.SongSelectionMode)
             {
-                case SongSelectionMode.ServerOwnerPicks:
+                case SongSelectionMode.ManagerPicks:
                     {
                         if (_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var p) && p.BeatmapIdentifier != null)
                         {
@@ -463,7 +464,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     {
                         Random rand = new();
                         int selectedPlayer = rand.Next(_playerRegistry.GetPlayerCount() - 1);
-                        RandomlyPickedPlayer = _playerRegistry.Players[selectedPlayer].UserId;
+                        RandomlyPickedPlayer = _playerRegistry.Players[selectedPlayer].HashedUserId;
                         return PlayerMapCheck(_playerRegistry.Players[selectedPlayer]) ? _playerRegistry.Players[selectedPlayer].BeatmapIdentifier : null;
                     }
                     return SelectedBeatmap;
@@ -478,9 +479,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private GameplayModifiers GetSelectedModifiers()
 		{
-            switch(_configuration.SongSelectionMode)
+            switch(_configuration.GameplayServerConfiguration.SongSelectionMode)
 			{
-                case SongSelectionMode.ServerOwnerPicks:
+                case SongSelectionMode.ManagerPicks:
                     if(_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var ServerOwner))
                         return ServerOwner.Modifiers;
                     return EmptyModifiers;

@@ -1,4 +1,5 @@
-﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+﻿using BeatTogether.Core.Enums;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Models;
@@ -33,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"(SenderId={sender.ConnectionId})."
             );
 
-            if (sender.IsServerOwner && _configuration.GameplayServerMode == Enums.GameplayServerMode.Managed)
+            if (sender.IsServerOwner && _configuration.GameplayServerConfiguration.GameplayServerMode == GameplayServerMode.Managed)
             {
                 _configuration.ServerOwnerId = packet.NewManagerID;
 
@@ -43,7 +44,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                     {
                         PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
                         {
-                            UserId = x.UserId,
+                            UserId = x.HashedUserId,
                             IsServerOwner = x.IsServerOwner,
                             HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
                             HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,

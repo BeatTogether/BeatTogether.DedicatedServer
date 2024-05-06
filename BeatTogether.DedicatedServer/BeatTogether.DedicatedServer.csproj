@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BeatTogether.DedicatedServer.Node\BeatTogether.DedicatedServer.Node.csproj" />
+    <ProjectReference Include="..\BeatTogether.DedicatedServer.Instancing\BeatTogether.DedicatedServer.Instancing.csproj" />
   </ItemGroup>
 
 </Project>

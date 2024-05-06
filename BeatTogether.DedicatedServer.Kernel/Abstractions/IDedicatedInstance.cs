@@ -2,8 +2,8 @@
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using BeatTogether.Core.Enums;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
-using BeatTogether.DedicatedServer.Messaging.Enums;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
@@ -24,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         public int Port { get; }
         MultiplayerGameState State { get; }
 
-        float NoPlayersTime { get; }
+        long NoPlayersTime { get; }
 
         IPlayerRegistry GetPlayerRegistry();
         IServiceProvider GetServiceProvider();

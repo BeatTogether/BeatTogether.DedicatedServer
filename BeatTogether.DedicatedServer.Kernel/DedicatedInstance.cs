@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.ENet;
-using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Extensions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
@@ -20,6 +19,7 @@ using BeatTogether.DedicatedServer.Messaging.Util;
 using Serilog;
 using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using Microsoft.Extensions.DependencyInjection;
+using BeatTogether.Core.Enums;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -35,7 +35,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public int Port => _configuration.Port;
         public bool IsRunning => IsAlive;
         public long RunTime => (DateTime.UtcNow.Ticks - _startTime) / 10000L;
-        public float NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
+        public long NoPlayersTime { get; private set; } = -1; //tracks the instance time once there are 0 players in the lobby
         public MultiplayerGameState State { get; private set; } = MultiplayerGameState.Lobby;
 
         public event Action<IDedicatedInstance> StopEvent = null!;
@@ -61,7 +61,6 @@ namespace BeatTogether.DedicatedServer.Kernel
         private long _startTime;
         private CancellationTokenSource? _waitForPlayerCts = null;
         private CancellationTokenSource? _stopServerCts;
-
 
         public DedicatedInstance(
             InstanceConfiguration configuration,
@@ -105,13 +104,14 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"Endpoint={EndPoint}," +
                 $"ServerName='{_configuration.ServerName}', " +
                 $"Secret='{_configuration.Secret}', " +
+                $"Code='{_configuration.Code}', " +
                 $"ManagerId='{_configuration.ServerOwnerId}', " +
-                $"MaxPlayerCount={_configuration.MaxPlayerCount}, " +
-                $"DiscoveryPolicy={_configuration.DiscoveryPolicy}, " +
-                $"InvitePolicy={_configuration.InvitePolicy}, " +
-                $"GameplayServerMode={_configuration.GameplayServerMode}, " +
-                $"SongSelectionMode={_configuration.SongSelectionMode}, " +
-                $"GameplayServerControlSettings={_configuration.GameplayServerControlSettings})"
+                $"MaxPlayerCount={_configuration.GameplayServerConfiguration.MaxPlayerCount}, " +
+                $"DiscoveryPolicy={_configuration.GameplayServerConfiguration.DiscoveryPolicy}, " +
+                $"InvitePolicy={_configuration.GameplayServerConfiguration.InvitePolicy}, " +
+                $"GameplayServerMode={_configuration.GameplayServerConfiguration.GameplayServerMode}, " +
+                $"SongSelectionMode={_configuration.GameplayServerConfiguration.SongSelectionMode}, " +
+                $"GameplayServerControlSettings={_configuration.GameplayServerConfiguration.GameplayServerControlSettings})"
             );
             _stopServerCts = new CancellationTokenSource();
             
@@ -119,7 +119,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 _waitForPlayerCts = new CancellationTokenSource();
                 
-                var waitTimeLimit = (WaitForPlayerTimeLimit + (int)(_configuration.DestroyInstanceTimeout * 1000));
+                var waitTimeLimit = (int)(WaitForPlayerTimeLimit + _configuration.DestroyInstanceTimeout);
                 
                 _ = Task.Delay(waitTimeLimit, _waitForPlayerCts.Token)
                     .ContinueWith(t =>
@@ -149,16 +149,17 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             _logger.Information(
                 "Stopping dedicated server " +
-                $"(Port={Port}," +
+                $"(Port={Port}, " +
                 $"ServerName='{_configuration.ServerName}', " +
                 $"Secret='{_configuration.Secret}', " +
+                $"Code='{_configuration.Code}', " +
                 $"ManagerId='{_configuration.ServerOwnerId}', " +
-                $"MaxPlayerCount={_configuration.MaxPlayerCount}, " +
-                $"DiscoveryPolicy={_configuration.DiscoveryPolicy}, " +
-                $"InvitePolicy={_configuration.InvitePolicy}, " +
-                $"GameplayServerMode={_configuration.GameplayServerMode}, " +
-                $"SongSelectionMode={_configuration.SongSelectionMode}, " +
-                $"GameplayServerControlSettings={_configuration.GameplayServerControlSettings})."
+                $"MaxPlayerCount={_configuration.GameplayServerConfiguration.MaxPlayerCount}, " +
+                $"DiscoveryPolicy={_configuration.GameplayServerConfiguration.DiscoveryPolicy}, " +
+                $"InvitePolicy={_configuration.GameplayServerConfiguration.InvitePolicy}, " +
+                $"GameplayServerMode={_configuration.GameplayServerConfiguration.GameplayServerMode}, " +
+                $"SongSelectionMode={_configuration.GameplayServerConfiguration.SongSelectionMode}, " +
+                $"GameplayServerControlSettings={_configuration.GameplayServerConfiguration.GameplayServerControlSettings})."
             );
             ServerStateHash.WriteToBitMask("terminating");
             PacketDispatcher.SendToNearbyPlayers(new INetSerializable[]{
@@ -188,7 +189,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return sortIndex;
 
             _lastSortIndex++;
-            if (_lastSortIndex > _configuration.MaxPlayerCount)
+            if (_lastSortIndex > _configuration.GameplayServerConfiguration.MaxPlayerCount)
             {
                 return 0;
             }
@@ -248,7 +249,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 goto EndOfTryAccept;
             }
 
-            _logger.Debug(
+            _logger.Information(
                 "Handling connection request though Enet" +
                 $"(RemoteEndPoint='{endPoint}', " +
                 $"PlayerSessionId='{connectionRequestData.PlayerSessionId}', " +
@@ -269,7 +270,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 PlayerNoJoin = true;
                 goto EndOfTryAccept;
             }
-            if (_playerRegistry.GetPlayerCount() >= _configuration.MaxPlayerCount)
+            if (_playerRegistry.GetPlayerCount() >= _configuration.GameplayServerConfiguration.MaxPlayerCount)
             {
                 _logger.Warning("Master server sent a player to a full server");
                 PlayerNoJoin = true;
@@ -305,7 +306,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             if (_configuration.ServerName == string.Empty)
             {
-                _logger.Information("About to update servers name" + _configuration.ServerName);
+                //_logger.Information("About to update servers name" + _configuration.ServerName);
                 _configuration.ServerName = player.UserName + "'s server";
                 InstanceConfigUpdated();
                 _logger.Information("Updated servers name to: " + _configuration.ServerName);
@@ -315,7 +316,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"(RemoteEndPoint='{player.Endpoint}', " +
                 $"ConnectionId={player.ConnectionId}, " +
                 $"PlayerSessionId='{player.PlayerSessionId}', " +
-                $"UserId='{player.UserId}', " +
+                $"UserId='{player.HashedUserId}', " +
                 $"UserName='{player.UserName}', " +
                 $"SortIndex={player.SortIndex})."
             );
@@ -323,20 +324,23 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (_waitForPlayerCts != null)
                 _waitForPlayerCts.Cancel();
 
-            if (GetPlayerRegistry().RemoveExtraPlayerSessionData(connectionRequestData.PlayerSessionId, out var ClientVer, out var Platform, out var PlayerPlatformUserId))
+            //UserID, UserName, and session
+            _logger.Information("Applying session data recv from master");
+            if (GetPlayerRegistry().RemoveExtraPlayerSessionDataAndApply(player))
             {
-                player.ClientVersion = ClientVer;
-                player.Platform = (Enums.Platform)Platform;
-                player.PlatformUserId = PlayerPlatformUserId;
+                _logger.Information("Successfull session data extraction");
             }
+            _logger.Information("Client ver: " + player.PlayerClientVersion.ToString());
+            _logger.Information("Client platform: " + player.PlayerPlatform.ToString());
+            _logger.Information("Client PlatformUserId: " + player.PlatformUserId);
 
             return player;
 
             EndOfTryAccept:
             if (PlayerNoJoin)
             {
-                GetPlayerRegistry().RemoveExtraPlayerSessionData(connectionRequestData.PlayerSessionId, out _, out _, out _);
-                string[] Players = _playerRegistry.Players.Select(p => p.UserId).ToArray();
+                GetPlayerRegistry().RemoveExtraPlayerSessionData(connectionRequestData.PlayerSessionId);
+                string[] Players = _playerRegistry.Players.Select(p => p.HashedUserId).ToArray();
                 PlayerDisconnectBeforeJoining?.Invoke(_configuration.Secret, endPoint, Players);
                 return null;
             }
@@ -367,13 +371,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 new PlayerConnectedPacket
                 {
                     RemoteConnectionId = player.ConnectionId,
-                    UserId = player.UserId,
+                    UserId = player.HashedUserId,
                     UserName = player.UserName,
                     IsConnectionOwner = false
                 },
                 new PlayerSortOrderPacket
                 {
-                    UserId = player.UserId,
+                    UserId = player.HashedUserId,
                     SortIndex = player.SortIndex
                 },
                 new MpNodePoseSyncStatePacket
@@ -392,7 +396,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     },
                 new PlayerSortOrderPacket
                     {
-                        UserId = player.UserId,
+                        UserId = player.HashedUserId,
                         SortIndex = player.SortIndex
                     },
                 new PlayerConnectedPacket
@@ -403,12 +407,12 @@ namespace BeatTogether.DedicatedServer.Kernel
                         IsConnectionOwner = true
                     },
                 new PlayerStatePacket
-                {
-                    PlayerState = ServerStateHash
-                },
+                    {
+                        PlayerState = ServerStateHash
+                    },
                 new SetIsStartButtonEnabledPacket// Disables start button if they are server owner without selected song
                     {
-                        Reason = player.UserId == _configuration.ServerOwnerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
+                        Reason = player.HashedUserId == _configuration.ServerOwnerId ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
                     },
                 new MpNodePoseSyncStatePacket
                     {
@@ -428,13 +432,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                     MakeBigPacketToSendToPlayer.Add(new PlayerConnectedPacket
                     {
                         RemoteConnectionId = p.ConnectionId,
-                        UserId = p.UserId,
+                        UserId = p.HashedUserId,
                         UserName = p.UserName,
                         IsConnectionOwner = false
                     });
                     MakeBigPacketToSendToPlayer.Add(new PlayerSortOrderPacket
                     {
-                        UserId = p.UserId,
+                        UserId = p.HashedUserId,
                         SortIndex = p.SortIndex
                     });
                 }
@@ -448,6 +452,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             INetSerializable[] SendToPlayerFromPlayers = new INetSerializable[2];
             SendToPlayerFromPlayers[0] = new PlayerIdentityPacket();
             SendToPlayerFromPlayers[1] = new MpPlayerData();
+            //TODO send selected modifiers if they have any, selected beatmap and custom bm packet.
 
             foreach (IPlayer p in _playerRegistry.Players)
             {
@@ -459,8 +464,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).Random = new ByteArray { Data = p.Random };
                     ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey };
                     ((MpPlayerData)SendToPlayerFromPlayers[1]).PlatformID = p.PlatformUserId;
-                    ((MpPlayerData)SendToPlayerFromPlayers[1]).Platform = p.Platform.Convert();
-                    ((MpPlayerData)SendToPlayerFromPlayers[1]).ClientVersion = p.ClientVersion;
+                    ((MpPlayerData)SendToPlayerFromPlayers[1]).Platform = p.PlayerPlatform.Convert();
+                    ((MpPlayerData)SendToPlayerFromPlayers[1]).ClientVersion = p.PlayerClientVersion.ToString();
                     
                     // Send all player avatars and states to just joined player
                     PacketDispatcher.SendFromPlayerToPlayer(p, player, SendToPlayerFromPlayers, IgnoranceChannelTypes.Reliable);
@@ -468,16 +473,16 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
 
             // Update permissions
-            if ((_configuration.SetConstantManagerFromUserId == player.UserId || _playerRegistry.GetPlayerCount() == 1) && _configuration.GameplayServerMode == GameplayServerMode.Managed)
+            if ((_configuration.SetConstantManagerFromUserId == player.HashedUserId || _playerRegistry.GetPlayerCount() == 1) && _configuration.GameplayServerConfiguration.GameplayServerMode == Core.Enums.GameplayServerMode.Managed)
                 SetNewServerOwner(player);
 
-            if (player.Platform == Enums.Platform.Test) //If the player is a bot, send permissions. Normal players request this in a packet when they join
+            if (player.PlayerPlatform == Core.Enums.Platform.Test) //If the player is a bot, send permissions. Normal players request this in a packet when they join
             {
                 bool HasManager = (_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var ServerOwner) && !player.IsServerOwner);
                 PlayerPermissionConfiguration[] playerPermissionConfigurations = new PlayerPermissionConfiguration[HasManager ? 2 : 1];
                 playerPermissionConfigurations[0] = new PlayerPermissionConfiguration
                 {
-                    UserId = player.UserId,
+                    UserId = player.HashedUserId,
                     IsServerOwner = player.IsServerOwner,
                     HasRecommendBeatmapsPermission = player.CanRecommendBeatmaps,
                     HasRecommendGameplayModifiersPermission = player.CanRecommendModifiers,
@@ -487,7 +492,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (HasManager)
                     playerPermissionConfigurations[1] = new PlayerPermissionConfiguration
                     {
-                        UserId = ServerOwner!.UserId,
+                        UserId = ServerOwner!.HashedUserId,
                         IsServerOwner = ServerOwner!.IsServerOwner,
                         HasRecommendBeatmapsPermission = ServerOwner!.CanRecommendBeatmaps,
                         HasRecommendGameplayModifiersPermission = ServerOwner!.CanRecommendModifiers,
@@ -511,17 +516,18 @@ namespace BeatTogether.DedicatedServer.Kernel
                     PacketDispatcher.SendFromPlayerToPlayer(player, p, new MpPlayerData
                     {
                         PlatformID = player.PlatformUserId!,
-                        Platform = player.Platform.Convert(),
-                        ClientVersion = player.ClientVersion!
+                        Platform = player.PlayerPlatform.Convert(),
+                        ClientVersion = player.PlayerClientVersion.ToString()!
                     }, IgnoranceChannelTypes.Reliable);
                 }
             }
 
             PacketDispatcher.SendToNearbyPlayers(new MpcTextChatPacket 
             { 
-                Text = player.UserName + " Joined, Platform: " + player.Platform.ToString() + " Version: " + player.ClientVersion 
+                Text = player.UserName + " Joined, Platform: " + player.PlayerPlatform.ToString() + " Version: " + player.PlayerClientVersion.ToString() 
             }, IgnoranceChannelTypes.Reliable);
 
+            _logger.Information($"Sent connection data though for (RemoteEndPoint='{endPoint}')");
         }
 
         public void DisconnectPlayer(IPlayer player)
@@ -560,7 +566,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             if(_playerRegistry.GetPlayerCount() != 0)
             {
-                if (player.IsServerOwner && _configuration.GameplayServerMode == GameplayServerMode.Managed)
+                if (player.IsServerOwner && _configuration.GameplayServerConfiguration.GameplayServerMode == Core.Enums.GameplayServerMode.Managed)
                 {
                     // Update permissions
                     SetNewServerOwner(_playerRegistry.Players[0]);
@@ -577,7 +583,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (_configuration.DestroyInstanceTimeout != -1)
                 {
                     _waitForPlayerCts = new CancellationTokenSource();
-                    _ = Task.Delay((int)(_configuration.DestroyInstanceTimeout * 1000), _waitForPlayerCts.Token).ContinueWith(t =>
+                    _ = Task.Delay((int)(_configuration.DestroyInstanceTimeout), _waitForPlayerCts.Token).ContinueWith(t =>
                     {
                         if (!t.IsCanceled && _playerRegistry.GetPlayerCount() == 0)
                         {
@@ -601,7 +607,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         {
             if (_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var OldOwner))
             {
-                _configuration.ServerOwnerId = NewOwner.UserId;
+                _configuration.ServerOwnerId = NewOwner.HashedUserId;
                 PacketDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
                 {
                     PermissionConfiguration = new PlayersPermissionConfiguration
@@ -610,7 +616,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         {
                             new PlayerPermissionConfiguration()
                             {
-                                UserId = OldOwner.UserId,
+                                UserId = OldOwner.HashedUserId,
                                 IsServerOwner = OldOwner.IsServerOwner,
                                 HasRecommendBeatmapsPermission = OldOwner.CanRecommendBeatmaps,
                                 HasRecommendGameplayModifiersPermission = OldOwner.CanRecommendModifiers,
@@ -619,7 +625,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                             },
                             new PlayerPermissionConfiguration()
                             {
-                                UserId = NewOwner.UserId,
+                                UserId = NewOwner.HashedUserId,
                                 IsServerOwner = NewOwner.IsServerOwner,
                                 HasRecommendBeatmapsPermission = NewOwner.CanRecommendBeatmaps,
                                 HasRecommendGameplayModifiersPermission = NewOwner.CanRecommendModifiers,
@@ -636,7 +642,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             }
             else
             {
-                _configuration.ServerOwnerId = NewOwner.UserId;
+                _configuration.ServerOwnerId = NewOwner.HashedUserId;
                 PacketDispatcher.SendToNearbyPlayers(new SetPlayersPermissionConfigurationPacket
                 {
                     PermissionConfiguration = new PlayersPermissionConfiguration
@@ -645,7 +651,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                         {
                             new PlayerPermissionConfiguration()
                             {
-                                UserId = NewOwner.UserId,
+                                UserId = NewOwner.HashedUserId,
                                 IsServerOwner = NewOwner.IsServerOwner,
                                 HasRecommendBeatmapsPermission = NewOwner.CanRecommendBeatmaps,
                                 HasRecommendGameplayModifiersPermission = NewOwner.CanRecommendModifiers,

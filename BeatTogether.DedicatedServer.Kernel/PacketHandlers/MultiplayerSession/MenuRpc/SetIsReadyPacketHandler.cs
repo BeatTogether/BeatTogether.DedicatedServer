@@ -1,8 +1,8 @@
-﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+﻿using BeatTogether.Core.Enums;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using Serilog;
 

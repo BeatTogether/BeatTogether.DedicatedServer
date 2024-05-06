@@ -1,4 +1,5 @@
-﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+﻿using BeatTogether.Core.Enums;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
@@ -26,7 +27,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetCountdownEndTimePacket)}' " +
                 $"(SenderId={sender.ConnectionId} CountdownTime={_lobbyManager.CountdownEndTime})."
             );
-            if(_lobbyManager.CountDownState == Enums.CountdownState.CountingDown)
+            if(_lobbyManager.CountDownState == CountdownState.CountingDown)
                 _packetDispatcher.SendToPlayer(sender, new SetCountdownEndTimePacket
                 {
                     CountdownTime = _lobbyManager.CountdownEndTime
