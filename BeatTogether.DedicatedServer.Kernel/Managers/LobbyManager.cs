@@ -418,6 +418,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
 
         private bool PlayerMapCheck(IPlayer p)
         {
+	        if(p.BeatmapIdentifier == null) return false;
             //If no map hash then treat as base game map for compat reasons and while waiting for a packet
             var Passed = p.SelectedBeatmapPacket != null && string.IsNullOrEmpty(p.SelectedBeatmapPacket.levelHash);
             //If not passed, then we have difficulties, and if we have the diff we are looking for, then we can check it for requirements.
