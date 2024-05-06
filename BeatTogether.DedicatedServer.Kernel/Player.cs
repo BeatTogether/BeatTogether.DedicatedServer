@@ -103,7 +103,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool UpdateEntitlement { get; set; } = false;
 
         public string MapHash { get; set; } = string.Empty;
-        public Dictionary<uint, string[]> BeatmapDifficultiesRequirements { get; set; }
+        public Dictionary<uint, string[]> BeatmapDifficultiesRequirements { get; set; } = new();
 
         public long TicksAtLastSyncStateDelta { get; set; } = 0; //33ms gaps for 30/sec, 66ms gap for 15/sec
         public long TicksAtLastSyncState { get; set; } = 0;
