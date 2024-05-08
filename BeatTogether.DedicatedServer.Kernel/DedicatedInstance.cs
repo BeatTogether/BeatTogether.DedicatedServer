@@ -386,6 +386,10 @@ namespace BeatTogether.DedicatedServer.Kernel
             //Send server infomation to player
             var Player_ConnectPacket = new INetSerializable[]
                {
+                new PingPacket
+                    {
+                        PingTime = RunTime
+                    },
                 new SyncTimePacket
                     {
                         SyncTime = RunTime
