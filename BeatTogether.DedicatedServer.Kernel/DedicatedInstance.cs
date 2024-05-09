@@ -325,14 +325,11 @@ namespace BeatTogether.DedicatedServer.Kernel
                 _waitForPlayerCts.Cancel();
 
             //UserID, UserName, and session
-            _logger.Information("Applying session data recv from master");
-            if (GetPlayerRegistry().RemoveExtraPlayerSessionDataAndApply(player))
+            if (!GetPlayerRegistry().RemoveExtraPlayerSessionDataAndApply(player))
             {
-                _logger.Information("Successfull session data extraction");
+                goto EndOfTryAccept;
             }
-            _logger.Information("Client ver: " + player.PlayerClientVersion.ToString());
-            _logger.Information("Client platform: " + player.PlayerPlatform.ToString());
-            _logger.Information("Client PlatformUserId: " + player.PlatformUserId);
+
 
             return player;
 
@@ -354,7 +351,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public override void OnConnect(EndPoint endPoint)
         {
-            _logger.Information($"Endpoint connected (RemoteEndPoint='{endPoint}')");
+            //_logger.Information($"Endpoint connected (RemoteEndPoint='{endPoint}')");
 
             if (!_playerRegistry.TryGetPlayer(endPoint, out var player))
             {
@@ -390,6 +387,10 @@ namespace BeatTogether.DedicatedServer.Kernel
             //Send server infomation to player
             var Player_ConnectPacket = new INetSerializable[]
                {
+                new PingPacket
+                    {
+                        PingTime = RunTime
+                    },
                 new SyncTimePacket
                     {
                         SyncTime = RunTime
@@ -527,7 +528,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 Text = player.UserName + " Joined, Platform: " + player.PlayerPlatform.ToString() + " Version: " + player.PlayerClientVersion.ToString() 
             }, IgnoranceChannelTypes.Reliable);
 
-            _logger.Information($"Sent connection data though for (RemoteEndPoint='{endPoint}')");
+            //_logger.Information($"Sent connection data though for (RemoteEndPoint='{endPoint}')");
         }
 
         public void DisconnectPlayer(IPlayer player)

@@ -222,6 +222,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     if (CountDownState != CountdownState.WaitingForEntitlement)
                     {
                         SetCountdown(CountdownState.WaitingForEntitlement);
+                        _packetDispatcher.SendToPlayers(_playerRegistry.Players.Where(p => p.GetEntitlement(SelectedBeatmap!.LevelId) == Messaging.Enums.EntitlementStatus.Unknown).ToArray(), new GetIsEntitledToLevelPacket
+                        {
+                            LevelId = SelectedBeatmap!.LevelId
+                        }, IgnoranceChannelTypes.Reliable);
                     }
                     if (_playerRegistry.Players.All(p => (p.GetEntitlement(SelectedBeatmap!.LevelId) is EntitlementStatus.Ok) || p.IsSpectating || !p.WantsToPlayNextLevel || p.IsBackgrounded || p.ForceLateJoin))
                     {

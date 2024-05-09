@@ -30,7 +30,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                 $"Handling packet of type '{nameof(GetPlayersPermissionConfigurationPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-
+            //sends player there own permissions, and those of the player who is the current manager.
             bool HasManager = (_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var ServerOwner) && !sender.IsServerOwner);
             PlayerPermissionConfiguration[] playerPermissionConfigurations = new PlayerPermissionConfiguration[HasManager ? 2 : 1];
             playerPermissionConfigurations[0] = new PlayerPermissionConfiguration
