@@ -79,7 +79,7 @@ namespace BeatTogether.DedicatedServer.Instancing
             }
             instance.StopEvent += HandleStopEvent;
 
-            serverInstance.InstanceEndPoint = IPEndPoint.Parse($"{_config.HostName}:{instanceConfig.Port}");
+            serverInstance.InstanceEndPoint = IPEndPoint.Parse($"{_config.HostEndpoint}:{instanceConfig.Port}");
 
             //Subscribe to server events if the layer above allows this.
             if(_SendEventsLayer != null)

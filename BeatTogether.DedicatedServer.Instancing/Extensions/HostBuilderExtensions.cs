@@ -17,7 +17,7 @@ namespace BeatTogether.DedicatedServer.Instancing.Extensions
                 .UseDedicatedInstances()
                 .ConfigureServices((hostBuilderContext, services) =>
                     services
-                        .AddConfiguration<InstancingConfiguration>("Instancing")
+                        .AddConfiguration<InstancingConfiguration>("ServerConfiguration")
                         .AddSingleton<IPortAllocator, PortAllocator>()
                         .AddSingleton<IInstanceRegistry, InstanceRegistry>()
                         .AddSingleton<IInstanceFactory, InstanceFactory>()

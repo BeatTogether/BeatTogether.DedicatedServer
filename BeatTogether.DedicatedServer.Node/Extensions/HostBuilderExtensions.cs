@@ -17,7 +17,7 @@ namespace BeatTogether.DedicatedServer.Node.Extensions
                 .UseAutobus()
                 .ConfigureServices((hostBuilderContext, services) =>
                     services
-                        .AddConfiguration<NodeConfiguration>("Node")
+                        .AddConfiguration<NodeConfiguration>("ServerConfiguration")
                         .AddServiceKernel<IMatchmakingService, NodeMatchmakingService>()
                         .AddSingleton<ILayer1, ForwardServerEventsLayer>()
                         .AddHostedService<NodeMessageEventHandler>()

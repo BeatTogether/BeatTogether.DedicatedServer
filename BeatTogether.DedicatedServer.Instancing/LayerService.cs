@@ -55,7 +55,7 @@ namespace BeatTogether.DedicatedServer.Instancing
             IServerInstance? serverInstance = null;
             if (_instanceRegistry.TryGetAvailablePublicServer(invitePolicy, serverMode, songMode, serverControlSettings, difficultyMask, modifiersMask, songPackMasks, out var instance))
             {
-                serverInstance = new ServerInstance(instance, IPEndPoint.Parse($"{_instancingConfiguration.HostName}:{instance._configuration.Port}"));
+                serverInstance = new ServerInstance(instance, IPEndPoint.Parse($"{_instancingConfiguration.HostEndpoint}:{instance._configuration.Port}"));
             }
             return Task.FromResult(serverInstance);
         }
@@ -65,7 +65,7 @@ namespace BeatTogether.DedicatedServer.Instancing
             IServerInstance? serverInstance = null;
             if (_instanceRegistry.TryGetInstance(secret, out var instance))
             {
-                serverInstance = new ServerInstance(instance, IPEndPoint.Parse($"{_instancingConfiguration.HostName}:{instance._configuration.Port}"));
+                serverInstance = new ServerInstance(instance, IPEndPoint.Parse($"{_instancingConfiguration.HostEndpoint}:{instance._configuration.Port}"));
             }
             return Task.FromResult(serverInstance);
         }
@@ -75,7 +75,7 @@ namespace BeatTogether.DedicatedServer.Instancing
             IServerInstance? serverInstance = null;
             if (_instanceRegistry.TryGetInstanceByCode(code, out var instance))
             {
-                serverInstance = new ServerInstance(instance, IPEndPoint.Parse($"{_instancingConfiguration.HostName}:{instance._configuration.Port}"));
+                serverInstance = new ServerInstance(instance, IPEndPoint.Parse($"{_instancingConfiguration.HostEndpoint}:{instance._configuration.Port}"));
             }
             return Task.FromResult(serverInstance);
         }

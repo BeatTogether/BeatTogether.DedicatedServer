@@ -48,8 +48,8 @@ namespace BeatTogether.DedicatedServer.Node
             _autobus.Subscribe<CheckNodesEvent>(HandleCheckNode);
             _autobus.Subscribe<DisconnectPlayerFromMatchmakingServerEvent>(HandleDisconnectPlayer);
             _autobus.Subscribe<CloseServerInstanceEvent>(HandleCloseServer);
-            _autobus.Publish(new NodeStartedEvent(_configuration.HostName, _configuration.NodeVersion.ToString()));
-            _logger.Information("Dedicated node version: " + _configuration.NodeVersion.ToString() + " starting: " + _configuration.HostName);
+            _autobus.Publish(new NodeStartedEvent(_configuration.HostEndpoint, _configuration.NodeVersion.ToString()));
+            _logger.Information("Dedicated node version: " + _configuration.NodeVersion.ToString() + ". Host Endpoint: " + _configuration.HostEndpoint);
             return Task.CompletedTask;
         }
 
@@ -68,20 +68,20 @@ namespace BeatTogether.DedicatedServer.Node
 
         private async Task HandlePlayerConnectedToMatchmaking(PlayerSessionDataSendToDediEvent SessionDataEvent)
         {
-            if (SessionDataEvent.NodeEndpoint != _configuration.HostName)
+            if (SessionDataEvent.NodeEndpoint != _configuration.HostEndpoint)
                 return;
 
             Core.Abstractions.IPlayer player = new PlayerFromMessage(SessionDataEvent.Player);
             if (!await _Layer2.SetPlayerSessionData(SessionDataEvent.serverInstanceSecret, player))
                 return;
 
-            _autobus.Publish(new NodeReceivedPlayerSessionDataEvent(_configuration.HostName, SessionDataEvent.Player.PlayerSessionId));
+            _autobus.Publish(new NodeReceivedPlayerSessionDataEvent(_configuration.HostEndpoint, SessionDataEvent.Player.PlayerSessionId));
             return;
         }
 
         private Task HandleCheckNode(CheckNodesEvent checkNodesEvent)
         {
-            _autobus.Publish(new NodeOnlineEvent(_configuration.HostName, _configuration.NodeVersion.ToString()));
+            _autobus.Publish(new NodeOnlineEvent(_configuration.HostEndpoint, _configuration.NodeVersion.ToString()));
             return Task.CompletedTask;
         }
 
