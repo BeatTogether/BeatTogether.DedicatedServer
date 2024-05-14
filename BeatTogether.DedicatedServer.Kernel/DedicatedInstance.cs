@@ -379,9 +379,14 @@ namespace BeatTogether.DedicatedServer.Kernel
                 },
                 new MpNodePoseSyncStatePacket
                 {
-                    fullStateUpdateFrequency = 100L,
-                    deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets()
+                    fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
+                    deltaUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()
                 },
+                new MpScoreSyncStatePacket
+                {
+                    fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets(), 500L),
+                    deltaUpdateFrequency = _playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets()
+                }
             }, IgnoranceChannelTypes.Reliable);
 
             //Send server infomation to player
@@ -417,9 +422,14 @@ namespace BeatTogether.DedicatedServer.Kernel
                     },
                 new MpNodePoseSyncStatePacket
                     {
-                        fullStateUpdateFrequency = 100L,
-                        deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets()
+                        fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
+                        deltaUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()
                     },
+                new MpScoreSyncStatePacket
+                    {
+                        fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets(), 500L),
+                        deltaUpdateFrequency = _playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets()
+                    }
                };
 
             PacketDispatcher.SendToPlayer(player, Player_ConnectPacket, IgnoranceChannelTypes.Reliable);
@@ -572,10 +582,17 @@ namespace BeatTogether.DedicatedServer.Kernel
                     // Update permissions
                     SetNewServerOwner(_playerRegistry.Players[0]);
                 }
-                PacketDispatcher.SendToNearbyPlayers(new MpNodePoseSyncStatePacket
-                {
-                    fullStateUpdateFrequency = 100L,
-                    deltaUpdateFrequency = _playerRegistry.GetMillisBetweenSyncStatePackets()
+                PacketDispatcher.SendToNearbyPlayers(new INetSerializable[] {
+                    new MpNodePoseSyncStatePacket
+                        {
+                            fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
+                            deltaUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()
+                        },
+                    new MpScoreSyncStatePacket
+                        {
+                            fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets(), 500L),
+                            deltaUpdateFrequency = _playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets()
+                        }
                 }, IgnoranceChannelTypes.Reliable);
             }
             else
