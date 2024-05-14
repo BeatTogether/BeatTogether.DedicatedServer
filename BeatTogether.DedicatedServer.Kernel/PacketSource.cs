@@ -118,24 +118,22 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if (_configuration.DisableNotes || (_playerRegistry.GetPlayerCount() >= _configuration.DisableNotesPlayerCount) && !_configuration.ForceEnableNotes)
                         return;
-                    method = IgnoranceChannelTypes.Unthrottled;
                     break;
                 }
                 else if (packet is NodePoseSyncStatePacket)
                 {
-                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
+                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets())
                     {
-                        _logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Instance._configuration.Secret}').");
+                        //_logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Instance._configuration.Secret}').");
                         return;
                     }
-                    method = IgnoranceChannelTypes.Unthrottled;
                     sender.TicksAtLastSyncState = DateTime.UtcNow.Ticks;
                 }
                 else if (packet is NodePoseSyncStateDeltaPacket)
                 {
-                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenSyncStatePackets())
+                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncStateDelta) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets())
                     {
-                        _logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Instance._configuration.Secret}').");
+                        //_logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Instance._configuration.Secret}').");
                         return;
                     }
                     sender.TicksAtLastSyncStateDelta = DateTime.UtcNow.Ticks;
