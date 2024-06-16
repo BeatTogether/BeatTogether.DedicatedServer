@@ -20,7 +20,9 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(LevelFinishedPacket)}' " +
-                $"(SenderId={sender.ConnectionId})."
+                $"(SenderId={sender.ConnectionId}, HasValue0={packet.HasValue0}, HasAnyResult={packet.Results.HasAnyResult()}, " +
+                $"ModifiedScore={(packet.HasValue0 && packet.Results.HasAnyResult() ? packet.Results.LevelCompletionResults.ModifiedScore : "NoValue/NoResults" )}, " +
+                $"MultipliedScore={(packet.HasValue0 && packet.Results.HasAnyResult() ? packet.Results.LevelCompletionResults.MultipliedScore : "NoValue/NoResults")})."
             );
 
             _gameplayManager.HandleLevelFinished(sender, packet);
