@@ -211,7 +211,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 //If the beatmap is not playable or the game is not startable
                 if ( NotStartable )
                 {
-                    _logger.Debug("Canceling countdown");
+                    _logger.Debug($"Canceling countdown check  SelectedBeatmapNotNull={SelectedBeatmap != null}");
+                    foreach (var p in _playerRegistry.Players.Where(p => (p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned) && !p.IsSpectating && !p.IsBackgrounded && p.WantsToPlayNextLevel))
+                    {
+                        _logger.Debug($"Player causing cancel UserId={p.HashedUserId} Username={p.UserName} Entitlement={p.GetEntitlement(SelectedBeatmap.LevelId)} IsSpectating={p.IsSpectating} IsBackgrounded={p.IsBackgrounded} WantsToPlayNextLevel={p.WantsToPlayNextLevel}");
+                    }
                     CancelCountdown();
                     return;
                 }
