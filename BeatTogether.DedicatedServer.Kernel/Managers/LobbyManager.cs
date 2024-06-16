@@ -212,9 +212,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 if ( NotStartable )
                 {
                     _logger.Debug($"Canceling countdown check  SelectedBeatmapNotNull={SelectedBeatmap != null}");
-                    foreach (var p in _playerRegistry.Players.Where(p => (p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned) && !p.IsSpectating && !p.IsBackgrounded && p.WantsToPlayNextLevel))
+                    foreach (var p in _playerRegistry.Players.Where(p => (SelectedBeatmap != null && p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned) && !p.IsSpectating && !p.IsBackgrounded && p.WantsToPlayNextLevel))
                     {
-                        _logger.Debug($"Player causing cancel UserId={p.HashedUserId} Username={p.UserName} Entitlement={p.GetEntitlement(SelectedBeatmap.LevelId)} IsSpectating={p.IsSpectating} IsBackgrounded={p.IsBackgrounded} WantsToPlayNextLevel={p.WantsToPlayNextLevel}");
+                        _logger.Debug($"Player causing cancel UserId={p.HashedUserId} Username={p.UserName} Entitlement={(SelectedBeatmap != null ? p.GetEntitlement(SelectedBeatmap.LevelId) : "SelectedBeatmap is null")} IsSpectating={p.IsSpectating} IsBackgrounded={p.IsBackgrounded} WantsToPlayNextLevel={p.WantsToPlayNextLevel}");
                     }
                     CancelCountdown();
                     return;
