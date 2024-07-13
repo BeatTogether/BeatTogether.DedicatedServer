@@ -3,7 +3,7 @@ using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets
 {
-    public sealed class PerPlayer : INetSerializable
+    public sealed class MpPerPlayerPacket : INetSerializable
     {
         public bool PPDEnabled;
         public bool PPMEnabled;

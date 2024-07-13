@@ -26,7 +26,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Commands.CommandHandlers
             {
                 Text = "Per player modifiers: " + command.Enabled
             }, IgnoranceChannelTypes.Reliable);
-            _packetDisapatcher.SendToNearbyPlayers(new PerPlayer()
+            _packetDisapatcher.SendToNearbyPlayers(new MpPerPlayerPacket()
             {
                 PPDEnabled = _Configuration.AllowPerPlayerDifficulties,
                 PPMEnabled = _Configuration.AllowPerPlayerModifiers,

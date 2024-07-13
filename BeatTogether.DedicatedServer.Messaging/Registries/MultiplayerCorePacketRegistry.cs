@@ -21,8 +21,8 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries
             AddPacket<GetMpPlayerData>();
             AddPacket<MpPlayerData>();
             AddPacket<MpNodePoseSyncStatePacket>();
-            AddPacket<PerPlayer>();
-            AddPacket<GetPerPlayer>();
+            AddPacket<MpPerPlayerPacket>();
+            AddPacket<GetMpPerPlayerPacket>();
         }
 
         public bool TryCreatePacket(string packetId, [MaybeNullWhen(false)] out INetSerializable packet)

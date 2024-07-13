@@ -3,7 +3,7 @@ using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets
 {
-    public sealed class GetPerPlayer : INetSerializable
+    public sealed class GetMpPerPlayerPacket : INetSerializable
     {
         public void ReadFrom(ref SpanBuffer bufferReader)
         {

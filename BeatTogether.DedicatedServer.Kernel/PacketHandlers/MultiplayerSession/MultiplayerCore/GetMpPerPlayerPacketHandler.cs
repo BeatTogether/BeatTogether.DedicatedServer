@@ -6,13 +6,13 @@ using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
-    class GetPerPlayerHandler : BasePacketHandler<GetPerPlayer>
+    class GetMpPerPlayerPacketHandler : BasePacketHandler<GetMpPerPlayerPacket>
     {
         private readonly InstanceConfiguration _configuration;
         private readonly IPacketDispatcher _PacketDispatcher;
-        private readonly ILogger _logger = Log.ForContext<GetPerPlayerHandler>();
+        private readonly ILogger _logger = Log.ForContext<GetMpPerPlayerPacketHandler>();
 
-        public GetPerPlayerHandler(
+        public GetMpPerPlayerPacketHandler(
             IPacketDispatcher PacketDispatcher,
             InstanceConfiguration configuration)
         {
@@ -20,14 +20,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _configuration = configuration;
         }
 
-        public override void Handle(IPlayer sender, GetPerPlayer packet)
+        public override void Handle(IPlayer sender, GetMpPerPlayerPacket packet)
         {
 
             _logger.Debug(
-                $"Handling packet of type '{nameof(GetPerPlayer)}' " +
+                $"Handling packet of type '{nameof(GetMpPerPlayerPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            _PacketDispatcher.SendToPlayer(sender, new PerPlayer()
+            _PacketDispatcher.SendToPlayer(sender, new MpPerPlayerPacket()
             {
                 PPDEnabled = _configuration.AllowPerPlayerDifficulties,
                 PPMEnabled = _configuration.AllowPerPlayerModifiers,
