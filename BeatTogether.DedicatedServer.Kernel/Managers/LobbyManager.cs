@@ -211,7 +211,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                 //If the beatmap is not playable or the game is not startable
                 if ( NotStartable )
                 {
-                    _logger.Debug($"Canceling countdown check  SelectedBeatmapNotNull={SelectedBeatmap != null}");
+                    _logger.Debug($"Canceling countdown check  SelectedBeatmapNull={SelectedBeatmap == null}");
                     foreach (var p in _playerRegistry.Players.Where(p => (SelectedBeatmap != null && p.GetEntitlement(SelectedBeatmap.LevelId) is EntitlementStatus.NotOwned) && !p.IsSpectating && !p.IsBackgrounded && p.WantsToPlayNextLevel))
                     {
                         _logger.Debug($"Player causing cancel UserId={p.HashedUserId} Username={p.UserName} Entitlement={(SelectedBeatmap != null ? p.GetEntitlement(SelectedBeatmap.LevelId) : "SelectedBeatmap is null")} IsSpectating={p.IsSpectating} IsBackgrounded={p.IsBackgrounded} WantsToPlayNextLevel={p.WantsToPlayNextLevel}");
@@ -388,6 +388,11 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             {
                 if (_configuration.AllowPerPlayerDifficulties && player.BeatmapIdentifier != null && diff != null && diff.ContainsKey((uint)player.BeatmapIdentifier.Difficulty))
                     bm.Difficulty = player.BeatmapIdentifier.Difficulty;
+                _logger.Debug($"Start level settings for player '{player.UserName}|{player.HashedUserId}'" +
+                              $"(LevelId={bm.LevelId}, Difficulty={bm.Difficulty} Modifiers={(_configuration.AllowPerPlayerModifiers ? player.Modifiers : SelectedModifiers)}) " +
+                              $"Checks: (AllowPerPlayerDifficulties={_configuration.AllowPerPlayerDifficulties}, " +
+                              $"Original Difficulty={SelectedBeatmap?.Difficulty}, Player Difficulty={player.BeatmapIdentifier?.Difficulty}, " +
+                              $"diff.ContainsKey={(player.BeatmapIdentifier?.Difficulty != null ? diff?.ContainsKey((uint)player.BeatmapIdentifier.Difficulty) : "Player Beatmap null")})");
                 _packetDispatcher.SendToPlayer(player, new StartLevelPacket
                 {
                     Beatmap = bm!,
