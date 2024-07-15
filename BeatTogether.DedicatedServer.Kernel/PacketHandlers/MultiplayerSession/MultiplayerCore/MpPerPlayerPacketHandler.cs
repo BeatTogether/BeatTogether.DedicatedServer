@@ -25,7 +25,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 
             _logger.Debug(
                 $"Handling packet of type '{nameof(MpPerPlayerPacket)}' " +
-                $"(SenderId={sender.ConnectionId})."
+                $"(SenderId={sender.ConnectionId})" +
+                $"(PPDEnabled={packet.PPDEnabled}, PPMEnabled={packet.PPMEnabled})."
             );
             if(sender.IsServerOwner)
             {

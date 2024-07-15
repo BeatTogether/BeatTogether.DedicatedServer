@@ -24,7 +24,7 @@ using Serilog;
  */
 namespace BeatTogether.DedicatedServer.Kernel.Managers
 {
-    public sealed class LobbyManager : ILobbyManager, IDisposable
+	public sealed class LobbyManager : ILobbyManager, IDisposable
     {
         public bool AllPlayersReady => _playerRegistry.Players.All(p => p.IsReady || !p.WantsToPlayNextLevel || p.IsBackgrounded || p.IsSpectating); //If all are ready or spectating or backgrounded or a spectator type
         public bool AnyPlayersReady => _playerRegistry.Players.Any(p => p.IsReady && p.WantsToPlayNextLevel && !p.IsBackgrounded && !p.IsSpectating); //If anyone who is active wants to play
@@ -321,15 +321,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         {
             if (!SelectedBeatmap!.LevelId.StartsWith("custom_level_"))
             {
-                return null;
-            }
+				return null;
+			}
+
+            var selectedLevelHash = SelectedBeatmap!.LevelId.Substring(13);
+
             foreach (var player in _playerRegistry.Players)
             {
-                if(SelectedBeatmap!.LevelId == player.MapHash)
+                _logger.Verbose($"GetDiffRequirements checking: SelectedHash {selectedLevelHash} Player MapHash {player.MapHash}");
+                if(selectedLevelHash == player.MapHash)
                 {
                     return player.BeatmapDifficultiesRequirements;
                 }
             }
+            _logger.Error($"Failed to find matching requirements searched SelectedHash {selectedLevelHash}");
             return null;
         }
 
@@ -386,16 +391,18 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             BeatmapIdentifier bm = SelectedBeatmap!;
             foreach (var player in _playerRegistry.Players)
             {
-                if (_configuration.AllowPerPlayerDifficulties && player.BeatmapIdentifier != null && diff != null && diff.ContainsKey((uint)player.BeatmapIdentifier.Difficulty))
+                // Check that PPD is enabled and that the difficulty the player has selected
+                // exists on the level or if the player has the same map selected
+                if (_configuration.AllowPerPlayerDifficulties && player.BeatmapIdentifier != null && (diff != null && diff.ContainsKey((uint)player.BeatmapIdentifier.Difficulty) || SelectedBeatmap.LevelId == player.BeatmapIdentifier.LevelId))
                     bm.Difficulty = player.BeatmapIdentifier.Difficulty;
                 _logger.Debug($"Start level settings for player '{player.UserName}|{player.HashedUserId}'" +
                               $"(LevelId={bm.LevelId}, Difficulty={bm.Difficulty} Modifiers={(_configuration.AllowPerPlayerModifiers ? player.Modifiers : SelectedModifiers)}) " +
                               $"Checks: (AllowPerPlayerDifficulties={_configuration.AllowPerPlayerDifficulties}, " +
-                              $"Original Difficulty={SelectedBeatmap?.Difficulty}, Player Difficulty={player.BeatmapIdentifier?.Difficulty}, " +
-                              $"diff.ContainsKey={(player.BeatmapIdentifier?.Difficulty != null ? diff?.ContainsKey((uint)player.BeatmapIdentifier.Difficulty) : "Player Beatmap null")})");
+                              $"diff == null? {diff == null}, " +
+                              $"diff.ContainsKey={(player.BeatmapIdentifier?.Difficulty != null && diff != null ? diff.ContainsKey((uint)player.BeatmapIdentifier.Difficulty) : "Player beatmap null or diff null")})");
                 _packetDispatcher.SendToPlayer(player, new StartLevelPacket
                 {
-                    Beatmap = bm!,
+					Beatmap = bm!,
                     Modifiers = _configuration.AllowPerPlayerModifiers ?  player.Modifiers : SelectedModifiers,
                     StartTime = CountdownEndTime
                 }, IgnoranceChannelTypes.Reliable);
