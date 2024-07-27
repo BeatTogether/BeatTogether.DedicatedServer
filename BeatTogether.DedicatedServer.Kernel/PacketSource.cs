@@ -167,6 +167,11 @@ namespace BeatTogether.DedicatedServer.Kernel
                     continue;
                 }
 
+                // Ensure we always skip/rewind our reader
+                var processedBytesToSkip = HandleRead.Offset - prevPosition;
+                try { HandleRead.SkipBytes((int)length - processedBytesToSkip); }
+                catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
+
                 ((Abstractions.IPacketHandler)packetHandler).Handle(sender, packet);
             }
             RoutePacket:
