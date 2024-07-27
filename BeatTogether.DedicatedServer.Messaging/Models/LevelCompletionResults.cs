@@ -31,6 +31,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public float AverageCutScoreForNotesWithFullScoreScoringType { get; set; }
         public int MaxCombo { get; set; }
         public float EndSongTime { get; set; }
+        public bool Invalidated { get; set; }
 
         public void ReadFrom(ref SpanBuffer reader)
         {
@@ -58,6 +59,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             AverageCutScoreForNotesWithFullScoreScoringType = reader.ReadFloat32();
             MaxCombo = reader.ReadVarInt();
             EndSongTime = reader.ReadFloat32();
+			Invalidated = reader.ReadBool(); // Added in 1.37.1
         }
 
         public void WriteTo(ref SpanBuffer writer)
@@ -86,6 +88,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteFloat32(AverageCutScoreForNotesWithFullScoreScoringType);
             writer.WriteVarInt(MaxCombo);
             writer.WriteFloat32(EndSongTime);
+			writer.WriteBool(Invalidated); // Added in 1.37.1
         }
     }
 }
