@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Reflection;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Kernel.CommandHandlers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BeatTogether.Extensions
@@ -25,8 +26,22 @@ namespace BeatTogether.Extensions
                         eventHandlerType);
             return services;
         }
-        
-        public static IServiceCollection AddAllHandshakeMessageHandlersFromAssembly(this IServiceCollection services, Assembly assembly)
+
+        public static IServiceCollection AddAllCommandHandlersFromAssembly(this IServiceCollection services, Assembly assembly)
+        {
+            var genericInterface = typeof(ICommandHandler<>);
+            var eventHandlerTypes = assembly
+                .GetTypes()
+                .Where(type => type.GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == genericInterface));
+            foreach (var eventHandlerType in eventHandlerTypes)
+                if (!eventHandlerType.IsAbstract)
+                    services.AddTransient(
+                        genericInterface.MakeGenericType(eventHandlerType.BaseType!.GetGenericArguments()),
+                        eventHandlerType);
+            return services;
+        }
+
+/*        public static IServiceCollection AddAllHandshakeMessageHandlersFromAssembly(this IServiceCollection services, Assembly assembly)
         {
             var genericInterface = typeof(IHandshakeMessageHandler<>);
             var eventHandlerTypes = assembly
@@ -38,6 +53,6 @@ namespace BeatTogether.Extensions
                         genericInterface.MakeGenericType(eventHandlerType.BaseType!.GetGenericArguments()),
                         eventHandlerType);
             return services;
-        }
+        }*/
     }
 }

@@ -1,14 +1,13 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.Core.Enums;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -35,7 +34,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _packetDispatcher = packetDispatcher;
         }
 
-        public override Task Handle(IPlayer sender, GetStartedLevelPacket packet)
+        public override void Handle(IPlayer sender, GetStartedLevelPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(GetStartedLevelPacket)}' " +
@@ -48,16 +47,17 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                     Beatmap = _gameplayManager.CurrentBeatmap,
                     Modifiers = _gameplayManager.CurrentModifiers,
                     StartTime = _instance.RunTime
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
             }
             else
             {
                 if (_lobbyManager.SelectedBeatmap != null)
                 {
-                    _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
-                    {
-                        LevelId = _lobbyManager.SelectedBeatmap.LevelId
-                    }, DeliveryMethod.ReliableOrdered);
+                    if(sender.GetEntitlement(_lobbyManager.SelectedBeatmap.LevelId) != EntitlementStatus.Ok)
+                        _packetDispatcher.SendToPlayer(sender, new GetIsEntitledToLevelPacket
+                        {
+                            LevelId = _lobbyManager.SelectedBeatmap.LevelId
+                        }, IgnoranceChannelTypes.Reliable);
 
                     if(_lobbyManager.CountDownState == CountdownState.WaitingForEntitlement || _lobbyManager.CountDownState == CountdownState.StartBeatmapCountdown)
                     {
@@ -67,8 +67,8 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                             Modifiers = sender.Modifiers;
                         if (_configuration.AllowPerPlayerDifficulties)
                         {
-                            BeatmapDifficulty[] diff = _lobbyManager.GetSelectedBeatmapDifficulties();
-                            if (sender.BeatmapIdentifier != null && diff.Contains(sender.BeatmapIdentifier.Difficulty))
+                            var diff = _lobbyManager.GetSelectedBeatmapDifficultiesRequirements();
+                            if (sender.BeatmapIdentifier != null && diff != null && diff.ContainsKey((uint)sender.BeatmapIdentifier.Difficulty))
                                 Beatmap.Difficulty = sender.BeatmapIdentifier.Difficulty;
                         }
                         _packetDispatcher.SendToPlayer(sender, new StartLevelPacket
@@ -76,13 +76,12 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
                             Beatmap = Beatmap,
                             Modifiers = Modifiers,
                             StartTime = _lobbyManager.CountdownEndTime
-                        }, DeliveryMethod.ReliableOrdered);
+                        }, IgnoranceChannelTypes.Reliable);
                     }
                 }
                 else
-                    _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), DeliveryMethod.ReliableOrdered);
+                    _packetDispatcher.SendToPlayer(sender, new CancelLevelStartPacket(), IgnoranceChannelTypes.Reliable);
             }
-            return Task.CompletedTask;
         }
     }
 }

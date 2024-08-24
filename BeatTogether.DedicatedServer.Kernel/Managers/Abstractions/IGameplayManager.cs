@@ -12,9 +12,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
         GameplayManagerState State { get; }
 		BeatmapIdentifier? CurrentBeatmap { get; }
 		GameplayModifiers CurrentModifiers { get; }
-        public float _songStartTime { get; }
 
-        void HandlePlayerLeaveGameplay(IPlayer player, int Unused = 0);
+        void HandlePlayerLeaveGameplay(IPlayer player);
         void HandleGameSceneLoaded(IPlayer player, SetGameplaySceneReadyPacket packet);
         void HandleGameSongLoaded(IPlayer player);
         void HandleLevelFinished(IPlayer player, LevelFinishedPacket packet);

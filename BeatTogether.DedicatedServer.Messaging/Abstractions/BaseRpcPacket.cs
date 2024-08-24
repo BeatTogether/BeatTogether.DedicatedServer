@@ -1,20 +1,20 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using Krypton.Buffers;
+﻿using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Abstractions
 {
     public abstract class BaseRpcPacket : INetSerializable
     {
-        public float SyncTime { get; set; }
+        public long SyncTime { get; set; }
 
-        public virtual void ReadFrom(ref SpanBufferReader reader)
+        public virtual void ReadFrom(ref SpanBuffer reader)
         {
-            SyncTime = reader.ReadFloat32();
+            SyncTime = (long)reader.ReadVarULong();
         }
 
-        public virtual void WriteTo(ref SpanBufferWriter writer)
+        public virtual void WriteTo(ref SpanBuffer writer)
         {
-            writer.WriteFloat32(SyncTime);
+            writer.WriteVarULong((ulong)SyncTime);
         }
     }
 }

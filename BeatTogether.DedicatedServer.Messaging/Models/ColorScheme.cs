@@ -1,5 +1,5 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using Krypton.Buffers;
+﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -13,7 +13,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public ColorNoAlpha EnvironmentColor0Boost { get; set; } = new();
         public ColorNoAlpha EnvironmentColor1Boost { get; set; } = new();
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             SaberAColor.ReadFrom(ref reader);
             SaberBColor.ReadFrom(ref reader);
@@ -24,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             EnvironmentColor1Boost.ReadFrom(ref reader);
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             SaberAColor.WriteTo(ref writer);
             SaberBColor.WriteTo(ref writer);

@@ -1,11 +1,9 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -26,30 +24,41 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _playerRegistry = playerRegistry;
         }
 
-        public override Task Handle(IPlayer sender, GetPlayersPermissionConfigurationPacket packet)
+        public override void Handle(IPlayer sender, GetPlayersPermissionConfigurationPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(GetPlayersPermissionConfigurationPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-
+            //sends player there own permissions, and those of the player who is the current manager.
+            bool HasManager = (_playerRegistry.TryGetPlayer(_configuration.ServerOwnerId, out var ServerOwner) && !sender.IsServerOwner);
+            PlayerPermissionConfiguration[] playerPermissionConfigurations = new PlayerPermissionConfiguration[HasManager ? 2 : 1];
+            playerPermissionConfigurations[0] = new PlayerPermissionConfiguration
+            {
+                UserId = sender.HashedUserId,
+                IsServerOwner = sender.IsServerOwner,
+                HasRecommendBeatmapsPermission = sender.CanRecommendBeatmaps,
+                HasRecommendGameplayModifiersPermission = sender.CanRecommendModifiers,
+                HasKickVotePermission = sender.CanKickVote,
+                HasInvitePermission = sender.CanInvite
+            };
+            if (HasManager)
+                playerPermissionConfigurations[1] = new PlayerPermissionConfiguration
+                {
+                    UserId = ServerOwner!.HashedUserId,
+                    IsServerOwner = ServerOwner!.IsServerOwner,
+                    HasRecommendBeatmapsPermission = ServerOwner!.CanRecommendBeatmaps,
+                    HasRecommendGameplayModifiersPermission = ServerOwner!.CanRecommendModifiers,
+                    HasKickVotePermission = ServerOwner!.CanKickVote,
+                    HasInvitePermission = ServerOwner!.CanInvite
+                };
             _packetDispatcher.SendToPlayer(sender, new SetPlayersPermissionConfigurationPacket
             {
                 PermissionConfiguration = new PlayersPermissionConfiguration
                 {
-                    PlayersPermission = _playerRegistry.Players.Select(x => new PlayerPermissionConfiguration
-                    {
-                        UserId = x.UserId,
-                        IsServerOwner = x.IsServerOwner,
-                        HasRecommendBeatmapsPermission = x.CanRecommendBeatmaps,
-                        HasRecommendGameplayModifiersPermission = x.CanRecommendModifiers,
-                        HasKickVotePermission = x.CanKickVote,
-                        HasInvitePermission = x.CanInvite
-                    }).ToArray()
+                    PlayersPermission = playerPermissionConfigurations
                 }
-            }, DeliveryMethod.ReliableOrdered);
-
-            return Task.CompletedTask;
+            }, IgnoranceChannelTypes.Reliable);
         }
     }
 }

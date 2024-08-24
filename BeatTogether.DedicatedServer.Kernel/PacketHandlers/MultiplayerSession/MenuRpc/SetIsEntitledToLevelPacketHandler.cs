@@ -2,7 +2,6 @@
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -23,22 +22,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _playerRegistry = playerRegistry;
         }
 
-        public override Task Handle(IPlayer sender, SetIsEntitledToLevelPacket packet)
+        public override void Handle(IPlayer sender, SetIsEntitledToLevelPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(SetIsEntitledToLevelPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, LevelId={packet.LevelId}, Entitlement={packet.Entitlement})."
             );
-            lock (sender.EntitlementLock)
+            sender.SetEntitlement(packet.LevelId, packet.Entitlement);
+            foreach (IPlayer player in _playerRegistry.Players)
             {
-                sender.SetEntitlement(packet.LevelId, packet.Entitlement);
-                foreach (IPlayer player in _playerRegistry.Players)
-                {
-                    if(player.BeatmapIdentifier != null && player.BeatmapIdentifier.LevelId == packet.LevelId)
-                        player.UpdateEntitlement = true;
-                }
+                if(player.BeatmapIdentifier != null && player.BeatmapIdentifier.LevelId == packet.LevelId)
+                    player.UpdateEntitlement = true;
             }
-            return Task.CompletedTask;
         }
     }
 }

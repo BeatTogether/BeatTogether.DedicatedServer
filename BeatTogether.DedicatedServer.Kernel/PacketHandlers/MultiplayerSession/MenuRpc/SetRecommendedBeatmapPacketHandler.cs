@@ -1,9 +1,9 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
+using System.Linq;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -24,28 +24,29 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _playerRegistry = playerRegistry;
         }
 
-        public override Task Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)
+        public override void Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)
 		{
 			_logger.Debug(
 				$"Handling packet of type '{nameof(SetRecommendedBeatmapPacket)}' " +
 				$"(SenderId={sender.ConnectionId}, LevelId={packet.BeatmapIdentifier.LevelId}, Difficulty={packet.BeatmapIdentifier.Difficulty})."
 			);
 
-            lock (sender.BeatmapLock)
-            {
-				if (sender.CanRecommendBeatmaps)
-				{
-					sender.BeatmapIdentifier = packet.BeatmapIdentifier;
-					if (sender.BeatmapIdentifier.LevelId != sender.MapHash)
-						sender.ResetRecommendedMapRequirements();
-					_packetDispatcher.SendToNearbyPlayers(new GetIsEntitledToLevelPacket
-					{
-						LevelId = packet.BeatmapIdentifier.LevelId
-					}, DeliveryMethod.ReliableOrdered);
-					sender.UpdateEntitlement = true;
-				}
-			}
-			return Task.CompletedTask;
-		}
+            if (sender.CanRecommendBeatmaps)
+			{
+                if(sender.BeatmapIdentifier != null && sender.BeatmapIdentifier.LevelId != packet.BeatmapIdentifier.LevelId)
+                {
+                    sender.BeatmapDifficultiesRequirements.Clear();
+                    sender.MapHash = string.Empty;
+                }
+				sender.BeatmapIdentifier = packet.BeatmapIdentifier;
+                sender.UpdateEntitlement = true;
+                //Our custom mpbeatmap packet stuff gets sent anyway
+                //TODO apply this logic to all entitlement checks, and check it works well. Might need to send everyones entitlements to a player when they select a map
+                _packetDispatcher.SendToPlayers(_playerRegistry.Players.Where(p => p.GetEntitlement(sender.BeatmapIdentifier.LevelId) == Messaging.Enums.EntitlementStatus.Unknown).ToArray(), new GetIsEntitledToLevelPacket
+                {
+                    LevelId = packet.BeatmapIdentifier.LevelId
+                }, IgnoranceChannelTypes.Reliable);
+            }
+        }
 	}
 }

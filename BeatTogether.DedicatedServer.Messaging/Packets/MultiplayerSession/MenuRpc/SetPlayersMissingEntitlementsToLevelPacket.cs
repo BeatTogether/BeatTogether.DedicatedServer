@@ -1,7 +1,7 @@
 ﻿using System;
 using BeatTogether.DedicatedServer.Messaging.Abstractions;
-using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {
@@ -9,7 +9,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
     {
         public string[] PlayersWithoutEntitlements { get; set; } = Array.Empty<string>();
 
-        public override void ReadFrom(ref SpanBufferReader reader)
+        public override void ReadFrom(ref SpanBuffer reader)
         {
             base.ReadFrom(ref reader);
 
@@ -23,7 +23,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.Menu
             }
         }
 
-        public override void WriteTo(ref SpanBufferWriter writer)
+        public override void WriteTo(ref SpanBuffer writer)
         {
             base.WriteTo(ref writer);
             

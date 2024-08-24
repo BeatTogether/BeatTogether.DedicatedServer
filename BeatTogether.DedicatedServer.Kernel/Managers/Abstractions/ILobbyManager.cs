@@ -1,4 +1,6 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Enums;
+﻿using BeatTogether.Core.Enums;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using System.Collections.Generic;
 
@@ -7,17 +9,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers.Abstractions
     public interface ILobbyManager
     {
         bool AllPlayersReady { get; }
-        bool SomePlayersReady { get; }
+        bool AnyPlayersReady { get; }
         bool NoPlayersReady { get; }
-		bool AllPlayersSpectating { get; }
-
+		bool AllPlayersNotWantToPlayNextLevel { get; }
+        bool CanEveryonePlayBeatmap { get; }
         BeatmapIdentifier? SelectedBeatmap { get; }
         GameplayModifiers SelectedModifiers { get; }
         CountdownState CountDownState { get; }
-        float CountdownEndTime { get; }
+        long CountdownEndTime { get; }
         GameplayModifiers EmptyModifiers {get; }
+        public bool UpdateSpectatingPlayers { get; set; }
+        public bool ForceStartSelectedBeatmap { get; set; }
 
         void Update();
-        BeatmapDifficulty[] GetSelectedBeatmapDifficulties();
+        Dictionary<uint, string[]>? GetSelectedBeatmapDifficultiesRequirements();
+        CannotStartGameReason GetCannotStartGameReason(IPlayer player, bool DoesEveryoneOwnBeatmap);
     }
 }

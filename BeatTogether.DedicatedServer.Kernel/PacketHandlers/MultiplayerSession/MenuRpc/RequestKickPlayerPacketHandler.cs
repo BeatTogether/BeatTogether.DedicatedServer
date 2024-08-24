@@ -1,10 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
-using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.DedicatedServer.Messaging.Packets;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -12,31 +8,29 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 	{
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
+        private readonly IDedicatedInstance _instance;
         private readonly ILogger _logger = Log.ForContext<RequestKickPlayerPacketHandler>();
 
         public RequestKickPlayerPacketHandler(
             IPlayerRegistry playerRegistry,
-            IPacketDispatcher packetDispatcher)
+            IPacketDispatcher packetDispatcher,
+            IDedicatedInstance dedicatedInstance)
         {
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
+            _instance = dedicatedInstance;
         }
 
-        public override Task Handle(IPlayer sender, RequestKickPlayerPacket packet)
+        public override void Handle(IPlayer sender, RequestKickPlayerPacket packet)
         {
-            _logger.Information(
+            _logger.Debug(
                 $"Handling packet of type '{nameof(RequestKickPlayerPacket)}' " +
                 $"(SenderId={sender.ConnectionId}, KickedPlayerId={packet.KickedPlayerId})."
             );
-
             if (sender.CanKickVote)
                 if (_playerRegistry.TryGetPlayer(packet.KickedPlayerId, out var kickedPlayer))
-                    _packetDispatcher.SendToPlayer(kickedPlayer, new KickPlayerPacket
-                    {
-                        DisconnectedReason = DisconnectedReason.Kicked
-                    }, DeliveryMethod.ReliableOrdered);
+                    _instance.DisconnectPlayer(kickedPlayer);
 
-            return Task.CompletedTask;
         }
     }
 }

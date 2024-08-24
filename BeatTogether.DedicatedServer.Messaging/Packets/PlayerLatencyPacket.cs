@@ -1,20 +1,21 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using Krypton.Buffers;
+﻿using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets
 {
     public sealed class PlayerLatencyPacket : INetSerializable
     {
-        public float Latency { get; set; }
+        public long Latency { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
-            Latency = reader.ReadFloat32();
+            Latency = (long)reader.ReadVarULong();
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
-            writer.WriteFloat32(Latency);
+            writer.WriteVarULong((ulong)Latency);
         }
     }
 }

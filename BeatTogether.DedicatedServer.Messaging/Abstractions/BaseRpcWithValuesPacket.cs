@@ -1,7 +1,8 @@
-﻿using Krypton.Buffers;
+﻿using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Abstractions
 {
+    // WARNING do not cast to ulong for any packets that inherit this class
     public abstract class BaseRpcWithValuesPacket : BaseRpcPacket
     {
         public byte HasValues { get; set; } = (1 | 2 | 4 | 8);
@@ -30,16 +31,17 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
             set => HasValues |= (byte) (value ? 8 : 0);
         }
 
-        public override void ReadFrom(ref SpanBufferReader reader)
+        public override void ReadFrom(ref SpanBuffer reader)
         {
             base.ReadFrom(ref reader);
             HasValues = reader.ReadUInt8();
         }
 
-        public override void WriteTo(ref SpanBufferWriter writer)
+        public override void WriteTo(ref SpanBuffer writer)
         {
             base.WriteTo(ref writer);
             writer.WriteUInt8(HasValues);
         }
+
     }
 }

@@ -1,6 +1,6 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets
@@ -20,13 +20,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCo
 
         public Dictionary<uint, string[]> requirements = new();
 
-        public void WriteTo(ref SpanBufferWriter bufferWriter)
+        public void WriteTo(ref SpanBuffer bufferWriter)
         {
             throw new System.NotImplementedException();
         }
-
-
-        public void ReadFrom(ref SpanBufferReader bufferReader)
+        public void ReadFrom(ref SpanBuffer bufferReader)
         {
             levelHash = bufferReader.ReadString();
             songName = bufferReader.ReadString();
@@ -49,7 +47,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCo
                     reqsForDifficulty[j] = bufferReader.ReadString();
                 requirements[difficulty] = reqsForDifficulty;
             }
-
+            //contributors
             byte count = bufferReader.ReadByte();
             for (int i = 0; i < count; i++)
             {
@@ -57,7 +55,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCo
                 bufferReader.ReadString();
                 bufferReader.ReadString();
             }
-
+            //difficulty colors
             byte count2 = bufferReader.ReadByte();
             for (int i = 0; i < count2; i++)
             {
@@ -65,6 +63,5 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCo
                 bufferReader.ReadColor();
             }
         }
-
     }
 }

@@ -4,7 +4,9 @@ on:
     branches:
       - master
       - dev
-      - dev-1.35
+      - dev-1.35.0
+      - dev-1.35.0-Restructured
+
 
 jobs:
   nuget-1:

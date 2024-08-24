@@ -1,9 +1,9 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.Core.Enums;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -27,30 +27,29 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _instance = dedicatedInstance;
         }
 
-        public override Task Handle(IPlayer sender, GetSelectedGameplayModifiers packet)
+        public override void Handle(IPlayer sender, GetSelectedGameplayModifiers packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(GetSelectedGameplayModifiers)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            if(_instance.State == Messaging.Enums.MultiplayerGameState.Lobby && _lobbyManager.SelectedModifiers != _lobbyManager.EmptyModifiers)
+            if(_instance.State != MultiplayerGameState.Game && _lobbyManager.SelectedModifiers != _lobbyManager.EmptyModifiers)
             {
                 _packetDispatcher.SendToPlayer(sender, new SetSelectedGameplayModifiers
                 {
                     Modifiers = _lobbyManager.SelectedModifiers
-                }, DeliveryMethod.ReliableOrdered);
-                return Task.CompletedTask;
+                }, IgnoranceChannelTypes.Reliable);
+                return;
             }
-            if (_instance.State == Messaging.Enums.MultiplayerGameState.Game)
+            if (_instance.State == MultiplayerGameState.Game)
             {
                 _packetDispatcher.SendToPlayer(sender, new SetSelectedGameplayModifiers
                 {
                     Modifiers = _gameplayManager.CurrentModifiers
-                }, DeliveryMethod.ReliableOrdered);
-                return Task.CompletedTask;
+                }, IgnoranceChannelTypes.Reliable);
+                return;
             }
-            _packetDispatcher.SendToPlayer(sender, new ClearSelectedGameplayModifiers(), DeliveryMethod.ReliableOrdered);
-            return Task.CompletedTask;
+            _packetDispatcher.SendToPlayer(sender, new ClearSelectedGameplayModifiers(), IgnoranceChannelTypes.Reliable);
         }
     }
 }

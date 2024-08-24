@@ -1,5 +1,4 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
-using Krypton.Buffers;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc
 {

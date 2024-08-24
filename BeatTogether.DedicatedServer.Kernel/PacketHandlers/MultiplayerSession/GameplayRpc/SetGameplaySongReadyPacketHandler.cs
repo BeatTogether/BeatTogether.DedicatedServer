@@ -2,14 +2,13 @@
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.GameplayRpc
 {
     public sealed class SetGameplaySongReadyPacketHandler : BasePacketHandler<SetGameplaySongReadyPacket>
     {
-        private IGameplayManager _gameplayManager;
-        private ILogger _logger = Log.ForContext<SetGameplaySongReadyPacketHandler>();
+        private readonly IGameplayManager _gameplayManager;
+        private readonly ILogger _logger = Log.ForContext<SetGameplaySongReadyPacketHandler>();
 
         public SetGameplaySongReadyPacketHandler(
             IGameplayManager gameplayManager)
@@ -17,7 +16,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _gameplayManager = gameplayManager;
         }
 
-        public override Task Handle(IPlayer sender, SetGameplaySongReadyPacket packet)
+        public override void Handle(IPlayer sender, SetGameplaySongReadyPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(SetGameplaySongReadyPacket)}' " +
@@ -25,7 +24,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             );
 
             _gameplayManager.HandleGameSongLoaded(sender);
-            return Task.CompletedTask;
         }
     }
 }

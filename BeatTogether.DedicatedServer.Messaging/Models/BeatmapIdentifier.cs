@@ -1,6 +1,6 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -10,14 +10,14 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public string Characteristic { get; set; } = null!;
         public BeatmapDifficulty Difficulty { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             LevelId = reader.ReadString();
             Characteristic = reader.ReadString();
             Difficulty = (BeatmapDifficulty)reader.ReadVarUInt();
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteString(LevelId);
             writer.WriteString(Characteristic);

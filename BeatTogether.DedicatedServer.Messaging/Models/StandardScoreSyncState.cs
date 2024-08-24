@@ -1,6 +1,6 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -12,7 +12,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public int Combo { get; set; }
         public int Multiplier { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             ModifiedScore = reader.ReadVarInt();
             RawScore = reader.ReadVarInt();
@@ -21,7 +21,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             Multiplier = reader.ReadVarInt();
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteVarInt(ModifiedScore);
             writer.WriteVarInt(RawScore);

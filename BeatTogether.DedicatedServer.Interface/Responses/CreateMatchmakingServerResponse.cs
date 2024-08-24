@@ -9,9 +9,7 @@
 
     public record CreateMatchmakingServerResponse(
         CreateMatchmakingServerError Error,
-        string? RemoteEndPoint = null,
-        byte[]? Random = null,
-        byte[]? PublicKey = null)
+        string RemoteEndPoint)
     {
         public bool Success => Error == default;
     }

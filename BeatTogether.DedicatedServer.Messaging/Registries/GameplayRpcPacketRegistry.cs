@@ -1,6 +1,6 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
-using BeatTogether.LiteNetLib.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
 
 namespace BeatTogether.DedicatedServer.Messaging.Registries
 {
@@ -20,6 +20,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries
             AddPacket<LevelFinishedPacket>(GameplayRpcPacketType.LevelFinished);
             AddPacket<NoteCutPacket>(GameplayRpcPacketType.NoteCut);
             AddPacket<NoteMissPacket>(GameplayRpcPacketType.NoteMissed);
+            AddPacket<ObstacleSpawnPacket>(GameplayRpcPacketType.ObstacleSpawned);
+            AddPacket<NoteSpawnPacket>(GameplayRpcPacketType.NoteSpawned);
+            AddPacket<SliderSpawnPacket>(GameplayRpcPacketType.SliderSpawned);
         }
     }
 }

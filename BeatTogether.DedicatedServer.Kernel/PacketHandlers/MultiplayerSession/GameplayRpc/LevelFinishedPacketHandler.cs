@@ -2,14 +2,13 @@
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.GameplayRpc
 {
     public sealed class LevelFinishedPacketHandler : BasePacketHandler<LevelFinishedPacket>
     {
-        private IGameplayManager _gameplayManager;
-        private ILogger _logger = Log.ForContext<LevelFinishedPacketHandler>();
+        private readonly IGameplayManager _gameplayManager;
+        private readonly ILogger _logger = Log.ForContext<LevelFinishedPacketHandler>();
 
         public LevelFinishedPacketHandler(
             IGameplayManager gameplayManager)
@@ -17,15 +16,16 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _gameplayManager = gameplayManager;
         }
 
-        public override Task Handle(IPlayer sender, LevelFinishedPacket packet)
+        public override void Handle(IPlayer sender, LevelFinishedPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(LevelFinishedPacket)}' " +
-                $"(SenderId={sender.ConnectionId})."
+                $"(SenderId={sender.ConnectionId}, HasValue0={packet.HasValue0}, HasAnyResult={packet.Results.HasAnyResult()}, " +
+                $"ModifiedScore={(packet.HasValue0 && packet.Results.HasAnyResult() ? packet.Results.LevelCompletionResults.ModifiedScore : "NoValue/NoResults" )}, " +
+                $"MultipliedScore={(packet.HasValue0 && packet.Results.HasAnyResult() ? packet.Results.LevelCompletionResults.MultipliedScore : "NoValue/NoResults")})."
             );
 
             _gameplayManager.HandleLevelFinished(sender, packet);
-            return Task.CompletedTask;
         }
     }
 }

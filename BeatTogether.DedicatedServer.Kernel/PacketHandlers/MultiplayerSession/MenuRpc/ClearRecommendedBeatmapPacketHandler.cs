@@ -1,10 +1,9 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -22,22 +21,19 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _lobbyManager = lobbyManager;
         }
 
-        public override Task Handle(IPlayer sender, ClearRecommendedBeatmapPacket packet)
+        public override void Handle(IPlayer sender, ClearRecommendedBeatmapPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(ClearRecommendedBeatmapPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            lock (sender.BeatmapLock)
+            sender.BeatmapIdentifier = null;
+            sender.MapHash = string.Empty;
+            sender.BeatmapDifficultiesRequirements.Clear();
+            _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
             {
-                sender.BeatmapIdentifier = null;
-                sender.ResetRecommendedMapRequirements();
-                _packetDispatcher.SendToPlayer(sender, new SetIsStartButtonEnabledPacket
-                {
-                    Reason = CannotStartGameReason.NoSongSelected
-                }, DeliveryMethod.ReliableOrdered);
-            }
-            return Task.CompletedTask;
+                Reason = sender.IsServerOwner ? CannotStartGameReason.NoSongSelected : CannotStartGameReason.None
+            }, IgnoranceChannelTypes.Reliable);
         }
     }
 }

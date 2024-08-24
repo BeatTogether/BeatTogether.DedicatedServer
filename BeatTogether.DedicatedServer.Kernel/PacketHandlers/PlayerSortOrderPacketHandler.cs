@@ -1,8 +1,7 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
 {
@@ -16,22 +15,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             _packetDispatcher = packetDispatcher;
         }
 
-        public override Task Handle(IPlayer sender, PlayerSortOrderPacket packet)
+        public override void Handle(IPlayer sender, PlayerSortOrderPacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(PlayerSortOrderPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-
-            lock (sender.SortLock)
+            if (sender.HashedUserId == packet.UserId && sender.SortIndex != packet.SortIndex) //If they send themselves as being in the wrong place, correct them. Although this probably shouldnt have a handler
             {
-                if (sender.UserId == packet.UserId && sender.SortIndex != packet.SortIndex)
-                {
-                    sender.SortIndex = packet.SortIndex;
-                    _packetDispatcher.SendExcludingPlayer(sender, packet, DeliveryMethod.ReliableOrdered);
-                }
+                packet.SortIndex = sender.SortIndex;
+                _packetDispatcher.SendToPlayer(sender, packet, IgnoranceChannelTypes.Reliable);
             }
-            return Task.CompletedTask;
+                
         }
     }
 }

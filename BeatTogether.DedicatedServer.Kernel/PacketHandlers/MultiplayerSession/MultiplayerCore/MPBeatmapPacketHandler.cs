@@ -5,7 +5,6 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePa
 using Serilog;
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -20,22 +19,23 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _lobbyManager = lobbyManager;
         }
 
-        public override Task Handle(IPlayer sender, MpBeatmapPacket packet)
+        public override void Handle(IPlayer sender, MpBeatmapPacket packet)
         {
 
             _logger.Debug(
                 $"Handling packet of type '{nameof(MpBeatmapPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            sender.MapHash = "custom_level_" + packet.levelHash;
-            if(packet.requirements.TryGetValue(packet.difficulty, out string[]? Requirements))
-            {
-                sender.Chroma = Requirements.Contains("Chroma");
-                sender.NoodleExtensions = Requirements.Contains("Noodle Extensions");
-                sender.MappingExtensions = Requirements.Contains("Mapping Extensions");
-            }
-            sender.BeatmapDifficulties = packet.requirements.Keys.Select(b => (BeatmapDifficulty)b).ToArray();
-            return Task.CompletedTask;
+            sender.MapHash = packet.levelHash;
+
+            if(sender.BeatmapIdentifier == null)
+                sender.BeatmapIdentifier = new BeatmapIdentifier();
+            sender.BeatmapIdentifier.LevelId = "custom_level_" + packet.levelHash;
+            sender.BeatmapIdentifier.Characteristic = packet.characteristic;
+            sender.BeatmapIdentifier.Difficulty = (BeatmapDifficulty)packet.difficulty;
+            sender.BeatmapDifficultiesRequirements = packet.requirements;
+
+            sender.UpdateEntitlement = true;
         }
     }
 }

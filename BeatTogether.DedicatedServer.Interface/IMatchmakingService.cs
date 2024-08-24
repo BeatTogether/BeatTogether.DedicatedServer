@@ -17,17 +17,14 @@ namespace BeatTogether.DedicatedServer.Interface
                     .UseName("DedicatedServer")
                     .AddInterface<IMatchmakingService>()
                     .AddEvent<PlayerLeaveServerEvent>()
+                    .AddEvent<PlayerJoinEvent>()
+                    .AddEvent<UpdatePlayersEvent>()
                     .AddEvent<NodeStartedEvent>()
                     .AddEvent<NodeOnlineEvent>()
-                    .AddEvent<NodeReceivedPlayerEncryptionEvent>()
+                    .AddEvent<NodeReceivedPlayerSessionDataEvent>()
                     .AddEvent<MatchmakingServerStoppedEvent>()
-                    //.AddEvent<UpdateInstanceConfigEvent>()
-                    .AddEvent<PlayerJoinEvent>()
-                    //.AddEvent<SelectedBeatmapEvent>()
-                    //.AddEvent<UpdateServerEvent>()
-                    //.AddEvent<LevelCompletionResultsEvent>()
-                    .AddEvent<ServerInGameplayEvent>()
-                    .AddEvent<UpdateStatusEvent>();
+                    .AddEvent<UpdateInstanceConfigEvent>() 
+                    .AddEvent<ServerInGameplayEvent>();
         }
     }
 }

@@ -1,8 +1,7 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
 {
@@ -17,22 +16,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
             _packetDispatcher = packetDispatcher;
         }
 
-        public override Task Handle(IPlayer sender, PlayerLatencyPacket packet)
+        public override void Handle(IPlayer sender, PlayerLatencyPacket packet)
         {
             _logger.Debug(
-                $"Handling packet of type '{nameof(SyncTimePacket)}' " +
-                $"(SenderId={sender.ConnectionId}, SyncTime={packet.Latency})."
+                $"Handling packet of type '{nameof(PlayerLatencyPacket)}' " +
+                $"(SenderId={sender.ConnectionId}, Latency={packet.Latency})."
             );
 
-            lock (sender.LatencyLock)
+            sender.Latency.Update(packet.Latency);
+            _packetDispatcher.SendFromPlayer(sender, new PlayerLatencyPacket
             {
-                sender.Latency.Update(packet.Latency);
-                _packetDispatcher.SendFromPlayer(sender, new PlayerLatencyPacket
-                {
-                    Latency = sender.Latency.CurrentAverage
-                }, DeliveryMethod.ReliableOrdered);
-            }
-            return Task.CompletedTask;
+                Latency = sender.Latency.CurrentAverage
+            }, IgnoranceChannelTypes.Reliable);
         }
     }
 }

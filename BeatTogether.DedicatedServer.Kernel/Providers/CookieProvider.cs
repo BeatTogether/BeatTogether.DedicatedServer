@@ -7,9 +7,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Providers
     {
         private const int CookieLength = 32;
 
-        private readonly RNGCryptoServiceProvider _rngCryptoServiceProvider;
+        private readonly RandomNumberGenerator _rngCryptoServiceProvider;
 
-        public CookieProvider(RNGCryptoServiceProvider rngCryptoServiceProvider)
+        public CookieProvider(RandomNumberGenerator rngCryptoServiceProvider)
         {
             _rngCryptoServiceProvider = rngCryptoServiceProvider;
         }

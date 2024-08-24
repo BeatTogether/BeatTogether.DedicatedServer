@@ -1,6 +1,5 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using Krypton.Buffers;
-using System;
+﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -8,7 +7,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
     {
         public PlayerPermissionConfiguration[] PlayersPermission = null!;
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             PlayersPermission = new PlayerPermissionConfiguration[reader.ReadInt32()];
             for (int i = 0; i < PlayersPermission.Length; i++)
@@ -17,7 +16,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             }
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteInt32(PlayersPermission.Length);
             for (int i = 0; i < PlayersPermission.Length; i++)

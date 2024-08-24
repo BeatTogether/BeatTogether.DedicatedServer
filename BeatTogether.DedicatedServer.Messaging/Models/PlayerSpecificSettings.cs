@@ -1,6 +1,6 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -14,7 +14,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public float HeadPosToPlayerHeightOffset { get; set; }
         public ColorScheme ColorScheme { get; set; } = new();
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             UserId = reader.ReadString();
             UserName = reader.ReadString();
@@ -25,7 +25,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             ColorScheme.ReadFrom(ref reader);
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteString(UserId);
             writer.WriteString(UserName);

@@ -1,19 +1,21 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Enums;
+﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
 {
     public interface IPacketDispatcher
     {
-        void SendToPlayer(IPlayer player, INetSerializable packet, DeliveryMethod deliveryMethod);
-        void SendToPlayer(IPlayer player, INetSerializable[] packets, DeliveryMethod deliveryMethod);
-        void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, DeliveryMethod deliveryMethod);
-        void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod);
-        void SendToNearbyPlayers(INetSerializable packet, DeliveryMethod deliveryMethod);
-        void SendToNearbyPlayers(INetSerializable[] packets, DeliveryMethod deliveryMethod);
-		void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable packet, DeliveryMethod deliveryMethod);
-		void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod);
-		void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, DeliveryMethod deliveryMethod);
-		void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, DeliveryMethod deliveryMethod);
-	}
+        void SendToPlayer(IPlayer player, INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
+        void SendToPlayer(IPlayer player, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
+        void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
+        void SendFromPlayerToPlayer(IPlayer fromPlayer, IPlayer toPlayer, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
+        void SendToNearbyPlayers(INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
+        void SendToNearbyPlayers(INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
+        void SendToPlayers(IPlayer[] Players, INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
+        void SendToPlayers(IPlayer[] Players, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
+        void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
+		void SendExcludingPlayer(IPlayer excludedPlayer, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
+		void SendFromPlayer(IPlayer fromPlayer, INetSerializable packet, IgnoranceChannelTypes deliveryMethod);
+		void SendFromPlayer(IPlayer fromPlayer, INetSerializable[] packets, IgnoranceChannelTypes deliveryMethod);
+    }
 }

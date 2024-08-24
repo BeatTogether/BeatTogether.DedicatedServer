@@ -1,23 +1,24 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
-using Krypton.Buffers;
+using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc
 {
     public sealed class SetSongStartTimePacket : BaseRpcWithValuesPacket
     {
-        public float StartTime { get; set; }
+        public long StartTime { get; set; }
 
-        public override void ReadFrom(ref SpanBufferReader reader)
+        public override void ReadFrom(ref SpanBuffer reader)
         {
             base.ReadFrom(ref reader);
             if (HasValue0)
-                StartTime = reader.ReadFloat32();
+                StartTime = reader.ReadVarLong();
         }
 
-        public override void WriteTo(ref SpanBufferWriter writer)
+        public override void WriteTo(ref SpanBuffer writer)
         {
             base.WriteTo(ref writer);
-            writer.WriteFloat32(StartTime);
+            writer.WriteVarLong(StartTime);
         }
     }
 }

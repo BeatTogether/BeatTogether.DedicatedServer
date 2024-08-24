@@ -1,9 +1,9 @@
-﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
+﻿using BeatTogether.Core.Enums;
+using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
+using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using BeatTogether.LiteNetLib.Enums;
 using Serilog;
-using System.Threading.Tasks;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -21,19 +21,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
             _packetDispatcher = packetDispatcher;
         }
 
-        public override Task Handle(IPlayer sender, GetCountdownEndTimePacket packet)
+        public override void Handle(IPlayer sender, GetCountdownEndTimePacket packet)
         {
             _logger.Debug(
                 $"Handling packet of type '{nameof(GetCountdownEndTimePacket)}' " +
-                $"(SenderId={sender.ConnectionId})."
+                $"(SenderId={sender.ConnectionId} CountdownTime={_lobbyManager.CountdownEndTime})."
             );
-            if(_lobbyManager.CountDownState == Enums.CountdownState.CountingDown)
+            if(_lobbyManager.CountDownState == CountdownState.CountingDown)
                 _packetDispatcher.SendToPlayer(sender, new SetCountdownEndTimePacket
                 {
                     CountdownTime = _lobbyManager.CountdownEndTime
-                }, DeliveryMethod.ReliableOrdered);
+                }, IgnoranceChannelTypes.Reliable);
 
-            return Task.CompletedTask;
         }
     }
 }

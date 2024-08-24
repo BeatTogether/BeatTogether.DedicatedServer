@@ -1,7 +1,7 @@
 ﻿using BeatTogether.DedicatedServer.Messaging.Enums;
-using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -31,8 +31,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public float AverageCutScoreForNotesWithFullScoreScoringType { get; set; }
         public int MaxCombo { get; set; }
         public float EndSongTime { get; set; }
+        public bool Invalidated { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             GameplayModifiers.ReadFrom(ref reader);
             ModifiedScore = reader.ReadVarInt();
@@ -58,9 +59,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             AverageCutScoreForNotesWithFullScoreScoringType = reader.ReadFloat32();
             MaxCombo = reader.ReadVarInt();
             EndSongTime = reader.ReadFloat32();
+			Invalidated = reader.ReadBool(); // Added in 1.37.1
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             GameplayModifiers.WriteTo(ref writer);
             writer.WriteVarInt(ModifiedScore);
@@ -86,6 +88,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             writer.WriteFloat32(AverageCutScoreForNotesWithFullScoreScoringType);
             writer.WriteVarInt(MaxCombo);
             writer.WriteFloat32(EndSongTime);
+			writer.WriteBool(Invalidated); // Added in 1.37.1
         }
     }
 }

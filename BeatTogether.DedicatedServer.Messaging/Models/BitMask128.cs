@@ -1,5 +1,5 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using Krypton.Buffers;
+﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -10,19 +10,37 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public ulong Top { get; set; }
         public ulong Bottom { get; set; }
 
+        public BitMask128(ulong top, ulong bottom)
+        {
+            Top = top;
+            Bottom = bottom;
+        }
+
+        public BitMask128() { }
+
         public bool Contains(string value, int hashCount = 3, int hashBits = 8)
         {
-			uint num = MurmurHash2(value);
+			uint hash = MurmurHash2(value);
 			for (int i = 0; i < hashCount; i++)
 			{
-				if (GetBits((int)((ulong)num % (ulong)((long)BitCount)), 1) == 0UL)
+				if (GetBits((int)(hash % (ulong)((long)BitCount)), 1) == 0UL)
 				{
 					return false;
 				}
-				num >>= hashBits;
+                hash >>= hashBits;
 			}
 			return true;
 		}
+
+		public void WriteToBitMask(string value, int hashCount = 3, int hashBits = 8)
+        {
+			ulong hash = MurmurHash2(value);
+			for(int i = 0; i < hashCount; i++)
+            {
+				SetBits((int)(hash % (ulong)((long)BitCount)), 1UL);
+				hash >>= hashBits;
+			}
+        }
 
 		public ulong GetBits(int offset, int count)
 		{
@@ -31,13 +49,20 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 			return (ShiftRight(Top, num2) | ShiftRight(Bottom, offset)) & num;
 		}
 
-		public void ReadFrom(ref SpanBufferReader reader)
+        public BitMask128 SetBits(int offset, ulong bits)
+        {
+            ulong d = Top;
+            int num = offset - 64;
+            return new BitMask128(d | ShiftLeft(bits, num), Bottom | ShiftLeft(bits, offset));
+        }
+
+        public void ReadFrom(ref SpanBuffer reader)
         {
             Top = reader.ReadUInt64();
             Bottom = reader.ReadUInt64();
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteUInt64(Top);
             writer.WriteUInt64(Bottom);

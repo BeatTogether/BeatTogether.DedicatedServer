@@ -1,5 +1,5 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using Krypton.Buffers;
+﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -23,7 +23,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 		public bool ZenMode { get; set; }
 		public bool SmallCubes { get; set; }
 
-		public void ReadFrom(ref SpanBufferReader reader)
+		public void ReadFrom(ref SpanBuffer reader)
 		{
 			int @int = reader.ReadInt32();
 			Energy = (EnergyType)(@int & 15);
@@ -45,7 +45,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
 			SmallCubes = (@int & 67108864) != 0;
 		}
 
-		public void WriteTo(ref SpanBufferWriter writer)
+		public void WriteTo(ref SpanBuffer writer)
 		{
 			int num = 0;
 			num |= (int)(Energy & (EnergyType)15);

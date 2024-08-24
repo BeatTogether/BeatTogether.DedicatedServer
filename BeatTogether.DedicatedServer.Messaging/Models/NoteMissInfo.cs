@@ -1,6 +1,6 @@
-﻿using BeatTogether.LiteNetLib.Abstractions;
-using BeatTogether.LiteNetLib.Extensions;
-using Krypton.Buffers;
+﻿using BeatTogether.DedicatedServer.Messaging.Abstractions;
+using BeatTogether.Extensions;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Models
 {
@@ -11,7 +11,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
         public int NoteLineIndex { get; set; }
         public float NoteTime { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader reader)
+        public void ReadFrom(ref SpanBuffer reader)
         {
             ColorType = reader.ReadVarInt();
             NoteLineLayer = reader.ReadVarInt();
@@ -19,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Models
             NoteTime = reader.ReadFloat32();
         }
 
-        public void WriteTo(ref SpanBufferWriter writer)
+        public void WriteTo(ref SpanBuffer writer)
         {
             writer.WriteVarInt(ColorType);
             writer.WriteVarInt(NoteLineLayer);
