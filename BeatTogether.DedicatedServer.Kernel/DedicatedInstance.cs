@@ -380,7 +380,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 new MpNodePoseSyncStatePacket
                 {
                     fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
-                    deltaUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()
+                    deltaUpdateFrequency = Math.Min(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 200L)
                 },
                 new MpScoreSyncStatePacket
                 {
@@ -423,8 +423,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 new MpNodePoseSyncStatePacket
                     {
                         fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
-                        deltaUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()
-                    },
+                        deltaUpdateFrequency = Math.Min(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 200L)
+					},
                 new MpScoreSyncStatePacket
                     {
                         fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets(), 500L),
@@ -586,7 +586,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     new MpNodePoseSyncStatePacket
                         {
                             fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
-                            deltaUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()
+                            deltaUpdateFrequency = Math.Min(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 200L)
                         },
                     new MpScoreSyncStatePacket
                         {
