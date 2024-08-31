@@ -379,8 +379,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 },
                 new MpNodePoseSyncStatePacket
                 {
-                    fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
-                    deltaUpdateFrequency = Math.Min(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 200L)
+                    fullStateUpdateFrequency = Math.Clamp(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets() / 10L, 100L, 1000L),
+                    deltaUpdateFrequency = Math.Clamp(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets() / 100L, 10L, 100L)
                 },
                 new MpScoreSyncStatePacket
                 {
@@ -422,8 +422,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     },
                 new MpNodePoseSyncStatePacket
                     {
-                        fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
-                        deltaUpdateFrequency = Math.Min(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 200L)
+	                    fullStateUpdateFrequency = Math.Clamp(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets() / 10L, 100L, 1000L),
+	                    deltaUpdateFrequency = Math.Clamp(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets() / 100L, 10L, 100L)
 					},
                 new MpScoreSyncStatePacket
                     {
@@ -585,8 +585,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 PacketDispatcher.SendToNearbyPlayers(new INetSerializable[] {
                     new MpNodePoseSyncStatePacket
                         {
-                            fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
-                            deltaUpdateFrequency = Math.Min(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 200L)
+	                        fullStateUpdateFrequency = Math.Clamp(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets() / 10L, 100L, 1000L),
+	                        deltaUpdateFrequency = Math.Clamp(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets() / 100L, 10L, 100L)
                         },
                     new MpScoreSyncStatePacket
                         {
