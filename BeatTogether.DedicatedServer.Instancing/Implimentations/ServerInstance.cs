@@ -42,5 +42,6 @@ namespace BeatTogether.DedicatedServer.Instancing.Implimentations
         public bool AllowChroma { get => _ServerInstance._configuration.AllowChroma; set => throw new NotImplementedException(); }
         public bool AllowME { get => _ServerInstance._configuration.AllowMappingExtensions; set => throw new NotImplementedException(); }
         public bool AllowNE { get => _ServerInstance._configuration.AllowNoodleExtensions; set => throw new NotImplementedException(); }
-    }
+        public VersionRange SupportedVersionRange { get => _ServerInstance._configuration.SupportedVersionRange; set => throw new NotImplementedException(); }
+	}
 }

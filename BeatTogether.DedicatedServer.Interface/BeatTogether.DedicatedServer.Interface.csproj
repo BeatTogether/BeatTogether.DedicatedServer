@@ -7,7 +7,7 @@
     <Authors>BeatTogether Team</Authors>
     <Company>BeatTogether</Company>
     <RepositoryUrl>https://github.com/beattogether/BeatTogether.DedicatedServer</RepositoryUrl>
-    <Version>2.0.2</Version>
+    <Version>2.1.0</Version>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autobus.Abstractions" Version="0.1.5" />
-    <PackageReference Include="BeatTogether.Core" Version="1.0.3" />
+    <PackageReference Include="BeatTogether.Core" Version="1.2.0-dev.3" />
   </ItemGroup>
 
 </Project>
