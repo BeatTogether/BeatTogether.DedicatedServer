@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="appsettings.Development.json" />
+    <None Remove="appsettings.*.json" />
     <None Remove="appsettings.json" />
     <None Update="cert.pem">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -19,10 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="appsettings.LocalDevelopment.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="appsettings.Development.json">
+    <Content Include="appsettings.*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="appsettings.json">
