@@ -472,6 +472,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     int Votes = 0;
                     foreach (var item in voteDictionary)
                     {
+                        _logger.Debug($"Checking Votes for map '{item.Key.LevelId}' on characteristic '{item.Key.Characteristic}' and difficulty '{item.Key.Difficulty}' votes: {item.Value}");
                         if (item.Value > Votes)
                         {
                             Selected = item.Key;
