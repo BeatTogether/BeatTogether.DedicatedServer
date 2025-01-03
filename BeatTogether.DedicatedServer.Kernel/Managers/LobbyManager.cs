@@ -479,6 +479,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                             Votes = item.Value;
                         }
                     }
+                    _logger.Verbose($"Vote: selected map '{Selected.LevelId}' characteristic '{Selected.Characteristic}' difficulty '{Selected.Difficulty}'");
                     return Selected;
                 case SongSelectionMode.RandomPlayerPicks:
                     if (CountDownState == CountdownState.CountingDown || CountDownState == CountdownState.NotCountingDown)
