@@ -6,6 +6,7 @@ using BeatTogether.DedicatedServer.Instancing.Implimentations;
 using Serilog;
 using System.Net;
 using System.Threading.Tasks;
+using BeatTogether.Core.Models;
 
 namespace BeatTogether.DedicatedServer.Instancing
 {
@@ -50,10 +51,10 @@ namespace BeatTogether.DedicatedServer.Instancing
             return Task.CompletedTask;
         }
 
-        public Task<IServerInstance?> GetAvailablePublicServer(InvitePolicy invitePolicy, GameplayServerMode serverMode, SongSelectionMode songMode, GameplayServerControlSettings serverControlSettings, BeatmapDifficultyMask difficultyMask, GameplayModifiersMask modifiersMask, string songPackMasks)
+        public Task<IServerInstance?> GetAvailablePublicServer(InvitePolicy invitePolicy, GameplayServerMode serverMode, SongSelectionMode songMode, GameplayServerControlSettings serverControlSettings, BeatmapDifficultyMask difficultyMask, GameplayModifiersMask modifiersMask, string songPackMasks, VersionRange versionRange)
         {
             IServerInstance? serverInstance = null;
-            if (_instanceRegistry.TryGetAvailablePublicServer(invitePolicy, serverMode, songMode, serverControlSettings, difficultyMask, modifiersMask, songPackMasks, out var instance))
+            if (_instanceRegistry.TryGetAvailablePublicServer(invitePolicy, serverMode, songMode, serverControlSettings, difficultyMask, modifiersMask, songPackMasks, versionRange, out var instance))
             {
                 serverInstance = new ServerInstance(instance, IPEndPoint.Parse($"{_instancingConfiguration.HostEndpoint}:{instance._configuration.Port}"));
             }

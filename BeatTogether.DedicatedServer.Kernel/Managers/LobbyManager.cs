@@ -472,12 +472,14 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
                     int Votes = 0;
                     foreach (var item in voteDictionary)
                     {
+                        _logger.Verbose($"Checking Votes for map '{item.Key.LevelId}' on characteristic '{item.Key.Characteristic}' and difficulty '{item.Key.Difficulty}' votes: {item.Value}");
                         if (item.Value > Votes)
                         {
                             Selected = item.Key;
                             Votes = item.Value;
                         }
                     }
+                    _logger.Verbose($"Vote: selected map '{Selected.LevelId}' characteristic '{Selected.Characteristic}' difficulty '{Selected.Difficulty}'");
                     return Selected;
                 case SongSelectionMode.RandomPlayerPicks:
                     if (CountDownState == CountdownState.CountingDown || CountDownState == CountdownState.NotCountingDown)

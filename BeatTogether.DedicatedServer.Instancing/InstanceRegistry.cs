@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using BeatTogether.Core.Enums;
 using System.Linq;
+using BeatTogether.Core.Models;
 
 namespace BeatTogether.DedicatedServer.Instancing
 {
@@ -23,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Instancing
 
         public bool RemoveInstance(IDedicatedInstance instance) => _instances.TryRemove(instance._configuration.Secret, out _) && _instancesByCode.TryRemove(instance._configuration.Code, out _);
 
-        public bool TryGetAvailablePublicServer(InvitePolicy invitePolicy, GameplayServerMode serverMode, SongSelectionMode songMode, GameplayServerControlSettings serverControlSettings, BeatmapDifficultyMask difficultyMask, GameplayModifiersMask modifiersMask, string songPackMasks, [MaybeNullWhen(false)] out IDedicatedInstance instance)
+        public bool TryGetAvailablePublicServer(InvitePolicy invitePolicy, GameplayServerMode serverMode, SongSelectionMode songMode, GameplayServerControlSettings serverControlSettings, BeatmapDifficultyMask difficultyMask, GameplayModifiersMask modifiersMask, string songPackMasks, VersionRange versionRange, [MaybeNullWhen(false)] out IDedicatedInstance instance)
         {
             instance = null;
             var AvaliableServers = _instances.Values.Where(s =>
@@ -33,7 +34,8 @@ namespace BeatTogether.DedicatedServer.Instancing
                 s._configuration.GameplayServerConfiguration.GameplayServerControlSettings == serverControlSettings &&
                 s._configuration.BeatmapDifficultyMask == difficultyMask &&
                 s._configuration.GameplayModifiersMask == modifiersMask &&
-                s._configuration.SongPacksMask == songPackMasks
+                s._configuration.SongPacksMask == songPackMasks &&
+                s._configuration.SupportedVersionRange == versionRange
                 );
             if (!AvaliableServers.Any())
                 return false;

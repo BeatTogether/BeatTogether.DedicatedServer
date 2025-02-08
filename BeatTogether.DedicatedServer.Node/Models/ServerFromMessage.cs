@@ -50,6 +50,8 @@ namespace BeatTogether.DedicatedServer.Node.Models
 
         public bool AllowNE { get; set; }
 
+        public VersionRange SupportedVersionRange { get; set; }
+
         public IPEndPoint InstanceEndPoint { get; set; } = null!;
         public HashSet<string> PlayerHashes { get; set; } = null!;
 
@@ -76,6 +78,7 @@ namespace BeatTogether.DedicatedServer.Node.Models
             AllowChroma = instance.AllowChroma;
             AllowME = instance.AllowME;
             AllowNE = instance.AllowNE;
+            SupportedVersionRange = instance.SupportedVersionRange;
         }
     }
 }

@@ -16,6 +16,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
         public string SetConstantManagerFromUserId { get; set; } = string.Empty; //If a user creates a server using the api and enteres there userId (eg uses discord bot with linked account))
         public bool AllowPerPlayerDifficulties { get; set; } = false;
         public bool AllowPerPlayerModifiers { get; set; } = false;
+
+        public VersionRange SupportedVersionRange { get; set; } = new();
         public CountdownConfig CountdownConfig { get; set; } = new();
 
         public GameplayServerConfiguration GameplayServerConfiguration { get; set; } = new();
