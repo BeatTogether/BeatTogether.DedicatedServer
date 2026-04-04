@@ -28,7 +28,9 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         RollingAverage Latency { get; }
         long SyncTime { get; }
         int SortIndex { get; set; }
-        MultiplayerAvatarsData Avatar { get; set; }
+
+		// TODO: Change to BeatSaberPlayerIdentityPacketData aka TGameSpecificData
+		MultiplayerAvatarsData Avatar { get; set; }
         bool IsReady { get; set; }
 
         BeatmapIdentifier? BeatmapIdentifier { get; set; }

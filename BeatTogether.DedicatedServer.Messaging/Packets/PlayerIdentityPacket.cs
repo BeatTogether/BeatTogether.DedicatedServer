@@ -6,24 +6,29 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
     public sealed class PlayerIdentityPacket : INetSerializable
     {
         public PlayerStateHash PlayerState { get; set; } = new();
-        public MultiplayerAvatarsData PlayerAvatar { get; set; } = new();
-        public ByteArray Random { get; set; } = new();
+		public ByteArray Random { get; set; } = new();
         public ByteArray PublicEncryptionKey { get; set; } = new();
 
-        public void ReadFrom(ref SpanBuffer reader)
+		// This field should technically be TGameSpecificData where TGameSpecificData : INetSerializable,
+		// for now we will hardcode it to BeatSaberPlayerIdentityPacketData
+		public BeatSaberPlayerIdentityPacketData GameSpecificData { get; set; } = new();
+
+		public void ReadFrom(ref SpanBuffer reader)
         {
             PlayerState.ReadFrom(ref reader);
-            PlayerAvatar.ReadFrom(ref reader);
+            //PlayerAvatar.ReadFrom(ref reader);
             Random.ReadFrom(ref reader);
             PublicEncryptionKey.ReadFrom(ref reader);
-        }
+            GameSpecificData.ReadFrom(ref reader);
+		}
 
         public void WriteTo(ref SpanBuffer writer)
         {
             PlayerState.WriteTo(ref writer);
-            PlayerAvatar.WriteTo(ref writer);
+            //PlayerAvatar.WriteTo(ref writer);
             Random.WriteTo(ref writer);
             PublicEncryptionKey.WriteTo(ref writer);
-        }
+            GameSpecificData.WriteTo(ref writer);
+		}
     }
 }

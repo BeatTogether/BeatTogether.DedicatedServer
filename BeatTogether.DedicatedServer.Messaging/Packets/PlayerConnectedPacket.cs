@@ -10,6 +10,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
         public string UserId { get; set; } = null!;
         public string UserName { get; set; } = null!;
         public bool IsConnectionOwner { get; set; }
+        public string CompatabilityVersion { get; set; } = string.Empty;
 
         public void ReadFrom(ref SpanBuffer reader)
         {
@@ -17,6 +18,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
             UserId = reader.ReadString();
             UserName = reader.ReadString();
             IsConnectionOwner = reader.ReadBool();
+            CompatabilityVersion = reader.ReadString();
         }
 
         public void WriteTo(ref SpanBuffer writer)
@@ -25,6 +27,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Packets
             writer.WriteString(UserId);
             writer.WriteString(UserName);
             writer.WriteBool(IsConnectionOwner);
+            writer.WriteString(CompatabilityVersion);
         }
     }
 }

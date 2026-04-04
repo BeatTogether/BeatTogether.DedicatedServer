@@ -25,7 +25,7 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
                 $"Handling packet of type '{nameof(PlayerIdentityPacket)}' " +
                 $"(SenderId={sender.ConnectionId})."
             );
-            sender.Avatar = packet.PlayerAvatar;
+            sender.Avatar = packet.GameSpecificData.PlayerAvatar;
             sender.State = packet.PlayerState;
             sender.Random = packet.Random.Data ?? Array.Empty<byte>();
             sender.PublicEncryptionKey = packet.PublicEncryptionKey.Data ?? Array.Empty<byte>();

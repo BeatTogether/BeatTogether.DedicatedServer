@@ -471,10 +471,11 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     // Send player to player data to new player
                     ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PlayerState = p.State;
-                    ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PlayerAvatar = p.Avatar;
+                    //((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PlayerAvatar = p.Avatar;
                     ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).Random = new ByteArray { Data = p.Random };
                     ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey };
-                    ((MpPlayerData)SendToPlayerFromPlayers[1]).PlatformID = p.PlatformUserId;
+					((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).GameSpecificData = new BeatSaberPlayerIdentityPacketData(p.Avatar);
+					((MpPlayerData)SendToPlayerFromPlayers[1]).PlatformID = p.PlatformUserId;
                     ((MpPlayerData)SendToPlayerFromPlayers[1]).Platform = p.PlayerPlatform.Convert();
                     ((MpPlayerData)SendToPlayerFromPlayers[1]).ClientVersion = p.PlayerClientVersion.ToString();
                     
