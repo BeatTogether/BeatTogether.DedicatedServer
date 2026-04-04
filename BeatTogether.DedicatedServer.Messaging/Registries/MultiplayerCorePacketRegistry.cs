@@ -7,7 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace BeatTogether.DedicatedServer.Messaging.Registries
 {
-    public class MultiplayerCorePacketRegistry : BasePacketRegistry
+    public class MultiplayerCorePacketRegistry : BaseVersionedPacketRegistry
     {
         private readonly ConcurrentDictionary<string, PacketFactory> _factories = new();
         public override void Register()

@@ -1,4 +1,5 @@
-﻿using BeatTogether.DedicatedServer.Messaging.Util;
+﻿using BeatTogether.Core.Models;
+using BeatTogether.DedicatedServer.Messaging.Util;
 
 namespace BeatTogether.DedicatedServer.Messaging.Abstractions
 {

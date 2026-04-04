@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace BeatTogether.DedicatedServer.Messaging.Abstractions
 {
-    public interface IPacketRegistry
+    public interface IVersionedPacketRegistry
     {
         /// <summary>
         /// Retrieves the identifiers of all registered packets.
@@ -12,21 +12,28 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         /// <returns>The identifiers of all registered packets.</returns>
         IReadOnlyDictionary<Type, IEnumerable<byte>> GetAllPacketIds();
 
-        /// <summary>
-        /// Retrieves the identifiers associated with the packet
-        /// of the given <see cref="Type"/>.
-        /// </summary>
-        /// <param name="type">The <see cref="Type"/> of packet.</param>
-        /// <returns>The identifiers associated with the packet.</returns>
-        IEnumerable<byte> GetPacketIds(Type type);
+        ///// <summary>
+        ///// Retrieves the identifiers associated with the packet
+        ///// of the given <see cref="Type"/>.
+        ///// </summary>
+        ///// <param name="type">The <see cref="Type"/> of packet.</param>
+        ///// <returns>The identifiers associated with the packet.</returns>
+        //IEnumerable<byte> GetPacketIds(Type type);
+
+        ///// <summary>
+        ///// Retrieves the identifiers associated with the packet of type <typeparamref name="T"/>.
+        ///// </summary>
+        ///// <typeparam name="T">The type of packet.</typeparam>
+        ///// <returns>The identifiers associated with the packet.</returns>
+        //IEnumerable<byte> GetPacketIds<T>()
+        //    where T : class, INetSerializable;
 
         /// <summary>
-        /// Retrieves the identifiers associated with the packet of type <typeparamref name="T"/>.
+        /// Gets the version number from a game version.
         /// </summary>
-        /// <typeparam name="T">The type of packet.</typeparam>
-        /// <returns>The identifiers associated with the packet.</returns>
-        IEnumerable<byte> GetPacketIds<T>()
-            where T : class, INetSerializable;
+        /// <param name="gameVersion"></param>
+        /// <returns></returns>
+        public int GetVersionNumber(Version? gameVersion);
 
         /// <summary>
         /// Retrieves the <see cref="Type"/> of the packet
@@ -37,18 +44,18 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         /// This must be castable to a <see cref="byte"/>.
         /// </param>
         /// <returns>The <see cref="Type"/> object of the packet.</returns>
-        Type GetPacketType(object packetId);
+        Type GetPacketType(object packetId, int version_number);
 
         /// <summary>
-        /// Retrieves the <see cref="IPacketRegistry"/> instance
+        /// Retrieves the <see cref="IVersionedPacketRegistry"/> instance
         /// associated with the given <paramref name="packetRegistryId"/>.
         /// </summary>
         /// <param name="packetRegistryId">
         /// The identifier associated with the sub packet registry.
         /// This must be castable to a <see cref="byte"/>.
         /// </param>
-        /// <returns>The <see cref="IPacketRegistry"/> instance associated with the given identifier.</returns>
-        IPacketRegistry GetSubPacketRegistry(object packetRegistryId);
+        /// <returns>The <see cref="IVersionedPacketRegistry"/> instance associated with the given identifier.</returns>
+        IVersionedPacketRegistry GetSubPacketRegistry(object packetRegistryId, int version_number);
 
         /// <summary>
         /// Creates a new instance of the packet associated with the given <paramref name="packetId"/>.
@@ -58,7 +65,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         /// This must be castable to a <see cref="byte"/>.
         /// </param>
         /// <returns>The packet instance.</returns>
-        INetSerializable CreatePacket(object packetId);
+        INetSerializable CreatePacket(object packetId, int version_number);
 
         /// <summary>
         /// Retrieves the identifiers associated with the packet
@@ -70,7 +77,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         /// <see langword="true"/> when the <paramref name="packetIds"/> were retrieved successfully;
         /// <see langword="false"/> otherwise.
         /// </returns>
-        bool TryGetPacketIds(Type type, [MaybeNullWhen(false)] out IEnumerable<byte> packetIds);
+        bool TryGetPacketIds(Type type, int version_number, [MaybeNullWhen(false)] out IEnumerable<byte> packetIds);
 
         /// <summary>
         /// Retrieves the identifiers associated with the packet of type <typeparamref name="T"/>.
@@ -81,7 +88,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         /// <see langword="true"/> when the <paramref name="packetIds"/> were retrieved successfully;
         /// <see langword="false"/> otherwise.
         /// </returns>
-        bool TryGetPacketIds<T>([MaybeNullWhen(false)] out IEnumerable<byte> packetIds)
+        bool TryGetPacketIds<T>(int version_number, [MaybeNullWhen(false)] out IEnumerable<byte> packetIds)
             where T : class, INetSerializable;
 
         /// <summary>
@@ -96,10 +103,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         /// <returns>
         /// <see langword="true"/> when the <paramref name="type"/> was retrieved successfully;
         /// <see langword="false"/> otherwise.</returns>
-        bool TryGetPacketType(object packetId, [MaybeNullWhen(false)] out Type type);
+        bool TryGetPacketType(object packetId, int version_number, [MaybeNullWhen(false)] out Type type);
 
         /// <summary>
-        /// Retrieves the <see cref="IPacketRegistry"/> instance
+        /// Retrieves the <see cref="IVersionedPacketRegistry"/> instance
         /// associated with the given <paramref name="packetRegistryId"/>.
         /// </summary>
         /// <param name="packetRegistryId">
@@ -107,13 +114,13 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         /// This must be castable to a <see cref="byte"/>.
         /// </param>
         /// <param name="packetRegistry">
-        /// The <see cref="IPacketRegistry"/> instance
+        /// The <see cref="IVersionedPacketRegistry"/> instance
         /// associated with the given identifier.
         /// </param>
         /// <returns>
         /// <see langword="true"/> when the <paramref name="packetRegistry"/> was retrieved successfully;
         /// <see langword="false"/> otherwise.</returns>
-        bool TryGetSubPacketRegistry(object packetRegistryId, [MaybeNullWhen(false)] out IPacketRegistry packetRegistry);
+        bool TryGetSubPacketRegistry(object packetRegistryId, int version_number, [MaybeNullWhen(false)] out IVersionedPacketRegistry packetRegistry);
 
         /// <summary>
         /// Creates a new instance of the packet associated with the given <paramref name="packetId"/>.
@@ -127,6 +134,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         /// <see langword="true"/> when the <paramref name="packet"/> was created successfully;
         /// <see langword="false"/> otherwise.
         /// </returns>
-        bool TryCreatePacket(object packetId, [MaybeNullWhen(false)] out INetSerializable packet);
+        bool TryCreatePacket(object packetId, int version_number, [MaybeNullWhen(false)] out INetSerializable packet);
     }
 }

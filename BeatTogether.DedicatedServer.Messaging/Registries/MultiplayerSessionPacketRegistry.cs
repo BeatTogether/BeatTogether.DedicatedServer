@@ -4,7 +4,7 @@ using BeatTogether.DedicatedServer.Messaging.Abstractions;
 
 namespace BeatTogether.DedicatedServer.Messaging.Registries
 {
-    public sealed class MultiplayerSessionPacketRegistry : BasePacketRegistry
+    public sealed class MultiplayerSessionPacketRegistry : BaseVersionedPacketRegistry
     {
         public override void Register()
         {

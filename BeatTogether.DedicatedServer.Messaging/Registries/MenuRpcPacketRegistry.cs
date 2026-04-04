@@ -4,7 +4,7 @@ using BeatTogether.DedicatedServer.Messaging.Abstractions;
 
 namespace BeatTogether.DedicatedServer.Messaging.Registries
 {
-    public sealed class MenuRpcPacketRegistry : BasePacketRegistry
+    public sealed class MenuRpcPacketRegistry : BaseVersionedPacketRegistry
     {
         public override void Register()
         {
