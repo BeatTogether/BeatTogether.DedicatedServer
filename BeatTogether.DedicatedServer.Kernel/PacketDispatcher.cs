@@ -5,6 +5,7 @@ using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Util;
 using Serilog;
 using BeatTogether.DedicatedServer.Kernel.ENet;
+using BeatTogether.DedicatedServer.Messaging.Registries;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -247,15 +248,17 @@ namespace BeatTogether.DedicatedServer.Kernel
                 foreach (byte packetId in packetIds)
                     packetWriter.WriteUInt8(packetId);
             }
-            else
+            else if (MultiplayerCorePacketRegistry.GetIsMpCorePacket(type))
             {
 
                 packetWriter.WriteUInt8(7);
                 packetWriter.WriteUInt8(100);
                 packetWriter.WriteString(type.Name);
-                //Presume it is a mpcore packet and use the mpcore packet ID, would thow an exeption here if not
-                //throw new Exception($"Failed to retrieve identifier for packet of type '{type.Name}'");
-                //this should be fine as its only for packets sent from the server
+            }
+            else
+            {
+                _logger.Error($"Packet IDs could not be found: {type.Name}, cannot be written");
+                return;
             }
             packet.WriteTo(ref packetWriter);
             writer.WriteVarUInt((uint)packetWriter.Size);

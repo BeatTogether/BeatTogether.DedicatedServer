@@ -4,11 +4,13 @@ using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Messaging.Registries
 {
     public class MultiplayerCorePacketRegistry : BaseVersionedPacketRegistry
     {
+        private static HashSet<Type> Registered_MpCore_Packets = new HashSet<Type>();
         private readonly ConcurrentDictionary<string, PacketFactory> _factories = new();
         public override void Register()
         {
@@ -41,6 +43,13 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries
         {
             Type typeFromHandle = typeof(T);
             _factories[typeFromHandle.Name] = () => new T();
+
+            Registered_MpCore_Packets.Add(typeFromHandle);
+        }
+
+        public static bool GetIsMpCorePacket(Type type)
+        {
+            return Registered_MpCore_Packets.Contains(type);
         }
     }
 }
