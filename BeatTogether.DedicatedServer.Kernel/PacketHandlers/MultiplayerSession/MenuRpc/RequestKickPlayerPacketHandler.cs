@@ -1,6 +1,5 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -9,16 +8,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IDedicatedInstance _instance;
-        private readonly ILogger _logger = Log.ForContext<RequestKickPlayerPacketHandler>();
+        private readonly Internal_Logger _logger;
 
         public RequestKickPlayerPacketHandler(
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
-            IDedicatedInstance dedicatedInstance)
+            IDedicatedInstance dedicatedInstance,
+            Kernel_Logger kernel_Logger)
         {
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
             _instance = dedicatedInstance;
+            _logger = kernel_Logger.ForContext<RequestKickPlayerPacketHandler>();
         }
 
         public override void Handle(IPlayer sender, RequestKickPlayerPacket packet)

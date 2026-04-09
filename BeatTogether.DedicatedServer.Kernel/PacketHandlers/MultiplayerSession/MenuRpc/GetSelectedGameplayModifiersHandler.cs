@@ -3,7 +3,6 @@ using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -13,18 +12,20 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         private readonly ILobbyManager _lobbyManager;
         private readonly IGameplayManager _gameplayManager;
         private readonly IDedicatedInstance _instance;
-        private readonly ILogger _logger = Log.ForContext<GetSelectedGameplayModifiersHandler>();
+        private readonly Internal_Logger _logger;
 
         public GetSelectedGameplayModifiersHandler(
             IPacketDispatcher packetDispatcher,
             ILobbyManager lobbyManager,
             IGameplayManager gameplayManager,
-            IDedicatedInstance dedicatedInstance)
+            IDedicatedInstance dedicatedInstance,
+            Kernel_Logger kernel_Logger)
         {
             _packetDispatcher = packetDispatcher;
             _lobbyManager = lobbyManager;
             _gameplayManager = gameplayManager;
             _instance = dedicatedInstance;
+            _logger = kernel_Logger.ForContext<GetSelectedGameplayModifiersHandler>();
         }
 
         public override void Handle(IPlayer sender, GetSelectedGameplayModifiers packet)

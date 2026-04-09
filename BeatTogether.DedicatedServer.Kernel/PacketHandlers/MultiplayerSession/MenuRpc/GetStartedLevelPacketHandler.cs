@@ -7,7 +7,6 @@ using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -18,20 +17,22 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         private readonly ILobbyManager _lobbyManager;
         private readonly IGameplayManager _gameplayManager;
         private readonly IPacketDispatcher _packetDispatcher;
-        private readonly ILogger _logger = Log.ForContext<GetStartedLevelPacketHandler>();
+        private readonly Internal_Logger _logger;
 
         public GetStartedLevelPacketHandler(
             InstanceConfiguration instanceConfiguration,
             IDedicatedInstance instance, 
             ILobbyManager lobbyManager,
             IGameplayManager gameplayManager, 
-            IPacketDispatcher packetDispatcher)
+            IPacketDispatcher packetDispatcher,
+            Kernel_Logger kernel_Logger)
         {
             _configuration = instanceConfiguration;
             _instance = instance;
             _lobbyManager = lobbyManager;
             _gameplayManager = gameplayManager;
             _packetDispatcher = packetDispatcher;
+            _logger = kernel_Logger.ForContext<GetStartedLevelPacketHandler>();
         }
 
         public override void Handle(IPlayer sender, GetStartedLevelPacket packet)

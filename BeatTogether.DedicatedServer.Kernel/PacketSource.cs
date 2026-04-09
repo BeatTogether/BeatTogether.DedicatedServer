@@ -21,7 +21,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public const byte AllConnectionIds = 127;
 
         private readonly IServiceProvider _serviceProvider;
-        private readonly IPacketRegistry _packetRegistry;
+        private readonly IVersionedPacketRegistry _packetRegistry;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly PacketDispatcher _packetDispatcher;
         private readonly Internal_Logger _logger;
@@ -29,7 +29,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public PacketSource(
             IServiceProvider serviceProvider,
-            IPacketRegistry packetRegistry,
+            IVersionedPacketRegistry packetRegistry,
             IPlayerRegistry playerRegistry,
             PacketDispatcher packetDispatcher,
             InstanceConfiguration instconfiguration,
@@ -78,7 +78,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 int prevPosition = HandleRead.Offset;
                 INetSerializable? packet;
-                IPacketRegistry packetRegistry = _packetRegistry;
+                IVersionedPacketRegistry packetRegistry = _packetRegistry;
                 byte? packetId = null;
                 string? MPCpacketId = null;
                 while (true)
@@ -89,9 +89,9 @@ namespace BeatTogether.DedicatedServer.Kernel
                         try
                         { packetId = HandleRead.ReadByte(); }
                         catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
-                        if (packetRegistry.TryCreatePacket(packetId, out packet))
+                        if (packetRegistry.TryCreatePacket(packetId, sender.Version_number, out packet))
                             break;
-                        if (packetRegistry.TryGetSubPacketRegistry(packetId, out var subPacketRegistry))
+                        if (packetRegistry.TryGetSubPacketRegistry(packetId, sender.Version_number, out var subPacketRegistry))
                         {
                             packetRegistry = subPacketRegistry;
                             continue;
@@ -138,7 +138,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 }
                 else if (packet is NodePoseSyncStatePacket)
                 {
-                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets())
+                    if ((DateTime.UtcNow.Ticks - sender.TicksAtLastSyncState) / TimeSpan.TicksPerMillisecond < _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()*7)
                     {
                         //_logger.Verbose($"Skipping sync state packet from {sender.ConnectionId} (Secret='{sender.Instance._configuration.Secret}').");
                         return;

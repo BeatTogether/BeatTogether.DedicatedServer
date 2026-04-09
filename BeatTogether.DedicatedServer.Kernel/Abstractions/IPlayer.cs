@@ -11,18 +11,20 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
     public interface IPlayer : Core.Abstractions.IPlayer
     {
         EndPoint Endpoint { get; }
+
         IDedicatedInstance Instance { get; }
+
+        int Version_number { get; }
+
         byte ConnectionId { get; }
+
         byte RemoteConnectionId { get; }
-        //string UserId { get; }
+
         string UserName { get; }
-        //string PlayerSessionId { get; }
 
         byte[]? Random { get; set; }
+
         byte[]? PublicEncryptionKey { get; set; }
-        //string ClientVersion { get; set; }
-        //Platform Platform { get; set; }
-        //string PlatformUserId { get; set; }
 
         uint ENetPeerId { get; set; }
 

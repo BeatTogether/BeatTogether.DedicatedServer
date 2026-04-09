@@ -3,7 +3,6 @@ using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.CommandHandlers;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPackets;
-using Serilog;
 using System;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MPChat
@@ -14,8 +13,6 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         private readonly InstanceConfiguration _instanceConfiguration;
         private readonly ITextCommandRepository _CommandRepository;
         private readonly IServiceProvider _serviceProvider;
-        //private readonly ILogger _logger = Log.ForContext<MpcTextChatPacketHandler>();
-
 
         public MpcTextChatPacketHandler(IPacketDispatcher packetDispatcher,
             ITextCommandRepository textCommandRepository,

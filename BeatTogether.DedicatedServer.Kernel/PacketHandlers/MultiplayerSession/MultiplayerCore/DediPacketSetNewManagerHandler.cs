@@ -5,7 +5,6 @@ using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
-using Serilog;
 using System.Linq;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -15,16 +14,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         private readonly InstanceConfiguration _configuration;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IPlayerRegistry _playerRegistry;
-        private readonly ILogger _logger = Log.ForContext<DediPacketSetNewManagerPacketHandler>();
+        private readonly Internal_Logger _logger;
 
         public DediPacketSetNewManagerPacketHandler(
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
-            InstanceConfiguration configuration)
+            InstanceConfiguration configuration,
+            Kernel_Logger kernel_Logger)
         {
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
             _configuration = configuration;
+            _logger = kernel_Logger.ForContext<DediPacketSetNewManagerPacketHandler>();
         }
 
         public override void Handle(IPlayer sender, DediPacketSetNewManagerPacket packet)

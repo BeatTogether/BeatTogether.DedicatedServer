@@ -2,7 +2,6 @@
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using Serilog;
 using System.Linq;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
@@ -12,16 +11,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
 		private readonly IPacketDispatcher _packetDispatcher;
 		private readonly ILobbyManager _lobbyManager;
 		private readonly IPlayerRegistry _playerRegistry;
-		private readonly ILogger _logger = Log.ForContext<SetRecommendedBeatmapPacketHandler>();
+        private readonly Internal_Logger _logger;
 
-		public SetRecommendedBeatmapPacketHandler(
+        public SetRecommendedBeatmapPacketHandler(
             IPacketDispatcher packetDispatcher,
             ILobbyManager lobbyManager,
-            IPlayerRegistry playerRegistry)
+            IPlayerRegistry playerRegistry,
+            Kernel_Logger kernel_Logger)
         {
             _packetDispatcher = packetDispatcher;
             _lobbyManager = lobbyManager;
             _playerRegistry = playerRegistry;
+            _logger = kernel_Logger.ForContext<SetRecommendedBeatmapPacketHandler>();
         }
 
         public override void Handle(IPlayer sender, SetRecommendedBeatmapPacket packet)

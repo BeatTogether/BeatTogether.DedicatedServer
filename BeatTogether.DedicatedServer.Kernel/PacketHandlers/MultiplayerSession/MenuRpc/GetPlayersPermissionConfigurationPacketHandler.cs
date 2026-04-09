@@ -3,7 +3,6 @@ using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Configuration;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
@@ -12,16 +11,18 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
         private readonly InstanceConfiguration _configuration;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IPlayerRegistry _playerRegistry;
-        private readonly ILogger _logger = Log.ForContext<GetPlayersPermissionConfigurationPacketHandler>();
+        private readonly Internal_Logger _logger;
 
         public GetPlayersPermissionConfigurationPacketHandler(
             InstanceConfiguration configuration,
             IPacketDispatcher packetDispatcher,
-            IPlayerRegistry playerRegistry)
+            IPlayerRegistry playerRegistry,
+            Kernel_Logger kernel_Logger)
         {
             _configuration = configuration;
             _packetDispatcher = packetDispatcher;
             _playerRegistry = playerRegistry;
+            _logger = kernel_Logger.ForContext<GetPlayersPermissionConfigurationPacketHandler>();
         }
 
         public override void Handle(IPlayer sender, GetPlayersPermissionConfigurationPacket packet)

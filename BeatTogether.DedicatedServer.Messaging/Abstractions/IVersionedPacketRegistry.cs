@@ -44,7 +44,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         /// This must be castable to a <see cref="byte"/>.
         /// </param>
         /// <returns>The <see cref="Type"/> object of the packet.</returns>
-        Type GetPacketType(object packetId, int version_number);
+        Type? GetPacketType(object packetId, int version_number);
 
         /// <summary>
         /// Retrieves the <see cref="IVersionedPacketRegistry"/> instance

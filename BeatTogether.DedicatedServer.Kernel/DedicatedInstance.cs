@@ -47,6 +47,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IServiceProvider _serviceProvider;
         private IPacketDispatcher PacketDispatcher;
+        private readonly IVersionedPacketRegistry _packetRegistry;
         private PacketSource ConnectedMessageSource;
 
         private readonly PlayerStateHash ServerStateHash = new();
@@ -65,12 +66,14 @@ namespace BeatTogether.DedicatedServer.Kernel
             InstanceConfiguration configuration,
             IPlayerRegistry playerRegistry,
             IServiceProvider serviceProvider,
+            IVersionedPacketRegistry packetRegistry,
             Kernel_Logger kernel_Logger)
             : base (configuration.Port)
         {
             _configuration = configuration;
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
+            _packetRegistry = packetRegistry;
             _logger = kernel_Logger.ForContext<DedicatedInstance>();
         }
 
@@ -97,7 +100,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             PacketDispatcher = _serviceProvider.GetRequiredService<IPacketDispatcher>();
             ConnectedMessageSource = _serviceProvider.GetRequiredService<PacketSource>();
-            
+          
             _startTime = DateTime.UtcNow.Ticks;
 
             _logger.Information(
@@ -233,8 +236,6 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         public override IPlayer? TryAcceptConnection(IPEndPoint endPoint, ref SpanBuffer Data)
         {
-            bool PlayerNoJoin = false;
-
             ConnectionRequestData connectionRequestData = new();
             try
             {
@@ -246,8 +247,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                     "Failed to deserialize connection request data" +
                     $"(RemoteEndPoint='{endPoint}')."
                 );
-                PlayerNoJoin = true;
-                goto EndOfTryAccept;
+                FailPlayerJoin(connectionRequestData, endPoint);
+                return null;
             }
 
             _logger.Information(
@@ -268,21 +269,16 @@ namespace BeatTogether.DedicatedServer.Kernel
                     $"UserName='{connectionRequestData.UserName}', " +
                     $"IsConnectionOwner={connectionRequestData.IsConnectionOwner})."
                 );
-                PlayerNoJoin = true;
-                goto EndOfTryAccept;
+                FailPlayerJoin(connectionRequestData, endPoint);
+                return null;
             }
             if (_playerRegistry.GetPlayerCount() >= _configuration.GameplayServerConfiguration.MaxPlayerCount)
             {
                 _logger.Warning("Master server sent a player to a full server");
-                PlayerNoJoin = true;
-                goto EndOfTryAccept;
+                FailPlayerJoin(connectionRequestData, endPoint);
+                return null;
             }
-            if (connectionRequestData.UserName == "IGGAMES" || connectionRequestData.UserName == "IGGGAMES")
-            {
-                _logger.Information("an IGG player just tried joining after passing master auth");
-                PlayerNoJoin = true;
-                goto EndOfTryAccept;
-            }
+
             int sortIndex = GetNextSortIndex();
             byte connectionId = GetNextConnectionId();
 
@@ -297,17 +293,29 @@ namespace BeatTogether.DedicatedServer.Kernel
             {
                 SortIndex = sortIndex
             };
+            //UserID, UserName, Version, and session
+            if (!GetPlayerRegistry().RemoveExtraPlayerSessionDataAndApply(player))
+            {
+                ReleaseSortIndex(player.SortIndex);
+                ReleaseConnectionId(player.ConnectionId);
+
+                FailPlayerJoin(connectionRequestData, endPoint);
+                return null;
+            }
+            player.Version_number = _packetRegistry.GetVersionNumber(player.PlayerClientVersion);
+
+
             if (!_playerRegistry.AddPlayer(player))
             {
                 ReleaseSortIndex(player.SortIndex);
                 ReleaseConnectionId(player.ConnectionId);
-                PlayerNoJoin = true;
-                goto EndOfTryAccept;
+
+                FailPlayerJoin(connectionRequestData, endPoint);
+                return null;
             }
 
             if (_configuration.ServerName == string.Empty)
             {
-                //_logger.Information("About to update servers name" + _configuration.ServerName);
                 _configuration.ServerName = player.UserName + "'s server";
                 InstanceConfigUpdated();
                 _logger.Information("Updated a server instance name to: " + _configuration.ServerName);
@@ -326,24 +334,14 @@ namespace BeatTogether.DedicatedServer.Kernel
             if (_waitForPlayerCts != null)
                 _waitForPlayerCts.Cancel();
 
-            //UserID, UserName, and session
-            if (!GetPlayerRegistry().RemoveExtraPlayerSessionDataAndApply(player))
-            {
-                goto EndOfTryAccept;
-            }
-
-
             return player;
+        }
 
-            EndOfTryAccept:
-            if (PlayerNoJoin)
-            {
-                GetPlayerRegistry().RemoveExtraPlayerSessionData(connectionRequestData.PlayerSessionId);
-                string[] Players = _playerRegistry.Players.Select(p => p.HashedUserId).ToArray();
-                PlayerDisconnectBeforeJoining?.Invoke(_configuration.Secret, endPoint, Players);
-                return null;
-            }
-            return null;
+        private void FailPlayerJoin(ConnectionRequestData connectionRequestData, IPEndPoint endPoint)
+        {
+            GetPlayerRegistry().RemoveExtraPlayerSessionData(connectionRequestData.PlayerSessionId);
+            string[] Players = _playerRegistry.Players.Select(p => p.HashedUserId).ToArray();
+            PlayerDisconnectBeforeJoining?.Invoke(_configuration.Secret, endPoint, Players);
         }
 
         public override void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, IgnoranceChannelTypes method)
@@ -381,12 +379,12 @@ namespace BeatTogether.DedicatedServer.Kernel
                 },
                 new MpNodePoseSyncStatePacket
                 {
-                    fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
+                    fullStateUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()*7,
                     deltaUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()
                 },
                 new MpScoreSyncStatePacket
                 {
-                    fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets(), 500L),
+                    fullStateUpdateFrequency = _playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets()*22,
                     deltaUpdateFrequency = _playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets()
                 }
             }, IgnoranceChannelTypes.Reliable);
@@ -394,7 +392,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             //Send server infomation to player
             var Player_ConnectPacket = new INetSerializable[]
                {
-                new PingPacket
+                new PingPacket_1_40_8
                     {
                         PingTime = RunTime
                     },
@@ -424,12 +422,12 @@ namespace BeatTogether.DedicatedServer.Kernel
                     },
                 new MpNodePoseSyncStatePacket
                     {
-                        fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
+                        fullStateUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()*7,
                         deltaUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()
                     },
                 new MpScoreSyncStatePacket
                     {
-                        fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets(), 500L),
+                        fullStateUpdateFrequency = _playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets()*22,
                         deltaUpdateFrequency = _playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets()
                     }
                };
@@ -463,7 +461,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             //send player avatars and states of other players in server to new player
             INetSerializable[] SendToPlayerFromPlayers = new INetSerializable[2];
-            SendToPlayerFromPlayers[0] = new PlayerIdentityPacket();
+            SendToPlayerFromPlayers[0] = new PlayerIdentityPacket_1_40_8();
             SendToPlayerFromPlayers[1] = new MpPlayerData();
             //TODO send selected modifiers if they have any, selected beatmap and custom bm packet.
 
@@ -472,11 +470,11 @@ namespace BeatTogether.DedicatedServer.Kernel
                 if (p.ConnectionId != player.ConnectionId)
                 {
                     // Send player to player data to new player
-                    ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PlayerState = p.State;
-                    //((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PlayerAvatar = p.Avatar;
-                    ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).Random = new ByteArray { Data = p.Random };
-                    ((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey };
-					((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).GameSpecificData = new BeatSaberPlayerIdentityPacketData(p.Avatar);
+                    ((PlayerIdentityPacket_1_40_8)SendToPlayerFromPlayers[0]).PlayerState = p.State;
+                    ((PlayerIdentityPacket_1_40_8)SendToPlayerFromPlayers[0]).PlayerAvatar = p.Avatar;
+                    //((PlayerIdentityPacket)SendToPlayerFromPlayers[0]).GameSpecificData = new BeatSaberPlayerIdentityPacketData(p.Avatar);
+                    ((PlayerIdentityPacket_1_40_8)SendToPlayerFromPlayers[0]).Random = new ByteArray { Data = p.Random };
+                    ((PlayerIdentityPacket_1_40_8)SendToPlayerFromPlayers[0]).PublicEncryptionKey = new ByteArray { Data = p.PublicEncryptionKey };
 					((MpPlayerData)SendToPlayerFromPlayers[1]).PlatformID = p.PlatformUserId;
                     ((MpPlayerData)SendToPlayerFromPlayers[1]).Platform = p.PlayerPlatform.Convert();
                     ((MpPlayerData)SendToPlayerFromPlayers[1]).ClientVersion = p.PlayerClientVersion.ToString();
@@ -588,12 +586,12 @@ namespace BeatTogether.DedicatedServer.Kernel
                 PacketDispatcher.SendToNearbyPlayers(new INetSerializable[] {
                     new MpNodePoseSyncStatePacket
                         {
-                            fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets(), 100L),
+                            fullStateUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()*7,
                             deltaUpdateFrequency = _playerRegistry.GetMillisBetweenPoseSyncStateDeltaPackets()
                         },
                     new MpScoreSyncStatePacket
                         {
-                            fullStateUpdateFrequency = Math.Max(_playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets(), 500L),
+                            fullStateUpdateFrequency = _playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets()*22,
                             deltaUpdateFrequency = _playerRegistry.GetMillisBetweenScoreSyncStateDeltaPackets()
                         }
                 }, IgnoranceChannelTypes.Reliable);

@@ -1,19 +1,20 @@
 ﻿using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
-using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.GameplayRpc
 {
     public sealed class LevelFinishedPacketHandler : BasePacketHandler<LevelFinishedPacket>
     {
         private readonly IGameplayManager _gameplayManager;
-        private readonly ILogger _logger = Log.ForContext<LevelFinishedPacketHandler>();
+        private readonly Internal_Logger _logger;
 
         public LevelFinishedPacketHandler(
-            IGameplayManager gameplayManager)
+            IGameplayManager gameplayManager,
+            Kernel_Logger kernel_Logger)
         {
             _gameplayManager = gameplayManager;
+            _logger = kernel_Logger.ForContext<LevelFinishedPacketHandler>();
         }
 
         public override void Handle(IPlayer sender, LevelFinishedPacket packet)

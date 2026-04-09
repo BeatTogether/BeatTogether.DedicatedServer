@@ -1,19 +1,20 @@
 ﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MenuRpc;
-using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
     public sealed class GetIsReadyPacketHandler : BasePacketHandler<GetIsReadyPacket>
     {
         private readonly IPacketDispatcher _packetDispatcher;
-        private readonly ILogger _logger = Log.ForContext<GetIsReadyPacketHandler>();
+        private readonly Internal_Logger _logger;
 
         public GetIsReadyPacketHandler(
-            IPacketDispatcher packetDispatcher)
+            IPacketDispatcher packetDispatcher,
+            Kernel_Logger kernel_Logger)
         {
             _packetDispatcher = packetDispatcher;
+            _logger = kernel_Logger.ForContext<GetIsReadyPacketHandler>();
         }
 
         public override void Handle(IPlayer sender, GetIsReadyPacket packet)

@@ -17,12 +17,12 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries
             AddPacket<PlayerLatencyPacket>(PacketType.PlayerLatencyUpdate);
             AddPacket<PlayerDisconnectedPacket>(PacketType.PlayerDisconnected);
             AddPacket<PlayerSortOrderPacket>(PacketType.PlayerSortOrderUpdate);
-            AddPacket<PlayerAvatarPacket>(PacketType_1_40_8.PlayerAvatarUpdate, new VersionRange(){MaxVersion = "1.40.8"});
+            AddPacket<PlayerAvatarPacket>(PacketType_1_40_8.PlayerAvatarUpdate, new VersionRange(){ MaxVersion = "1.40.8" });
             AddPacket<KickPlayerPacket>(PacketType.KickPlayer);
             AddPacket<PlayerStatePacket>(PacketType.PlayerStateUpdate);
             AddSubPacketRegistry<MultiplayerSessionPacketRegistry>(PacketType.MultiplayerSession);
-            AddPacket<PingPacket>(PacketType_1_40_8.Ping, new VersionRange() { MaxVersion = "1.40.8" });
-            AddPacket<PongPacket>(PacketType_1_40_8.Pong, new VersionRange() { MaxVersion = "1.40.8" });
+            AddPacket<PingPacket_1_40_8>(PacketType_1_40_8.Ping, new VersionRange() { MaxVersion = "1.40.8" });
+            AddPacket<PongPacket_1_40_8>(PacketType_1_40_8.Pong, new VersionRange() { MaxVersion = "1.40.8" });
             AddPacket<PingPacket>(PacketType.Ping, new VersionRange() { MinVersion = "1.42.0" });
             AddPacket<PongPacket>(PacketType.Pong, new VersionRange() { MinVersion = "1.42.0" });
         }

@@ -1,18 +1,18 @@
 ﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
-using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
 {
     public sealed class SyncTimePacketHandler : BasePacketHandler<SyncTimePacket>
     {
         private readonly IPacketDispatcher _packetDispatcher;
-        private readonly ILogger _logger = Log.ForContext<SyncTimePacketHandler>();
+        private readonly Internal_Logger _logger;
 
-        public SyncTimePacketHandler(IPacketDispatcher packetDispatcher)
+        public SyncTimePacketHandler(IPacketDispatcher packetDispatcher, Kernel_Logger kernel_Logger)
         {
             _packetDispatcher = packetDispatcher;
+            _logger = kernel_Logger.ForContext<SyncTimePacketHandler>();
         }
 
         public override void Handle(IPlayer sender, SyncTimePacket packet)

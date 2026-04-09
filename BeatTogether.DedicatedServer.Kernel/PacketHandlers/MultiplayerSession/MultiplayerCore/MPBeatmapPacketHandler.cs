@@ -2,21 +2,20 @@
 using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
-using Serilog;
-using System;
-using System.Linq;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.MenuRpc
 {
     class MpBeatmapPacketHandler : BasePacketHandler<MpBeatmapPacket>
     {
         private readonly ILobbyManager _lobbyManager;
-        private readonly ILogger _logger = Log.ForContext<MpBeatmapPacketHandler>();
+        private readonly Internal_Logger _logger;
 
         public MpBeatmapPacketHandler(
-            ILobbyManager lobbyManager)
+            ILobbyManager lobbyManager,
+            Kernel_Logger kernel_Logger)
         {
             _lobbyManager = lobbyManager;
+            _logger = kernel_Logger.ForContext<MpBeatmapPacketHandler>();
         }
 
         public override void Handle(IPlayer sender, MpBeatmapPacket packet)

@@ -10,13 +10,14 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
     {
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IDedicatedInstance _instance;
-        private readonly ILogger _logger = Log.ForContext<PlayerIdentityPacketHandler>();
+        private readonly Internal_Logger _logger;
 
         public PlayerIdentityPacketHandler_1_40_8(
-            IPacketDispatcher packetDispatcher, IDedicatedInstance instance)
+            IPacketDispatcher packetDispatcher, IDedicatedInstance instance, Kernel_Logger kernel_Logger)
         {
             _packetDispatcher = packetDispatcher;
             _instance = instance;
+            _logger = kernel_Logger.ForContext<PlayerIdentityPacketHandler_1_40_8>();
         }
 
         public override void Handle(IPlayer sender, PlayerIdentityPacket_1_40_8 packet)

@@ -9,17 +9,24 @@ namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers.MultiplayerSession.
     {
         private readonly IPacketDispatcher _PacketDispatcher;
         private readonly IPlayerRegistry _PlayerRegistry;
+        private readonly Internal_Logger _logger;
 
         public GetMpPlayerDataPacketHandler(
             IPacketDispatcher packetDispatcher,
-            IPlayerRegistry playerRegistry)
+            IPlayerRegistry playerRegistry,
+            Kernel_Logger kernel_Logger)
         {
             _PacketDispatcher = packetDispatcher;
             _PlayerRegistry = playerRegistry;
+            _logger = kernel_Logger.ForContext<GetMpPlayerDataPacketHandler>();
         }
 
         public override void Handle(IPlayer sender, MpPlayerData packet)
         {
+            _logger.Debug(
+                $"Handling packet of type '{nameof(MpPlayerData)}' " +
+                $"(SenderId={sender.ConnectionId})."
+            );
 
             foreach (var Player in _PlayerRegistry.Players)
             {

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
@@ -12,6 +13,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         bool TryGetPlayer(EndPoint remoteEndPoint, [MaybeNullWhen(false)] out IPlayer player);
         bool TryGetPlayer(byte connectionId, [MaybeNullWhen(false)] out IPlayer player);
         bool TryGetPlayer(string userId, [MaybeNullWhen(false)] out IPlayer player);
+
+        IEnumerable<int> GetPlayerVersions();
+        IPlayer[] GetPlayersOnGameVersion(int version_number);
+
         long GetMillisBetweenPoseSyncStateDeltaPackets();
         long GetMillisBetweenScoreSyncStateDeltaPackets();
 

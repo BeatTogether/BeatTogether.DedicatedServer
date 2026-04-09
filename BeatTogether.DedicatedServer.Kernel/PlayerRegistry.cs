@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
@@ -18,7 +19,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
         private readonly Dictionary<string, Core.Abstractions.IPlayer> _pendingPlayerSessionData = new();
 
-
+        private readonly Dictionary<int, List<IPlayer>> _playersByGameVersion = new();
 
         public void AddExtraPlayerSessionData(Core.Abstractions.IPlayer playerSessionData)
         {
@@ -75,9 +76,18 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     _playersByRemoteEndPoint.TryAdd(player.Endpoint, player);
                     _playersByConnectionId.TryAdd(player.ConnectionId, player);
+
+                    if (_playersByGameVersion.TryGetValue(player.Version_number, out var players))
+                    {
+                        players.Add(player);
+                    }
+                    else
+                    {
+                        _playersByGameVersion.TryAdd(player.Version_number, new List<IPlayer> { player });
+                    }
                     _PlayerCount++;
-                    MillisBetweenPoseSyncStatePackets = _PlayerCount == 1 ? 1000 : (long)(0.94 * _PlayerCount + 15);
-                    MillisBetweenScoreSyncStatePackets = _PlayerCount == 1 ? 1000 : (long)(1.5 * _PlayerCount + 20);
+                    MillisBetweenPoseSyncStatePackets = Math.Clamp((long)(0.94 * _PlayerCount + 15), 10, 300);
+                    MillisBetweenScoreSyncStatePackets = Math.Clamp((long)(1.5 * _PlayerCount + 20), 20, 1000);
                     return true;
                 }
             }
@@ -92,9 +102,17 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     _playersByRemoteEndPoint.Remove(player.Endpoint, out _);
                     _playersByConnectionId.Remove(player.ConnectionId, out _);
+                    if (_playersByGameVersion.TryGetValue(player.Version_number, out var players))
+                    {
+                        players.Add(player);
+                    }
+                    else
+                    {
+                        _playersByGameVersion.TryAdd(player.Version_number, new List<IPlayer> { player });
+                    }
                     _PlayerCount--;
-                    MillisBetweenPoseSyncStatePackets = _PlayerCount == 1 ? 1000 : (long)(0.94 * _PlayerCount + 15);
-                    MillisBetweenScoreSyncStatePackets = _PlayerCount == 1 ? 1000 : (long)(1.5 * _PlayerCount + 20);
+                    MillisBetweenPoseSyncStatePackets = Math.Clamp((long)(0.94 * _PlayerCount + 15), 10, 300);
+                    MillisBetweenScoreSyncStatePackets = Math.Clamp((long)(1.5 * _PlayerCount + 20), 20, 1000);
                 }
             }
         }
@@ -120,8 +138,24 @@ namespace BeatTogether.DedicatedServer.Kernel
                 return _playersByUserId.TryGetValue(userId, out player);
             }
         }
-
-
+        public IEnumerable<int> GetPlayerVersions()
+        {
+            lock (PlayerDictionaries_Lock)
+            {
+                return _playersByGameVersion.Keys;
+            }
+        }
+        public IPlayer[] GetPlayersOnGameVersion(int version_number)
+        {
+            lock (PlayerDictionaries_Lock)
+            {
+                if (_playersByGameVersion.TryGetValue(version_number, out var players))
+                {
+                    return players.ToArray();
+                }
+            }
+            return Array.Empty<IPlayer>();
+        }
 
         private long MillisBetweenPoseSyncStatePackets = 0;
         public long GetMillisBetweenPoseSyncStateDeltaPackets()

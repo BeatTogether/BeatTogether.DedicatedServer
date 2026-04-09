@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Net;
-using BeatTogether.Core.Enums;
+﻿using BeatTogether.Core.Enums;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Types;
@@ -33,6 +29,9 @@ namespace BeatTogether.DedicatedServer.Kernel
         public int SortIndex { get; set; }
         public byte[]? Random { get; set; }
         public byte[]? PublicEncryptionKey { get; set; }
+
+        public int Version_number { get; set; }
+
         public Version PlayerClientVersion { get; set; } = new();
         public Platform PlayerPlatform { get; set; } = Platform.Test; //Unknown
         public string PlatformUserId { get; set; } = "";

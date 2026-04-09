@@ -1,18 +1,18 @@
 ﻿using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using BeatTogether.DedicatedServer.Kernel.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Packets;
-using Serilog;
 
 namespace BeatTogether.DedicatedServer.Kernel.PacketHandlers
 {
 	public sealed class PlayerSortOrderPacketHandler : BasePacketHandler<PlayerSortOrderPacket>
 	{
         private readonly IPacketDispatcher _packetDispatcher;
-        private readonly ILogger _logger = Log.ForContext<PlayerSortOrderPacketHandler>();
+        private readonly Internal_Logger _logger;//
 
-        public PlayerSortOrderPacketHandler(IPacketDispatcher packetDispatcher)
+        public PlayerSortOrderPacketHandler(IPacketDispatcher packetDispatcher, Kernel_Logger kernel_Logger)
         {
             _packetDispatcher = packetDispatcher;
+            _logger = kernel_Logger.ForContext<PlayerSortOrderPacketHandler>(); ;
         }
 
         public override void Handle(IPlayer sender, PlayerSortOrderPacket packet)

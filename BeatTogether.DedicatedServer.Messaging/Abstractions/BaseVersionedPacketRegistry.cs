@@ -27,15 +27,6 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
             return Low_Ver;
         }
 
-        private Type? GetPacketType(byte ID, int version_in)
-        {
-            if (!_types[GetVersionIndex(ID, version_in)].TryGetValue(ID, out var ret_type))
-            {
-                return null;
-            }
-            return ret_type;
-        }
-
         private readonly Dictionary<byte, (int, int)[]> versionRanges = new();
         private readonly Dictionary<int, Dictionary<byte, Type>> _types = new();
         private readonly Dictionary<Type, IEnumerable<byte>> _packetIds = new();
@@ -46,7 +37,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
 
         private readonly HashSet<VersionRange> _versionRanges = new();
         private readonly HashSet<Version> _versions = new();
-        private Version[] _versions_in_order;
+        private readonly Version[] _versions_in_order;
         private readonly Dictionary<Version, int> _version_order_dict = new();
 
         //For registering packets and sub registries
@@ -54,7 +45,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         private readonly Dictionary<Type, (byte, VersionRange, IVersionedPacketRegistry)> _subRegistryVersionRanges = new();
 
         //Collects the version ranges and puts them in order for fast comparrisons.
-        private void SetupVersioning()
+        private void SetupVersioning(out Version[] versions_in_order)
         {
             //Add min and max versions.
             _versions.Add(new Version("0.0.0")); //will be index 0
@@ -67,12 +58,12 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
             }
             //Versions hash set now contains a list of all versions.
 
-            _versions_in_order = _versions.ToArray();
-            Array.Sort(_versions_in_order);
+            versions_in_order = _versions.ToArray();
+            Array.Sort(versions_in_order);
 
-            for (int i = 0; i < _versions_in_order.Length - 1; i++)
+            for (int i = 0; i < versions_in_order.Length - 1; i++)
             {
-                _version_order_dict.Add(_versions_in_order[i], i);
+                _version_order_dict.Add(versions_in_order[i], i);
             }
 
             Dictionary<byte, List<(int, int)>> versionRangesConstructor = new();
@@ -151,7 +142,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         public BaseVersionedPacketRegistry()
         {
             Register();
-            SetupVersioning();
+            SetupVersioning(out _versions_in_order);
         }
 
         //Now, when storing packets, we should store them in a dictionary, starting with the lowest update number they exist for.
@@ -194,10 +185,12 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         //    GetPacketIds(typeof(T));
 
         /// <inheritdoc cref="IVersionedPacketRegistry.GetPacketType"/>
-        public Type GetPacketType(object packetId, int version_number)
+        public Type? GetPacketType(object packetId, int version_number)
         {
             int ver = GetVersionIndex((byte)packetId, version_number);
-            return _types[ver][(byte)packetId];
+            if (!_types.TryGetValue(ver, out var ver_types))
+                return null;
+            return ver_types[(byte)packetId];
         }
 
         /// <inheritdoc cref="IVersionedPacketRegistry.GetSubPacketRegistry"/>
@@ -232,7 +225,9 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
                 }
             }
             //For all the default(all version) sub packet registries
-            foreach (var (id, subRegistry) in _subPacketRegistries[0])
+            if (!_subPacketRegistries.TryGetValue(0, out var versioned_registries))
+                return false;
+            foreach (var (id, subRegistry) in versioned_registries)
             {
                 if (subRegistry.TryGetPacketIds(type, version_number, out IEnumerable<byte>? subPacketIds))
                 {
@@ -252,14 +247,24 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         public bool TryGetPacketType(object packetId, int version_number, [MaybeNullWhen(false)] out Type type)
         {
             int ver = GetVersionIndex((byte)packetId, version_number);
-            return _types[ver].TryGetValue((byte)packetId, out type);
+            if(!_types.TryGetValue(ver, out var ver_type))
+            {
+                type = null;
+                return false;
+            }
+            return ver_type.TryGetValue((byte)packetId, out type);
         }
 
         /// <inheritdoc cref="IVersionedPacketRegistry.TryGetSubPacketRegistry"/>
         public bool TryGetSubPacketRegistry(object packetRegistryId, int version_number, [MaybeNullWhen(false)] out IVersionedPacketRegistry packetRegistry)
         {
             int ver = GetVersionIndex((byte)packetRegistryId, version_number);
-            return _subPacketRegistries[ver].TryGetValue((byte)packetRegistryId, out packetRegistry);
+            if (!_subPacketRegistries.TryGetValue(ver, out var sub_version_reg))
+            {
+                packetRegistry = null;
+                return false;
+            }
+            return sub_version_reg.TryGetValue((byte)packetRegistryId, out packetRegistry);
         }
 
 
@@ -267,12 +272,11 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
         public bool TryCreatePacket(object packetId, int version_number, [MaybeNullWhen(false)] out INetSerializable packet)
         {
             int ver = GetVersionIndex((byte)packetId, version_number);
-            if (_factories[ver].TryGetValue((byte)packetId, out var factory))
+            if(_factories.TryGetValue(ver, out var ver_fact) && ver_fact.TryGetValue((byte)packetId, out var factory))
             {
                 packet = factory();
                 return true;
             }
-
             packet = null;
             return false;
         }
@@ -285,16 +289,28 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
             where T : class, INetSerializable, new()
         {
             var type = typeof(T);
-            if (_types.ContainsKey((byte)packetId) || _packetIds.ContainsKey(type))
+            if (!_types.TryGetValue(0, out var types_at_version))
+            {
+                types_at_version = new();
+                _types[0] = types_at_version;
+            }
+
+            if (types_at_version.ContainsKey((byte)packetId) || _packetIds.ContainsKey(type))
                 throw new Exception(
-                    $"Duplicate registration for packet of type '{type.Name}' " +
+                    $"Duplicate registration for packet of type '{type.Name}' (No game version specified)" +
+                    $"(ver_number={0})' " +
                     $"(PacketId={packetId})."
                 );
 
-            _types[0][(byte)packetId] = type;
+            types_at_version[(byte)packetId] = type;
             _packetIds[type] = Enumerable.Empty<byte>()
                 .Append((byte)packetId);
-            _factories[0][(byte)packetId] = () => new T();
+            if (!_factories.TryGetValue(0, out var fact_at_version))
+            {
+                fact_at_version = new();
+                _factories[0] = fact_at_version;
+            }
+            fact_at_version[(byte)packetId] = () => new T();
 
         }
 
@@ -302,9 +318,10 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
             where T : class, INetSerializable, new()
         {
             var type = typeof(T);
-            if (_types.ContainsKey((byte)packetId) || _packetIds.ContainsKey(type))
+            if (_packetVersionRanges.ContainsKey(type) || _packetIds.ContainsKey(type))
                 throw new Exception(
                     $"Duplicate registration for packet of type '{type.Name}' " +
+                    $"Registering at version range: {versionRange}' " +
                     $"(PacketId={packetId})."
                 );
 
@@ -317,7 +334,12 @@ namespace BeatTogether.DedicatedServer.Messaging.Abstractions
             where T : class, IVersionedPacketRegistry, new()
         {
             var subPacketRegistry = new T();
-            _subPacketRegistries[0][(byte)packetRegistryId] = subPacketRegistry;
+            if(!_subPacketRegistries.TryGetValue(0, out var packet_reg_versioned))
+            {
+                packet_reg_versioned = new();
+                _subPacketRegistries[0] = packet_reg_versioned;
+            }
+            packet_reg_versioned[(byte)packetRegistryId] = subPacketRegistry;
 
         }
 
