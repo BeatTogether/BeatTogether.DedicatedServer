@@ -3,6 +3,7 @@ using System.Net;
 using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using Serilog.Events;
 using System.Collections.Generic;
 
 namespace BeatTogether.DedicatedServer.Kernel.Abstractions
@@ -67,5 +68,8 @@ namespace BeatTogether.DedicatedServer.Kernel.Abstractions
         public Dictionary<uint, string[]> BeatmapDifficultiesRequirements { get; set; }
         long TicksAtLastSyncStateDelta { get; set; }
         long TicksAtLastSyncState { get; set; }
+
+        bool LogToMpChat { get; set; }
+        LogEventLevel MpChatLogLevel { get; set; }
     }
 }

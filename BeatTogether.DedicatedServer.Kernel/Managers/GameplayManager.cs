@@ -6,7 +6,6 @@ using BeatTogether.DedicatedServer.Kernel.Managers.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.GameplayRpc;
-using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -59,16 +58,18 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private CancellationTokenSource? songReadyCts = null;
         private CancellationTokenSource? linkedSongReadyCts = null;
 
-        private readonly ILogger _logger = Log.ForContext<GameplayManager>();
+        private readonly Internal_Logger _logger;
 
         public GameplayManager(
             IDedicatedInstance instance,
             IPlayerRegistry playerRegistry,
-            IPacketDispatcher packetDispatcher)
+            IPacketDispatcher packetDispatcher,
+            Kernel_Logger kernel_Logger)
         {
             _instance = instance;
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
+            _logger = kernel_Logger.ForContext<GameplayManager>();
 
             _instance.PlayerDisconnectedEvent += HandlePlayerLeaveGameplay;
         }

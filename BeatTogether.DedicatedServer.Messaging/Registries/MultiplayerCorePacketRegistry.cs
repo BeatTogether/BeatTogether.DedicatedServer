@@ -21,6 +21,7 @@ namespace BeatTogether.DedicatedServer.Messaging.Registries
             AddPacket<GetMpPlayerData>();
             AddPacket<MpPlayerData>();
             AddPacket<MpNodePoseSyncStatePacket>();
+            AddPacket<MpScoreSyncStatePacket>();
             AddPacket<MpPerPlayerPacket>();
             AddPacket<GetMpPerPlayerPacket>();
         }

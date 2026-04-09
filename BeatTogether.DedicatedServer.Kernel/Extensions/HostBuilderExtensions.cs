@@ -33,6 +33,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Extensions
                         //.AddConfiguration<LiteNetConfiguration>("LiteNetLib")
                         .AddScoped<InstanceConfiguration>()
                         .AddDedicatedServerMessaging()
+                        .AddScoped<Kernel_Logger>()
                         .AddScoped<DedicatedInstance>()
                         .AddExisting<IDedicatedInstance, DedicatedInstance>()
                         .AddExisting<ENetServer, DedicatedInstance>() //Used to be like this for lnl

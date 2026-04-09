@@ -1,5 +1,6 @@
 ﻿using BeatTogether.Core.Enums;
 using BeatTogether.Core.Models;
+using Serilog.Events;
 
 namespace BeatTogether.DedicatedServer.Kernel.Configuration
 {
@@ -36,6 +37,10 @@ namespace BeatTogether.DedicatedServer.Kernel.Configuration
         public int MaxLengthCommand { get; set; } = 200;
         public bool ApplyNoFailModifier { get; set; } = true;
         public int DisableNotesPlayerCount { get; set; } = 16;
+
+        public bool LogToMpChat { get; set; } = false;
+        public bool LogToEveryone { get; set; } = false;
+        public LogEventLevel MpChatLogLevel { get; set; } = LogEventLevel.Debug;
     }
 
     public sealed class CountdownConfig

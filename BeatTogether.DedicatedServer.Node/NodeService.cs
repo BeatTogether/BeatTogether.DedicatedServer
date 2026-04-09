@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using BeatTogether.Core.Abstractions;
 using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Interface.Requests;
@@ -40,10 +41,7 @@ namespace BeatTogether.DedicatedServer.Node
             if(!result)
                 return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.NoAvailableSlots, string.Empty);
 
-            return new CreateMatchmakingServerResponse(
-                CreateMatchmakingServerError.None,
-                $"{serverInstance.InstanceEndPoint}"
-            );
+            return new CreateMatchmakingServerResponse(CreateMatchmakingServerError.None, $"{serverInstance.InstanceEndPoint}");
         }
     }
 }

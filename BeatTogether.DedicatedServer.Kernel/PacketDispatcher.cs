@@ -17,16 +17,18 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly IPacketRegistry _packetRegistry;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly ENetServer _serverInstance;
-        private readonly ILogger _logger = Log.ForContext<PacketDispatcher>();
+        private readonly Internal_Logger _logger;
 
         public PacketDispatcher(
             IPacketRegistry packetRegistry,
             IPlayerRegistry playerRegistry,
+            Kernel_Logger kernel_Logger,
             ENetServer serverInstance)
         {
             _packetRegistry = packetRegistry;
             _playerRegistry = playerRegistry;
             _serverInstance = serverInstance;
+            _logger = kernel_Logger.ForContext<PacketDispatcher>(); ;
         }
 
         private void SendInternal(IPlayer player, ref SpanBuffer writer, IgnoranceChannelTypes deliveryMethod)
@@ -41,8 +43,8 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
                 $"(SenderId={ServerId})"
-            );
-
+            , false);
+            //Is fine to re-use buffer as packets get copied into another array by Enet
             var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
             WriteOne(ref writer, packet);
@@ -55,7 +57,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending MultiPacket " +
                 $"(SenderId={ServerId})"
-            );
+            , false);
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
@@ -68,7 +70,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' to specific players" +
                 $"(SenderId={ServerId})"
-            );
+            , false);
 
             var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
@@ -82,7 +84,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending MultiPacket to specific players" +
                 $"(SenderId={ServerId})"
-            );
+            , false);
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
@@ -96,7 +98,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
                 $"(ExcludedId={excludedPlayer.ConnectionId})"
-            );
+            , false);
 
             var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
@@ -112,14 +114,14 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending MultiPacket " +
                 $"(ExcludedId={excludedPlayer.ConnectionId})"
-            );
-            if (_logger.IsEnabled(Serilog.Events.LogEventLevel.Verbose))
-                for (int i = 0; i < packets.Length; i++)
-                {
-                    _logger.Verbose(
-                        $"Packet {i} is of type '{packets[i].GetType().Name}' "
-                    );
-                }
+            , false);
+            //if (_logger.IsEnabled(Serilog.Events.LogEventLevel.Verbose))
+            //    for (int i = 0; i < packets.Length; i++)
+            //    {
+            //        _logger.Verbose(
+            //            $"Packet {i} is of type '{packets[i].GetType().Name}' "
+            //        );
+            //    }
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
@@ -135,7 +137,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending routed packet " +
                 $"(ExcludedId={excludedPlayer.ConnectionId})"
-            );
+            , false);
 
             foreach (IPlayer player in _playerRegistry.Players)
                 if (player.ConnectionId != excludedPlayer.ConnectionId)
@@ -148,7 +150,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 			_logger.Debug(
 			    $"Sending packet of type '{packet.GetType().Name}' " + 
                 $"(SenderId={fromPlayer.ConnectionId})"
-            );
+            , false);
 
             var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
@@ -162,7 +164,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending MultiPacket " +
                 $"(SenderId={fromPlayer.ConnectionId})"
-            );
+            , false);
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
@@ -177,7 +179,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
                 $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={LocalConnectionId})."
-            );
+            , false);
 
             var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
@@ -190,7 +192,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending MultiPacket" +
                 $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={LocalConnectionId})."
-            );
+            , false);
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(fromPlayer.ConnectionId, LocalConnectionId);
@@ -203,7 +205,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending routed packet " +
                 $"(SenderId={fromPlayer.ConnectionId}, ReceiverId={LocalConnectionId})."
-            );
+            , false);
 
             SendInternal(toPlayer, ref writer, deliveryMethod);
         }
@@ -213,7 +215,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending packet of type '{packet.GetType().Name}' " +
                 $"(SenderId={ServerId}, ReceiverId={LocalConnectionId})."
-            );
+            , false);
 
             var writer = new SpanBuffer(stackalloc byte[412]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);
@@ -225,7 +227,7 @@ namespace BeatTogether.DedicatedServer.Kernel
             _logger.Debug(
                 $"Sending MultiPacket " +
                 $"(SenderId={ServerId}, ReceiverId={LocalConnectionId})."
-            );
+            , false);
 
             var writer = new SpanBuffer(stackalloc byte[1024]);
             writer.WriteRoutingHeader(ServerId, LocalConnectionId);

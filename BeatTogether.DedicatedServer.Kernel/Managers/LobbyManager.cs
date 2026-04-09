@@ -53,14 +53,15 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
         private readonly IPlayerRegistry _playerRegistry;
         private readonly IPacketDispatcher _packetDispatcher;
         private readonly IGameplayManager _gameplayManager;
-        private readonly ILogger _logger = Log.ForContext<LobbyManager>();
+        private readonly Internal_Logger _logger;
 
         public LobbyManager(
             InstanceConfiguration configuration,
             IDedicatedInstance instance,
             IPlayerRegistry playerRegistry,
             IPacketDispatcher packetDispatcher,
-            IGameplayManager gameplayManager
+            IGameplayManager gameplayManager,
+            Kernel_Logger kernel_Logger
             )
         {
             _configuration = configuration;
@@ -68,6 +69,7 @@ namespace BeatTogether.DedicatedServer.Kernel.Managers
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
             _gameplayManager = gameplayManager;
+            _logger = kernel_Logger.ForContext<LobbyManager>();
 
             _instance.StopEvent += Stop;
             Task.Run(() => UpdateLoop(_stopCts.Token));

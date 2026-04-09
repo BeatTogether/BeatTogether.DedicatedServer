@@ -8,6 +8,11 @@ using BeatTogether.DedicatedServer.Kernel.Enums;
 using BeatTogether.DedicatedServer.Kernel.Types;
 using BeatTogether.DedicatedServer.Messaging.Enums;
 using BeatTogether.DedicatedServer.Messaging.Models;
+using Serilog.Events;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Net;
 
 namespace BeatTogether.DedicatedServer.Kernel
 {
@@ -24,9 +29,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         public uint ENetPeerId { get; set; }
 
         public RollingAverage Latency { get; } = new(30);
-        public long SyncTime =>
-            Math.Min(Instance.RunTime - Latency.CurrentAverage,
-                     Instance.RunTime);
+        public long SyncTime => Math.Min(Instance.RunTime - Latency.CurrentAverage, Instance.RunTime);
         public int SortIndex { get; set; }
         public byte[]? Random { get; set; }
         public byte[]? PublicEncryptionKey { get; set; }
@@ -77,6 +80,9 @@ namespace BeatTogether.DedicatedServer.Kernel
         public bool CanTextChat { get; set; } = false;
         public bool CanReceiveVoiceChat { get; set; } = false;
         public bool CanTransmitVoiceChat { get; set; } = false;
+
+        public bool LogToMpChat { get; set; } = false;
+        public LogEventLevel MpChatLogLevel { get; set; } = LogEventLevel.Information;
 
         private AccessLevel _AccessLevel;
         public AccessLevel GetAccessLevel()

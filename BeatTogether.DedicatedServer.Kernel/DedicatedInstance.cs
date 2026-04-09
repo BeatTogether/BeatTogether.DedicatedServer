@@ -16,7 +16,6 @@ using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MPChatPa
 using BeatTogether.DedicatedServer.Messaging.Packets.MultiplayerSession.MpCorePackets;
 using BeatTogether.DedicatedServer.Messaging.Abstractions;
 using BeatTogether.DedicatedServer.Messaging.Util;
-using Serilog;
 using BeatTogether.DedicatedServer.Ignorance.IgnoranceCore;
 using Microsoft.Extensions.DependencyInjection;
 using BeatTogether.Core.Enums;
@@ -56,7 +55,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private int _lastSortIndex = -1;
         private readonly Queue<byte> _releasedConnectionIds = new();
         private readonly Queue<int> _releasedSortIndices = new();
-        private readonly ILogger _logger = Log.ForContext<DedicatedInstance>();
+        private readonly Internal_Logger _logger;
 
         private long _startTime;
         private CancellationTokenSource? _waitForPlayerCts = null;
@@ -65,12 +64,14 @@ namespace BeatTogether.DedicatedServer.Kernel
         public DedicatedInstance(
             InstanceConfiguration configuration,
             IPlayerRegistry playerRegistry,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            Kernel_Logger kernel_Logger)
             : base (configuration.Port)
         {
             _configuration = configuration;
             _playerRegistry = playerRegistry;
             _serviceProvider = serviceProvider;
+            _logger = kernel_Logger.ForContext<DedicatedInstance>();
         }
 
         #region Public Methods
@@ -126,8 +127,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 {
                     if (!t.IsCanceled)
                     {
-                        _logger.Warning("Stopping instance (no players joined timeout): {Instance}",
-                            _configuration.ServerName);
+                        _logger.Warning("Stopping instance (no players joined timeout): {Instance}"
+                            + $"(ServerName={_configuration.ServerId})");
                         _ = Stop(CancellationToken.None);
                     }
                     else
@@ -309,7 +310,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                 //_logger.Information("About to update servers name" + _configuration.ServerName);
                 _configuration.ServerName = player.UserName + "'s server";
                 InstanceConfigUpdated();
-                _logger.Information("Updated servers name to: " + _configuration.ServerName);
+                _logger.Information("Updated a server instance name to: " + _configuration.ServerName);
             }
             _logger.Information(
                 "Player joined dedicated server " +
@@ -318,7 +319,8 @@ namespace BeatTogether.DedicatedServer.Kernel
                 $"PlayerSessionId='{player.PlayerSessionId}', " +
                 $"UserId='{player.HashedUserId}', " +
                 $"UserName='{player.UserName}', " +
-                $"SortIndex={player.SortIndex})."
+                $"SortIndex={player.SortIndex})." + 
+                $"GameVersion={player.PlayerClientVersion})." 
             );
 
             if (_waitForPlayerCts != null)
@@ -536,7 +538,7 @@ namespace BeatTogether.DedicatedServer.Kernel
 
             PacketDispatcher.SendToNearbyPlayers(new MpcTextChatPacket 
             { 
-                Text = player.UserName + " Joined, Platform: " + player.PlayerPlatform.ToString() + " Version: " + player.PlayerClientVersion.ToString() 
+                Text = player.UserName + " Joined, Platform: " + player.PlayerPlatform.ToString() + ", Version: " + player.PlayerClientVersion.ToString()
             }, IgnoranceChannelTypes.Reliable);
 
             //_logger.Information($"Sent connection data though for (RemoteEndPoint='{endPoint}')");

@@ -24,7 +24,7 @@ namespace BeatTogether.DedicatedServer.Kernel
         private readonly IPacketRegistry _packetRegistry;
         private readonly IPlayerRegistry _playerRegistry;
         private readonly PacketDispatcher _packetDispatcher;
-        private readonly ILogger _logger = Log.ForContext<PacketSource>();
+        private readonly Internal_Logger _logger;
         private readonly InstanceConfiguration _configuration;
 
         public PacketSource(
@@ -32,13 +32,15 @@ namespace BeatTogether.DedicatedServer.Kernel
             IPacketRegistry packetRegistry,
             IPlayerRegistry playerRegistry,
             PacketDispatcher packetDispatcher,
-            InstanceConfiguration instconfiguration)
+            InstanceConfiguration instconfiguration,
+            Kernel_Logger kernel_Logger)
         {
             _serviceProvider = serviceProvider;
             _packetRegistry = packetRegistry;
             _playerRegistry = playerRegistry;
             _packetDispatcher = packetDispatcher;
             _configuration = instconfiguration;
+            _logger = kernel_Logger.ForContext<PacketSource>();
         }
 
         public void OnReceive(EndPoint remoteEndPoint, ref SpanBuffer reader, IgnoranceChannelTypes method)
@@ -77,11 +79,13 @@ namespace BeatTogether.DedicatedServer.Kernel
                 int prevPosition = HandleRead.Offset;
                 INetSerializable? packet;
                 IPacketRegistry packetRegistry = _packetRegistry;
+                byte? packetId = null;
+                string? MPCpacketId = null;
                 while (true)
                 {
                     if (packetRegistry is not MultiplayerCorePacketRegistry MPCoreRegistry)
                     {
-                        byte packetId;
+                        
                         try
                         { packetId = HandleRead.ReadByte(); }
                         catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
@@ -95,7 +99,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     }
                     else
                     {
-                        string MPCpacketId;
+                        
                         try
                         { MPCpacketId = HandleRead.ReadString(); }
                         catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
@@ -107,13 +111,25 @@ namespace BeatTogether.DedicatedServer.Kernel
 
                 if (packet == null)
                 {
-                    _logger.Debug($"Failed to create packet.");
+                    if(packetId != null)
+                    {
+                        _logger.Debug($"Failed to create packet, current registry: {packetRegistry.GetType().Name}, packetId: {packetId}");
+                    }
+                    else if(MPCpacketId != null)
+                    {
+                        _logger.Debug($"Failed to create MPCorePacket, current registry: {packetRegistry.GetType().Name}, packetId: {MPCpacketId}");
+                    }
+                    else
+                    {
+                        _logger.Debug($"Failed to create packet for other reasons, current registry: {packetRegistry.GetType().Name}");
+                    }
                     // skip any unprocessed bytes
                     var processedBytes = HandleRead.Offset - prevPosition;
                     try { HandleRead.SkipBytes((int)length - processedBytes); }
                     catch (EndOfBufferException) { _logger.Warning("Packet was an incorrect length"); goto RoutePacket; }
                     continue;
                 }
+                _logger.Verbose($"Recieving packet {packet.GetType().Name} from {sender.ENetPeerId}");
                 if(packet is NoteSpawnPacket || packet is ObstacleSpawnPacket || packet is SliderSpawnPacket) //Note packet logic
                 {
                     if (_configuration.DisableNotes || (_playerRegistry.GetPlayerCount() >= _configuration.DisableNotesPlayerCount) && !_configuration.ForceEnableNotes)
@@ -139,8 +155,7 @@ namespace BeatTogether.DedicatedServer.Kernel
                     sender.TicksAtLastSyncStateDelta = DateTime.UtcNow.Ticks;
                 }
                 var packetType = packet.GetType();
-                var packetHandlerType = typeof(Abstractions.IPacketHandler<>)
-                    .MakeGenericType(packetType);
+                var packetHandlerType = typeof(Abstractions.IPacketHandler<>).MakeGenericType(packetType);
                 var packetHandler = _serviceProvider.GetService(packetHandlerType);
                 if (packetHandler is null)
                 {
